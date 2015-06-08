@@ -10,6 +10,7 @@ files included
 1. Fitter.py
 
    A tool to fit data given a function and a data file
+   (Incomplete)
 
 2. picalc.py
 
