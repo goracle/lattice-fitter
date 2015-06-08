@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""Fits function to data.  Computes chi^2 and errors"""
+"""Fit function to data.
+Compute chi^2 and errors.
+Plot fit with error bars.
+"""
 
 #plotting part
 
@@ -37,7 +40,7 @@ def main(argv):
             return arg
 
 def tree():
-    """Used to make a multidimensional dict"""
+    """Return a multidimensional dict"""
     return defaultdict(tree)
 
 #main part
