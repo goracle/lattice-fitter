@@ -1,0 +1,6 @@
+#ignore txt files
+*.txt
+#ignore data files
+A1_PI_Sub_prop
+#backup files excluded
+*~
