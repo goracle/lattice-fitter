@@ -7,7 +7,7 @@ summer study group
 --------------------------------------------
 files included
 --------------------------------------------
-1. Fitter.py
+1. fitter.py
 
    A tool to fit data given a function and a data file
    (Incomplete)
@@ -16,6 +16,11 @@ files included
 
    Traditional exercise in calculating Pi using monte carlo simulation of random points inside of a square with an inscribed circle.  
    My version uses bootstrapping for improved precision.
+
+3. mantissa.cpp
+
+   Sum from 1 to N harmonic series and sum from N to 1 of harmonic series.
+   experiment in computer representation of real numbers
 
 To do:
 ---------------------------------------
