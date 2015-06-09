@@ -27,7 +27,10 @@ int main(int argc, char* argv[])
   char *endptr;
   long int N = strtol(argv[1], &endptr, 10);
   if (!*argv[1] || *endptr)
-    cerr << "Invalid number " << argv[1] << '\n';
+    {
+      cerr << "Invalid number " << argv[1] << '\n';
+      return 2;
+    }
   for(int i=1; i<N+1; i++)
     {
       sumup+=1.0/i;
