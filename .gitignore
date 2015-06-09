@@ -5,3 +5,4 @@ A1_PI_Sub_prop
 #backup files excluded
 *~
 *.out
+*\#*

@@ -43,6 +43,12 @@ def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
 
+def fitFunc(qsq, a_0, a_1, b_1):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See main(argv))
+    """
+    return qsq(a_0+a_1/(b_1+qsq))
+
 #main part
 if __name__ == "__main__":
     #re.match(r'',input part from file)
@@ -80,5 +86,7 @@ if __name__ == "__main__":
     print COV[2][2]
     COVINV = inv(COV)
     print COVINV[2][2]
+    #compute chi^2
+
     print len(COORDS)
     sys.exit()
