@@ -87,6 +87,6 @@ if __name__ == "__main__":
     COVINV = inv(COV)
     print COVINV[2][2]
     #compute chi^2
-
+    chiSq = sum([COORDS[i][j]
     print len(COORDS)
     sys.exit()
