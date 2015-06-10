@@ -43,11 +43,11 @@ def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
 
-def fitFunc(qsq, a_0, a_1, b_1):
+def fit_func(qsq, a_0, a_1, b_1):
     """Give result of function computed to fit the data given in <inputfile>
     (See main(argv))
     """
-    return qsq(a_0+a_1/(b_1+qsq))
+    return qsq*(a_0+a_1/(b_1+qsq))
 
 #main part
 if __name__ == "__main__":
@@ -68,7 +68,8 @@ if __name__ == "__main__":
             except ValueError:
                 print "ignored line: '", line, "'"
                 continue
-            #make a list of x y COORDS
+            #make a list of
+            #[indep. variable, empirical dep variable] = COORDS
             if len(cols) == 2:
                 COORDS.append([cols[0], cols[1]])
             #Find the C_ij^-1 inverse covariance matrix
@@ -87,6 +88,10 @@ if __name__ == "__main__":
     COVINV = inv(COV)
     print COVINV[2][2]
     #compute chi^2
-    chiSq = sum([COORDS[i][j]
-    print len(COORDS)
+    CHI_SQ = sum([(COORDS[i][1]-fit_func(COORDS[i][0], 1, 1, 1))*
+                  COVINV[i][j]*(COORDS[j][1]-fit_func(COORDS[j][0], 1, 1, 1))
+                  for i in range(len(COORDS))
+                  for j in range(len(COORDS))])
+    print "chi^2 = ", CHI_SQ
+    #minimize chi^2
     sys.exit()
