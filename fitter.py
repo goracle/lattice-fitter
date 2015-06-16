@@ -7,7 +7,7 @@ Plot fit with error bars.
 
 #plotting part
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 #import re
 import sys
 import getopt
@@ -16,6 +16,7 @@ import getopt
 #from fractions import Fraction
 #from numpy import array
 #from numpy import linalg
+import numpy as np
 from numpy.linalg import inv
 from collections import defaultdict
 
@@ -94,4 +95,16 @@ if __name__ == "__main__":
                   for j in range(len(COORDS))])
     print "chi^2 = ", CHI_SQ
     #minimize chi^2
+    #plotting part, example
+    #needs to be eliminated
+    x = np.arange(-5, 5, 0.1)
+    y = np.power(x, 2)
+    yerrV = 0.1 + 0.2*np.sqrt(x+5.1)
+    xerrV = 0.1 + yerrV
+    plt.figure()
+    plt.errorbar(x, y, xerr=xerrV, yerr=yerrV)
+    plt.title(r"Such example (quadratic) much LaTeX: $\sigma$")
+    plt.annotate('wow', xy=(.3,.09), xytext=(-2, 15), arrowprops=dict(facecolor='black', shrink=0.05))
+    plt.show()
+    #end example
     sys.exit()
