@@ -19,6 +19,7 @@ import getopt
 import numpy as np
 from numpy.linalg import inv
 from collections import defaultdict
+import os, re
 
 #global constants
 
@@ -28,39 +29,93 @@ def main(argv):
     Give usage information or set the input file.
     """
     try:
-        opts = getopt.getopt(argv, "hi:", ["ifile="])[0]
+        opts = getopt.getopt(argv, "f:hi:", ["ifolder=", "help", "ifile="])[0]
     except getopt.GetoptError:
-        print "File not found"
+        print "Invalid argument."
         print "usage:", sys.argv[0], "-i <inputfile>"
+        print "usage(2):", sys.argv[0], "-f <folder of jackknife blocks>"
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
             print "usage:", sys.argv[0], "-i <inputfile>"
+            print "usage(2):", sys.argv[0], "-f <folder of jackknife blocks>"
             sys.exit()
         elif opt in "-i" "--ifile":
+            return arg
+        elif opt in "-f" "--ifolder":
             return arg
 
 def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
 
-def fit_func(qsq, a_0, a_1, b_1):
-    """Give result of function computed to fit the data given in <inputfile>
+#type of function: pade, used for certain types of qcd theories
+#be sure to put triple quotes back in afterwards for the docstring
+"""def fit_func(qsq, a_0, a_1, b_1):
+    Give result of function computed to fit the data given in <inputfile>
     (See main(argv))
-    """
     return qsq*(a_0+a_1/(b_1+qsq))
+"""
+
+#simple exponential
+def fit_func(t, a_0, energy):
+    """Give result of function computed to fit the data given"""
+    return a_0*exp(-t*energy)
+
+def proc_folder(folder, time):
+    """Process folder where jackknife blocks are stored.
+    Return file corresponding to current ensemble (lattice time slice).
+    Assumes file is <anything>t<time><anything>
+    Assumes only 1 valid file per match, e.g. ...t3... doesn't happen more 
+    than once
+    """
+    result = []
+    #build regex as a string
+    my_regex = r"t" + str(time)
+    for root, dirs, files in os.walk(folder):
+        for name in files:
+            if (re.match(my_regex, name)):
+                #delete me
+                print folder
+                print name
+                #end delete me, print test statements
+                return name
+
+def proc_file(IFILE):
+    """Process the current file, determining errors"""
+    INPUTFILE = open(IFILE, "r")
+    pass
 
 #main part
 if __name__ == "__main__":
     #re.match(r'',input part from file)
-    try:
-        INPUTFILE = main(sys.argv[1:])
-        IFILE = open(INPUTFILE, "r")
-    except (IOError, TypeError):
-        print "File:", INPUTFILE, "not found"
+    INPUT = main(sys.argv[1:])
+    #error handling
+    if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
+        print "File:", INPUT, "not found"
+        print "Folder:", INPUT, "also not found."
         print "usage:", sys.argv[0], "-i <inputfile>"
+        print "usage(2):", sys.argv[0], "-f <folder of jackknife blocks>"
         sys.exit(2)
-    COORDS = []
+    if (os.path.isfile(INPUT)):
+        proc_file(INPUT)
+    elif (os.path.isdir(INPUT)):
+        print "Now, input valid time domain (abscissa)."
+        print "time min<=t<=time max"
+        print "time min="
+        TMIN = int(raw_input())
+        print "time max="
+        TMAX = int(raw_input())
+        for time in range(TMIN,TMAX+1):
+            IFILE = proc_folder(INPUT, time)
+            try:
+                TRIAL = open(IFILE, "r")
+            except TypeError:
+                print "Either time range is invalid, or folder is invalid."  
+                print "Double check contents of folder."
+                sys.exit(1)
+            proc_file(IFILE)
+    """COORDS = []
     CDICT = tree()
     with open(INPUTFILE) as f:
         for line in f:
@@ -107,4 +162,5 @@ if __name__ == "__main__":
     plt.annotate('wow', xy=(.3,.09), xytext=(-2, 15), arrowprops=dict(facecolor='black', shrink=0.05))
     plt.show()
     #end example
+    """
     sys.exit()
