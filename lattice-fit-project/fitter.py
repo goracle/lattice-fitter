@@ -25,7 +25,7 @@ from math import fsum
 from itertools import izip
 from collections import namedtuple
 from scipy.optimize import minimize
-from math import exp
+from math import exp, sqrt
 import numdifftools as nd
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -151,7 +151,7 @@ def proc_file(pifile, pjfile=CSENT):
     #initialize return value named tuple. in other words:
     #create a type of object, rets, to hold return values
     #instantiate it with return values, then return that instantiation
-    rets = namedtuple('rets', ['coord', 'covar', 'numblocks'])
+    rets = namedtuple('rets', ['coord', 'covar'])
     if pjfile == CSENT:
         print "***ERROR***"
         print "Missing secondary file."
@@ -184,7 +184,7 @@ def proc_file(pifile, pjfile=CSENT):
                 (float(l1)-avgone)*(float(l2)-avgtwo)
                 for l1, l2 in izip(open(pifile), open(pjfile))])
             return rets(coord=avgone,
-                        covar=coventry, numblocks=count)
+                        covar=coventry)
     print "***Unexpted Error***"
     print "If you\'re seeing this program has a bug that needs fixing"
     sys.exit(1)
@@ -257,7 +257,7 @@ if __name__ == "__main__":
                     print JFILE
                     sys.exit(1)
                 RESRET = proc_file(IFILE, JFILE)
-                #apply jackknife correction here
+                #fill in the covariance matrix
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times
                 if j == 0:
@@ -305,8 +305,10 @@ if __name__ == "__main__":
     HINV = inv(HFUN(RESULT_MIN.x))
     #HESSINV = inv(HESS)
     #compute errors in fit parameters
-    print "a0 = ", RESULT_MIN.x[0]
-    print "energy = ", RESULT_MIN.x[1]
+    ERR_A0 = sqrt(2*HINV[0][0])
+    ERR_ENERGY = sqrt(2*HINV[1][1])
+    print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+    print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
         XCOORD = np.arange(TMIN, TMAX+1, 1)
@@ -322,9 +324,11 @@ if __name__ == "__main__":
         plt.ylim([0, 0.1])
         #add labels, more magic numbers
         plt.title('Some Correlation function vs. time')
-        STRIKE1 = "Energy = " + str(RESULT_MIN.x[1])
-        STRIKE2 = "Amplitude = " + str(RESULT_MIN.x[0])
-        X_POS_OF_FIT_RESULTS = 9
+        STRIKE1 = "Energy = " + str(RESULT_MIN.x[1]) + "+/-" + str(
+            ERR_ENERGY)
+        STRIKE2 = "Amplitude = " + str(RESULT_MIN.x[0]) + "+/-" + str(
+            ERR_A0)
+        X_POS_OF_FIT_RESULTS = 8
         plt.text(X_POS_OF_FIT_RESULTS, 0.07, STRIKE1)
         plt.text(X_POS_OF_FIT_RESULTS, .065, STRIKE2)
         plt.xlabel('time (?)')
