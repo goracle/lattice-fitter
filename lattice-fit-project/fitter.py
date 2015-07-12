@@ -58,11 +58,12 @@ def tree():
 
 #type of function: pade, used for certain types of qcd theories
 #be sure to put triple quotes back in afterwards for the docstring
-#"""def fit_func(qsq, a_0, a_1, b_1):
-#Give result of function computed to fit the data given in <inputfile>
-#(See main(argv))
-#return qsq*(a_0+a_1/(b_1+qsq))
-#"""
+#def fit_func(ctime, trial_params):
+#    """Give result of function computed to fit the data given in <inputfile>
+#    (See main(argv))
+#    """
+#    return (trial_params[0])/(trial_params[1]*ctime+1)
+
 
 #simple exponential
 def fit_func(ctime, trial_params):
@@ -117,7 +118,7 @@ def proc_folder(folder, ctime):
 def simple_proc_file(kfile):
     """Process file with precomputed covariance matrix."""
     cdict = tree()
-    rets = namedtuple('rets', ['coord', 'covar'])
+    rets = namedtuple('rets', ['coord', 'covar', 'numblocks'])
     proccoords = []
     with open(kfile) as opensimp:
         for line in opensimp:
@@ -139,7 +140,7 @@ def simple_proc_file(kfile):
         ccov = [[cdict[proccoords[ci][0]][proccoords[cj][0]]
                  for ci in range(len(proccoords))]
                 for cj in range(len(proccoords))]
-        return rets(coord=proccoords, covar=ccov)
+        return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
     sys.exit(1)
 
 CSENT = object()
@@ -210,11 +211,12 @@ if __name__ == "__main__":
         main(["h"])
     #test to see if input is file, then process the file
     #result is returnd as a named tuple: RESRET
-    RESRET = namedtuple('ret', ['coord', 'covar'])
+    RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
     if os.path.isfile(INPUT):
         RESRET = simple_proc_file(INPUT)
         COV = RESRET.covar
         COORDS = RESRET.coord
+        DIMCOV = RESRET.numblocks
     #test if directory
     #then find out domain of files to process
     elif os.path.isdir(INPUT):
@@ -267,12 +269,11 @@ if __name__ == "__main__":
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     COVINV = inv(COV)
-    print COVINV[2][3]
+    print "Scale of errors = ", COV[0][0]
     #minimize chi squared
-
     #todo:generalize this
-    START_A_0 = 6
-    START_ENERGY = 0.7
+    START_A_0 = 1
+    START_ENERGY = 1
     START_PARAMS = [START_A_0, START_ENERGY]
     BINDS = ((None, None), (0, None))
     #end todo: generalize this
@@ -288,8 +289,10 @@ if __name__ == "__main__":
 
     #def chi_sq(COVINV, trial_params, COORDS):
     #BFGS uses first derivatives of function
-    RESULT_MIN = minimize(chi_sq, [1, 1], (COVINV, COORDS),
-                          bounds=BINDS, method='L-BFGS-B',
+    RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS),
+                          bounds=BINDS,
+                          method='L-BFGS-B',
+                          #method='BFGS')
                           options={'disp': True})
     print "minimized params = ", RESULT_MIN.x
     print "successfully minimized = ", RESULT_MIN.success
@@ -297,6 +300,10 @@ if __name__ == "__main__":
     print "message of optimizer = ", RESULT_MIN.message
     print "number of iterations = ", RESULT_MIN.nit
     print "chi^2 minimized = ", RESULT_MIN.fun
+    if RESULT_MIN.fun < 0:
+        print "***ERROR***"
+        print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
+        sys.exit(1)
     print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(START_PARAMS))
     #compute hessian matrix
     HFUNC = lambda xrray: chi_sq(xrray, COVINV, COORDS)
@@ -311,26 +318,29 @@ if __name__ == "__main__":
     print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
-        XCOORD = np.arange(TMIN, TMAX+1, 1)
+        XCOORD = [COORDS[i][0] for i in range(len(COORDS))]
         YCOORD = [COORDS[i][1] for i in range(len(COORDS))]
         ER2 = np.array([COV[i][i] for i in range(len(COORDS))])
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None')
-        XFIT = np.arange(TMIN-1, TMAX+1, 0.1)
-        YFIT = np.array([fit_func(XFIT[i], RESULT_MIN.x)
-                         for i in range(len(XFIT))])
-        plt.plot(XFIT, YFIT)
-        plt.xlim([TMIN-1, TMAX+1])
+        YFIT = np.array([fit_func(XCOORD[i], RESULT_MIN.x)
+                         for i in range(len(XCOORD))])
+        #only plot fit function if minimizer result makes sense
+        if RESULT_MIN.status == 0:
+            plt.plot(XCOORD, YFIT)
+        #todo: figure out a way to generally assign limits to plot
+        #plt.xlim([XCOORD[0], TMAX+1])
         #magic numbers for the problem you're solving
-        plt.ylim([0, 0.1])
+        #plt.ylim([0, 0.1])
         #add labels, more magic numbers
         plt.title('Some Correlation function vs. time')
-        STRIKE1 = "Energy = " + str(RESULT_MIN.x[1]) + "+/-" + str(
-            ERR_ENERGY)
-        STRIKE2 = "Amplitude = " + str(RESULT_MIN.x[0]) + "+/-" + str(
-            ERR_A0)
-        X_POS_OF_FIT_RESULTS = 8
-        plt.text(X_POS_OF_FIT_RESULTS, 0.07, STRIKE1)
-        plt.text(X_POS_OF_FIT_RESULTS, .065, STRIKE2)
+        #STRIKE1 = "Energy = " + str(RESULT_MIN.x[1]) + "+/-" + str(
+        #    ERR_ENERGY)
+        #STRIKE2 = "Amplitude = " + str(RESULT_MIN.x[0]) + "+/-" + str(
+        #    ERR_A0)
+        #X_POS_OF_FIT_RESULTS = XCOORD[3]
+        #todo: figure out a way to generally place text on plot
+        #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[3], STRIKE1)
+        #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[7], STRIKE2)
         plt.xlabel('time (?)')
         plt.ylabel('the function')
         #read out into a pdf
