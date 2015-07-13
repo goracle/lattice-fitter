@@ -35,53 +35,71 @@ def main(argv):
     Give usage information or set the input file.
     """
     try:
-        opts = getopt.getopt(argv, "f:hi:", ["ifolder=", "help", "ifile="])[0]
+        opts = getopt.getopt(argv, "f:hi:s:", ["ifolder=", "help", "ifile=", "switch=", "xmin=", "xmax="])[0]
         if opts == []:
             raise NameError("NoArgs")
     except (getopt.GetoptError, NameError):
         print "Invalid or missing argument."
         main(["-h"])
+    switch = -1
+    options = namedtuple('ops', ['xmin', 'xmax'])
     for opt, arg in opts:
         if opt == '-h':
             print "usage:", sys.argv[0], "-i <inputfile>"
             print "usage(2):", sys.argv[0]
             print "-f <folder of blocks to be averaged>"
+            print "Required aruments:"
+            print "-s <fit function to use>"
+            print "fit function options are:"
+            print "0: Pade"
+            print "1: Exponential"
+            print "Optional Arguments"
+            print "--xmin=<domain lower bound>"
+            print "--xmax=<domain upper bound>"
             sys.exit()
-        elif opt in "-i" "--ifile":
-            return arg
-        elif opt in "-f" "--ifolder":
-            return arg
+        if opt in "-s" "--switch":
+            switch = arg
+        if opt in "--xmin":
+            options.xmin = arg
+        if opt in "--xmax":
+            options.xmax = arg
+    if not switch in set(['0', '1']):
+        print "You need to pick a fit function."
+        main(["-h"])
+    #exiting loop
+    for opt, arg in opts:
+        if opt in "-i" "--ifile":
+            return arg, switch, options
+        if opt in "-f" "--ifolder":
+            return arg, switch, options
 
 def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
 
-#type of function: pade, used for certain types of qcd theories
-#be sure to put triple quotes back in afterwards for the docstring
-#def fit_func(ctime, trial_params):
-#    """Give result of function computed to fit the data given in <inputfile>
-#    (See main(argv))
-#    """
-#    return (trial_params[0])/(trial_params[1]*ctime+1)
+def fit_func(ctime, trial_params, switch):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See main(argv))
+    """
+    if switch == '0':
+        #pade function
+        return trial_params[3]+ctime*(trial_params[0]+
+                      trial_params[1]/(trial_params[2]+ctime))
+    if switch == '1':
+        #simple exponential
+        return trial_params[0]*exp(-ctime*trial_params[1])
 
-
-#simple exponential
-def fit_func(ctime, trial_params):
-    """Give result of function computed to fit the data given"""
-    #amplitude is trial_params[0], energy is trial_params[1]
-    return trial_params[0]*exp(-ctime*trial_params[1])
-
-def chi_sq(trial_params, covinv, coords):
+def chi_sq(trial_params, covinv, coords, switch):
     """Compute chi^2 given a set of trial parameters,
     the inverse covariance matrix, and the x-y coordinates to fit.
     """
     return fsum([(coords[outer][1]-
-                  fit_func(coords[outer][0], trial_params))*
+                  fit_func(coords[outer][0], trial_params, switch))*
                  covinv[outer][inner]*(coords[inner][1]-
                                        fit_func(coords[inner][0],
-                                                trial_params))
-                 for outer in range(len(COORDS))
-                 for inner in range(len(COORDS))])
+                                                trial_params, switch))
+                 for outer in range(len(coords))
+                 for inner in range(len(coords))])
 
 #delete me
 #CHI_SQ = fsum([(COORDS[i][1]-fit_func(COORDS[i][0], trial_params))*
@@ -202,7 +220,16 @@ def proc_file(pifile, pjfile=CSENT):
 #main part
 if __name__ == "__main__":
     #re.match(r'',input part from file) // ignore this
-    INPUT = main(sys.argv[1:])
+    SENT1 = object()
+    SENT2 = object()
+    XMIN = SENT1
+    XMAX = SENT2
+    INPUT, SWITCH, OPTIONS = main(sys.argv[1:])
+    print "a=", isinstance(OPTIONS.xmin, str)
+    if isinstance(OPTIONS.xmax, str):
+        XMAX = int(OPTIONS.xmax)
+    if isinstance(OPTIONS.xmin, str):
+        XMIN = int(OPTIONS.xmin)
     #error handling
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
@@ -216,33 +243,37 @@ if __name__ == "__main__":
         RESRET = simple_proc_file(INPUT)
         COV = RESRET.covar
         COORDS = RESRET.coord
+        #DIMCOV is dimensions of the covariance matrix
         DIMCOV = RESRET.numblocks
     #test if directory
     #then find out domain of files to process
     elif os.path.isdir(INPUT):
-        print "Now, input valid time domain (abscissa)."
-        print "time min<=t<=time max"
-        print "time min="
-        TMIN = int(raw_input())
-        print "time max="
-        TMAX = int(raw_input())
+        if XMIN == SENT1 or XMAX == SENT2:
+            print "Now, input valid domain (abscissa)."
+            print "xmin<=x<=xmax"
+            if XMIN == SENT1:
+                print "x min="
+                XMIN = int(raw_input())
+            if XMAX == SENT2:
+                print "time max="
+                XMAX = int(raw_input())
         #now process individual files
         #error handling, test to see if time value goes out of range,
         #i.e. if data isn't available to match the requested time domain
-        #i,j are new indices, shifting TMIN to the origin
+        #i,j are new indices, shifting XMIN to the origin
         #j = 0 # initialized below
         i = 0
         #DIMCOV is dimensions of the covariance matrix
-        DIMCOV = (TMAX+1)-TMIN
+        DIMCOV = (XMAX+1)-XMIN
         #cov is the covariance matrix
         COV = [[[0] for k in range(DIMCOV)] for j in range(DIMCOV)]
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
         COORDS = [[[0] for k in range(2)] for j in range(DIMCOV)]
-        for time in range(TMIN, TMAX+1):
+        for time in range(XMIN, XMAX+1):
             COORDS[i][0] = time
             j = 0
-            for time2 in range(TMIN, TMAX+1):
+            for time2 in range(XMIN, XMAX+1):
                 IFILE = proc_folder(INPUT, time)
                 JFILE = proc_folder(INPUT, time2)
                 IFILE = INPUT + "/" + IFILE
@@ -272,73 +303,79 @@ if __name__ == "__main__":
     print "Scale of errors = ", COV[0][0]
     #minimize chi squared
     #todo:generalize this
-    START_A_0 = 1
-    START_ENERGY = 1
-    START_PARAMS = [START_A_0, START_ENERGY]
-    BINDS = ((None, None), (0, None))
-    #end todo: generalize this
-    #minimize chi squared
-    #plan (delete me later):
-    #compute derivatives of each parameter of the fit function
-    #call sage to solve system of equationss???
-    #"""CHI_SQ = fsum([(COORDS[i][1]-fit_func(COORDS[i][0], trial_params))*
-    #               COVINV[i][j]*(COORDS[j][1]-fit_func(COORDS[j][0],
-    #                                                   a_0, energy))
-    #              for i in range(len(COORDS))
-    #              for j in range(len(COORDS))])"""
-
-    #def chi_sq(COVINV, trial_params, COORDS):
+    if SWITCH == '0':
+        print "This method is highly questionable."
+        print "Most likely causes of failure:" 
+        print "(1): Pade definition is wrong."
+        print "(2): Starting point is ill-considered."
+        START_PARAMS = [1, -1, .1, -1.8]
+        METHOD = 'Nelder-Mead'
+    if SWITCH == '1':
+        START_A_0 = 20
+        START_ENERGY = 2
+        START_PARAMS = [START_A_0, START_ENERGY]
+        BINDS = ((None, None), (0, None))
+        METHOD = 'L-BFGS-B'
     #BFGS uses first derivatives of function
-    RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS),
-                          bounds=BINDS,
-                          method='L-BFGS-B',
+    #comment out options{...}, bounds for L-BFGS-B
+    if SWITCH in set(['0']):
+        RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
+                          method=METHOD)
                           #method='BFGS')
-                          options={'disp': True})
+                          #method='L-BFGS-B',
+                          #bounds=BINDS,
+                          #options={'disp': True})
+    if SWITCH in set(['1']):
+        RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
+                              method=METHOD, bounds=BINDS, 
+                              options={'disp': True})
+        print "number of iterations = ", RESULT_MIN.nit
     print "minimized params = ", RESULT_MIN.x
     print "successfully minimized = ", RESULT_MIN.success
     print "status of optimizer = ", RESULT_MIN.status
     print "message of optimizer = ", RESULT_MIN.message
-    print "number of iterations = ", RESULT_MIN.nit
+    #comment out the below if L-BFGS-B is used
     print "chi^2 minimized = ", RESULT_MIN.fun
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
-        sys.exit(1)
     print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(START_PARAMS))
     #compute hessian matrix
-    HFUNC = lambda xrray: chi_sq(xrray, COVINV, COORDS)
-    HFUN = nd.Hessian(HFUNC)
-    #compute hessian inverse
-    HINV = inv(HFUN(RESULT_MIN.x))
-    #HESSINV = inv(HESS)
-    #compute errors in fit parameters
-    ERR_A0 = sqrt(2*HINV[0][0])
-    ERR_ENERGY = sqrt(2*HINV[1][1])
-    print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-    print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+    if RESULT_MIN.fun > 0 and RESULT_MIN.status == 0:
+        HFUNC = lambda xrray: chi_sq(xrray, COVINV, COORDS, SWITCH)
+        HFUN = nd.Hessian(HFUNC)
+        #compute hessian inverse
+        HINV = inv(HFUN(RESULT_MIN.x))
+        #HESSINV = inv(HESS)
+        #compute errors in fit parameters
+        ERR_A0 = sqrt(2*HINV[0][0])
+        ERR_ENERGY = sqrt(2*HINV[1][1])
+        print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+        print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
         XCOORD = [COORDS[i][0] for i in range(len(COORDS))]
         YCOORD = [COORDS[i][1] for i in range(len(COORDS))]
         ER2 = np.array([COV[i][i] for i in range(len(COORDS))])
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None')
-        YFIT = np.array([fit_func(XCOORD[i], RESULT_MIN.x)
+        YFIT = np.array([fit_func(XCOORD[i], RESULT_MIN.x, SWITCH)
                          for i in range(len(XCOORD))])
         #only plot fit function if minimizer result makes sense
         if RESULT_MIN.status == 0:
+            print "Minimizer thinks that it worked.  Plotting fit."
             plt.plot(XCOORD, YFIT)
         #todo: figure out a way to generally assign limits to plot
-        #plt.xlim([XCOORD[0], TMAX+1])
+        #plt.xlim([XCOORD[0], XMAX+1])
         #magic numbers for the problem you're solving
         #plt.ylim([0, 0.1])
         #add labels, more magic numbers
         plt.title('Some Correlation function vs. time')
+        #todo: figure out a way to generally place text on plot
         #STRIKE1 = "Energy = " + str(RESULT_MIN.x[1]) + "+/-" + str(
         #    ERR_ENERGY)
         #STRIKE2 = "Amplitude = " + str(RESULT_MIN.x[0]) + "+/-" + str(
         #    ERR_A0)
         #X_POS_OF_FIT_RESULTS = XCOORD[3]
-        #todo: figure out a way to generally place text on plot
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[3], STRIKE1)
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[7], STRIKE2)
         plt.xlabel('time (?)')
