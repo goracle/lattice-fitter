@@ -87,8 +87,7 @@ def fit_func(ctime, trial_params, switch):
     """
     if switch == '0':
         #pade function
-        return trial_params[3]+ctime*(trial_params[0]+
-                                      trial_params[1]/(
+        return trial_params[0]+ctime*(trial_params[1]/(
                                           trial_params[2]+ctime))
     if switch == '1':
         #simple exponential
@@ -327,8 +326,9 @@ if __name__ == "__main__":
         print "Most likely causes of failure:"
         print "(1): Pade definition is wrong."
         print "(2): Starting point is ill-considered."
-        START_PARAMS = [1, -1, .1, -1.8]
-        METHOD = 'Nelder-Mead'
+        START_PARAMS = [-0.174, 0.01, 0.21] 
+        METHOD = 'L-BFGS-B'
+        BINDS = ((None, 0), (None, None), (None, None))
     if SWITCH == '1':
         START_A_0 = 20
         START_ENERGY = 2
@@ -337,14 +337,14 @@ if __name__ == "__main__":
         METHOD = 'L-BFGS-B'
     #BFGS uses first derivatives of function
     #comment out options{...}, bounds for L-BFGS-B
-    if SWITCH in set(['0']):
+    if SWITCH in set(['00']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
                               method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
                           #bounds=BINDS,
                           #options={'disp': True})
-    if SWITCH in set(['1']):
+    if SWITCH in set(['1', '0']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
                               method=METHOD, bounds=BINDS,
                               options={'disp': True})
@@ -366,10 +366,10 @@ if __name__ == "__main__":
         HINV = inv(HFUN(RESULT_MIN.x))
         #HESSINV = inv(HESS)
         #compute errors in fit parameters
-        ERR_A0 = sqrt(2*HINV[0][0])
-        ERR_ENERGY = sqrt(2*HINV[1][1])
-        print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-        print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+        #ERR_A0 = sqrt(2*HINV[0][0])
+        #ERR_ENERGY = sqrt(2*HINV[1][1])
+        #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+        #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
         XCOORD = [COORDS[i][0] for i in range(len(COORDS))]
