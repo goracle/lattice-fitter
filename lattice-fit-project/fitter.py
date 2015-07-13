@@ -35,13 +35,17 @@ def main(argv):
     Give usage information or set the input file.
     """
     try:
-        opts = getopt.getopt(argv, "f:hi:s:", ["ifolder=", "help", "ifile=", "switch=", "xmin=", "xmax="])[0]
+        opts = getopt.getopt(argv, "f:hi:s:",
+                             ["ifolder=", "help", "ifile=",
+                              "switch=", "xmin=", "xmax="])[0]
         if opts == []:
             raise NameError("NoArgs")
     except (getopt.GetoptError, NameError):
         print "Invalid or missing argument."
         main(["-h"])
     switch = -1
+    cxmin = object()
+    cxmax = object()
     options = namedtuple('ops', ['xmin', 'xmax'])
     for opt, arg in opts:
         if opt == '-h':
@@ -60,18 +64,18 @@ def main(argv):
         if opt in "-s" "--switch":
             switch = arg
         if opt in "--xmin":
-            options.xmin = arg
+            cxmin = arg
         if opt in "--xmax":
-            options.xmax = arg
+            cxmax = arg
     if not switch in set(['0', '1']):
         print "You need to pick a fit function."
         main(["-h"])
     #exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile":
-            return arg, switch, options
+            return arg, switch, options(xmin=cxmin, xmax=cxmax)
         if opt in "-f" "--ifolder":
-            return arg, switch, options
+            return arg, switch, options(xmin=cxmin, xmax=cxmax)
 
 def tree():
     """Return a multidimensional dict"""
@@ -84,7 +88,8 @@ def fit_func(ctime, trial_params, switch):
     if switch == '0':
         #pade function
         return trial_params[3]+ctime*(trial_params[0]+
-                      trial_params[1]/(trial_params[2]+ctime))
+                                      trial_params[1]/(
+                                          trial_params[2]+ctime))
     if switch == '1':
         #simple exponential
         return trial_params[0]*exp(-ctime*trial_params[1])
@@ -164,7 +169,8 @@ def simple_proc_file(kfile):
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT):
     """Process the current file.
-    Return covariance matrix entry I,indexj in the case of multi-file structure.
+    Return covariance matrix entry I,indexj in the case of multi-file
+    structure.
     Return the covariance matrix for single file.
     """
     #initialize return value named tuple. in other words:
@@ -224,6 +230,7 @@ if __name__ == "__main__":
     SENT2 = object()
     XMIN = SENT1
     XMAX = SENT2
+    OPTIONS = namedtuple('ops', ['xmin', 'xmax'])
     INPUT, SWITCH, OPTIONS = main(sys.argv[1:])
     print "a=", isinstance(OPTIONS.xmin, str)
     if isinstance(OPTIONS.xmax, str):
@@ -305,7 +312,7 @@ if __name__ == "__main__":
     #todo:generalize this
     if SWITCH == '0':
         print "This method is highly questionable."
-        print "Most likely causes of failure:" 
+        print "Most likely causes of failure:"
         print "(1): Pade definition is wrong."
         print "(2): Starting point is ill-considered."
         START_PARAMS = [1, -1, .1, -1.8]
@@ -320,7 +327,7 @@ if __name__ == "__main__":
     #comment out options{...}, bounds for L-BFGS-B
     if SWITCH in set(['0']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
-                          method=METHOD)
+                              method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
                           #bounds=BINDS,
