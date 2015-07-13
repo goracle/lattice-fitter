@@ -327,14 +327,13 @@ if __name__ == "__main__":
                           #options={'disp': True})
     if SWITCH in set(['1']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
-                              method=METHOD, bounds=BINDS, 
+                              method=METHOD, bounds=BINDS,
                               options={'disp': True})
         print "number of iterations = ", RESULT_MIN.nit
     print "minimized params = ", RESULT_MIN.x
     print "successfully minimized = ", RESULT_MIN.success
     print "status of optimizer = ", RESULT_MIN.status
     print "message of optimizer = ", RESULT_MIN.message
-    #comment out the below if L-BFGS-B is used
     print "chi^2 minimized = ", RESULT_MIN.fun
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
