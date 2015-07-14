@@ -163,6 +163,18 @@ def simple_proc_file(kfile):
         ccov = [[cdict[proccoords[ci][0]][proccoords[cj][0]]
                  for ci in range(len(proccoords))]
                 for cj in range(len(proccoords))]
+        #perform a symmetry check on the covariance matrix, just in case
+        for ci in range(len(ccov)):
+            for cj in range(ci+1, len(ccov)):
+                if ccov[ci][cj] == ccov[cj][ci]:
+                    pass
+                else:
+                    print "***ERROR***"
+                    print "The provided covariance matrix is not symmetric."
+                    print "Good fits need a symmetric covariance matrix."
+                    print "Please provide different data."
+                    print "Exiting."
+                    print sys.exit(1)
         return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
     sys.exit(1)
 
