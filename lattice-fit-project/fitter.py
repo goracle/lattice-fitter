@@ -28,6 +28,18 @@ from scipy.optimize import minimize
 from math import exp, sqrt
 import numdifftools as nd
 from matplotlib.backends.backend_pdf import PdfPages
+########SOURCE CODE NAVIGATION#######
+########for the part starting with
+#if __name__ == "__main__":
+####set up 1ab
+####error handling 2ab
+####process the files 3ab
+####input time domain for folders 4ab
+####process individual files in dir 5ab
+####we have data 6ab
+####minimize 7ab
+####compute errors 8ab
+####plot result 9ab
 
 #function definitions
 def main(argv):
@@ -236,19 +248,18 @@ def proc_file(pifile, pjfile=CSENT):
 
 #main part
 if __name__ == "__main__":
-    #re.match(r'',input part from file) // ignore this
+####set up 1ab
     SENT1 = object()
     SENT2 = object()
     XMIN = SENT1
     XMAX = SENT2
     OPTIONS = namedtuple('ops', ['xmin', 'xmax'])
     INPUT, SWITCH, OPTIONS = main(sys.argv[1:])
-    print "a=", isinstance(OPTIONS.xmin, str)
     if isinstance(OPTIONS.xmax, str):
         XMAX = int(OPTIONS.xmax)
     if isinstance(OPTIONS.xmin, str):
         XMIN = int(OPTIONS.xmin)
-    #error handling
+####error handling 2ab
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
         print "File:", INPUT, "not found"
@@ -257,6 +268,7 @@ if __name__ == "__main__":
     #test to see if input is file, then process the file
     #result is returnd as a named tuple: RESRET
     RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
+####process the files 3ab
     if os.path.isfile(INPUT):
         RESRET = simple_proc_file(INPUT)
         COV = RESRET.covar
@@ -265,6 +277,7 @@ if __name__ == "__main__":
         DIMCOV = RESRET.numblocks
     #test if directory
     #then find out domain of files to process
+####input time domain for folders 4ab
     elif os.path.isdir(INPUT):
         if XMIN == SENT1 or XMAX == SENT2:
             print "Now, input valid domain (abscissa)."
@@ -280,6 +293,7 @@ if __name__ == "__main__":
         #i.e. if data isn't available to match the requested time domain
         #i,j are new indices, shifting XMIN to the origin
         #j = 0 # initialized below
+####process individual files in dir 5ab
         i = 0
         #DIMCOV is dimensions of the covariance matrix
         DIMCOV = (XMAX+1)-XMIN
@@ -315,10 +329,12 @@ if __name__ == "__main__":
                     COORDS[i][1] = RESRET.coord
                 j += 1
             i += 1
+####we have data 6ab
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     COVINV = inv(COV)
     print "Scale of errors = ", COV[0][0]
+####minimize 7ab
     #minimize chi squared
     #todo:generalize this
     if SWITCH == '0':
@@ -358,6 +374,7 @@ if __name__ == "__main__":
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
     print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(START_PARAMS))
+####compute errors 8ab
     #compute hessian matrix
     if RESULT_MIN.fun > 0 and RESULT_MIN.status == 0:
         HFUNC = lambda xrray: chi_sq(xrray, COVINV, COORDS, SWITCH)
@@ -370,6 +387,7 @@ if __name__ == "__main__":
         #ERR_ENERGY = sqrt(2*HINV[1][1])
         #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
         #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+####plot result 9ab
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
         XCOORD = [COORDS[i][0] for i in range(len(COORDS))]
