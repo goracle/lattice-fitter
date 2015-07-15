@@ -187,6 +187,7 @@ def simple_proc_file(kfile):
                     print "Exiting."
                     print sys.exit(1)
         return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
+    print "simple proc error"
     sys.exit(1)
 
 CSENT = object()
@@ -233,7 +234,7 @@ def proc_file(pifile, pjfile=CSENT):
                 for l1, l2 in izip(open(pifile), open(pjfile))])
             return rets(coord=avgone,
                         covar=coventry)
-    print "***Unexpted Error***"
+    print "***Unexpected Error***"
     print "If you\'re seeing this program has a bug that needs fixing"
     sys.exit(1)
     #delete me (if working)
