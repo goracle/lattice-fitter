@@ -28,6 +28,7 @@ from scipy.optimize import minimize
 from math import exp, sqrt
 import numdifftools as nd
 from matplotlib.backends.backend_pdf import PdfPages
+from numpy.linalg import cholesky as posdefexcept
 ########SOURCE CODE NAVIGATION#######
 ########for the part starting with
 #if __name__ == "__main__":
@@ -175,6 +176,9 @@ def simple_proc_file(kfile):
                  for ci in range(len(proccoords))]
                 for cj in range(len(proccoords))]
         #perform a symmetry check on the covariance matrix, just in case
+        #Note, pos def => symmetric.
+        #I don't know why the covariance matrix would ever be non-symmetric
+        #unless the data were mangled.
         for ci in range(len(ccov)):
             for cj in range(ci+1, len(ccov)):
                 if ccov[ci][cj] == ccov[cj][ci]:
@@ -186,6 +190,22 @@ def simple_proc_file(kfile):
                     print "Please provide different data."
                     print "Exiting."
                     print sys.exit(1)
+        #check to see if (cov) matrix is positive definite.  If it is, then
+        #it must have a Cholesky decomposition.
+        #The posdefexcept finds this decomposition, and raises a LinAlgError
+        #if the matrix is not positive definite.
+        #The program then tells the user to select a different domain.
+        #The data may still be useable.
+        #Some people on the internet suggest this is faster, and I was going
+        #to use a canned routine anyway, so this one won.
+        try:
+            doesnotmatter = posdefexcept(ccov)
+        except np.linalg.linalg.LinAlgError:
+            print "***ERROR***"
+            print "Covariance matrix is not positive definite."
+            print "Choose a different domain to fit."
+            print "The data may still be useable."
+            sys.exit(1)
         return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
     print "simple proc error"
     sys.exit(1)
