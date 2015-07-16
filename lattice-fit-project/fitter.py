@@ -134,11 +134,14 @@ def proc_folder(folder, ctime):
     Assumes file is <anything>t<time><anything>
     Assumes only 1 valid file per match, e.g. ...t3... doesn't happen more
     than once.
-    Match both the int and float versions of the number.
+    Both the int and float versions of ctime are treated the same.
     """
     #build regex as a string
     my_regex = r"t" + str(ctime)
     flag = 0
+    flag2 = 0
+    temp4 = object()
+    retname = temp4
     if int(str(ctime-int(ctime))[2:]) == 0:
         my_regex2 = r"t" + str(int(ctime))
         flag = 1
@@ -146,13 +149,27 @@ def proc_folder(folder, ctime):
     temp2 = ""
     for root, dirs, files in os.walk(folder):
         for name in files:
-            if re.search(my_regex, name):
-                return name
-            elif re.search(my_regex2, name) and flag == 1:
-                return name
+            #logic: if the search matches either int or float ctime
+            if re.search(my_regex, name) or (
+                    re.search(my_regex2, name) and flag == 1):
+                #logic: if we found another matching file in 
+                #the folder already
+                if not retname == temp4:
+                    flag2 = 1
+                #logic: else save the file name to return after folder walk
+                retname = name
             else:
                 temp1 = root
                 temp2 = dirs
+    #logic: if we found at least one match
+    if not retname == temp4:
+        if flag2 == 1:
+            print "***ERROR***"
+            print "File name collision."
+            print "Two files match the search."
+            print "Amend your file names."
+            sys.exit(1)
+        return retname
     print temp1
     print temp2
     print folder
