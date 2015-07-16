@@ -50,7 +50,7 @@ def main(argv):
     try:
         opts = getopt.getopt(argv, "f:hi:s:",
                              ["ifolder=", "help", "ifile=",
-                              "switch=", "xmin=", "xmax="])[0]
+                              "switch=", "xmin=", "xmax=", 'xstep='])[0]
         if opts == []:
             raise NameError("NoArgs")
     except (getopt.GetoptError, NameError):
@@ -59,7 +59,9 @@ def main(argv):
     switch = -1
     cxmin = object()
     cxmax = object()
-    options = namedtuple('ops', ['xmin', 'xmax'])
+    cxstep = object()
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep'])
+    #Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
             print "usage:", sys.argv[0], "-i <inputfile>"
@@ -73,11 +75,14 @@ def main(argv):
             print "Optional Arguments"
             print "--xmin=<domain lower bound>"
             print "--xmax=<domain upper bound>"
+            print "--xstep=<domain step size>"
             sys.exit()
         if opt in "-s" "--switch":
             switch = arg
         if opt in "--xmin":
             cxmin = arg
+        if opt in "--xstep":
+            cxstep = arg
         if opt in "--xmax":
             cxmax = arg
     if not switch in set(['0', '1']):
@@ -85,10 +90,8 @@ def main(argv):
         main(["-h"])
     #exiting loop
     for opt, arg in opts:
-        if opt in "-i" "--ifile":
-            return arg, switch, options(xmin=cxmin, xmax=cxmax)
-        if opt in "-f" "--ifolder":
-            return arg, switch, options(xmin=cxmin, xmax=cxmax)
+        if opt in "-i" "--ifile" "-f" "--ifolder":
+            return arg, switch, options(xmin=cxmin, xmax=cxmax, xstep=cxstep)
 
 def tree():
     """Return a multidimensional dict"""
@@ -130,15 +133,22 @@ def proc_folder(folder, ctime):
     Return file corresponding to current ensemble (lattice time slice).
     Assumes file is <anything>t<time><anything>
     Assumes only 1 valid file per match, e.g. ...t3... doesn't happen more
-    than once
+    than once.
+    Match both the int and float versions of the number.
     """
     #build regex as a string
     my_regex = r"t" + str(ctime)
+    flag = 0
+    if int(str(ctime-int(ctime))[2:]) == 0:
+        my_regex2 = r"t" + str(int(ctime))
+        flag = 1
     temp1 = ""
     temp2 = ""
     for root, dirs, files in os.walk(folder):
         for name in files:
             if re.search(my_regex, name):
+                return name
+            elif re.search(my_regex2, name) and flag == 1:
                 return name
             else:
                 temp1 = root
@@ -272,14 +282,16 @@ if __name__ == "__main__":
 ####set up 1ab
     SENT1 = object()
     SENT2 = object()
+    SENT3 = object()
     XMIN = SENT1
     XMAX = SENT2
-    OPTIONS = namedtuple('ops', ['xmin', 'xmax'])
+    XSTEP = SENT3
+    OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep'])
     INPUT, SWITCH, OPTIONS = main(sys.argv[1:])
     if isinstance(OPTIONS.xmax, str):
-        XMAX = int(OPTIONS.xmax)
+        XMAX = float(OPTIONS.xmax)
     if isinstance(OPTIONS.xmin, str):
-        XMIN = int(OPTIONS.xmin)
+        XMIN = float(OPTIONS.xmin)
 ####error handling 2ab
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
@@ -305,11 +317,14 @@ if __name__ == "__main__":
             print "xmin<=x<=xmax"
             if XMIN == SENT1:
                 print "x min="
-                XMIN = int(raw_input())
+                XMIN = float(raw_input())
             if XMAX == SENT2:
                 print "time max="
-                XMAX = int(raw_input())
-        #now process individual files
+                XMAX = float(raw_input())
+    if XSTEP == SENT3:
+        print "Assuming domain step size is 1 (int)."
+        XSTEP = 1
+#now process individual files
         #error handling, test to see if time value goes out of range,
         #i.e. if data isn't available to match the requested time domain
         #i,j are new indices, shifting XMIN to the origin
@@ -317,16 +332,16 @@ if __name__ == "__main__":
 ####process individual files in dir 5ab
         i = 0
         #DIMCOV is dimensions of the covariance matrix
-        DIMCOV = (XMAX+1)-XMIN
+        DIMCOV = int((XMAX-XMIN)/XSTEP+1)
         #cov is the covariance matrix
         COV = [[[0] for k in range(DIMCOV)] for j in range(DIMCOV)]
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
         COORDS = [[[0] for k in range(2)] for j in range(DIMCOV)]
-        for time in range(XMIN, XMAX+1):
+        for time in np.arange(XMIN, XMAX+1, XSTEP):
             COORDS[i][0] = time
             j = 0
-            for time2 in range(XMIN, XMAX+1):
+            for time2 in np.arange(XMIN, XMAX+1, XSTEP):
                 IFILE = proc_folder(INPUT, time)
                 JFILE = proc_folder(INPUT, time2)
                 IFILE = INPUT + "/" + IFILE
