@@ -362,10 +362,10 @@ if __name__ == "__main__":
         #DIMCOV is dimensions of the covariance matrix
         DIMCOV = int((XMAX-XMIN)/XSTEP+1)
         #cov is the covariance matrix
-        COV = [[[0] for k in range(DIMCOV)] for j in range(DIMCOV)]
+        COV = [[[0] for _ in range(DIMCOV)] for _ in range(DIMCOV)]
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
-        COORDS = [[[0] for k in range(2)] for j in range(DIMCOV)]
+        COORDS = [[[0] for _ in range(2)] for _ in range(DIMCOV)]
         for time in np.arange(XMIN, XMAX+1, XSTEP):
             COORDS[i][0] = time
             j = 0
