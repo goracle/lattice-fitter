@@ -99,7 +99,7 @@ def fit_func(ctime, trial_params, switch):
     """
     if switch == '0':
         #pade function
-        return trial_params[0]+ctime*(trial_params[1]/(
+        return float(-10)+ctime*(trial_params[0]+trial_params[1]/(
                                           trial_params[2]+ctime))
     if switch == '1':
         #simple exponential
@@ -334,7 +334,7 @@ if __name__ == "__main__":
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     COVINV = inv(COV)
-    print "Scale of errors = ", COV[0][0]
+    print "(Rough) scale of errors in data points = ", COV[0][0]
 ####minimize 7ab
     #minimize chi squared
     #todo:generalize this
@@ -354,14 +354,14 @@ if __name__ == "__main__":
         METHOD = 'L-BFGS-B'
     #BFGS uses first derivatives of function
     #comment out options{...}, bounds for L-BFGS-B
-    if SWITCH in set(['00']):
+    if not METHOD in set(['L-BFGS-B']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
                               method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
                           #bounds=BINDS,
                           #options={'disp': True})
-    if SWITCH in set(['1', '0']):
+    if METHOD in set(['L-BFGS-B']):
         RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
                               method=METHOD, bounds=BINDS,
                               options={'disp': True})
@@ -383,11 +383,11 @@ if __name__ == "__main__":
         #compute hessian inverse
         HINV = inv(HFUN(RESULT_MIN.x))
         #HESSINV = inv(HESS)
-        #compute errors in fit parameters
-        #ERR_A0 = sqrt(2*HINV[0][0])
-        #ERR_ENERGY = sqrt(2*HINV[1][1])
-        #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-        #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+        #compute errors in first two fit parameters
+        ERR_A0 = sqrt(2*HINV[0][0])
+        ERR_ENERGY = sqrt(2*HINV[1][1])
+        print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+        print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
 ####plot result 9ab
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
@@ -395,12 +395,15 @@ if __name__ == "__main__":
         YCOORD = [COORDS[i][1] for i in range(len(COORDS))]
         ER2 = np.array([COV[i][i] for i in range(len(COORDS))])
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None')
-        YFIT = np.array([fit_func(XCOORD[i], RESULT_MIN.x, SWITCH)
-                         for i in range(len(XCOORD))])
+        #the fit function is plotted on a scale 1000x more fine
+        #than the original data points
+        XFIT = np.arange(XCOORD[0], XCOORD[len(XCOORD)-1], abs((XCOORD[len(XCOORD)-1]-XCOORD[0]))/1000.0/len(XCOORD))
+        YFIT = np.array([fit_func(XFIT[i], RESULT_MIN.x, SWITCH)
+                         for i in range(len(XFIT))])
         #only plot fit function if minimizer result makes sense
         if RESULT_MIN.status == 0:
             print "Minimizer thinks that it worked.  Plotting fit."
-            plt.plot(XCOORD, YFIT)
+            plt.plot(XFIT, YFIT)
         #todo: figure out a way to generally assign limits to plot
         #plt.xlim([XCOORD[0], XMAX+1])
         #magic numbers for the problem you're solving
