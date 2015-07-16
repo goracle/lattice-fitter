@@ -13,7 +13,7 @@ parts of the graph routine
 #probably needs to be refactored for python3...
 #then sudo pip install numdifftools
 
-
+from __future__ import division
 import matplotlib.pyplot as plt
 import sys
 import getopt
@@ -103,8 +103,11 @@ def fit_func(ctime, trial_params, switch):
     """
     if switch == '0':
         #pade function
-        return float(-10)+ctime*(trial_params[0]+trial_params[1]/(
-                                          trial_params[2]+ctime))
+        #return trial_params[3]+ctime*(trial_params[0]+trial_params[1]/(
+        #                                  trial_params[2]+ctime))
+        return (trial_params[0]+trial_params[1]*ctime+
+                trial_params[3]*ctime*ctime)/(
+            1+trial_params[2]*ctime)
     if switch == '1':
         #simple exponential
         return trial_params[0]*exp(-ctime*trial_params[1])
@@ -177,7 +180,7 @@ def proc_folder(folder, ctime):
     print "Can't find file corresponding to time = ", ctime
     sys.exit(1)
 
-def simple_proc_file(kfile):
+def simple_proc_file(kfile, cxmin, cxmax):
     """Process file with precomputed covariance matrix."""
     cdict = tree()
     rets = namedtuple('rets', ['coord', 'covar', 'numblocks'])
@@ -189,15 +192,18 @@ def simple_proc_file(kfile):
             except ValueError:
                 print "ignored line: '", line, "'"
                 continue
-            if len(cols) == 2:
+            if len(cols) == 2 and cxmin <= cols[0] <= cxmax:
+                #only store coordinates in the valid range
                 proccoords.append([cols[0], cols[1]])
                 #two columns mean coordinate section, 3 covariance section
             elif len(cols) == 3:
                 cdict[cols[0]][cols[1]] = cols[2]
-            else:
+            elif (not len(cols) == 2) and (not len(cols(3))):
                 print "***Error***"
                 print "mangled file:"
-                print IFILE
+                print kfile
+                print "Expecting either two or three numbers per line."
+                print len(cols), "found instead."
                 sys.exit(1)
         ccov = [[cdict[proccoords[ci][0]][proccoords[cj][0]]
                  for ci in range(len(proccoords))]
@@ -296,7 +302,7 @@ def proc_file(pifile, pjfile=CSENT):
 
 #main part
 if __name__ == "__main__":
-####set up 1ab
+    ####set up 1ab
     SENT1 = object()
     SENT2 = object()
     SENT3 = object()
@@ -309,44 +315,49 @@ if __name__ == "__main__":
         XMAX = float(OPTIONS.xmax)
     if isinstance(OPTIONS.xmin, str):
         XMIN = float(OPTIONS.xmin)
-####error handling 2ab
+        ####error handling 2ab
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
         print "File:", INPUT, "not found"
         print "Folder:", INPUT, "also not found."
         main(["h"])
     #test to see if input is file, then process the file
-    #result is returnd as a named tuple: RESRET
+    #result is returned as a named tuple: RESRET
     RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
-####process the files 3ab
+    ####input time domain for folders 4ab
+    if XMIN == SENT1 or XMAX == SENT2:
+        print "Now, input valid domain (abscissa)."
+        print "xmin<=x<=xmax"
+        if XMIN == SENT1:
+            print "x min="
+            XMIN = float(raw_input())
+        if XMAX == SENT2:
+            print "time max="
+            XMAX = float(raw_input())
+    if XMAX < XMIN:
+        print "Assuming you swapped xmin for xmax on command line."
+        print "Swapping xmin for xmax."
+        XMIN, XMAX = XMAX, XMIN
+    #We only care about step size for multi file setup
+    if XSTEP == SENT3 and os.path.isdir(INPUT):
+        print "Assuming domain step size is 1 (int)."
+        XSTEP = 1
+    ####process the file(s) 3ab
+    #process individual file (single file setup)
     if os.path.isfile(INPUT):
-        RESRET = simple_proc_file(INPUT)
+        RESRET = simple_proc_file(INPUT, XMIN, XMAX)
         COV = RESRET.covar
         COORDS = RESRET.coord
         #DIMCOV is dimensions of the covariance matrix
         DIMCOV = RESRET.numblocks
+        #then find out domain of files to process
+    ####process individual files in dir 5ab
+    #error handling, test to see if time value goes out of range,
+    #i.e. if data isn't available to match the requested time domain
+    #i,j are new indices, shifting XMIN to the origin
+    #j = 0 # initialized below
     #test if directory
-    #then find out domain of files to process
-####input time domain for folders 4ab
     elif os.path.isdir(INPUT):
-        if XMIN == SENT1 or XMAX == SENT2:
-            print "Now, input valid domain (abscissa)."
-            print "xmin<=x<=xmax"
-            if XMIN == SENT1:
-                print "x min="
-                XMIN = float(raw_input())
-            if XMAX == SENT2:
-                print "time max="
-                XMAX = float(raw_input())
-    if XSTEP == SENT3:
-        print "Assuming domain step size is 1 (int)."
-        XSTEP = 1
-#now process individual files
-        #error handling, test to see if time value goes out of range,
-        #i.e. if data isn't available to match the requested time domain
-        #i,j are new indices, shifting XMIN to the origin
-        #j = 0 # initialized below
-####process individual files in dir 5ab
         i = 0
         #DIMCOV is dimensions of the covariance matrix
         DIMCOV = int((XMAX-XMIN)/XSTEP+1)
@@ -395,9 +406,10 @@ if __name__ == "__main__":
         print "Most likely causes of failure:"
         print "(1): Pade definition is wrong."
         print "(2): Starting point is ill-considered."
-        START_PARAMS = [-0.174, 0.01, 0.21] 
+        START_PARAMS = [0.00207711, 0.09405524, 1.21877187, .1]
         METHOD = 'L-BFGS-B'
-        BINDS = ((None, 0), (None, None), (None, None))
+        BINDS = ((None, None), (None, None), (None, None),
+                 (None, None))
     if SWITCH == '1':
         START_A_0 = 20
         START_ENERGY = 2
@@ -477,4 +489,4 @@ if __name__ == "__main__":
         #show the plot
         plt.show()
     #extraneous notes below
-    sys.exit()
+    sys.exit(0)
