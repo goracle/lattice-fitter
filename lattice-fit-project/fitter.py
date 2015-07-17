@@ -107,7 +107,7 @@ def fit_func(ctime, trial_params, switch):
         #                                  trial_params[2]+ctime))
         return (trial_params[0]+trial_params[1]*ctime+
                 trial_params[3]*ctime*ctime)/(
-            1+trial_params[2]*ctime)
+                    1+trial_params[2]*ctime)
     if switch == '1':
         #simple exponential
         return trial_params[0]*exp(-ctime*trial_params[1])
@@ -155,7 +155,7 @@ def proc_folder(folder, ctime):
             #logic: if the search matches either int or float ctime
             if re.search(my_regex, name) or (
                     re.search(my_regex2, name) and flag == 1):
-                #logic: if we found another matching file in 
+                #logic: if we found another matching file in
                 #the folder already
                 if not retname == temp4:
                     flag2 = 1
@@ -212,9 +212,9 @@ def simple_proc_file(kfile, cxmin, cxmax):
         #Note, pos def => symmetric.
         #I don't know why the covariance matrix would ever be non-symmetric
         #unless the data were mangled.
-        for ci in range(len(ccov)):
-            for cj in range(ci+1, len(ccov)):
-                if ccov[ci][cj] == ccov[cj][ci]:
+        for ciii in range(len(ccov)):
+            for cjjj in range(ciii+1, len(ccov)):
+                if ccov[ciii][cjjj] == ccov[cjjj][ciii]:
                     pass
                 else:
                     print "***ERROR***"
@@ -232,7 +232,7 @@ def simple_proc_file(kfile, cxmin, cxmax):
         #Some people on the internet suggest this is faster, and I was going
         #to use a canned routine anyway, so this one won.
         try:
-            doesnotmatter = posdefexcept(ccov)
+            posdefexcept(ccov)
         except np.linalg.linalg.LinAlgError:
             print "***ERROR***"
             print "Covariance matrix is not positive definite."
@@ -461,7 +461,10 @@ if __name__ == "__main__":
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None')
         #the fit function is plotted on a scale 1000x more fine
         #than the original data points
-        XFIT = np.arange(XCOORD[0], XCOORD[len(XCOORD)-1], abs((XCOORD[len(XCOORD)-1]-XCOORD[0]))/1000.0/len(XCOORD))
+        XFIT = np.arange(XCOORD[0],
+                         XCOORD[len(XCOORD)-1],
+                         abs((XCOORD[len(
+                             XCOORD)-1]-XCOORD[0]))/1000.0/len(XCOORD))
         YFIT = np.array([fit_func(XFIT[i], RESULT_MIN.x, SWITCH)
                          for i in range(len(XFIT))])
         #only plot fit function if minimizer result makes sense
