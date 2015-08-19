@@ -50,7 +50,8 @@ def main(argv):
     try:
         opts = getopt.getopt(argv, "f:hi:s:",
                              ["ifolder=", "help", "ifile=",
-                              "switch=", "xmin=", "xmax=", 'xstep='])[0]
+                              "switch=", "xmin=", "xmax=", 'xstep=',
+                              'nextra='])[0]
         if opts == []:
             raise NameError("NoArgs")
     except (getopt.GetoptError, NameError):
@@ -60,7 +61,8 @@ def main(argv):
     cxmin = object()
     cxmax = object()
     cxstep = object()
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep'])
+    cnextra = object()
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'nextra'])
     #Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
@@ -71,6 +73,10 @@ def main(argv):
             print "-s <fit function to use>"
             print "fit function options are:"
             print "0: Pade"
+            print "Optional argument for Pade:"
+            print "--nextra=<number of extra arguments/2>"
+            print "E.g., if you enter --nextra=3, 6 additional fit"
+            print "parameters will be used."
             print "1: Exponential"
             print "Optional Arguments"
             print "--xmin=<domain lower bound>"
@@ -85,13 +91,16 @@ def main(argv):
             cxstep = arg
         if opt in "--xmax":
             cxmax = arg
+        if opt in "--nextra":
+            cnextra = arg
     if not switch in set(['0', '1']):
         print "You need to pick a fit function."
         main(["-h"])
     #exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
-            return arg, switch, options(xmin=cxmin, xmax=cxmax, xstep=cxstep)
+            return arg, switch, options(xmin=cxmin, xmax=cxmax,
+                                        xstep=cxstep, nextra=cnextra)
 
 def tree():
     """Return a multidimensional dict"""
@@ -103,11 +112,11 @@ def fit_func(ctime, trial_params, switch):
     """
     if switch == '0':
         #pade function
-        #return trial_params[3]+ctime*(trial_params[0]+trial_params[1]/(
-        #                                  trial_params[2]+ctime))
-        return (trial_params[0]+trial_params[1]*ctime+
-                trial_params[3]*ctime*ctime)/(
-                    1+trial_params[2]*ctime)
+        return trial_params[0]+ctime*(trial_params[1]+trial_params[2]/(
+            trial_params[3]+ctime)+fsum([trial_params[i]/(trial_params[i+1]+ctime) for i in np.arange(4, len(trial_params), 2)]))
+    #return (trial_params[0]+trial_params[1]*ctime+
+    #trial_params[3]*ctime*ctime)/(
+    #           1+trial_params[2]*ctime)
     if switch == '1':
         #simple exponential
         return trial_params[0]*exp(-ctime*trial_params[1])
@@ -306,16 +315,41 @@ if __name__ == "__main__":
     SENT1 = object()
     SENT2 = object()
     SENT3 = object()
+    SENT4 = object()
     XMIN = SENT1
     XMAX = SENT2
     XSTEP = SENT3
-    OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep'])
+    NUMPEXTRA = SENT4
+    OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'nextra'])
     INPUT, SWITCH, OPTIONS = main(sys.argv[1:])
     if isinstance(OPTIONS.xmax, str):
-        XMAX = float(OPTIONS.xmax)
+        try:
+            XMAX = float(OPTIONS.xmax)
+        except ValueError:
+            print "***ERROR***"
+            print "Invalid xmax."
+            main(["h"])
     if isinstance(OPTIONS.xmin, str):
-        XMIN = float(OPTIONS.xmin)
-        ####error handling 2ab
+        try:
+            XMIN = float(OPTIONS.xmin)
+        except ValueError:
+            print "***ERROR***"
+            print "Invalid xmin."
+            main(["h"])
+    if isinstance(OPTIONS.nextra, str):
+        try:
+            OPSTEMP = OPTIONS.nextra
+            OPSTEMP = int(OPSTEMP)
+        except ValueError:
+            print "***ERROR***"
+            print "Invalid number of extra parameters."
+            print "Expecting an int >= 0."
+            main(["h"])
+    if OPSTEMP >= 0:
+        NUMPEXTRA = OPSTEMP
+    else:
+        NUMPEXTRA = -1
+    ####error handling 2ab
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
         print "File:", INPUT, "not found"
@@ -406,28 +440,57 @@ if __name__ == "__main__":
         print "Most likely causes of failure:"
         print "(1): Pade definition is wrong."
         print "(2): Starting point is ill-considered."
-        START_PARAMS = [0.00207711, 0.09405524, 1.21877187, .1]
+        if NUMPEXTRA == -1:
+            print "Input the number of extra fit parameters desired / 2"
+            print "Two extra parameters will be used for each Extra"
+            print "E.g., if you input 3, the number of extra parameters will"
+            print "be 6.  See definition of pade given in source."
+            print "Please fix to be more general:"
+            print "each b_i value is taken to be greater than 4*(m_pi)^2"
+            print "Extra = "
+            NUMPEXTRA = int(raw_input())
+            if NUMPEXTRA < 0 or (not isinstance(NUMPEXTRA, int)):
+                print "***ERROR***"
+                print "Expecting an int >= 0"
+                sys.exit(2)
+        #m_rho = 770 MeV
+        #m_pi = 140 MeV
+        #b_i>2.3716
+        start_params = [-.18, 0.09405524, 1.21877187, 2.4]
+        if NUMPEXTRA == 0:
+            ADDPARAMS = []
+        else:
+            ADDPARAMS = [1.21877187+i/1000.0 if i%2 == 0
+                         else 2.4+i/1000.0 for i in range(NUMPEXTRA*2)]
+        for i in ADDPARAMS:
+            start_params.append(i)
+        MBOUND = 0.0779
+        binds = [(None, None), (None, None), (None, None),
+                 (MBOUND, None)]
+        ADDBINDS = [(None, None) if i%2 ==0 else (MBOUND, None)
+                    for i in range(NUMPEXTRA*2)]
+        for i in ADDBINDS:
+            binds.append(i)
+        binds = tuple(binds)
         METHOD = 'L-BFGS-B'
-        BINDS = ((None, None), (None, None), (None, None),
-                 (None, None))
     if SWITCH == '1':
         START_A_0 = 20
         START_ENERGY = 2
-        START_PARAMS = [START_A_0, START_ENERGY]
-        BINDS = ((None, None), (0, None))
+        start_params = [START_A_0, START_ENERGY]
+        binds = ((None, None), (0, None))
         METHOD = 'L-BFGS-B'
     #BFGS uses first derivatives of function
     #comment out options{...}, bounds for L-BFGS-B
     if not METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
+        RESULT_MIN = minimize(chi_sq, start_params, (COVINV, COORDS, SWITCH),
                               method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
-                          #bounds=BINDS,
+                          #bounds=binds,
                           #options={'disp': True})
     if METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, START_PARAMS, (COVINV, COORDS, SWITCH),
-                              method=METHOD, bounds=BINDS,
+        RESULT_MIN = minimize(chi_sq, start_params, (COVINV, COORDS, SWITCH),
+                              method=METHOD, bounds=binds,
                               options={'disp': True})
         print "number of iterations = ", RESULT_MIN.nit
     print "minimized params = ", RESULT_MIN.x
@@ -438,7 +501,7 @@ if __name__ == "__main__":
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
-    print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(START_PARAMS))
+    print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(start_params))
 ####compute errors 8ab
     #compute hessian matrix
     if RESULT_MIN.fun > 0 and RESULT_MIN.status == 0:
