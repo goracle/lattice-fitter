@@ -271,7 +271,18 @@ def simple_proc_file(kfile, cxmin, cxmax):
             print "List of eigenvalues of covariance matrix:"
             for i in TESTEIG:
                 print i
-            sys.exit(1)
+            while True:
+                print "Continue? (y/n)"
+                RESP = str(raw_input())
+                if (RESP == "n" or RESP == "no" or
+                    RESP == "No" or RESP == "N"):
+                    sys.exit(1)
+                if (RESP == "y" or RESP == "yes"
+                    or RESP == "Yes" or RESP == "Y"):
+                    break
+                else:
+                    print "Sorry, I didn't understand that."
+                    continue
         return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
     print "simple proc error"
     sys.exit(1)
