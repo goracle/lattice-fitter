@@ -479,6 +479,13 @@ if __name__ == "__main__":
         start_params = [START_A_0, START_ENERGY]
         binds = ((None, None), (0, None))
         METHOD = 'L-BFGS-B'
+    #error handling for Degrees of Freedom <= 0.
+    #DIMCOV is number of points plotted.
+    if len(start_params) >= DIMCOV:
+        print "***ERROR***"
+        print "Degrees of freedom <= 0."
+        print "Rerun with a different number of fit parameters."
+        sys.exit(1)
     #BFGS uses first derivatives of function
     #comment out options{...}, bounds for L-BFGS-B
     if not METHOD in set(['L-BFGS-B']):
@@ -509,12 +516,21 @@ if __name__ == "__main__":
         HFUN = nd.Hessian(HFUNC)
         #compute hessian inverse
         HINV = inv(HFUN(RESULT_MIN.x))
-        #HESSINV = inv(HESS)
-        #compute errors in first two fit parameters
-        ERR_A0 = sqrt(2*HINV[0][0])
-        ERR_ENERGY = sqrt(2*HINV[1][1])
-        print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-        print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+        #compute errors in fit parameters
+        for i in range(len(HINV)):
+            print "Statistical error in parameter #", i, " = "
+            try:
+                print sqrt(2*HINV[i][i])
+            except ValueError:
+                print "***ERROR***"
+                print "Examine fit domain.  Hessian inverse has negative"
+                print "diagonal entries, leading to complex errors in some"
+                print "or all of the fit parameters."
+                sys.exit(1)
+        #ERR_A0 = sqrt(2*HINV[0][0])
+        #ERR_ENERGY = sqrt(2*HINV[1][1])
+        #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+        #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
 ####plot result 9ab
     #plot the function and the data, with error bars
     with PdfPages('foo.pdf') as pdf:
