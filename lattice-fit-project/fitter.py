@@ -150,27 +150,40 @@ def proc_folder(folder, ctime):
     """
     #build regex as a string
     my_regex = r"t" + str(ctime)
+    regex_reject1 = my_regex+r"[0-9]"
     flag = 0
     flag2 = 0
     temp4 = object()
     retname = temp4
     if int(str(ctime-int(ctime))[2:]) == 0:
         my_regex2 = r"t" + str(int(ctime))
+        regex_reject2 = my_regex2+r"[0-9]"
         flag = 1
     temp1 = ""
     temp2 = ""
     for root, dirs, files in os.walk(folder):
         for name in files:
             #logic: if the search matches either int or float ctime
-            if re.search(my_regex, name) or (
-                    re.search(my_regex2, name) and flag == 1):
+            #test for int match first
+            if flag == 1:
+                if re.search(my_regex2, name) and (
+                        not re.search(regex_reject2, name)):
+                    #logic: if we found another matching file in
+                    #the folder already, then flag it
+                    if not retname == temp4:
+                        flag2 = 1
+                    retname = name
+            #then test for a float match
+            if re.search(my_regex, name) and (
+                    not re.search(regex_reject1, name)):
                 #logic: if we found another matching file in
-                #the folder already
+                #the folder already, then flag it
                 if not retname == temp4:
                     flag2 = 1
                 #logic: else save the file name to return after folder walk
                 retname = name
             else:
+                #gather debugging information.
                 temp1 = root
                 temp2 = dirs
     #logic: if we found at least one match
@@ -180,13 +193,14 @@ def proc_folder(folder, ctime):
             print "File name collision."
             print "Two files match the search."
             print "Amend your file names."
+            print "Offending files:", retname
             sys.exit(1)
         return retname
     print temp1
     print temp2
     print folder
     print "***ERROR***"
-    print "Can't find file corresponding to time = ", ctime
+    print "Can't find file corresponding to x-value = ", ctime
     sys.exit(1)
 
 def simple_proc_file(kfile, cxmin, cxmax):
@@ -276,7 +290,7 @@ def simple_proc_file(kfile, cxmin, cxmax):
                 RESP = str(raw_input())
                 if (RESP == "n" or RESP == "no" or
                     RESP == "No" or RESP == "N"):
-                    sys.exit(1)
+                    sys.exit(0)
                 if (RESP == "y" or RESP == "yes"
                     or RESP == "Yes" or RESP == "Y"):
                     break
@@ -380,10 +394,10 @@ if __name__ == "__main__":
             print "Invalid number of extra parameters."
             print "Expecting an int >= 0."
             main(["h"])
-    if OPSTEMP >= 0:
-        NUMPEXTRA = OPSTEMP
-    else:
-        NUMPEXTRA = -1
+        if OPSTEMP >= 0:
+            NUMPEXTRA = OPSTEMP
+        else:
+            NUMPEXTRA = -1
     ####error handling 2ab
     #test to see if file/folder exists
     if not (os.path.isfile(INPUT) or os.path.isdir(INPUT)):
@@ -401,12 +415,43 @@ if __name__ == "__main__":
             print "x min="
             XMIN = float(raw_input())
         if XMAX == SENT2:
-            print "time max="
+            print "x max="
             XMAX = float(raw_input())
     if XMAX < XMIN:
-        print "Assuming you swapped xmin for xmax on command line."
-        print "Swapping xmin for xmax."
-        XMIN, XMAX = XMAX, XMIN
+        while True:
+            print "xmax < xmin.  Contradiction."
+            print "Swap xmax for xmin? (y/n)"
+            RESP = str(raw_input())
+            if (RESP == "n" or RESP == "no" or
+                RESP == "No" or RESP == "N"):
+                while True:
+                    print "Abort? (y/n)"
+                    RESP = str(raw_input())
+                    if (RESP == "n" or RESP == "no" or
+                        RESP == "No" or RESP == "N"):
+                        break
+                    if (RESP == "y" or RESP == "yes"
+                        or RESP == "Yes" or RESP == "Y"):
+                        sys.exit(0)
+                    else:
+                        print "Sorry, I didn't understand that."
+                        continue
+                print "Input new values."
+                print "x min="
+                XMIN = float(raw_input())
+                print "x max="
+                XMAX = float(raw_input())
+                if XMAX < XMIN:
+                    continue
+                else:
+                    break
+            if (RESP == "y" or RESP == "yes"
+                or RESP == "Yes" or RESP == "Y"):
+                XMIN, XMAX = XMAX, XMIN
+                break
+            else:
+                print "Sorry, I didn't understand that."
+                continue
     #We only care about step size for multi file setup
     if XSTEP == SENT3 and os.path.isdir(INPUT):
         print "Assuming domain step size is 1 (int)."
@@ -447,7 +492,7 @@ if __name__ == "__main__":
                     TRIAL = open(IFILE, "r")
                     TRIAL2 = open(JFILE, "r")
                 except TypeError:
-                    STR1 = "Either time range is invalid,"
+                    STR1 = "Either domain is invalid,"
                     print STR1, "or folder is invalid."
                     print "Double check contents of folder."
                     print "Offending file(s):"
@@ -558,9 +603,9 @@ if __name__ == "__main__":
         HINV = inv(HFUN(RESULT_MIN.x))
         #compute errors in fit parameters
         for i in range(len(HINV)):
-            print "Statistical error in parameter #", i, " = "
+            print "Minimized parameter #", i, " = "
             try:
-                print sqrt(2*HINV[i][i])
+                print RESULT_MIN.x[i], "+/-", sqrt(2*HINV[i][i])
             except ValueError:
                 print "***ERROR***"
                 print "Examine fit domain.  Hessian inverse has negative"
@@ -595,7 +640,7 @@ if __name__ == "__main__":
         #magic numbers for the problem you're solving
         #plt.ylim([0, 0.1])
         #add labels, more magic numbers
-        plt.title('Some Correlation function vs. time')
+        plt.title('Some Correlation function vs. q^2')
         #todo: figure out a way to generally place text on plot
         #STRIKE1 = "Energy = " + str(RESULT_MIN.x[1]) + "+/-" + str(
         #    ERR_ENERGY)
@@ -604,7 +649,7 @@ if __name__ == "__main__":
         #X_POS_OF_FIT_RESULTS = XCOORD[3]
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[3], STRIKE1)
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[7], STRIKE2)
-        plt.xlabel('time (?)')
+        plt.xlabel('q^2 (GeV/c^2)^2')
         plt.ylabel('the function')
         #read out into a pdf
         pdf.savefig()
