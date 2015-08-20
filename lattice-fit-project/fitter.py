@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import sys
 import getopt
 import numpy as np
-from numpy.linalg import inv
+from numpy.linalg import inv, eigvals
 from collections import defaultdict
 import os, re
 from math import fsum
@@ -247,6 +247,30 @@ def simple_proc_file(kfile, cxmin, cxmax):
             print "Covariance matrix is not positive definite."
             print "Choose a different domain to fit."
             print "The data may still be useable."
+            print "List of eigenvalues:"
+            TESTEIG = eigvals(ccov)
+            for i in TESTEIG:
+                print i
+            sys.exit(1)
+        #Check to see if the matrix eigenvalues are too small.
+        #This can cause problems when computing chi^2 due to precision loss
+        TESTEIG = eigvals(ccov)
+        EIGCUT = 10**(-10)
+        flag = 0
+        for i in TESTEIG:
+            if i < EIGCUT:
+                flag = 1
+                print "***Warning***"
+                print "Range selected has a covariance matrix with"
+                print "very small eigenvalues.  This can cause problems"
+                print "in computing chi^2, as well as quantities derived"
+                print "from chi^2. The cuttoff is set at:", EIGCUT
+                print "Problematic eigenvalue = ", i
+                break;
+        if flag == 1:
+            print "List of eigenvalues of covariance matrix:"
+            for i in TESTEIG:
+                print i
             sys.exit(1)
         return rets(coord=proccoords, covar=ccov, numblocks=len(ccov))
     print "simple proc error"
@@ -457,14 +481,18 @@ if __name__ == "__main__":
         #m_pi = 140 MeV
         #b_i>2.3716
         start_params = [-.18, 0.09405524, 1.21877187, 2.4]
+        #mass of pion bound
+        MBOUND = 0.0779
+        #mass of rho meson bound
+        #MBOUND = 2.4025
         if NUMPEXTRA == 0:
             ADDPARAMS = []
         else:
             ADDPARAMS = [1.21877187+i/1000.0 if i%2 == 0
-                         else 2.4+i/1000.0 for i in range(NUMPEXTRA*2)]
+                         else MBOUND*1.01+i/1000.0
+                         for i in range(NUMPEXTRA*2)]
         for i in ADDPARAMS:
             start_params.append(i)
-        MBOUND = 0.0779
         binds = [(None, None), (None, None), (None, None),
                  (MBOUND, None)]
         ADDBINDS = [(None, None) if i%2 ==0 else (MBOUND, None)
@@ -509,6 +537,7 @@ if __name__ == "__main__":
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
     print "chi^2 reduced = ", RESULT_MIN.fun/(DIMCOV-len(start_params))
+    print "degrees of freedom = ", DIMCOV-len(start_params)
 ####compute errors 8ab
     #compute hessian matrix
     if RESULT_MIN.fun > 0 and RESULT_MIN.status == 0:
