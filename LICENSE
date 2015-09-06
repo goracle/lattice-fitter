@@ -1,14 +1,14 @@
-Python-learning -- Some programs I wrote to learn python and github
+Lattice-fitter -- fit data from lattice qcd projects
 Copyright (C) 2015  Daniel Hoying
 email: hoying.45 AT osu.edu
 
-These files are part of python-learning
-Python-learning is free software: you can redistribute it and/or modify
+These files are part of Lattice-fitter
+Lattice-fitter is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    Python-learning is distributed in the hope that it will be useful,
+    Lattice-fitter is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
