@@ -1,4 +1,5 @@
 import re
+import os
 
 def proc_folder(folder, ctime):
     """Process folder where blocks to be averaged are stored.

@@ -4,6 +4,8 @@ from latfit.mathfun import chi_sq
 from latfit.globs import START_PARAMS
 from latfit.globs import MBOUND
 from latfit.globs import AYONE
+from latfit.globs import START_A_0
+from latfit.globs import START_ENERGY
 
 def setparams(switch, numpextra, start_params = START_PARAMS, mbound = MBOUND, ayone = AYONE):
     """Set start parameters and bounds on the initial parameters.

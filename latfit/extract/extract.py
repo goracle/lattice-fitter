@@ -8,7 +8,7 @@ from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_folder import proc_folder
 from latfit.extract.proc_file import proc_file
 
-def extract(INPUT, xmin, xmax):
+def extract(INPUT, xmin, xmax, xstep):
     """Get covariance matrix, coordinates.
     This is the meta-extractor.  It processes both individual files and
     folders.
@@ -25,22 +25,22 @@ def extract(INPUT, xmin, xmax):
     ####process individual files in dir 5ab
     #error handling, test to see if time value goes out of range,
     #i.e. if data isn't available to match the requested time domain
-    #i,j are new indices, shifting XMIN to the origin
+    #i,j are new indices, shifting xmin to the origin
     #j = 0 # initialized below
     #test if directory
     elif os.path.isdir(INPUT):
         i = 0
         #DIMCOV is dimensions of the covariance matrix
-        DIMCOV = int((XMAX-XMIN)/XSTEP+1)
+        DIMCOV = int((xmax-xmin)/xstep+1)
         #cov is the covariance matrix
         COV = [[[0] for _ in range(DIMCOV)] for _ in range(DIMCOV)]
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
         COORDS = [[[0] for _ in range(2)] for _ in range(DIMCOV)]
-        for time in np.arange(XMIN, XMAX+1, XSTEP):
+        for time in np.arange(xmin, xmax+1, xstep):
             COORDS[i][0] = time
             j = 0
-            for time2 in np.arange(XMIN, XMAX+1, XSTEP):
+            for time2 in np.arange(xmin, xmax+1, xstep):
                 IFILE = proc_folder(INPUT, time)
                 JFILE = proc_folder(INPUT, time2)
                 IFILE = INPUT + "/" + IFILE

@@ -1,4 +1,4 @@
-from math import fsum
+from math import fsum, exp
 from numpy import arange
 
 def fit_func(ctime, trial_params, switch):

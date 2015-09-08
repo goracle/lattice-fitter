@@ -1,4 +1,7 @@
 from __future__ import division
+from collections import namedtuple
+from math import fsum
+from itertools import izip
 
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT):

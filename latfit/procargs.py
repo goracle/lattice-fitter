@@ -1,5 +1,6 @@
 import getopt
 from collections import namedtuple
+import sys
 
 def procargs(argv):
     """Parse the command line.
