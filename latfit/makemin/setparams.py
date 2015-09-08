@@ -1,3 +1,4 @@
+from __future__ import division
 from latfit.mathfun import chi_sq
 #import global variables
 from latfit.globs import START_PARAMS

@@ -1,3 +1,4 @@
+from __future__ import division
 from scipy.optimize import minimize
 
 from latfit.globs import METHOD

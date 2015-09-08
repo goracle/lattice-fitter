@@ -1,3 +1,4 @@
+from __future__ import division
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import matplotlib.pyplot as plt

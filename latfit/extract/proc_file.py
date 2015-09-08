@@ -1,3 +1,5 @@
+from __future__ import division
+
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT):
     """Process the current file.
