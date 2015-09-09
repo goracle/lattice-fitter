@@ -34,7 +34,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
 
-if __name__ == "__main__":
+def main():
     ####set up 1ab
     OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'nextra'])
 
@@ -83,3 +83,6 @@ if __name__ == "__main__":
     #plot the function and the data, with error bars
     mkplot(COORDS, COV, RESULT_MIN, SWITCH)
     sys.exit(0)
+
+if __name__ == "__main__":
+    main()

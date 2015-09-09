@@ -9,3 +9,4 @@ A1_PI_Sub_prop
 *.dat
 *\#*
 *.pyc
+*egg-info*
