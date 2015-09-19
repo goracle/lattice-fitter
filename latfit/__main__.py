@@ -46,7 +46,7 @@ def main():
     inputexists(INPUT)
 
     ####process the file(s)
-    COORDS, COV, DIMCOV = extract(INPUT, XMIN, XMAX)
+    COORDS, COV, DIMCOV = extract(INPUT, XMIN, XMAX, XSTEP)
 
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
