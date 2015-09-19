@@ -1,6 +1,7 @@
 import numdifftools as nd
 from numpy.linalg import inv
 from math import sqrt
+import sys
 
 from latfit.mathfun.chi_sq import chi_sq
 
