@@ -1,1 +1,1 @@
-__all__ = ["procargs", "globs"]
+__all__ = ["procargs", "config"]
