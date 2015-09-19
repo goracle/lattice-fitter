@@ -5,9 +5,9 @@ import sys
 
 from latfit.mathfun.chi_sq import chi_sq
 
-def printerr(result_min, covinv, coords, switch):
+def printerr(result_min, covinv, coords):
     if result_min.fun > 0 and result_min.status == 0:
-        HFUNC = lambda xrray: chi_sq(xrray, covinv, coords, switch)
+        HFUNC = lambda xrray: chi_sq(xrray, covinv, coords)
         HFUN = nd.Hessian(HFUNC)
         #compute hessian inverse
         HINV = inv(HFUN(result_min.x))

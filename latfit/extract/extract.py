@@ -8,7 +8,7 @@ from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_folder import proc_folder
 from latfit.extract.proc_file import proc_file
 
-def extract(INPUT, xmin, xmax, xstep):
+def extract(INPUT, xmin, xmax):
     """Get covariance matrix, coordinates.
     This is the meta-extractor.  It processes both individual files and
     folders.

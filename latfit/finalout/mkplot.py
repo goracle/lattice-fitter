@@ -3,9 +3,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import matplotlib.pyplot as plt
 
-from latfit.mathfun.fit_func import fit_func
+from latfit.config import fit_func
 
-def mkplot(coords, cov, result_min, switch):
+def mkplot(coords, cov, result_min):
     """Plot the fitted graph."""
     with PdfPages('foo.pdf') as pdf:
         XCOORD = [coords[i][0] for i in range(len(coords))]
@@ -18,7 +18,7 @@ def mkplot(coords, cov, result_min, switch):
                          XCOORD[len(XCOORD)-1],
                          abs((XCOORD[len(
                              XCOORD)-1]-XCOORD[0]))/1000.0/len(XCOORD))
-        YFIT = np.array([fit_func(XFIT[i], result_min.x, switch)
+        YFIT = np.array([fit_func(XFIT[i], result_min.x)
                          for i in range(len(XFIT))])
         #only plot fit function if minimizer result makes sense
         if result_min.status == 0:

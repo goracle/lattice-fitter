@@ -1,23 +1,25 @@
 from __future__ import division
 from scipy.optimize import minimize
 
-from latfit.globs import METHOD
+from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
+from latfit.config import START_PARAMS
+from latfit.config import BINDS
 
-def mkmin(start_params, covinv, coords, switch, binds, dimcov):
+def mkmin(covinv, coords, dimcov):
     """Minimization of chi^2 section of fitter.
     Return minimized result.
     """
     if not METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords, switch),
+        RESULT_MIN = minimize(chi_sq, START_PARAMS, (covinv, coords),
                               method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
-                          #bounds=binds,
+                          #bounds=BINDS,
                           #options={'disp': True})
     if METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords, switch),
-                              method=METHOD, bounds=binds,
+        RESULT_MIN = minimize(chi_sq, START_PARAMS, (covinv, coords),
+                              method=METHOD, bounds=BINDS,
                               options={'disp': True})
         print "number of iterations = ", RESULT_MIN.nit
     print "minimized params = ", RESULT_MIN.x
@@ -28,6 +30,6 @@ def mkmin(start_params, covinv, coords, switch, binds, dimcov):
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
-    print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(start_params))
-    print "degrees of freedom = ", dimcov-len(start_params)
+    print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(START_PARAMS))
+    print "degrees of freedom = ", dimcov-len(START_PARAMS)
     return RESULT_MIN
