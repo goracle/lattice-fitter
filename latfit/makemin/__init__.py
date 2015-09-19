@@ -1,1 +1,1 @@
-__all__ = ["DOFerrchk", "mkmin", "setparams"]
+__all__ = ["DOFerrchk", "mkmin"]
