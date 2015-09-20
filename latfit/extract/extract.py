@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 import os
 
-from latfit.globs import EIGCUT
+from latfit.config import EIGCUT
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_folder import proc_folder
 from latfit.extract.proc_file import proc_file

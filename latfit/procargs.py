@@ -7,8 +7,8 @@ def procargs(argv):
     Give usage information or set the input file.
     """
     try:
-        opts = getopt.getopt(argv, "f:hi:",
-                             ["ifolder=", "help", "ifile=",
+        opts = getopt.getopt(argv, "f:hi:t:",
+                             ["ifolder=", "help", "ifile=", "trials=",
                               "xmin=", "xmax=", 'xstep='])[0]
         if opts == []:
             raise NameError("NoArgs")
@@ -19,7 +19,8 @@ def procargs(argv):
     cxmax = object()
     cxstep = object()
     cnextra = object()
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep'])
+    ctrials = object()
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
     #Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
@@ -37,10 +38,10 @@ def procargs(argv):
             cxstep = arg
         if opt in "--xmax":
             cxmax = arg
-        if opt in "--nextra":
-            cnextra = arg
+        if opt in "--trials":
+            ctrials = arg
     #exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
             return arg, options(xmin=cxmin, xmax=cxmax,
-                                        xstep=cxstep)
+                                        xstep=cxstep, trials=ctrials)

@@ -1,7 +1,8 @@
 import re
 import os
+import sys
 
-def proc_folder(folder, ctime):
+def proc_folder(folder, ctime, other_regex = ""):
     """Process folder where blocks to be averaged are stored.
     Return file corresponding to current ensemble (lattice time slice).
     Assumes file is <anything>t<time><anything>
@@ -10,15 +11,19 @@ def proc_folder(folder, ctime):
     Both the int and float versions of ctime are treated the same.
     """
     #build regex as a string
-    my_regex = r"t" + str(ctime)
+    if other_regex == "":
+        my_regex = r"t" + str(ctime)
+    else:
+        my_regex = r"{0}{1}".format(other_regex, str(ctime))
     regex_reject1 = my_regex+r"[0-9]"
     regex_reject2 = ""
     flag2 = 0
     temp4 = object()
     retname = temp4
-    if int(str(ctime-int(ctime))[2:]) == 0:
-        my_regex2 = r"t" + str(int(ctime))
-        regex_reject2 = my_regex2+r"[0-9]"
+    if not type(ctime) is int:
+        if int(str(ctime-int(ctime))[2:]) == 0:
+            my_regex2 = r"t" + str(int(ctime))
+            regex_reject2 = my_regex2+r"[0-9]"
     temp1 = ""
     temp2 = ""
     for root, dirs, files in os.walk(folder):
@@ -48,10 +53,11 @@ def proc_folder(folder, ctime):
                 temp2 = dirs
     #logic: if we found at least one match
     if not retname == temp4:
+        #logic: if we found >1 match
         if flag2 == 1:
             print "***ERROR***"
             print "File name collision."
-            print "Two files match the search."
+            print "Two (or more) files match the search."
             print "Amend your file names."
             print "Offending files:", retname
             sys.exit(1)
@@ -61,4 +67,5 @@ def proc_folder(folder, ctime):
     print folder
     print "***ERROR***"
     print "Can't find file corresponding to x-value = ", ctime
+    print "regex = ", my_regex
     sys.exit(1)

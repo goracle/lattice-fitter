@@ -18,6 +18,7 @@ def mkplot(coords, cov, result_min):
                          XCOORD[len(XCOORD)-1],
                          abs((XCOORD[len(
                              XCOORD)-1]-XCOORD[0]))/1000.0/len(XCOORD))
+        #result_min.x is is the array of minimized fit params
         YFIT = np.array([fit_func(XFIT[i], result_min.x)
                          for i in range(len(XFIT))])
         #only plot fit function if minimizer result makes sense
