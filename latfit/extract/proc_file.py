@@ -3,6 +3,8 @@ from collections import namedtuple
 from math import fsum
 from itertools import izip
 
+from latfit.config import JACKKNIFE
+
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT):
     """Process the current file.
@@ -42,7 +44,15 @@ def proc_file(pifile, pjfile=CSENT):
                 avgtwo /= count
             #cov[I][indexj]=return value for folder-style
             #applying jackknife correction of (count-1)^2
-            coventry = (count-1)/(1.0*count)*fsum([
+            if JACKKNIFE == YES:
+                prefactor = (count-1.0)/(1.0*count)
+            elif JACKKNIFE == NO:
+                prefactor = (1.0)/((count-1.0)*(1.0*count))
+            else:
+                print "Edit the config file."
+                print "Invalid value of parameter JACKKNIFE"
+                sys.exit(1)
+            coventry = prefactor*fsum([
                 (float(l1)-avgone)*(float(l2)-avgtwo)
                 for l1, l2 in izip(open(pifile), open(pjfile))])
             return rets(coord=avgone,

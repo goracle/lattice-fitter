@@ -1,16 +1,22 @@
 ##the boundary for when the fitter warns you if the eigenvalues
 ##of your covariance are very small
 EIGCUT = 10**(-10)
+
 ##starting values for fit parameters
 ##START_PARAMS = [-.18, 0.09405524, 0, .1]
-##
 START_PARAMS = [-.18, 0, .1]
+
 ##bounds for fit parameters
 BINDS = ((None, None), (None, None), (0.0779, None))
+
 ##method used by the scipy.optimize.minimize
 ##other internals will need to be edited if you change this
 ##it's probably not a good idea
 METHOD = 'L-BFGS-B'
+
+##jackknife correction? YES or NO
+##correction only happens if multiple files are processed
+JACKCKNIFE = YES
 
 from math import fsum
 from numpy import arange
