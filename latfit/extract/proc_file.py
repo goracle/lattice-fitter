@@ -44,9 +44,9 @@ def proc_file(pifile, pjfile=CSENT):
                 avgtwo /= count
             #cov[I][indexj]=return value for folder-style
             #applying jackknife correction of (count-1)^2
-            if JACKKNIFE == YES:
+            if JACKKNIFE == 'YES':
                 prefactor = (count-1.0)/(1.0*count)
-            elif JACKKNIFE == NO:
+            elif JACKKNIFE == 'NO':
                 prefactor = (1.0)/((count-1.0)*(1.0*count))
             else:
                 print "Edit the config file."
