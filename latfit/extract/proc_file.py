@@ -2,8 +2,23 @@ from __future__ import division
 from collections import namedtuple
 from math import fsum
 from itertools import izip
+from warnings import warn
 
 from latfit.config import JACKKNIFE
+from latfit.config import UNCORR
+
+def proc_line(line,pifile="BLANK"):
+    l = line.split()
+    if len(l) == 2:
+        warn("Taking the real (first column).")
+        return float(l[0])
+    elif len(l) == 1:
+        return float(line)
+    else:
+        print "***ERROR***"
+        print "Unknown block format."
+        print "File=", pifile
+        sys.exit(1)
 
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT):
@@ -26,13 +41,17 @@ def proc_file(pifile, pjfile=CSENT):
         avgtwo = 0
         count = 0
         for line in ithfile:
-            avgone += float(line)
+            avgone += proc_line(line,pifile)
             count += 1
         avgone /= count
         with open(pjfile) as jthfile:
+            #do uncorrelated fit
+            if UNCORR == True and pjfile != pifile:
+                return rets(coord=avgone,
+                            covar=0)
             counttest = 0
             for line in jthfile:
-                avgtwo += float(line)
+                avgtwo += proc_line(line,pjfile)
                 counttest += 1
             if not counttest == count:
                 print "***ERROR***"
@@ -53,7 +72,7 @@ def proc_file(pifile, pjfile=CSENT):
                 print "Invalid value of parameter JACKKNIFE"
                 sys.exit(1)
             coventry = prefactor*fsum([
-                (float(l1)-avgone)*(float(l2)-avgtwo)
+                (proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo)
                 for l1, l2 in izip(open(pifile), open(pjfile))])
             return rets(coord=avgone,
                         covar=coventry)

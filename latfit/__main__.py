@@ -45,7 +45,7 @@ def main():
         RESULT_MIN, PARAM_ERR, COORDS, COV = singlefit(INPUT, 
                                                        XMIN, XMAX, XSTEP)
         printerr(RESULT_MIN.x, PARAM_ERR)
-        mkplot(COORDS, COV, RESULT_MIN)
+        mkplot(COORDS, COV, RESULT_MIN, PARAM_ERR)
         sys.exit(0)
     else:
         list_fit_params = []

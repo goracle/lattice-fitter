@@ -12,6 +12,7 @@ from latfit.extract.extract import extract
 from latfit.makemin.DOFerrchk import DOFerrchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
+from numpy import sqrt
 
 def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #test to see if file/folder exists
@@ -24,7 +25,7 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     COVINV = inv(COV)
-    print "(Rough) scale of errors in data points = ", COV[0][0]
+    print "(Rough) scale of errors in data points = ", sqrt(COV[0][0])
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
     #DIMCOV is number of points plotted.
