@@ -22,6 +22,7 @@ from math import sqrt
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
+from latfit.config import FIT
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
 from latfit.extract.errcheck.xstep_err import xstep_err
@@ -42,10 +43,14 @@ def main():
     TRIALS = trials_err(OPTIONS.trials)
 
     if TRIALS == -1:
-        RESULT_MIN, PARAM_ERR, COORDS, COV = singlefit(INPUT, 
-                                                       XMIN, XMAX, XSTEP)
-        printerr(RESULT_MIN.x, PARAM_ERR)
-        mkplot(COORDS, COV, RESULT_MIN, PARAM_ERR)
+        if FIT:
+            RESULT_MIN, PARAM_ERR, COORDS, COV = singlefit(INPUT,
+                                                           XMIN, XMAX, XSTEP)
+            printerr(RESULT_MIN.x, PARAM_ERR)
+            mkplot(COORDS, COV, INPUT,RESULT_MIN, PARAM_ERR)
+        else:
+            COORDS, COV = singlefit(INPUT, XMIN, XMAX, XSTEP)
+            mkplot(COORDS, COV,INPUT)
         sys.exit(0)
     else:
         list_fit_params = []

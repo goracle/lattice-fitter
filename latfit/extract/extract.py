@@ -4,9 +4,23 @@ import numpy as np
 import os
 
 from latfit.config import EIGCUT
+from latfit.config import EFF_MASS
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_folder import proc_folder
 from latfit.extract.proc_file import proc_file
+
+def pre_proc_file(IFILE,INPUT):
+    IFILE = INPUT + "/" + IFILE
+    try:
+        TRIAL = open(IFILE, "r")
+    except TypeError:
+        STR1 = "Either domain is invalid,"
+        print STR1, "or folder is invalid."
+        print "Double check contents of folder."
+        print "Offending file(s):"
+        print IFILE
+        sys.exit(1)
+    return IFILE
 
 def extract(INPUT, xmin, xmax, xstep):
     """Get covariance matrix, coordinates.
@@ -41,22 +55,23 @@ def extract(INPUT, xmin, xmax, xstep):
             COORDS[i][0] = time
             j = 0
             for time2 in np.arange(xmin, xmax+1, xstep):
+                #extract file
                 IFILE = proc_folder(INPUT, time)
                 JFILE = proc_folder(INPUT, time2)
-                IFILE = INPUT + "/" + IFILE
-                JFILE = INPUT + "/" + JFILE
-                try:
-                    TRIAL = open(IFILE, "r")
-                    TRIAL2 = open(JFILE, "r")
-                except TypeError:
-                    STR1 = "Either domain is invalid,"
-                    print STR1, "or folder is invalid."
-                    print "Double check contents of folder."
-                    print "Offending file(s):"
-                    print IFILE
-                    print JFILE
-                    sys.exit(1)
-                RESRET = proc_file(IFILE, JFILE)
+                #check for errors
+                IFILE = pre_proc_file(IFILE,INPUT)
+                JFILE = pre_proc_file(JFILE,INPUT)
+                #if plotting effective mass
+                if EFF_MASS:
+                    ti2 = time+1
+                    tj2 = time2+1
+                    I2FILE = proc_folder(INPUT, ti2)
+                    J2FILE = proc_folder(INPUT, tj2)
+                    I2FILE = pre_proc_file(I2FILE,INPUT)
+                    J2FILE = pre_proc_file(J2FILE,INPUT)
+                    RESRET = proc_file(IFILE, JFILE,I2FILE,J2FILE)
+                else:
+                    RESRET = proc_file(IFILE, JFILE)
                 #fill in the covariance matrix
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times

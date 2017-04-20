@@ -3,9 +3,12 @@ from collections import namedtuple
 from math import fsum
 from itertools import izip
 from warnings import warn
+from math import log
+import sys
 
 from latfit.config import JACKKNIFE
 from latfit.config import UNCORR
+from latfit.config import EFF_MASS
 
 def proc_line(line,pifile="BLANK"):
     l = line.split()
@@ -20,8 +23,19 @@ def proc_line(line,pifile="BLANK"):
         print "File=", pifile
         sys.exit(1)
 
+def proc_MEFF(line1,fn1,line2,fn2):
+    num = proc_line(line1,fn1)
+    denom = proc_line(line2,fn2)
+    if num*denom < 0:
+        print "***ERROR***"
+        print "Negative argument to log in effective mass calc."
+        print fn1
+        print fn2
+        sys.exit(1)
+    return log(num/denom)
+
 CSENT = object()
-def proc_file(pifile, pjfile=CSENT):
+def proc_file(pifile, pjfile=CSENT,i2file=CSENT,j2file=CSENT):
     """Process the current file.
     Return covariance matrix entry I,indexj in the case of multi-file
     structure.
@@ -35,13 +49,23 @@ def proc_file(pifile, pjfile=CSENT):
         print "***ERROR***"
         print "Missing secondary file."
         sys.exit(1)
+    if EFF_MASS and (i2file == CSENT or j2file == CSENT):
+        print "***ERROR***"
+        print "Missing time adjacent file(s)."
+        sys.exit(1)
+    if not EFF_MASS:
+        i2file = pifile
+        j2file = pjfile
     #within true cond. of test, we assume number of columns is one
     with open(pifile) as ithfile:
         avgone = 0
         avgtwo = 0
         count = 0
-        for line in ithfile:
-            avgone += proc_line(line,pifile)
+        for line,linei in izip(ithfile,open(i2file)):
+            if EFF_MASS:
+                avgone += proc_MEFF(line,pifile,linei,i2file)
+            else:
+                avgone += proc_line(line,pifile)
             count += 1
         avgone /= count
         with open(pjfile) as jthfile:
@@ -50,8 +74,11 @@ def proc_file(pifile, pjfile=CSENT):
                 return rets(coord=avgone,
                             covar=0)
             counttest = 0
-            for line in jthfile:
-                avgtwo += proc_line(line,pjfile)
+            for line,linej in izip(jthfile,open(j2file)):
+                if EFF_MASS:
+                    avgtwo += proc_MEFF(line,pjfile,linej,j2file)
+                else:
+                    avgtwo += proc_line(line,pjfile)
                 counttest += 1
             if not counttest == count:
                 print "***ERROR***"
@@ -71,11 +98,11 @@ def proc_file(pifile, pjfile=CSENT):
                 print "Edit the config file."
                 print "Invalid value of parameter JACKKNIFE"
                 sys.exit(1)
-            coventry = prefactor*fsum([
-                (proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo)
-                for l1, l2 in izip(open(pifile), open(pjfile))])
-            return rets(coord=avgone,
-                        covar=coventry)
+            if EFF_MASS:
+                coventry = prefactor*fsum([(proc_MEFF(l1,pifile,li1,i2file)-avgone)*(proc_MEFF(l2,pjfile,lj2,j2file)-avgtwo) for l1, li1, l2, lj2 in izip(open(pifile), open(i2file), open(pjfile), open(j2file))])
+            else:
+                coventry = prefactor*fsum([(proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo) for l1, l2 in izip(open(pifile), open(pjfile))])
+            return rets(coord=avgone, covar=coventry)
     print "***Unexpected Error***"
     print "If you\'re seeing this program has a bug that needs fixing"
     sys.exit(1)
