@@ -19,7 +19,8 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         XCOORD = [coords[i][0] for i in range(len(coords))]
         YCOORD = [coords[i][1] for i in range(len(coords))]
         ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
-        plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None')
+        plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=0.75,marker='.')
+        print "(y)Error bar numeric values:",ER2
         if FIT:
             #the fit function is plotted on a scale FINE times more fine
             #than the original data points

@@ -15,11 +15,11 @@ BINDS = ((1e1,1e3), (0, 1),(0,10))
 UNCORR = False
 
 ##Plot Effective Mass? True or False
-EFF_MASS = False
-#EFF_MASS = True
+#EFF_MASS = False
+EFF_MASS = True
 ##Do a fit at all?
-#FIT = False
-FIT = True
+FIT = False
+#FIT = True
 
 ##scale to plot (divisor)
 FINE = 1.0
