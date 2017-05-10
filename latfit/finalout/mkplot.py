@@ -28,8 +28,8 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         title=TITLE
 
     #setup fonts
-    hfontT = {'fontname':'Helvetica','size':10}
-    hfontl = {'fontname':'Helvetica','size':12}
+    hfontT = {'fontname':'FreeSans','size':12}
+    hfontl = {'fontname':'FreeSans','size':14}
 
     with PdfPages(title+'.pdf') as pdf:
         XCOORD = [coords[i][0] for i in range(len(coords))]

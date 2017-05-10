@@ -18,7 +18,7 @@ ASSISTED_FIT=False
 #scale=1e11
 #BINDS = ((scale*1,10*scale), (0, 1),(.01*scale,.05*scale))
 scale=1e10
-BINDS = ((scale*1,10*scale), (0, 1),(.1*scale,.5*scale))
+BINDS = ((scale*.1,30*scale), (0, 1),(.01*scale,scale))
 
 ##Uncorrelated fit? True or False
 #UNCORR = True
