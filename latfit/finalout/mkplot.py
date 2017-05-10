@@ -15,7 +15,23 @@ from latfit.config import FIT
 
 def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     """Plot the fitted graph."""
-    with PdfPages('foo.pdf') as pdf:
+    if TITLE == '' or not TITLE:
+        #then plot title should be the location directory of the jk blocks
+        cwd = os.getcwd()
+        if os.path.isdir(INPUT):
+            os.chdir(INPUT)
+            title=os.getcwd().split('/')[-1]
+            os.chdir(cwd)
+        else:
+            title=INPUT
+    else:
+        title=TITLE
+
+    #setup fonts
+    hfontT = {'fontname':'Helvetica','size':10}
+    hfontl = {'fontname':'Helvetica','size':12}
+
+    with PdfPages(title+'.pdf') as pdf:
         XCOORD = [coords[i][0] for i in range(len(coords))]
         YCOORD = [coords[i][1] for i in range(len(coords))]
         ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
@@ -39,17 +55,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         #magic numbers for the problem you're solving
         #plt.ylim([0, 0.1])
         #add labels, more magic numbers
-        if TITLE == '' or not TITLE:
-            #then plot title should be the location directory of the jk blocks
-            cwd = os.getcwd()
-            if os.path.isdir(INPUT):
-                os.chdir(INPUT)
-                plt.title(os.getcwd().split('/')[-1])
-                os.chdir(cwd)
-            else:
-                plt.title(INPUT)
-        else:
-            plt.title(TITLE)
+        plt.title(title,**hfontT)
         #todo: figure out a way to generally place text on plot
         #STRIKE1 = "Energy = " + str(result_min.x[1]) + "+/-" + str(
         #    ERR_ENERGY)
@@ -60,8 +66,8 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         #X_POS_OF_FIT_RESULTS = XCOORD[3]
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[3], STRIKE1)
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[7], STRIKE2)
-        plt.xlabel(XLABEL)
-        plt.ylabel(YLABEL)
+        plt.xlabel(XLABEL,**hfontl)
+        plt.ylabel(YLABEL,**hfontl)
         #read out into a pdf
         pdf.savefig()
         #show the plot

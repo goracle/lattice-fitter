@@ -1,24 +1,47 @@
 from __future__ import division
 from scipy.optimize import minimize
+from scipy.optimize import curve_fit
 
 from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS
 from latfit.config import BINDS
+from latfit.config import AUTO_FIT
+from latfit.config import ASSISTED_FIT
+from latfit.config import fit_func
 
 def mkmin(covinv, coords, dimcov):
     """Minimization of chi^2 section of fitter.
     Return minimized result.
     """
+    x=[coords[i][0] for i in range(len(coords))]
+    y=[coords[i][1] for i in range(len(coords))]
+    if AUTO_FIT:
+        if ASSISTED_FIT:
+            guess = START_PARAMS
+        else:
+            guess=((i[0]+i[1])/2 for i in BINDS)
+        l = len(BINDS)
+        def f(t,*tp):
+            return fit_func(t,tp)
+        try:
+            popt,pcov=curve_fit(x,y,f,p0=guess)
+            start_params=popt
+        except:
+            print "Automatic guess of starting params failed."
+            print "Attempting to continue with manual entry."
+            start_params=START_PARAMS
+    else:
+            start_params=START_PARAMS
     if not METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, START_PARAMS, (covinv, coords),
+        RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords),
                               method=METHOD)
                           #method='BFGS')
                           #method='L-BFGS-B',
                           #bounds=BINDS,
                           #options={'disp': True})
     if METHOD in set(['L-BFGS-B']):
-        RESULT_MIN = minimize(chi_sq, START_PARAMS, (covinv, coords),
+        RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords),
                               method=METHOD, bounds=BINDS,
                               options={'disp': True})
         print "number of iterations = ", RESULT_MIN.nit
@@ -30,6 +53,6 @@ def mkmin(covinv, coords, dimcov):
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
-    print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(START_PARAMS))
-    print "degrees of freedom = ", dimcov-len(START_PARAMS)
+    print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(start_params))
+    print "degrees of freedom = ", dimcov-len(start_params)
     return RESULT_MIN
