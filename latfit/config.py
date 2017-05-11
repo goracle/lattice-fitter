@@ -1,11 +1,17 @@
 ##the boundary for when the fitter warns you if the eigenvalues
 ##of your covariance are very small
 EIGCUT = 10**(-20)
+##boundary scale for zero'ing out a failing inverse Hessian
+##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
+CUTOFF = 10**(7)
 
+##Do a fit at all?
+#FIT = False
+FIT = True
 ##starting values for fit parameters
 ##START_PARAMS = [-.18, 0.09405524, 0, .1]
 ##START_PARAMS = [-.18, 0, .1]
-START_PARAMS = [  1.67889076e+11,   4.90800275e-01,   1.64009479e+09]
+START_PARAMS = [6.67889076e+10,   5e-01,   1.64009479e+08]
 #if set to true, AUTO_FIT uses curve_fit from scipy.optimize to bootstrap START_PARAMS.  Bounds must still be set manually.
 #Bounds are used to find very rough start parameters: taken as the midpoints
 #Probably, you should set FIT to False to first find some reasonable bounds.
@@ -16,9 +22,9 @@ ASSISTED_FIT=False
 ##bounds for fit parameters
 #optional, scale parameter to set binds
 #scale=1e11
-#BINDS = ((scale*1,10*scale), (0, 1),(.01*scale,.05*scale))
-scale=1e10
-BINDS = ((scale*.1,30*scale), (0, 1),(.01*scale,scale))
+SCALE=1e10
+BINDS = ((SCALE*.1,10*SCALE), (0,1),(.01*SCALE,.02*SCALE))
+#BINDS = ((scale*.01,30*scale), (0, .8),(.01*scale*0,scale))
 
 ##Uncorrelated fit? True or False
 #UNCORR = True
@@ -27,9 +33,6 @@ UNCORR = False
 ##Plot Effective Mass? True or False
 EFF_MASS = False
 #EFF_MASS = True
-##Do a fit at all?
-#FIT = False
-FIT = True
 
 ##scale to plot (divisor)
 FINE = 1.0
