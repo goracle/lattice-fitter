@@ -26,13 +26,14 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
-    try:
-        COVINV = inv(COV)
-    except:
-        print "Covariance matrix is singular."
-        print "Check to make sure plot range does not contain a mirror image."
-        #print "determinant:",det(COV)
-        sys.exit(1)
+    if FIT:
+        try:
+            COVINV = inv(COV)
+        except:
+            print "Covariance matrix is singular."
+            print "Check to make sure plot range does not contain a mirror image."
+            #print "determinant:",det(COV)
+            sys.exit(1)
     print "(Rough) scale of errors in data points = ", sqrt(COV[0][0])
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).

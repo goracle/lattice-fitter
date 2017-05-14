@@ -14,10 +14,8 @@ EFF_MASS = False
 #EFF_MASS = True
 
 ##starting values for fit parameters
-##START_PARAMS = [-.18, 0.09405524, 0, .1]
-##START_PARAMS = [-.18, 0, .1]
 
-START_PARAMS = [6.68203895e+05,   2.46978036e-01,   3.82353790e+02]
+START_PARAMS = [1.68203895e+10,   5.26978036e-01,   2.62353790e+09]
 #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
@@ -75,7 +73,7 @@ def fit_func_exp(ctime, trial_params):
     (See procargs(argv))
     """
     #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))+trial_params[2]
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
     #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
