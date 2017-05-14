@@ -19,6 +19,8 @@ import sys
 import numpy as np
 import os
 from math import sqrt
+import sys
+import subprocess as sp
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
@@ -31,7 +33,30 @@ from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
 
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open("fit.log", "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass    
+
+sys.stdout = Logger()
+
 def main():
+    print "BEGIN OUTPUT"
+    CWD=os.getcwd()
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+    GITLOG=sp.check_output(['git','rev-parse','HEAD'])
+    os.chdir(CWD)
+    print "current git commit:",GITLOG
     ####set up 1ab
     OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
 
@@ -51,7 +76,6 @@ def main():
         else:
             COORDS, COV = singlefit(INPUT, XMIN, XMAX, XSTEP)
             mkplot(COORDS, COV,INPUT)
-        sys.exit(0)
     else:
         list_fit_params = []
         for ctime in range(TRIALS):
@@ -80,6 +104,7 @@ def main():
                           for i in range(len(TRANSPOSE))]
         printerr(avg_fit_params, err_fit_params)
         sys.exit(0)
+    print "END OUTPUT"
 
 if __name__ == "__main__":
     main()
