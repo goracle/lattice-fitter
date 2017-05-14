@@ -33,8 +33,8 @@ def extract(INPUT, xmin, xmax, xstep):
         RESRET = simple_proc_file(INPUT, xmin, xmax, EIGCUT)
         COV = RESRET.covar
         COORDS = RESRET.coord
-        #DIMCOV is dimensions of the covariance matrix
-        DIMCOV = RESRET.numblocks
+        #dimcov is dimensions of the covariance matrix
+        dimcov = RESRET.numblocks
         #then find out domain of files to process
     ####process individual files in dir 5ab
     #error handling, test to see if time value goes out of range,
@@ -44,13 +44,13 @@ def extract(INPUT, xmin, xmax, xstep):
     #test if directory
     elif os.path.isdir(INPUT):
         i = 0
-        #DIMCOV is dimensions of the covariance matrix
-        DIMCOV = int((xmax-xmin)/xstep+1)
+        #dimcov is dimensions of the covariance matrix
+        dimcov = int((xmax-xmin)/xstep+1)
         #cov is the covariance matrix
-        COV = [[[0] for _ in range(DIMCOV)] for _ in range(DIMCOV)]
+        COV = [[[0] for _ in range(dimcov)] for _ in range(dimcov)]
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
-        COORDS = [[[0] for _ in range(2)] for _ in range(DIMCOV)]
+        COORDS = [[[0] for _ in range(2)] for _ in range(dimcov)]
         for time in np.arange(xmin, xmax+1, xstep):
             COORDS[i][0] = time
             j = 0
@@ -79,4 +79,4 @@ def extract(INPUT, xmin, xmax, xstep):
                     COORDS[i][1] = RESRET.coord
                 j += 1
             i += 1
-    return COORDS, COV, DIMCOV
+    return COORDS, COV

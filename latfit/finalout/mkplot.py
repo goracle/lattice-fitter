@@ -31,12 +31,27 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     hfontT = {'fontname':'FreeSans','size':12}
     hfontl = {'fontname':'FreeSans','size':14}
 
+    print "list of plotted points [x,y]:"
+    print coords
+    XCOORD = [coords[i][0] for i in range(len(coords))]
+    YCOORD = [coords[i][1] for i in range(len(coords))]
+    ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
+
+    print "list of point errors (x,yerr):"
+    print zip(XCOORD,ER2)
+    #print message up here because of weirdness with pdfpages
+    if FIT:
+        if result_min.status == 0:
+            print "Minimizer thinks that it worked.  Plotting fit."
+            print "Minimized params:",np.array2string(result_min.x, separator=', ')
+            print "Error in params :",np.array2string(np.array(param_err), separator=', ')
+            print "chi^2 minimized = ", result_min.fun
+            dof = len(cov)-len(result_min.x)
+            print "degrees of freedom = ", dof
+            print "chi^2 reduced = ", result_min.fun/dof
+
     with PdfPages(title+'.pdf') as pdf:
-        XCOORD = [coords[i][0] for i in range(len(coords))]
-        YCOORD = [coords[i][1] for i in range(len(coords))]
-        ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=0.75,marker='.')
-        print "(y)Error bar numeric values:",ER2
         if FIT:
             #the fit function is plotted on a scale FINE times more fine
             #than the original data points
@@ -47,9 +62,12 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                              for i in range(len(XFIT))])
             #only plot fit function if minimizer result makes sense
             if result_min.status == 0:
-                print "Minimizer thinks that it worked.  Plotting fit."
                 plt.plot(XFIT, YFIT)
             plt.text(XCOORD[1], YCOORD[0],"Energy="+str(result_min.x[1])+"+/-"+str(param_err[1]))
+            dof = len(cov)-len(result_min.x)
+            redchisq=result_min.fun/dof
+            if redchisq<2:
+                plt.text(XCOORD[2], YCOORD[1],"Reduced Chi^2="+str(redchisq)+",dof="+str(dof))
         #todo: figure out a way to generally assign limits to plot
         #plt.xlim([XCOORD[0], XMAX+1])
         #magic numbers for the problem you're solving

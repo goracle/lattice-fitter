@@ -5,6 +5,7 @@ from itertools import izip
 from warnings import warn
 from math import log
 import sys
+import numpy as np
 
 from latfit.config import JACKKNIFE
 from latfit.config import UNCORR
@@ -16,7 +17,7 @@ def proc_line(line,pifile="BLANK"):
         warn("Taking the real (first column).")
         return float(l[0])
     elif len(l) == 1:
-        return float(line)
+        return np.float128(line)
     else:
         print "***ERROR***"
         print "Unknown block format."
@@ -91,6 +92,7 @@ def proc_file(pifile, pjfile=CSENT,i2file=CSENT,j2file=CSENT):
             #cov[I][indexj]=return value for folder-style
             #applying jackknife correction of (count-1)^2
             if JACKKNIFE == 'YES':
+                warn("Applying jackknife correction to cov. matrix.")
                 prefactor = (count-1.0)/(1.0*count)
             elif JACKKNIFE == 'NO':
                 prefactor = (1.0)/((count-1.0)*(1.0*count))
@@ -102,16 +104,4 @@ def proc_file(pifile, pjfile=CSENT,i2file=CSENT,j2file=CSENT):
                 coventry = prefactor*fsum([(proc_MEFF(l1,pifile,li1,i2file)-avgone)*(proc_MEFF(l2,pjfile,lj2,j2file)-avgtwo) for l1, li1, l2, lj2 in izip(open(pifile), open(i2file), open(pjfile), open(j2file))])
             else:
                 coventry = prefactor*fsum([(proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo) for l1, l2 in izip(open(pifile), open(pjfile))])
-            return rets(coord=avgone, covar=coventry)
-    print "***Unexpected Error***"
-    print "If you\'re seeing this program has a bug that needs fixing"
-    sys.exit(1)
-    #delete me (if working)
-            #append at position i,j to the covariance matrix entry
-        #store precomputed covariance matrix (if it exists)
-        #in convenient form
-        #try:
-        #COV = [[CDICT[PROCCOORDS[i][0]][PROCCOORDS[j][0]]
-        #        for i in range(len(PROCCOORDS))]
-        #       for j in range(len(PROCCOORDS))]
-    #delete me end (if working)
+    return rets(coord=avgone, covar=coventry)
