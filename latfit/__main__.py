@@ -21,6 +21,7 @@ import os
 from math import sqrt
 import sys
 import subprocess as sp
+from warnings import warn
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
@@ -49,14 +50,16 @@ class Logger(object):
         pass    
 
 sys.stdout = Logger()
+sys.stderr = Logger()
 
 def main():
-    print "BEGIN OUTPUT"
+    print "BEGIN NEW OUTPUT"
     CWD=os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     GITLOG=sp.check_output(['git','rev-parse','HEAD'])
+    if len(GITLOG.split()) == 1:
+        print "current git commit:",GITLOG
     os.chdir(CWD)
-    print "current git commit:",GITLOG
     ####set up 1ab
     OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
 
@@ -104,7 +107,8 @@ def main():
                           for i in range(len(TRANSPOSE))]
         printerr(avg_fit_params, err_fit_params)
         sys.exit(0)
-    print "END OUTPUT"
+    print "END STDOUT OUTPUT"
+    warn("END STDERR OUTPUT")
 
 if __name__ == "__main__":
     main()
