@@ -25,7 +25,7 @@ START_PARAMS = [1.78203895e+11,   4.62078036e-01,   2.62353790e+09]
 #If ASSISTED_FIT is also True, use start_params to find the guess for the AUTO fitter
 #(for use with L-BFGS-B)
 
-AUTO_FIT=True
+AUTO_FIT=False
 #AUTO_FIT=False
 #ASSISTED_FIT=True
 ASSISTED_FIT=False
