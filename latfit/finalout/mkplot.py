@@ -13,6 +13,9 @@ from latfit.config import XLABEL
 from latfit.config import YLABEL
 from latfit.config import UNCORR
 from latfit.config import FIT
+from latfit.config import START_PARAMS
+from latfit.config import AUTO_FIT as auf
+from latfit.config import ASSISTED_FIT as asf
 
 def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     """Plot the fitted graph."""
@@ -44,7 +47,11 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     #print message up here because of weirdness with pdfpages
     if FIT:
         if result_min.status == 0:
+            sp=np.array(START_PARAMS)
+            print "Autofit:",auf
+            print "Assisted Fit:",asf
             print "Minimizer thinks that it worked.  Plotting fit."
+            print "Guessed params: ",np.array2string(sp,separator=', ')
             print "Minimized params:",np.array2string(result_min.x, separator=', ')
             print "Error in params :",np.array2string(np.array(param_err), separator=', ')
             print "chi^2 minimized = ", result_min.fun
