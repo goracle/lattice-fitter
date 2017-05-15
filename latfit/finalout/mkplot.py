@@ -52,7 +52,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print "degrees of freedom = ", dof
             print "chi^2 reduced = ", result_min.fun/dof
 
-    with PdfPages(title+'.pdf') as pdf:
+    with PdfPages(re.sub(' ','_',title)+'.pdf') as pdf:
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=0.75,marker='.')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine
