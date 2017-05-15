@@ -78,7 +78,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         #STRIKE1 = "Energy = " + str(result_min.x[1]) + "+/-" + str(
         #    ERR_ENERGY)
         if UNCORR:
-            plt.text(XCOORD[3], YCOORD[1],"Uncorrelated fit.")
+            plt.text(XCOORD[3], YCOORD[2],"Uncorrelated fit.")
         #STRIKE2 = "Amplitude = " + str(result_min.x[0]) + "+/-" + str(
         #    ERR_A0)
         #X_POS_OF_FIT_RESULTS = XCOORD[3]
