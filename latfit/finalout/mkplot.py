@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os.path
 import os
+import re
 
 from latfit.config import fit_func
 from latfit.config import FINE
@@ -26,6 +27,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             title=INPUT
     else:
         title=TITLE
+    title=re.sub('_',' ',title)
 
     #setup fonts
     hfontT = {'fontname':'FreeSans','size':12}

@@ -15,8 +15,8 @@ EFF_MASS = False
 
 ##starting values for fit parameters
 
-START_PARAMS = [1.68203895e+10,   5.26978036e-01,   2.62353790e+09]
-#START_PARAMS = [6.68203895e+05,   2.46978036e-01]
+#START_PARAMS = [1.78203895e+11,   4.62078036e-01,   2.62353790e+09]
+START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
 #if set to true, AUTO_FIT uses curve_fit from scipy.optimize to bootstrap START_PARAMS.  Bounds must still be set manually.
@@ -25,16 +25,16 @@ START_PARAMS = [1.68203895e+10,   5.26978036e-01,   2.62353790e+09]
 #If ASSISTED_FIT is also True, use start_params to find the guess for the AUTO fitter
 #(for use with L-BFGS-B)
 
-#AUTO_FIT=True
-AUTO_FIT=False
+AUTO_FIT=True
+#AUTO_FIT=False
 #ASSISTED_FIT=True
 ASSISTED_FIT=False
 
 ##bounds for fit parameters
 #optional, scale parameter to set binds
 #scale=1e11
-SCALE=1e5
-BINDS = ((SCALE*.1,10*SCALE), (0,1),(.001*SCALE,.003*SCALE))
+SCALE=1e11
+BINDS = ((SCALE*.1,10*SCALE), (0,1),(.001*SCALE,.03*SCALE))
 #BINDS = ((scale*.01,30*scale), (0, .8),(.01*scale*0,scale))
 
 ##boundary scale for zero'ing out a failing inverse Hessian
@@ -57,7 +57,7 @@ JACKKNIFE = 'YES'
 ###DISPLAY PARAMETERS
 #TITLE = 'FigureT_vec_pol_snk_1_sep4_momsrc000_momsnk000'
 #no title takes the current working directory as the title
-TITLE = ''
+TITLE = 'Daiqian_pion_I1_mom000'
 XLABEL = 'Time (lattice units)'
 if EFF_MASS:
     YLABEL = 'Effective Mass (lattice units)'
@@ -72,8 +72,8 @@ def fit_func_exp(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
     #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
