@@ -22,6 +22,7 @@ from math import sqrt
 import sys
 import subprocess as sp
 from warnings import warn
+from shutil import copy2 as cp
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
@@ -57,6 +58,7 @@ def main():
     CWD=os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     GITLOG=sp.check_output(['git','rev-parse','HEAD'])
+    cp(os.getcwd()+'/config.py',CWD+'/config.log')
     if len(GITLOG.split()) == 1:
         print "current git commit:",GITLOG
     os.chdir(CWD)
