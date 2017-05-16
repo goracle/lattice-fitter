@@ -22,7 +22,7 @@ from math import sqrt
 import sys
 import subprocess as sp
 from warnings import warn
-from shutil import copy2 as cp
+import time
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
@@ -55,10 +55,19 @@ sys.stderr = Logger()
 
 def main():
     print "BEGIN NEW OUTPUT"
+    t=time.asctime(time.localtime(time.time()))
+    print t
     CWD=os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     GITLOG=sp.check_output(['git','rev-parse','HEAD'])
-    cp(os.getcwd()+'/config.py',CWD+'/config.log')
+    with open(CWD+'/config.log','a') as conflog:
+        conflog.write("BEGIN NEW OUTPUT-------------\n")
+        conflog.write(t+'\n')
+        conflog.write("current git commit:"+GITLOG+'\n')
+        fn=open(os.getcwd()+'/config.py','r')
+        for line in fn:
+            conflog.write(line)
+        conflog.write("END OUTPUT-------------------\n")
     if len(GITLOG.split()) == 1:
         print "current git commit:",GITLOG
     os.chdir(CWD)
