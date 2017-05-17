@@ -10,8 +10,8 @@ FIT = True
 UNCORR = False
 
 ##Plot Effective Mass? True or False
-EFF_MASS = False
-#EFF_MASS = True
+#EFF_MASS = False
+EFF_MASS = True
 
 ##starting values for fit parameters
 
@@ -58,11 +58,11 @@ JACKKNIFE = 'YES'
 #TITLE = 'FigureT_vec_pol_snk_1_sep4_momsrc000_momsnk000'
 #no title takes the current working directory as the title
 TITLE = ''
-XLABEL = 'Time (lattice units)'
+XLABEL = r'$t/a$'
 if EFF_MASS:
-    YLABEL = 'Effective Mass (lattice units)'
+    YLABEL = r'$am_{res}^{eff}}(t)$'
 else:
-    YLABEL = 'Corr Func'
+    YLABEL = 'C(t)'
 
 from math import fsum
 from numpy import arange, exp
@@ -85,7 +85,9 @@ def fit_func(ctime,trial_params):
     #return trial_params[0]
     return fit_func_exp(ctime,trial_params)
 
-###BEGIN DO NOT EDIT###
-#effective mass fits not supported
+C=0e5 #additive constant added to effective mass functions
 if EFF_MASS:
-    FIT = False
+    FIT=True
+    START_PARAMS = [.5]
+    def fit_func(ctime,trial_params):
+        return trial_params[0]

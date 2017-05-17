@@ -63,13 +63,22 @@ def extract(INPUT, xmin, xmax, xstep):
                 JFILE = pre_proc_file(JFILE,INPUT)
                 #if plotting effective mass
                 if EFF_MASS:
-                    ti2 = time+1
-                    tj2 = time2+1
+                    ti2 = time+xstep
+                    ti3 = time+2*xstep
+                    tj2 = time2+xstep
+                    tj3 = time2+2*xstep
+                    #print time,ti2,ti3,time2,tj2,tj3
                     I2FILE = proc_folder(INPUT, ti2)
+                    I3FILE = proc_folder(INPUT, ti3)
                     J2FILE = proc_folder(INPUT, tj2)
+                    J3FILE = proc_folder(INPUT, tj3)
                     I2FILE = pre_proc_file(I2FILE,INPUT)
+                    I3FILE = pre_proc_file(I3FILE,INPUT)
                     J2FILE = pre_proc_file(J2FILE,INPUT)
-                    RESRET = proc_file(IFILE, JFILE,I2FILE,J2FILE)
+                    J3FILE = pre_proc_file(J3FILE,INPUT)
+                    #print IFILE,I2FILE,I3FILE,JFILE,J2FILE,J3FILE
+                    RESRET = proc_file(IFILE, JFILE,
+                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)])
                 else:
                     RESRET = proc_file(IFILE, JFILE)
                 #fill in the covariance matrix

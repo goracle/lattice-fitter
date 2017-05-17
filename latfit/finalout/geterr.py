@@ -25,7 +25,10 @@ def geterr(result_min, covinv, coords):
                              for i in range(len(coords))])
         fhess=nd.Gradient(nd.Gradient(g))(result_min.x)
         grad=nd.Gradient(g)(result_min.x)
-        Hess=[[2*fsum(fhess[i][a][b]*covinv[i][j]*(g(result_min.x)[j]-coords[j][1])+grad[i][a]*covinv[i][j]*grad[j][b] for i in range(l) for j in range(l)) for b in range(l2)] for a in range(l2)]
+        if l2!=1:
+            Hess=[[2*fsum(fhess[i][a][b]*covinv[i][j]*(g(result_min.x)[j]-coords[j][1])+grad[i][a]*covinv[i][j]*grad[j][b] for i in range(l) for j in range(l)) for b in range(l2)] for a in range(l2)]
+        else:
+            Hess=[[2*fsum(fhess[i]*covinv[i][j]*(g(result_min.x)[j]-coords[j][1])+grad[i]*covinv[i][j]*grad[j] for i in range(l) for j in range(l))]]
         #compute hessian inverse
         try:
             #HINV = inv(nd.Hessian(HFUNC)(result_min.x))
@@ -35,7 +38,10 @@ def geterr(result_min, covinv, coords):
             print "Hessian:"
             print Hess
             sys.exit(1)
-        delta=[[4*fsum(HINV[a][c]*grad[i][c]*covinv[i][j]*grad[j][d]*HINV[d][b] for i in range(l) for j in range(l) for c in range(l2) for d in range(l2)) for b in range(l2)] for a in range(l2)]
+        if l2!=1:
+            delta=[[4*fsum(HINV[a][c]*grad[i][c]*covinv[i][j]*grad[j][d]*HINV[d][b] for i in range(l) for j in range(l) for c in range(l2) for d in range(l2)) for b in range(l2)] for a in range(l2)]
+        else:
+            delta=[[4*fsum(HINV[a][c]*grad[i]*covinv[i][j]*grad[j]*HINV[d][b] for i in range(l) for j in range(l) for c in range(l2) for d in range(l2)) for b in range(l2)] for a in range(l2)] 
         for i in range(len(HINV)):
             try:
                 #approx = sqrt(2*HINV[i][i])

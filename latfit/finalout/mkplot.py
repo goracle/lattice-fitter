@@ -17,7 +17,11 @@ from latfit.config import METHOD
 from latfit.config import BINDS
 from latfit.config import START_PARAMS
 from latfit.config import AUTO_FIT as auf
+from latfit.config import EFF_MASS
 from latfit.config import ASSISTED_FIT as asf
+from matplotlib import rcParams
+import matplotlib.patches as patches
+rcParams.update({'figure.autolayout': True})
 
 def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     """Plot the fitted graph."""
@@ -66,7 +70,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print "chi^2 reduced = ", result_min.fun/dof
 
     with PdfPages(re.sub(' ','_',title)+'.pdf') as pdf:
-        plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=0.75,marker='.')
+        plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine
             #than the original data points
@@ -78,11 +82,16 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             #only plot fit function if minimizer result makes sense
             if result_min.status == 0:
                 plt.plot(XFIT, YFIT)
-            plt.text(XCOORD[1], YCOORD[0],"Energy="+str(result_min.x[1])+"+/-"+str(param_err[1]))
+            if len(result_min.x) > 1:
+                estring=str(result_min.x[1])+"+/-"+str(param_err[1])
+            else:
+                #for an effective mass plot
+                estring=str(result_min.x[0])+"+/-"+str(param_err[0])
+            plt.annotate("Energy="+estring,xy=(0.05,0.95),xycoords='axes fraction')
             dof = len(cov)-len(result_min.x)
             redchisq=result_min.fun/dof
             if redchisq<2:
-                plt.text(XCOORD[2], YCOORD[1],"Reduced Chi^2="+str(redchisq)+",dof="+str(dof))
+                plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
         #todo: figure out a way to generally assign limits to plot
         #plt.xlim([XCOORD[0], XMAX+1])
         #magic numbers for the problem you're solving
@@ -101,6 +110,22 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         #plt.text(X_POS_OF_FIT_RESULTS, YCOORD[7], STRIKE2)
         plt.xlabel(XLABEL,**hfontl)
         plt.ylabel(YLABEL,**hfontl)
+        #plot box for effective mass
+        if EFF_MASS:
+            ax = plt.gca()
+            print ax.get_ylim()
+            print ax.get_xlim()
+            print XCOORD[3],YCOORD[2]
+            #gca,gcf=getcurrentaxes getcurrentfigure
+            fig = plt.gcf()
+            ax.add_patch((
+                plt.Rectangle(#(11.0, 0.24514532441),3,.001,
+                    (XCOORD[0]-1, result_min.x[0]-param_err[0]),   # (x,y)
+                    XCOORD[len(XCOORD)-1]-XCOORD[0]+2, # width
+                    2*param_err[0],          # height
+                    fill=True,color='k',alpha=0.5,zorder=1000,figure=fig,
+                    #transform=fig.transFigure
+                )))
         #read out into a pdf
         pdf.savefig()
         #show the plot
