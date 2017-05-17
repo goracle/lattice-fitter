@@ -1,4 +1,5 @@
 from latfit.procargs import procargs
+import sys
 
 def xlim_err(xmin, xmax):
     """Check for errors in the input of xmin and xmax.

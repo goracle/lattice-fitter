@@ -98,7 +98,7 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)]):
                 if EFF_MASS:
                     avgtwo += proc_MEFF(linej,linej2,linej3,jfiles)
                 else:
-                    avgtwo += proc_line(line,pjfile)
+                    avgtwo += proc_line(linej,pjfile)
                 counttest += 1
             if not counttest == count:
                 print "***ERROR***"

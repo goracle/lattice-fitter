@@ -85,9 +85,9 @@ def fit_func(ctime,trial_params):
     #return trial_params[0]
     return fit_func_exp(ctime,trial_params)
 
-C=0e5 #additive constant added to effective mass functions
+C=0*5.05447626030778e8 #additive constant added to effective mass functions
 if EFF_MASS:
-    FIT=True
+    FIT=False
     START_PARAMS = [.5]
     def fit_func(ctime,trial_params):
         return trial_params[0]

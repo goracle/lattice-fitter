@@ -111,11 +111,8 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         plt.xlabel(XLABEL,**hfontl)
         plt.ylabel(YLABEL,**hfontl)
         #plot box for effective mass
-        if EFF_MASS:
+        if EFF_MASS and FIT:
             ax = plt.gca()
-            print ax.get_ylim()
-            print ax.get_xlim()
-            print XCOORD[3],YCOORD[2]
             #gca,gcf=getcurrentaxes getcurrentfigure
             fig = plt.gcf()
             ax.add_patch((
