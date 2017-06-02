@@ -31,8 +31,6 @@ def AvgVdis():
         os.makedirs(d)
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
     tlist=traj_list(onlyfiles)
-    ##FIXME!!! numt is not carefully calculated.
-    numt=len(tlist)
     for fn in onlyfiles:
         fign = rf.figure(fn)
         if fign in ['Vdis', 'scalar-bubble']:
@@ -51,7 +49,9 @@ def AvgVdis():
             outfile = d+"Avg_"+fign+sepstr+momstr
             if os.path.isfile(outfile):
                 continue
-            avg = np.array(procV(fn))/numt
+            avg = np.array(procV(fn))
+            numt=1
+            #use this first file to bootstrap the rest of the files (traj substitution)
             for traj in tlist:
                 if traj == rf.traj(fn):
                     continue
@@ -62,6 +62,8 @@ def AvgVdis():
                 except:
                     continue
                 avg+=np.array(procV(fn2))
+                numt+=1
+            print "Number of configs to average over:",numt,"for outfile:",outfile
             rf.write_vec_str(avg/numt,outfile)
     print "Done writing Vdis averaged over trajectories."
     return

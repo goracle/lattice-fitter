@@ -9,6 +9,7 @@ import os.path
 from os.path import isfile, join
 import warnings
 from math import sqrt
+import sys
 
 def sum_blks(outdir,coeffs_arr):
     print "Start of blocks:",outdir,"--------------------------------------------"
@@ -41,6 +42,7 @@ def sum_blks(outdir,coeffs_arr):
                     val=coeff*complex(float(line[0]),float(line[1]))
                 else:
                     print "Error: bad block:",fn
+                    exit(1)
                 try:
                     outblk[i]+=val
                 except:
@@ -48,7 +50,7 @@ def sum_blks(outdir,coeffs_arr):
         flag = 0
         with open(outfile,'a') as fn:
             for line in outblk:
-                outline = complex(line)
+                outline=complex('{0:.{1}f}'.format(outline,sys.float_info.dig))
                 if outline.imag == 0:
                     outline = str(outline.real)+"\n"
                 else:

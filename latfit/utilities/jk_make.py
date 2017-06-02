@@ -7,6 +7,7 @@ import linecache as lc
 from os import listdir
 import os.path
 from os.path import isfile, join
+import sys
 import re
 
 #write jackknife blocks for this basename
@@ -51,6 +52,7 @@ def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
                     print "How did you get here?"
                     exit(1)
             #line to write in the block file
+            outl=complex('{0:.{1}f}'.format(outl,sys.float_info.dig))
             outl = str(avg.real)+" "+str(avg.imag)+"\n"
             with open(outfile, "a") as myfile:
                myfile.write(outl)

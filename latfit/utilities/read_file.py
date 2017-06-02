@@ -191,7 +191,7 @@ def find_dim(filename):
         print "Error: Non-square matrix, nl=", nl
         return None
 
-#write matrix of strings
+#write vector of strings
 def write_vec_str(data,outfile):
     if(os.path.isfile(outfile)):
         print "Skipping:", outfile
@@ -201,6 +201,8 @@ def write_vec_str(data,outfile):
     Lt = len(data)
     for tdis in range(Lt):
         c=data[tdis]
+        if not type(c) is str:
+            c='{0:.{1}f}'.format(c,sys.float_info.dig)
         line = str(tdis)+" "+str(c)+"\n"
         fn.write(line)
     print "Done writing file:", outfile
@@ -220,6 +222,8 @@ def write_mat_str(data,outfile):
     for tsrc in range(Lt):
         for tdis in range(Lt):
             c=data[tsrc][tdis]
+            if not type(c) is str:
+                c='{0:.{1}f}'.format(c,sys.float_info.dig)
             line = str(tsrc)+" "+str(tdis)+" "+str(c)+"\n"
             fn.write(line)
     print "Done writing file:", outfile
@@ -282,6 +286,8 @@ def write_arr(data,outfile):
     for tsrc in range(Lt):
         for tdis in range(Lt):
             c=data[tsrc][tdis]
+            if not type(c) is str:
+                c=complex('{0:.{1}f}'.format(c,sys.float_info.dig))
             line = str(tsrc)+" "+str(tdis)+" "+str(c.real)+" "+str(c.imag)+"\n"
             fn.write(line)
     print "Done writing file:", outfile

@@ -1,21 +1,18 @@
 #!/usr/bin/python
 
 import sys
-#DELETE ME
-#import os
-#import read_file as rf
-#end delete
+import numpy as np
 
 def build_arr(fin):
     """Read the file and build the array"""
     fn = open(fin,'r')
-    out = []
+    out = np.array([],dtype=complex)
     for line in fn:
         l=line.split()
         try:
-            out.append(complex(float(l[1]),float(l[2])))
+            out=np.append(out,complex(float(l[1]),float(l[2])))
         except:
-            out.append(complex(l[1]))
+            out=np.append(out,complex(l[1]))
     return np.array(out)
 
 def find_dim(fin):
@@ -38,8 +35,8 @@ def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=True):
     snk = build_arr(finSnk)
     for tsrc in range(Lt):
         for tsnk in range(Lt):
-            srcNum=src[tsrc].conjugate() if starSrc=True else src[tsrc]
-            snkNum=snk[tsnk-sep] if starSnk=False else snk[tsnk-sep].conjugate()
+            srcNum=src[tsrc].conjugate() if starSrc==True else src[tsrc]
+            snkNum=snk[(tsnk+sep)%Lt] if starSnk==False else snk[(tsnk+sep)%Lt].conjugate()
             out.itemset(tsrc,(tsnk-tsrc+Lt)%Lt,srcNum*snkNum)
     return out
 

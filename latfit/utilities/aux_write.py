@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
-from read_file import *
+import read_file as rf
 import re
 import os.path
 
 #gets the array from the file, but keeps the values as strings
 def proc_file_str(filename):
-    Lt = find_dim(filename)
-    tsep=pion_sep(filename)
-    n=nmom(filename)
+    Lt = rf.find_dim(filename)
+    tsep=rf.pion_sep(filename)
+    n=rf.nmom(filename)
     out=np.zeros((Lt,Lt),dtype=np.object)
     fn=open(filename,'r')
     for line in fn:
@@ -34,7 +34,7 @@ def call_aux(fn,out):
     if(os.path.isfile(out)):
         print "Skipping:'"+out+"'.  File exists."
     else:
-        write_mat_str(proc_file_str(fn),out)
+        rf.write_mat_str(proc_file_str(fn),out)
     return
     
 
@@ -45,8 +45,8 @@ def aux_fn(filename):
         if len(line.split())<4:
             print "Disconnected.  Skipping."
             return
-    pret=np.array(mom(filename))
-    n=nmom(filename)
+    pret=np.array(rf.mom(filename))
+    n=rf.nmom(filename)
     pn=n*[0]
     outfile=filename
     if n==3:
@@ -57,7 +57,7 @@ def aux_fn(filename):
         pn[0]=psnk2
         pn[1]=psnk1
         pn[2]=psrc2
-        outfile=pchange(outfile,pn)
+        outfile=rf.pchange(outfile,pn)
         if(outfile==filename):
             print "symmetric Momenta; skipping"
             return
@@ -78,12 +78,12 @@ def aux_fn(filename):
             #or outfile=filename.replace("scalarR_","scalar_")
             #print "i.e.", outfile
             return
-        outfile=pchange(outfile,pn)
+        outfile=rf.pchange(outfile,pn)
     elif n==1:
         #outfile=outfile.replace("scalar_","scalarR_")
-        if vecp(outfile):
+        if rf.vecp(outfile):
             #swap the polarizations
-            pol1,pol2=pol(outfile)
+            pol1,pol2=rf.pol(outfile)
             b="pol_src-snk_"
             outfile=outfile.replace(b+str(pol1),b+"temp1")
             outfile=outfile.replace(b+"temp1-"+str(pol2),b+"temp1-temp2")

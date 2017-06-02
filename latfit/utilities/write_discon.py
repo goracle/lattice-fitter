@@ -120,8 +120,8 @@ def main():
                 dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
                 #get the  <><> subtraction array (<> indicates avg over trajectories)
                 arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
-                arr = arrPlus - arrMinus
-                rf.write_arr(arr,outfile)
+                #arr = arrPlus - arrMinus
+                rf.write_arr(arrPlus - arrMinus,outfile)
 
 #to test below this line
 #helper function; builds string corresponding to file
