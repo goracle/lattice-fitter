@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
 import sys
-import os
-from read_file import *
+#DELETE ME
+#import os
+#import read_file as rf
+#end delete
 
 def build_arr(fin):
     """Read the file and build the array"""
@@ -14,29 +16,31 @@ def build_arr(fin):
             out.append(complex(float(l[1]),float(l[2])))
         except:
             out.append(complex(l[1]))
-    return out
+    return np.array(out)
 
 def find_dim(fin):
     nl = sum(1 for line in open(fin))
     return nl
 
-def comb_dis(fin1,fin2):
+def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=True):
     """Combine disconnected diagrams into an array.
 
     args = filename 1, filename 2
     returns an array indexed by tsrc, tdis
     """
-    print "combining", fin1, fin2
-    Lt = find_dim(fin1)
-    if Lt != find_dim(fin2):
+    print "combining", finSrc, finSnk
+    Lt = find_dim(finSrc)
+    if Lt != find_dim(finSnk):
         print "Error: dimension mismatch in combine operation."
         exit(1)
     out = np.zeros(shape=(Lt,Lt),dtype=complex)
-    src = build_arr(fin1)
-    snk = build_arr(fin2)
+    src = build_arr(finSrc)
+    snk = build_arr(finSnk)
     for tsrc in range(Lt):
         for tsnk in range(Lt):
-            out.itemset(tsrc,(tsnk-tsrc+Lt)%Lt,src[tsrc]*snk[tsnk])
+            srcNum=src[tsrc].conjugate() if starSrc=True else src[tsrc]
+            snkNum=snk[tsnk-sep] if starSnk=False else snk[tsnk-sep].conjugate()
+            out.itemset(tsrc,(tsnk-tsrc+Lt)%Lt,srcNum*snkNum)
     return out
 
 def main():

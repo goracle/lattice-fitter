@@ -94,12 +94,15 @@ def main():
                         continue
                 if sep1:
                     sep = sep1
+                    sepVal=int(sep)
                     sepstr = "_sep"+str(sep)+"_"
                 elif sep2:
                     sep = sep2
+                    sepVal=int(sep)
                     sepstr = "_sep"+str(sep)+"_"
                 else:
                     sep = None
+                    sepVal = 0
                     sepstr = "_"
                 outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+momstr
                 if(os.path.isfile(outfile)):
@@ -107,7 +110,8 @@ def main():
                     print "File exists."
                     continue
                 #get the data
-                arrPlus = np.array(cb.comb_dis(dsrc,dsnk))
+                #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
+                arrPlus = np.array(cb.comb_dis(dsrc,dsnk,sepVal))
                 srcFig=rf.figure(dsrc)
                 snkFig=rf.figure(dsnk)
                 dsrcSub = re.sub(srcFig,"Avg_"+srcFig,d+dsrc)
@@ -115,7 +119,7 @@ def main():
                 dsrcSub = re.sub('traj_(\d)+_Figure_','',dsrcSub)
                 dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
                 #get the  <><> subtraction array (<> indicates avg over trajectories)
-                arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub))
+                arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
                 arr = arrPlus - arrMinus
                 rf.write_arr(arr,outfile)
 

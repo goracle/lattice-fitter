@@ -31,6 +31,7 @@ def AvgVdis():
         os.makedirs(d)
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
     tlist=traj_list(onlyfiles)
+    ##FIXME!!! numt is not carefully calculated.
     numt=len(tlist)
     for fn in onlyfiles:
         fign = rf.figure(fn)
@@ -54,7 +55,8 @@ def AvgVdis():
             for traj in tlist:
                 if traj == rf.traj(fn):
                     continue
-                fn2 = re.sub('traj_([0-9]*?)_','traj_'+traj+'_',fn)
+                #slightly less stringent checking here on substitute:  no checking of anything following second underscore. probably fine since user warned above.
+                fn2 = re.sub('traj_([B0-9]+)_','traj_'+traj+'_',fn)
                 try:
                     open(fn2,'r')
                 except:
