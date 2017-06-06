@@ -132,7 +132,7 @@ def main():
     else:
         exit(1)
     #end global params
-    for binsize in [20,40,60,80]:
+    for binsize in [10,20,40,60,80]:
         bin_tsrc_sum(binsize,mdstep,already_summed)
     
 if __name__ == "__main__":

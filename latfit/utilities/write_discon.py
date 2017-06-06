@@ -67,6 +67,7 @@ def main():
     d='summed_tsrc_diagrams/'
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
     tlist = traj_list(onlyfiles)
+    lookup = {}
     for traj in tlist:
         disfiles=[]
         for fn in onlyfiles:
@@ -119,7 +120,12 @@ def main():
                 dsrcSub = re.sub('traj_(\d)+_Figure_','',dsrcSub)
                 dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
                 #get the  <><> subtraction array (<> indicates avg over trajectories)
-                arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
+                if dsrcSub+dsnkSub in lookup:
+                    print "Using prev."
+                    arrMinus=lookup[dsrcSub+dsnkSub] 
+                else:
+                    arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
+                    lookup[dsrcSub+dsnkSub]=arrMinus
                 #arr = arrPlus - arrMinus
                 rf.write_arr(arrPlus - arrMinus,outfile)
 
