@@ -122,7 +122,7 @@ def main():
                 #get the  <><> subtraction array (<> indicates avg over trajectories)
                 if dsrcSub+dsnkSub in lookup:
                     print "Using prev."
-                    arrMinus=lookup[dsrcSub+dsnkSub] 
+                    arrMinus=lookup[dsrcSub+dsnkSub]
                 else:
                     arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
                     lookup[dsrcSub+dsnkSub]=arrMinus
