@@ -59,28 +59,34 @@ def call_sum(fn,d,binsize=1,binNum=1,already_summed=False):
             data=proc_file(fn, True)
         else:
             data=subV.procV(fn)
-        if data == None:
+        if type(data) is type(None):
             print "Skipping file", fn, "should be 4 numbers per line, non-4 value found."
     return data,outfile
 
 
 def bin_tsrc_sum(binsize,step,already_summed=False):
     nmax = int(binsize)/int(step)
-    if nmax == 1:
-        d='summed_tsrc_diagrams/'
-        binsize=1
-    else:
-        d='binned_diagrams/binsize'+str(binsize)+'/'
-    if not os.path.isdir(d):
-        os.makedirs(d)
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
-    if binsize == 1:
+    if nmax == 1:
+        if not already_summed:
+            d='summed_tsrc_diagrams/'
+            if not os.path.isdir(d):
+                os.makedirs(d)
+        else:
+            return
         for fn in onlyfiles:
-            data,outfile = call_sum(fn,d)
+            data,outfile = call_sum(fn,d,1)
             if data and outfile:
                 rf.write_vec_str(data, d+outfile)
         print "Done writing files averaged over tsrc."
+        return
     else:
+        if not already_summed:
+            d='summed_tsrc_diagrams/binned_diagrams/binsize'+str(binsize)+'/'
+        else:
+            d='binned_diagrams/binsize'+str(binsize)+'/'
+        if not os.path.isdir(d):
+            os.makedirs(d)
         of={}
         for f in onlyfiles:
             base=jk.baseN(f)
@@ -100,12 +106,13 @@ def bin_tsrc_sum(binsize,step,already_summed=False):
             binNum = 0
             data=None
             print "Processing base",base
+            #sort by trajectory number
             blist=np.array(sorted(of[base], key=lambda tup: int(tup[1])))
             for fn in blist[:,0]:
                 odata,outfile=call_sum(fn,d,binsize,binNum,already_summed)
-                if odata == None or not outfile:
+                if type(odata) is type(None) or not outfile:
                     continue
-                if data == None:
+                if type(data) is type(None):
                     data=np.array(odata)
                 else:
                     data+=np.array(odata)
@@ -118,8 +125,8 @@ def bin_tsrc_sum(binsize,step,already_summed=False):
                     binNum += 1
                     count = 0
                     data=None
-        print "Done writing files averaged over tsrc and binned with bin size =",binsize
-    return
+        print "Done writing files binned with bin size =",binsize
+        return
 
 def main():
     #global params, set by hand
@@ -132,7 +139,14 @@ def main():
     else:
         exit(1)
     #end global params
-    for binsize in [10,20,40,60,80]:
+    for binsize in [mdstep,20,40,60,80]:
+        if binsize == mdstep:
+            if not already_summed:
+                print "Averaging diagrams over tsrc."
+            else:
+                continue
+        else:
+            print "Doing binsize:",binsize
         bin_tsrc_sum(binsize,mdstep,already_summed)
     
 if __name__ == "__main__":
