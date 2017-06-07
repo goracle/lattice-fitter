@@ -52,8 +52,8 @@ def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
                     print "How did you get here?"
                     exit(1)
             #line to write in the block file
-            outl=complex('{0:.{1}f}'.format(outl,sys.float_info.dig))
-            outl = str(avg.real)+" "+str(avg.imag)+"\n"
+            outl=complex('{0:.{1}f}'.format(avg,sys.float_info.dig))
+            outl = str(outl.real)+" "+str(outl.imag)+"\n"
             with open(outfile, "a") as myfile:
                myfile.write(outl)
 
@@ -67,11 +67,12 @@ def baseN(fn):
 #return value: True if diagram is in every trajectory, otherwise False: we need a smaller trajectory list otherwise
 def allTp(base,trajl):
     for t in trajl:
-        if not (os.path.isfile("traj_"+str(t)+"_"+base)):
+        test="traj_"+str(t)+"_"+base
+        if not (os.path.isfile(test)):
+            print "Missing:",test
             return False
     return True
 
-#TODO: Move to read_file
 #gets the trajectory list for an individual base
 def tlist(base,onlyfiles=None):
     trajl = set()
@@ -80,6 +81,7 @@ def tlist(base,onlyfiles=None):
     for fn2 in onlyfiles:
         if baseN(fn2) == base:
             trajl.add(rf.traj(fn2))
+    trajl-=set([None])
     print "Done getting trajectory list. N trajectories = "+str(len(trajl))
     return trajl
 
@@ -95,6 +97,7 @@ def main():
     #get the max trajectory list
     for fn in onlyfiles:
         trajl.add(rf.traj(fn))
+    trajl-=set([None])
     print "Done getting max trajectory list. N trajectories = "+str(len(trajl))
     for fn in onlyfiles:
         #get the basename of the file (non-trajectory information)

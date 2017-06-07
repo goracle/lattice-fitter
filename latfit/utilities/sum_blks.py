@@ -50,7 +50,7 @@ def sum_blks(outdir,coeffs_arr):
         flag = 0
         with open(outfile,'a') as fn:
             for line in outblk:
-                outline=complex('{0:.{1}f}'.format(outline,sys.float_info.dig))
+                outline=complex('{0:.{1}f}'.format(line,sys.float_info.dig))
                 if outline.imag == 0:
                     outline = str(outline.real)+"\n"
                 else:

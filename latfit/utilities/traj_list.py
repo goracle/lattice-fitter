@@ -15,6 +15,7 @@ def traj_list(onlyfiles=None):
         onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
     for fn2 in onlyfiles:
         trajl.add(rf.traj(fn2))
+    trajl-=set([None])
     print "Done getting trajectory list. N trajectories = "+str(len(trajl))
     return trajl
 
