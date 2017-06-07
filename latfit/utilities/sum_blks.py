@@ -28,6 +28,11 @@ def sum_blks(outdir,coeffs_arr):
             name,coeff=pair
             if flag == sent:
                 print "Including:",name,"with coefficient",coeff
+            #do the check after printing out the coefficients so we can check afterwards
+            if(os.path.isfile(outfile)):
+                print "Skipping:", outfile
+                print "File exists."
+                continue
             try:
                 fn=open(name+'/'+time,'r')
             except:
@@ -48,6 +53,8 @@ def sum_blks(outdir,coeffs_arr):
                 except:
                     outblk=np.append(outblk,val)
         flag = 0
+        if(os.path.isfile(outfile)):
+            continue
         with open(outfile,'a') as fn:
             for line in outblk:
                 outline=complex('{0:.{1}f}'.format(line,sys.float_info.dig))
@@ -63,16 +70,16 @@ def norm_fix(fn):
     name = rf.figure(fn)
     norm = 1.0
     if(name == 'R'):
-        norm = 4.0
+        norm = 1.0
     elif(name == 'T'):
         if rf.vecp(fn) and not rf.reverseP(fn):
-            norm = -2.0
+            norm = -1.0
         else:
-            norm = 2.0
+            norm = 1.0
     elif(name == 'C'):
-        norm = 2.0
+        norm = 1.0
     elif(name == 'D'):
-        norm = 2.0
+        norm = 1.0
     elif(name == 'Hbub' or name == 'pioncorr'):
         norm = 2.0
     elif(name == 'scalar-bubble'):
@@ -91,15 +98,15 @@ def isospin_coeff(fn,I):
         if(name == 'V'):
             norm = 3.0
         elif(name == 'D' and not vecp):
-            norm = 1.0
+            norm = 2.0
         elif(name == 'R' and not vecp):
-            norm = 1.5
+            norm = -6.0
         elif(name == 'C'):
-            norm = 0.5
+            norm = 1.0
         elif name == 'Cv3' or name == 'Cv3R':
             norm = 5.0/sqrt(6.0)
         elif name == 'T' and not vecp:
-            norm = -5.0/(sqrt(6.0)*2.0)
+            norm = -5.0/(sqrt(6.0))
         elif name == 'Hbub' and not vecp:
             norm = -1.0
         elif name == 'Bub2' or name == 'bub2':
@@ -110,18 +117,18 @@ def isospin_coeff(fn,I):
         if (name == 'Hbub' and vecp) or name == 'pioncorr':
             norm = 1.0
         elif name == 'T' and vecp:
-            norm = 2.0/sqrt(2.0)
+            norm = 4.0/sqrt(2.0)
         elif name == 'R' and vecp:
-            norm = 1.0
+            norm = 4.0
         elif name == 'D' and vecp:
-            norm = 1.0
+            norm = 2.0
         else:
             return None
     elif I == 2:
         if name == 'D' and not vecp:
-            norm = 1.0
+            norm = 2.0
         elif name == 'C':
-            norm = -1.0
+            norm = -2.0
         else:
             return None
     else:
