@@ -69,7 +69,11 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print "degrees of freedom = ", dof
             print "chi^2 reduced = ", result_min.fun/dof
 
-    with PdfPages(re.sub(' ','_',title)+'.pdf') as pdf:
+    if EFF_MASS:
+        eff_str="_eff_mass"
+    else:
+        eff_str=""
+    with PdfPages(re.sub(' ','_',title)+eff_str+'.pdf') as pdf:
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine

@@ -37,8 +37,8 @@ def sum_blks(outdir,coeffs_arr):
                 fn=open(name+'/'+time,'r')
             except:
                 print "Error: bad block name in:", name
-                print "block name:",time
-                exit(1)
+                print "block name:",time,"Continuing."
+                continue
             for i,line in enumerate(fn):
                 line=line.split()
                 if len(line)==1:
@@ -47,7 +47,7 @@ def sum_blks(outdir,coeffs_arr):
                     val=coeff*complex(float(line[0]),float(line[1]))
                 else:
                     print "Error: bad block:",fn
-                    exit(1)
+                    break
                 try:
                     outblk[i]+=val
                 except:

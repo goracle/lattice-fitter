@@ -13,9 +13,14 @@ UNCORR = False
 #EFF_MASS = False
 EFF_MASS = True
 
+#EFF_MASS_METHOD 1: analytic for arg to acosh
+#EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
+#EFF_MASS_METHOD 3: one param fit
+EFF_MASS_METHOD = 1
+
 ##starting values for fit parameters
 
-START_PARAMS = [1.14694187e+11,   5.11135390e-01,   1.55042617e+09]
+START_PARAMS = [1.14694187e+11,   4.51135390e-01,   1.55042617e+09]
 #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
@@ -65,7 +70,21 @@ else:
     YLABEL = 'C(t)'
 
 from math import fsum
-from numpy import arange, exp
+from numpy import arange,exp
+from sympy import exp as exps
+
+#setup is for simple exponential fit, but one can easily modify it.
+def fit_func_sym(ctime, trial_params):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See procargs(argv))
+    """
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
+    return trial_params[0]*(exps(-trial_params[1]*ctime)+exps(-trial_params[1]*(24-ctime)))+trial_params[2]
+    #other test function
+    #return trial_params[0]+ctime*(trial_params[1]/(
+    #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
+    #            trial_params[ci+1]+ctime) for ci in arange(
+    #                3, len(trial_params), 2)]))
 
 #setup is for simple exponential fit, but one can easily modify it.
 def fit_func_exp(ctime, trial_params):
@@ -80,6 +99,11 @@ def fit_func_exp(ctime, trial_params):
     #            trial_params[ci+1]+ctime) for ci in arange(
     #                3, len(trial_params), 2)]))
 
+def fit_func_1p(ctime,trial_params):
+    C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(24-ctime))
+    C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(24-(ctime+1)))
+    C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(24-(ctime+2)))
+    return (C2-C1)/(C3-C2)
 
 def fit_func(ctime,trial_params):
     #return trial_params[0]
@@ -87,7 +111,17 @@ def fit_func(ctime,trial_params):
 
 C=0*5.05447626030778e8 #additive constant added to effective mass functions
 if EFF_MASS:
-    FIT=False
-    START_PARAMS = [.5]
-    def fit_func(ctime,trial_params):
-        return trial_params[0]
+    if EFF_MASS_METHOD < 3:
+        C=SCALE*.02
+        START_PARAMS = [.5]
+        def fit_func(ctime,trial_params):
+            return trial_params[0]
+    if EFF_MASS_METHOD == 2:
+        C=0
+        pass
+    if EFF_MASS_METHOD == 3:
+        FIT = True
+        START_PARAMS = [.5]
+        def fit_func(ctime,trial_params):
+            #return trial_params[0]
+            return fit_func_1p(ctime,trial_params)

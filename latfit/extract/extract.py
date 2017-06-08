@@ -29,6 +29,8 @@ def extract(INPUT, xmin, xmax, xstep):
     """
     #result is returned as a named tuple: RESRET
     RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
+    #reuse results
+    reuse={}
     if os.path.isfile(INPUT):
         RESRET = simple_proc_file(INPUT, xmin, xmax, EIGCUT)
         COV = RESRET.covar
@@ -78,7 +80,7 @@ def extract(INPUT, xmin, xmax, xstep):
                     J3FILE = pre_proc_file(J3FILE,INPUT)
                     #print IFILE,I2FILE,I3FILE,JFILE,J2FILE,J3FILE
                     RESRET = proc_file(IFILE, JFILE,
-                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)])
+                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)],reuse)
                 else:
                     RESRET = proc_file(IFILE, JFILE)
                 #fill in the covariance matrix
