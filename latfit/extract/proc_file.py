@@ -18,7 +18,7 @@ from latfit.config import C
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import FIT
 from latfit.config import START_PARAMS
-from latfit.config import fit_func_sym
+from latfit.config import fit_func_3pt_sym
 
 #take the real and test for error
 def proc_line(line,pifile="BLANK"):
@@ -71,7 +71,7 @@ elif EFF_MASS_METHOD == 2:
         C2 = proc_line(line2,fn2)
         C3 = proc_line(line3,fn3)
         try:
-            sol = nsolve((fit_func_sym(t1,[x,y,z])-C1, fit_func_sym(t2,[x,y,z])-C2,fit_func_sym(t3,[x,y,z])-C3), (x,y,z), START_PARAMS)
+            sol = nsolve((fit_func_3pt_sym(t1,[x,y,z])-C1, fit_func_3pt_sym(t2,[x,y,z])-C2,fit_func_3pt_sym(t3,[x,y,z])-C3), (x,y,z), START_PARAMS)
         except ValueError:
             print "Solution not within tolerance."
             print C1,fn1

@@ -1,3 +1,8 @@
+from math import fsum,log
+import numpy as np
+from numpy import arange,exp
+from sympy import exp as exps
+
 ##the boundary for when the fitter warns you if the eigenvalues
 ##of your covariance are very small
 EIGCUT = 10**(-20)
@@ -10,8 +15,8 @@ FIT = True
 UNCORR = False
 
 ##Plot Effective Mass? True or False
-#EFF_MASS = False
-EFF_MASS = True
+EFF_MASS = False
+#EFF_MASS = True
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
@@ -20,8 +25,8 @@ EFF_MASS_METHOD = 3
 
 ##starting values for fit parameters
 
-#START_PARAMS = [1.14694187e+11,   4.51135390e-01,   1.55042617e+09]
-START_PARAMS = [6.68203895e+05,   2.46978036e-01]
+START_PARAMS = [1.14694187e+11,   4.51135390e-01,   1.55042617e+09]
+#START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
 #if set to true, AUTO_FIT uses curve_fit from scipy.optimize to bootstrap START_PARAMS.  Bounds must still be set manually.
@@ -46,15 +51,15 @@ BINDS = ((SCALE*.1,10*SCALE), (0,1),(.001*SCALE,.03*SCALE))
 ##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
 CUTOFF = 10**(7)
 
-##scale to plot (divisor)
-FINE = 1.0
+###-------END POSSIBLY OBSOLETE------###
+##fineness of scale to plot (higher is more fine)
+FINE = 1000.0
 ##method used by the scipy.optimize.minimize
 ##other internals will need to be edited if you change this
 ##it's probably not a good idea
 METHOD = 'Nelder-Mead'
 #METHOD = 'L-BFGS-B'
 
-###-------END POSSIBLY OBSOLETE------###
 ##jackknife correction? "YES" or "NO"
 ##correction only happens if multiple files are processed
 JACKKNIFE = 'YES'
@@ -69,17 +74,13 @@ if EFF_MASS:
 else:
     YLABEL = 'C(t)'
 
-from math import fsum,log
-from numpy import arange,exp
-from sympy import exp as exps
-
 #setup is for simple exponential fit, but one can easily modify it.
-def fit_func_sym(ctime, trial_params):
+def fit_func_3pt_sym(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
-    return trial_params[0]*(exps(-trial_params[1]*ctime)+exps(-trial_params[1]*(32-ctime)))+trial_params[2]
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))
+    return trial_params[0]*(exps(-trial_params[1]*ctime)+exps(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
     #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
@@ -91,31 +92,25 @@ def fit_func_exp(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
-    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))+trial_params[2]
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
     #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
     #            trial_params[ci+1]+ctime) for ci in arange(
     #                3, len(trial_params), 2)]))
 
-def fit_func_1p(ctime,trial_params):
-    C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(32-ctime))
-    C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(32-(ctime+1)))
-    C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(32-(ctime+2)))
-    return log((C2-C1)/(C3-C2))
-
 def fit_func(ctime,trial_params):
     #return trial_params[0]
-    return fit_func_exp(ctime,trial_params)
+    return np.array([fit_func_exp(ctime,trial_params)])
 
 C=0*5.05447626030778e8 #additive constant added to effective mass functions
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
-        C=SCALE*.02*0
+        C=SCALE*.02
         START_PARAMS = [.5]
         def fit_func(ctime,trial_params):
-            return trial_params[0]
+            return np.array([trial_params[0]])
     if EFF_MASS_METHOD == 2:
         C=0
         pass
@@ -124,4 +119,12 @@ if EFF_MASS:
         START_PARAMS = [.45]
         def fit_func(ctime,trial_params):
             #return trial_params[0]
-            return fit_func_1p(ctime,trial_params)
+            return np.array([fit_func_1p(ctime,trial_params)])
+
+
+#one parameter fit, probably not good idea to edit (for effective mass plots)
+def fit_func_1p(ctime,trial_params):
+    C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(24-ctime))
+    C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(24-(ctime+1)))
+    C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(24-(ctime+2)))
+    return log((C2-C1)/(C3-C2))
