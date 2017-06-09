@@ -18,6 +18,8 @@ from latfit.config import BINDS
 from latfit.config import START_PARAMS
 from latfit.config import AUTO_FIT as auf
 from latfit.config import EFF_MASS
+from latfit.config import EFF_MASS_METHOD
+from latfit.config import C
 from latfit.config import ASSISTED_FIT as asf
 from matplotlib import rcParams
 import matplotlib.patches as patches
@@ -66,6 +68,8 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print "Error in params :",np.array2string(np.array(param_err), separator=', ')
             print "chi^2 minimized = ", result_min.fun
             dof = len(cov)-len(result_min.x)
+            if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
+                dof-=1
             print "degrees of freedom = ", dof
             print "chi^2 reduced = ", result_min.fun/dof
 
@@ -92,10 +96,12 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                 #for an effective mass plot
                 estring=str(result_min.x[0])+"+/-"+str(param_err[0])
             plt.annotate("Energy="+estring,xy=(0.05,0.95),xycoords='axes fraction')
-            dof = len(cov)-len(result_min.x)
             redchisq=result_min.fun/dof
             if redchisq<2:
-                plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
+                if EFF_MASS_METHOD == 3:
+                    plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
+                else:
+                    plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
         #todo: figure out a way to generally assign limits to plot
         #plt.xlim([XCOORD[0], XMAX+1])
         #magic numbers for the problem you're solving

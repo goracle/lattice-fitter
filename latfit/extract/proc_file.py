@@ -4,7 +4,7 @@ from math import fsum
 from itertools import izip
 from warnings import warn
 import re
-#from math import log
+from math import log
 from math import acosh
 import sys
 import numpy as np
@@ -97,13 +97,16 @@ elif EFF_MASS_METHOD == 3 and FIT:
         C1 = proc_line(line1,fn1)
         C2 = proc_line(line2,fn2)
         C3 = proc_line(line3,fn3)
-        sol = (C2-C1)/(C3-C2)
-        if sol == -1.0:
-            print C1,fn1
-            print C2,fn2
-            print C3,fn3
+        arg = (C2-C1)/(C3-C2)
+        if arg < 1:
+            print "***ERROR***"
+            print "argument to acosh in effective mass calc is less than 1:",arg
+            print fn1
+            print fn2
+            print fn3
+            sys.exit(1)
         #print 'solution =',sol
-        return sol
+        return log(arg)
 else:
     print "Bad method for finding the effective mass specified:", EFF_MASS_METHOD, "with fit set to", FIT
     sys.exit(1)
