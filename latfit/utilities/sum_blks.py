@@ -217,14 +217,18 @@ def main():
                         coeffs_arr.append((d,norm))
                     if coeffs_arr == []:
                         continue
-                    sepstr='_'
+                    sepstr=''
                     if sep:
-                        sepstr=sepstr+"sep"+str(sep)+'_'
+                        sepstr=sepstr+"sep"+str(sep)+'/'
                     #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
                     #outdir = op+"_I"+str(I)+sepstr+mom
-                    outdir = sepstr+'/'+'I'+str(I)+'/'+op+'_'+mom
+                    outdir = 'I'+str(I)+'/'+sepstr+op+'_'+mom
                     if not os.path.exists(outdir):
-                        os.makedirs(outdir)
+                        try:
+                            os.makedirs(outdir)
+                        except OSError:
+                            print "can't create directory:",outdir,"Permission denied."
+                            sys.exit(1)
                     sum_blks(outdir,coeffs_arr)
     print "Done writing jackknife sums."
                     
