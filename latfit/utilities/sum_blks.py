@@ -12,6 +12,12 @@ from math import sqrt
 import sys
 
 def sum_blks(outdir,coeffs_arr):
+    if not os.path.exists(outdir):
+        try:
+            os.makedirs(outdir)
+        except OSError:
+            print "can't create directory:",outdir,"Permission denied."
+            sys.exit(1)
     print "Start of blocks:",outdir,"--------------------------------------------"
     onlyfiles=[f for f in listdir('./'+coeffs_arr[0][0]) if isfile(join('./'+coeffs_arr[0][0],f))]            
     #make new directory if it doesn't exist
@@ -223,12 +229,6 @@ def main():
                     #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
                     #outdir = op+"_I"+str(I)+sepstr+mom
                     outdir = 'I'+str(I)+'/'+sepstr+op+'_'+mom
-                    if not os.path.exists(outdir):
-                        try:
-                            os.makedirs(outdir)
-                        except OSError:
-                            print "can't create directory:",outdir,"Permission denied."
-                            sys.exit(1)
                     sum_blks(outdir,coeffs_arr)
     print "Done writing jackknife sums."
                     
