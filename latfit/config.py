@@ -25,7 +25,7 @@ EFF_MASS_METHOD = 3
 
 ##starting values for fit parameters
 
-START_PARAMS = [1.14694187e+11,   4.51135390e-01,   1.55042617e+09]
+START_PARAMS = [1.02356707e+10,   4.47338103e-01,   1.52757540e+09]
 #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
@@ -44,7 +44,7 @@ ASSISTED_FIT=False
 #optional, scale parameter to set binds
 #scale=1e11
 SCALE=1e11
-BINDS = ((SCALE*.1,10*SCALE), (0,1),(.001*SCALE,.03*SCALE))
+BINDS = ((SCALE*.1,10*SCALE), (.4,.6),(.01*SCALE,.03*SCALE))
 #BINDS = ((scale*.01,30*scale), (0, .8),(.01*scale*0,scale))
 
 ##boundary scale for zero'ing out a failing inverse Hessian

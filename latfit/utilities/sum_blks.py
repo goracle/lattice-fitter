@@ -221,7 +221,8 @@ def main():
                     if sep:
                         sepstr=sepstr+"sep"+str(sep)+'_'
                     #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
-                    outdir = op+"_I"+str(I)+sepstr+mom
+                    #outdir = op+"_I"+str(I)+sepstr+mom
+                    outdir = sepstr+'/'+'I'+str(I)+'/'+op+'_'+mom
                     if not os.path.exists(outdir):
                         os.makedirs(outdir)
                     sum_blks(outdir,coeffs_arr)

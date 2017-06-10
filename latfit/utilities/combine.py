@@ -19,7 +19,7 @@ def find_dim(fin):
     nl = sum(1 for line in open(fin))
     return nl
 
-def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=True):
+def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=False):
     """Combine disconnected diagrams into an array.
 
     args = filename 1, filename 2

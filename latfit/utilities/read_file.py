@@ -109,8 +109,8 @@ def getmomstr(filename):
     if m:
         return m.group(0)
     else:
-        print "Error: no momentum in filename:",filename
-        exit(1)
+        warnings.warn("Error: no momentum in filename: "+filename)
+        return None
 
 #returns momentum of filename in the form of an int array
 def mom(filename):
