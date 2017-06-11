@@ -1,6 +1,7 @@
 from __future__ import division
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
+import sys
 
 from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
@@ -55,6 +56,7 @@ def mkmin(covinv, coords):
     if RESULT_MIN.fun < 0:
         print "***ERROR***"
         print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
+        sys.exit(1)
     #print "degrees of freedom = ", dimcov-len(start_params)
     #print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(start_params))
     return RESULT_MIN

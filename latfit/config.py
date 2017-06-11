@@ -15,12 +15,12 @@ FIT = True
 UNCORR = False
 
 ##Plot Effective Mass? True or False
-EFF_MASS = False
-#EFF_MASS = True
+#EFF_MASS = False
+EFF_MASS = True
 
-#EFF_MASS_METHOD 1: analytic for arg to acosh
+#EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
-#EFF_MASS_METHOD 3: one param fit
+#EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
 EFF_MASS_METHOD = 3
 
 ##starting values for fit parameters
@@ -74,12 +74,14 @@ if EFF_MASS:
 else:
     YLABEL = 'C(t)'
 
-#setup is for simple exponential fit, but one can easily modify it.
+###setup is for cosh fit, but one can easily modify it.
+
+#for EFF_MASS_METHOD = 2
 def fit_func_3pt_sym(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
     return trial_params[0]*(exps(-trial_params[1]*ctime)+exps(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
@@ -92,7 +94,7 @@ def fit_func_exp(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
     return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
@@ -107,7 +109,7 @@ def fit_func(ctime,trial_params):
 C=0*5.05447626030778e8 #additive constant added to effective mass functions
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
-        C=SCALE*.02
+        C=SCALE*.01563*0
         START_PARAMS = [.5]
         def fit_func(ctime,trial_params):
             return np.array([trial_params[0]])
@@ -116,7 +118,7 @@ if EFF_MASS:
         pass
     if EFF_MASS_METHOD == 3:
         FIT = True
-        START_PARAMS = [.45]
+        START_PARAMS = [.5]
         def fit_func(ctime,trial_params):
             #return trial_params[0]
             return np.array([fit_func_1p(ctime,trial_params)])

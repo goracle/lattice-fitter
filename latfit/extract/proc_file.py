@@ -183,6 +183,10 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
         print count, counttest
         print "Offending files:", pifile, "and", pjfile
         sys.exit(1)
+    else:
+        if proc_file.CONFIGSENT != 0:
+            print "Number of configurations to average over:",count
+            proc_file.CONFIGSENT = 0
     avgtwo /= count
     #cov[I][indexj]=return value for folder-style
     #applying jackknife correction of (count-1)^2
@@ -200,3 +204,4 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
     else:
         coventry = prefactor*fsum([(proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo) for l1, l2 in izip(open(pifile), open(pjfile))])
     return rets(coord=avgone, covar=coventry)
+proc_file.CONFIGSENT = object()
