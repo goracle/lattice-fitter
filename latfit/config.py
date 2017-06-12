@@ -111,10 +111,30 @@ if EFF_MASS:
             #return trial_params[0]
             return np.array([fit_func_1p(ctime,trial_params)])
 
+#for EFF_MASS_METHOD = 2
+def fit_func_3pt_sym(ctime, trial_params):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See procargs(argv))
+    """
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
+    return trial_params[0]*(exps(-trial_params[1]*ctime)+exps(-trial_params[1]*(24-ctime)))+trial_params[2]
+    #other test function
+    #return trial_params[0]+ctime*(trial_params[1]/(
+    #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
+    #            trial_params[ci+1]+ctime) for ci in arange(
+    #                3, len(trial_params), 2)]))
 
 #one parameter fit, probably not good idea to edit (for effective mass plots)
 def fit_func_1p(ctime,trial_params):
     C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(24-ctime))
     C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(24-(ctime+1)))
     C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(24-(ctime+2)))
+    arg = (C2-C1)/(C3-C2)
+    if arg <= 0:
+        print "imaginary effective mass."
+        print "problematic time slices:",ctime,ctime+1,ctime+2
+        print "C1=",C1
+        print "C2=",C2
+        print "C3=",C3
+        sys.exit(1)
     return log((C2-C1)/(C3-C2))
