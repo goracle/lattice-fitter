@@ -9,6 +9,7 @@ import re
 from latfit.config import fit_func
 from latfit.config import FINE
 from latfit.config import TITLE
+from latfit.config import TITLE_PREFIX
 from latfit.config import XLABEL
 from latfit.config import YLABEL
 from latfit.config import UNCORR
@@ -40,6 +41,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             title=INPUT
     else:
         title=TITLE
+    title=TITLE_PREFIX+title
     title=re.sub('_',' ',title)
     if EFF_MASS:
         eff_str='_eff_mass'

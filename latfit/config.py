@@ -68,6 +68,7 @@ JACKKNIFE = 'YES'
 ###DISPLAY PARAMETERS
 #TITLE = 'FigureT_vec_pol_snk_1_sep4_momsrc000_momsnk000'
 #no title takes the current working directory as the title
+TITLE_PREFIX = ''
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
