@@ -72,7 +72,7 @@ TITLE_PREFIX = ''
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
-    YLABEL = r'$am_{res}^{eff}}(t)$'
+    YLABEL = r'$am^{eff}}(t)$'
 else:
     YLABEL = 'C(t)'
 
