@@ -161,14 +161,7 @@ def momtotal(pl,fig=None):
         print "Error: bad momentum list:",pl
         exit(1)
 
-def main():
-    fixn=raw_input("Need fix norms before summing? True/False?")
-    if fixn=='True':
-        fixn=True
-    elif fixn=='False':
-        fixn=False
-    else:
-        exit(1)
+def main(fixn,DIRNUM):
     d='.'
     dlist=[os.path.join(d,o) for o in os.listdir(d) if os.path.isdir(os.path.join(d,o))]
     seplist=set()
@@ -223,15 +216,32 @@ def main():
                         coeffs_arr.append((d,norm))
                     if coeffs_arr == []:
                         continue
-                    sepstr=''
-                    if sep:
-                        sepstr=sepstr+"sep"+str(sep)+'/'
-                    #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
-                    #outdir = op+"_I"+str(I)+sepstr+mom
-                    outdir = 'I'+str(I)+'/'+sepstr+op+'_'+mom
+                    if DIRNUM == 0:
+                        sepstr=''
+                        if sep:
+                            sepstr=sepstr+"sep"+str(sep)+'/'
+                        #outdir = op+"_I"+str(I)+sepstr+mom
+                        outdir = 'I'+str(I)+'/'+sepstr+op+'_'+mom
+                    elif DIRNUM == 1:
+                        sepstr='_'
+                        if sep:
+                            sepstr=sepstr+"sep"+str(sep)+'_'
+                        #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
+                        outdir = op+"_I"+str(I)+sepstr+mom
+                    else:
+                        print "Error: bad flag specified. DIRNUM =", DIRNUM
+                        sys.exit(1)
                     sum_blks(outdir,coeffs_arr)
     print "Done writing jackknife sums."
                     
     #
 if __name__ == '__main__':
-    main()
+    fixn=raw_input("Need fix norms before summing? True/False?")
+    if fixn=='True':
+        fixn=True
+    elif fixn=='False':
+        fixn=False
+    else:
+        sys.exit(1)
+    main(fixn,0)
+    main(fixn,1)

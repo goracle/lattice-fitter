@@ -42,9 +42,15 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         title=TITLE
     title=re.sub('_',' ',title)
     if EFF_MASS:
-        eff_str="_eff_mass"
+        eff_str='_eff_mass'
+        if EFF_MASS_METHOD == 1:
+            eff_str+='_meth1'
     else:
-        eff_str=""
+        eff_str=''
+    if UNCORR:
+        uncorr_str='_uncorr_fit'
+    else:
+        uncorr_str=''
 
     #setup fonts
     hfontT = {'fontname':'FreeSans','size':12}
@@ -84,7 +90,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             redchisq=result_min.fun/dof
             print "chi^2 reduced = ", redchisq
 
-    with PdfPages(re.sub(' ','_',title)+eff_str+'.pdf') as pdf:
+    with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+'.pdf') as pdf:
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine than the original data points (to show smoothness)
@@ -120,11 +126,12 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             plt.annotate("Energy="+estring,xy=(0.05,0.95),xycoords='axes fraction')
 
             #if the fit is good, also annotate with reduced chi^2
-            if redchisq<2:
-                if EFF_MASS_METHOD == 3:
-                    plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
-                else:
-                    plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
+            if result_min.status == 0:
+                if redchisq<2:
+                    if EFF_MASS_METHOD == 3:
+                        plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
+                    else:
+                        plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
             if UNCORR:
                 plt.text(XCOORD[3], YCOORD[2],"Uncorrelated fit.")
 
