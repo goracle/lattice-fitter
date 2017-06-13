@@ -13,35 +13,35 @@ def xlim_err(xmin, xmax):
         try:
             XMAX = float(xmax)
         except ValueError:
-            print "***ERROR***"
-            print "Invalid xmax."
+            print("***ERROR***")
+            print("Invalid xmax.")
             procargs(["h"])
     if isinstance(xmin, str):
         try:
             XMIN = float(xmin)
         except ValueError:
-            print "***ERROR***"
-            print "Invalid xmin."
+            print("***ERROR***")
+            print("Invalid xmin.")
             procargs(["h"])
     if XMIN == SENT1 or XMAX == SENT2:
-        print "Now, input valid domain (abscissa)."
-        print "xmin<=x<=xmax"
+        print("Now, input valid domain (abscissa).")
+        print("xmin<=x<=xmax")
         if XMIN == SENT1:
-            print "x min="
-            XMIN = float(raw_input())
+            print("x min=")
+            XMIN = float(input())
         if XMAX == SENT2:
-            print "x max="
-            XMAX = float(raw_input())
+            print("x max=")
+            XMAX = float(input())
     if XMAX < XMIN:
         while True:
-            print "xmax < xmin.  Contradiction."
-            print "Swap xmax for xmin? (y/n)"
-            RESP = str(raw_input())
+            print("xmax < xmin.  Contradiction.")
+            print("Swap xmax for xmin? (y/n)")
+            RESP = str(input())
             if (RESP == "n" or RESP == "no" or
                     RESP == "No" or RESP == "N"):
                 while True:
-                    print "Abort? (y/n)"
-                    RESP = str(raw_input())
+                    print("Abort? (y/n)")
+                    RESP = str(input())
                     if (RESP == "n" or RESP == "no" or
                             RESP == "No" or RESP == "N"):
                         break
@@ -49,13 +49,13 @@ def xlim_err(xmin, xmax):
                             or RESP == "Yes" or RESP == "Y"):
                         sys.exit(0)
                     else:
-                        print "Sorry, I didn't understand that."
+                        print("Sorry, I didn't understand that.")
                         continue
-                print "Input new values."
-                print "x min="
-                XMIN = float(raw_input())
-                print "x max="
-                XMAX = float(raw_input())
+                print("Input new values.")
+                print("x min=")
+                XMIN = float(input())
+                print("x max=")
+                XMAX = float(input())
                 if XMAX < XMIN:
                     continue
                 else:
@@ -65,6 +65,6 @@ def xlim_err(xmin, xmax):
                 XMIN, XMAX = XMAX, XMIN
                 break
             else:
-                print "Sorry, I didn't understand that."
+                print("Sorry, I didn't understand that.")
                 continue
     return XMIN, XMAX

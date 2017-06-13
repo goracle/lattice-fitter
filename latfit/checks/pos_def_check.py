@@ -13,13 +13,13 @@ def pos_def_check(ccov):
     try:
         posdefexcept(ccov)
     except np.linalg.linalg.LinAlgError:
-        print "***ERROR***"
-        print "Covariance matrix is not positive definite."
-        print "Choose a different domain to fit."
-        print "The data may still be useable."
-        print "List of eigenvalues:"
+        print("***ERROR***")
+        print("Covariance matrix is not positive definite.")
+        print("Choose a different domain to fit.")
+        print("The data may still be useable.")
+        print("List of eigenvalues:")
         testeig = eigvals(ccov)
         for entry in testeig:
-            print entry
+            print(entry)
         sys.exit(1)
     return 0

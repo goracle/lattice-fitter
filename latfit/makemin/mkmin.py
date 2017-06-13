@@ -1,4 +1,4 @@
-from __future__ import division
+
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
 import sys
@@ -29,8 +29,8 @@ def mkmin(covinv, coords):
             popt,pcov=curve_fit(x,y,f,p0=guess)
             start_params=popt
         except:
-            print "Automatic guess of starting params failed."
-            print "Attempting to continue with manual entry."
+            print("Automatic guess of starting params failed.")
+            print("Attempting to continue with manual entry.")
             start_params=START_PARAMS
     else:
             start_params=START_PARAMS
@@ -45,17 +45,17 @@ def mkmin(covinv, coords):
         RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords),
                               method=METHOD, bounds=BINDS,
                               options={'disp': True})
-        print "number of iterations = ", RESULT_MIN.nit
+        print("number of iterations = ", RESULT_MIN.nit)
     #print "minimized params = ", RESULT_MIN.x
-    print "successfully minimized = ", RESULT_MIN.success
-    print "status of optimizer = ", RESULT_MIN.status
-    print "message of optimizer = ", RESULT_MIN.message
+    print("successfully minimized = ", RESULT_MIN.success)
+    print("status of optimizer = ", RESULT_MIN.status)
+    print("message of optimizer = ", RESULT_MIN.message)
     #print "chi^2 minimized = ", RESULT_MIN.fun
     #print "chi^2 minimized check = ",chi_sq(RESULT_MIN.x,covinv,coords)
     #print covinv
     if RESULT_MIN.fun < 0:
-        print "***ERROR***"
-        print "Chi^2 minimizer failed. Chi^2 found to be less than zero."
+        print("***ERROR***")
+        print("Chi^2 minimizer failed. Chi^2 found to be less than zero.")
         sys.exit(1)
     #print "degrees of freedom = ", dimcov-len(start_params)
     #print "chi^2 reduced = ", RESULT_MIN.fun/(dimcov-len(start_params))

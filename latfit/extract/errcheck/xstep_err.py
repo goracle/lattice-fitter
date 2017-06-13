@@ -11,9 +11,9 @@ def xstep_err(xstep, INPUT):
             OPSTEMP = xstep
             OPSTEMP = float(OPSTEMP)
         except ValueError:
-            print "***ERROR***"
-            print "Invalid step size."
-            print "Expecting an float >= 0."
+            print("***ERROR***")
+            print("Invalid step size.")
+            print("Expecting an float >= 0.")
             procargs(["h"])
         if OPSTEMP >= 0:
             XSTEP = OPSTEMP
@@ -21,6 +21,6 @@ def xstep_err(xstep, INPUT):
             XSTEP = -1
     #We only care about step size for multi file setup
     if XSTEP == -1 and os.path.isdir(INPUT):
-        print "Assuming domain step size is 1 (int)."
+        print("Assuming domain step size is 1 (int).")
         XSTEP = 1
     return XSTEP

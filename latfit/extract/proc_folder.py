@@ -55,17 +55,17 @@ def proc_folder(folder, ctime, other_regex = ""):
     if not retname == temp4:
         #logic: if we found >1 match
         if flag2 == 1:
-            print "***ERROR***"
-            print "File name collision."
-            print "Two (or more) files match the search."
-            print "Amend your file names."
-            print "Offending files:", retname
+            print("***ERROR***")
+            print("File name collision.")
+            print("Two (or more) files match the search.")
+            print("Amend your file names.")
+            print("Offending files:", retname)
             sys.exit(1)
         return retname
-    print temp1
-    print temp2
-    print folder
-    print "***ERROR***"
-    print "Can't find file corresponding to x-value = ", ctime
-    print "regex = ", my_regex
+    print(temp1)
+    print(temp2)
+    print(folder)
+    print("***ERROR***")
+    print("Can't find file corresponding to x-value = ", ctime)
+    print("regex = ", my_regex)
     sys.exit(1)

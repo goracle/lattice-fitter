@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import read_file as rf
+from . import read_file as rf
 import os
 import numpy as np
 import re
@@ -16,9 +16,9 @@ def sum_blks(outdir,coeffs_arr):
         try:
             os.makedirs(outdir)
         except OSError:
-            print "can't create directory:",outdir,"Permission denied."
+            print("can't create directory:",outdir,"Permission denied.")
             sys.exit(1)
-    print "Start of blocks:",outdir,"--------------------------------------------"
+    print("Start of blocks:",outdir,"--------------------------------------------")
     onlyfiles=[f for f in listdir('./'+coeffs_arr[0][0]) if isfile(join('./'+coeffs_arr[0][0],f))]            
     #make new directory if it doesn't exist
     #loop over time slices until there are none left
@@ -26,24 +26,24 @@ def sum_blks(outdir,coeffs_arr):
     flag=sent
     for time in onlyfiles:
         if re.search('pdf',time):
-            print "Skipping 'block' = ",time
+            print("Skipping 'block' = ",time)
             continue
         outfile=outdir+'/'+time
         outblk=np.array([])
         for pair in coeffs_arr:
             name,coeff=pair
             if flag == sent:
-                print "Including:",name,"with coefficient",coeff
+                print("Including:",name,"with coefficient",coeff)
             #do the check after printing out the coefficients so we can check afterwards
             if(os.path.isfile(outfile)):
-                print "Skipping:", outfile
-                print "File exists."
+                print("Skipping:", outfile)
+                print("File exists.")
                 continue
             try:
                 fn=open(name+'/'+time,'r')
             except:
-                print "Error: bad block name in:", name
-                print "block name:",time,"Continuing."
+                print("Error: bad block name in:", name)
+                print("block name:",time,"Continuing.")
                 continue
             for i,line in enumerate(fn):
                 line=line.split()
@@ -52,7 +52,7 @@ def sum_blks(outdir,coeffs_arr):
                 elif len(line)==2:
                     val=coeff*complex(float(line[0]),float(line[1]))
                 else:
-                    print "Error: bad block:",fn
+                    print("Error: bad block:",fn)
                     break
                 try:
                     outblk[i]+=val
@@ -69,8 +69,8 @@ def sum_blks(outdir,coeffs_arr):
                 else:
                     outline = str(outline.real)+" "+str(outline.imag)+"\n"
                 fn.write(outline)
-            print "Done writing:",outfile
-    print "End of blocks:",outdir,"--------------------------------------------"
+            print("Done writing:",outfile)
+    print("End of blocks:",outdir,"--------------------------------------------")
                 
 def norm_fix(fn):
     name = rf.figure(fn)
@@ -138,7 +138,7 @@ def isospin_coeff(fn,I):
         else:
             return None
     else:
-        print "Error: bad isospin:", I
+        print("Error: bad isospin:", I)
         exit(1)
     return norm
 
@@ -158,7 +158,7 @@ def momtotal(pl,fig=None):
         ptotal=list(p1+p2)
         return ptotal
     else:
-        print "Error: bad momentum list:",pl
+        print("Error: bad momentum list:",pl)
         exit(1)
 
 def main(fixn,DIRNUM):
@@ -229,14 +229,14 @@ def main(fixn,DIRNUM):
                         #outdir = op+"_I"+str(I)+sepstr+"_momtotal"+rf.ptostr(mom)
                         outdir = op+"_I"+str(I)+sepstr+mom
                     else:
-                        print "Error: bad flag specified. DIRNUM =", DIRNUM
+                        print("Error: bad flag specified. DIRNUM =", DIRNUM)
                         sys.exit(1)
                     sum_blks(outdir,coeffs_arr)
-    print "Done writing jackknife sums."
+    print("Done writing jackknife sums.")
                     
     #
 if __name__ == '__main__':
-    fixn=raw_input("Need fix norms before summing? True/False?")
+    fixn=input("Need fix norms before summing? True/False?")
     if fixn=='True':
         fixn=True
     elif fixn=='False':

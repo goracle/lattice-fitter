@@ -1,4 +1,4 @@
-from __future__ import division
+
 from collections import namedtuple
 import numpy as np
 import os
@@ -15,10 +15,10 @@ def pre_proc_file(IFILE,INPUT):
         TRIAL = open(IFILE, "r")
     except TypeError:
         STR1 = "Either domain is invalid,"
-        print STR1, "or folder is invalid."
-        print "Double check contents of folder."
-        print "Offending file(s):"
-        print IFILE
+        print(STR1, "or folder is invalid.")
+        print("Double check contents of folder.")
+        print("Offending file(s):")
+        print(IFILE)
         sys.exit(1)
     return IFILE
 

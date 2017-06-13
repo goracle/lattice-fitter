@@ -30,11 +30,11 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         try:
             COVINV = inv(COV)
         except:
-            print "Covariance matrix is singular."
-            print "Check to make sure plot range does not contain a mirror image."
+            print("Covariance matrix is singular.")
+            print("Check to make sure plot range does not contain a mirror image.")
             #print "determinant:",det(COV)
             sys.exit(1)
-    print "(Rough) scale of errors in data points = ", sqrt(COV[0][0])
+    print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
     #number of points plotted = len(COV).

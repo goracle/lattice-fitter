@@ -24,13 +24,14 @@ setup(
         'Intended Audience :: Physicists'
         'Topic :: Data Visualisation and Analysis'
         'License :: GPLv3'
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 3.6'
     ],
     keywords = 'qcd data analysis',
     packages = find_packages(),
     install_requires = [
         'matplotlib',
         'numpy',
+        'sympy',
         'scipy',
         'numdifftools',
     ],

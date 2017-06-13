@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import read_file as rf
+from . import read_file as rf
 import re
 import os.path
 
@@ -25,25 +25,25 @@ def proc_file_str(filename):
             tsrc2=(tdis+tsrc)%Lt
             tdis2=(Lt-tdis)%Lt
         else:
-            print "Error: bad filename, error in proc_file_str"
+            print("Error: bad filename, error in proc_file_str")
             exit(1)
         out[tsrc2][tdis2]=str(l[2])+" "+str(l[3]).rstrip()
     return out
 
 def call_aux(fn,out):
     if(os.path.isfile(out)):
-        print "Skipping:'"+out+"'.  File exists."
+        print("Skipping:'"+out+"'.  File exists.")
     else:
         rf.write_mat_str(proc_file_str(fn),out)
     return
     
 
 def aux_fn(filename):
-    print "Processing:", filename
+    print("Processing:", filename)
     fn=open(filename,'r')
     for line in fn:
         if len(line.split())<4:
-            print "Disconnected.  Skipping."
+            print("Disconnected.  Skipping.")
             return
     pret=np.array(rf.mom(filename))
     n=rf.nmom(filename)
@@ -59,7 +59,7 @@ def aux_fn(filename):
         pn[2]=psrc2
         outfile=rf.pchange(outfile,pn)
         if(outfile==filename):
-            print "symmetric Momenta; skipping"
+            print("symmetric Momenta; skipping")
             return
     elif n==2:
         psrc1=pret[0]
@@ -73,7 +73,7 @@ def aux_fn(filename):
         outfile=outfile.replace("pol_SINK","pol_snk")
         outfile=outfile.replace("scalar_","scalarR_")
         if outfile == filename:
-            print "T aux diagram already exists. Skipping."
+            print("T aux diagram already exists. Skipping.")
             #outfile=filename.replace("pol_src","pol_snk")
             #or outfile=filename.replace("scalarR_","scalar_")
             #print "i.e.", outfile
@@ -90,7 +90,7 @@ def aux_fn(filename):
             outfile=outfile.replace("temp1",str(pol2))
             outfile=outfile.replace("temp2",str(pol1))
         if outfile == filename:
-            print "Two point not a vector diagram.  Skipping."
+            print("Two point not a vector diagram.  Skipping.")
             return
     else:
         "Error: nmom does not equal 1,2, or 3."
@@ -104,7 +104,7 @@ def main():
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
     for fn in onlyfiles:
         aux_fn(fn)
-    print "Done writing auxiliary periodic bc files"
+    print("Done writing auxiliary periodic bc files")
     exit(0)
     
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from os.path import isfile, join
 import numpy as np
 from math import sqrt
 import re
-from combine import comb_dis
+from .combine import comb_dis
 import warnings
 
 #get polarizations from file
@@ -89,7 +89,7 @@ def nmom_arr(pret):
     elif type(pret[0]) is not int:
         return n
     else:
-        print "Error: bad momentum container."
+        print("Error: bad momentum container.")
         exit(1)
 
 def nmom(filename):
@@ -99,7 +99,7 @@ def nmom(filename):
 def procmom(mstr):
     b = re.findall('_*\d', mstr)
     if (len(b) != 3):
-            print "Error: bad filename, number of momenta"
+            print("Error: bad filename, number of momenta")
             exit(1)
     p = [ int(b[i].replace('_','-')) for i in range(len(b))]
     return p
@@ -125,7 +125,7 @@ def mom(filename):
             p2 = procmom(k.group(1))
             return p1,p2
         else:
-            print "Error: bad filename, p2 not found",filename
+            print("Error: bad filename, p2 not found",filename)
             exit(1)
     elif l:
         psrc = procmom(l.group(1))
@@ -134,7 +134,7 @@ def mom(filename):
             psnk = procmom(l.group(1))
             return psrc,psnk
         else:
-            print "Error: bad filename, psnk not found",filename
+            print("Error: bad filename, psnk not found",filename)
             exit(1)
     elif m:
         psrc1 = procmom(m.group(1))
@@ -146,16 +146,16 @@ def mom(filename):
                 psnk1 = procmom(m.group(1))
                 return psrc1,psrc2,psnk1
             else:
-                print "Error: bad filename, psnk1 not found",filename
+                print("Error: bad filename, psnk1 not found",filename)
                 exit(1)
         else:
-            print "Error: bad filename, psrc2 not found.",filename
+            print("Error: bad filename, psrc2 not found.",filename)
             exit(1)
     elif n:
         p = procmom(n.group(1))
         return p
     else:
-        print "Error: bad filename= '"+str(filename)+"' no momenta found.  Attempting to continue."
+        print("Error: bad filename= '"+str(filename)+"' no momenta found.  Attempting to continue.")
         return None
         #exit(1)
     
@@ -188,14 +188,14 @@ def find_dim(filename):
         Lt=int(sqrt(nl))
         return Lt
     else:
-        print "Error: Non-square matrix, nl=", nl
+        print("Error: Non-square matrix, nl=", nl)
         return None
 
 #write vector of strings
 def write_vec_str(data,outfile):
     if(os.path.isfile(outfile)):
-        print "Skipping:", outfile
-        print "File exists."
+        print("Skipping:", outfile)
+        print("File exists.")
         return
     fn = open(outfile, 'w')
     Lt = len(data)
@@ -205,19 +205,19 @@ def write_vec_str(data,outfile):
             c='{0:.{1}f}'.format(c,sys.float_info.dig)
         line = str(tdis)+" "+str(c)+"\n"
         fn.write(line)
-    print "Done writing file:", outfile
+    print("Done writing file:", outfile)
     fn.close()
 
 #write matrix of strings
 def write_mat_str(data,outfile):
     if(os.path.isfile(outfile)):
-        print "Skipping:", outfile
-        print "File exists."
+        print("Skipping:", outfile)
+        print("File exists.")
         return
     fn = open(outfile, 'w')
     Lt = len(data[0])
     if Lt != len(data):
-        print "Error: non-square matrix."
+        print("Error: non-square matrix.")
         exit(1)
     for tsrc in range(Lt):
         for tdis in range(Lt):
@@ -226,7 +226,7 @@ def write_mat_str(data,outfile):
                 c='{0:.{1}f}'.format(c,sys.float_info.dig)
             line = str(tsrc)+" "+str(tdis)+" "+str(c)+"\n"
             fn.write(line)
-    print "Done writing file:", outfile
+    print("Done writing file:", outfile)
     fn.close()
 
 #scan the output directory where all the files to be processed into the GEVP array are stored
@@ -245,7 +245,7 @@ def scan_dir():
             elif len(pnew)==3 and type(momret[0]) is int:
                 plist.append(pnew)
             else: #shouldn't get here
-                print "Error: bad filename, momentum somehow in bad format."
+                print("Error: bad filename, momentum somehow in bad format.")
         plist = np.vstack({tuple(row) for row in plist})
         trajl = list(set(trajl))
     return trajl, plist
@@ -275,13 +275,13 @@ def find_V(conf,p1,p2,sep=1):
 #write built array to file (for use in building disconnected diagrams)
 def write_arr(data,outfile):
     if(os.path.isfile(outfile)):
-        print "Skipping:", outfile
-        print "File exists."
+        print("Skipping:", outfile)
+        print("File exists.")
         return
     fn = open(outfile, 'w')
     Lt = len(data[0])
     if Lt != len(data):
-        print "Error: non-square matrix. outfile=", outfile
+        print("Error: non-square matrix. outfile=", outfile)
         exit(1)
     for tsrc in range(Lt):
         for tdis in range(Lt):
@@ -290,7 +290,7 @@ def write_arr(data,outfile):
                 c=complex('{0:.{1}f}'.format(c,sys.float_info.dig))
             line = str(tsrc)+" "+str(tdis)+" "+str(c.real)+" "+str(c.imag)+"\n"
             fn.write(line)
-    print "Done writing file:", outfile
+    print("Done writing file:", outfile)
     fn.close()
 
 
@@ -302,7 +302,7 @@ def pchange(filename,pnew):
     t=traj(filename)
     fn=re.sub("traj_.*?_","traj_TEMPsafe_",filename)
     if nnew!=nold:
-        print "Error: filename momentum mismatch"
+        print("Error: filename momentum mismatch")
         exit(1)
     n=nold
     if n==1:
@@ -313,7 +313,7 @@ def pchange(filename,pnew):
         for i in range(n):
             fn=fn.replace("temp"+str(i),ptostr(pnew[i]),1)
     else:
-        print "Error: bad filename for momentum replacement specified."    
+        print("Error: bad filename for momentum replacement specified.")    
         exit(1)
     fn=re.sub("TEMPsafe",str(t),fn)
     return fn
@@ -370,11 +370,11 @@ def compute_coeff(fn, I=0):
     return fig, figb
         
 def main():
-    print "untested, exiting."
+    print("untested, exiting.")
     exit(0)
     args=len(sys.argv)
     ar=sys.argv
-    print "Processing files..."
+    print("Processing files...")
     trajl, plist = scan_dir()
     create_dis_figs(trajl,plist)
     for conf in trajl:
@@ -395,7 +395,7 @@ def main():
                         #e.g. one particle -> one particle
                         continue
                     else:
-                        print "Skipping.  No momenta found."
+                        print("Skipping.  No momenta found.")
                         continue
                     #I=0
                     fig, figb = compute_coeff(fn, 0)

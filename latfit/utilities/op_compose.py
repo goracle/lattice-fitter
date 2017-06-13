@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from math import sqrt
-from sum_blks import sum_blks
-import read_file as rf
+from .sum_blks import sum_blks
+from . import read_file as rf
 import os
 
 def momstr(psrc,psnk):
@@ -59,7 +59,7 @@ def op_list():
         for snkpart in partlist:
             partchk=partstr(srcpart,snkpart)
             for op in oplist:
-                print "Doing op:",op,"for particles:",partchk
+                print("Doing op:",op,"for particles:",partchk)
                 coeffs_arr = []
                 for src in oplist[op]:
                     for snk in oplist[op]:
@@ -73,12 +73,12 @@ def op_list():
                         pstr=momstr(src[2],snk[2])
                         d = partS+"_"+pstr
                         if not os.path.isdir(d):
-                            print "dir",d,"is missing"
+                            print("dir",d,"is missing")
                             sys.exit(1)
                         coeffs_arr.append((d,coeff))
                 outdir=partchk+"_"+op
                 sum_blks(outdir,coeffs_arr)
-    print "End of operator list."
+    print("End of operator list.")
     return
             
 

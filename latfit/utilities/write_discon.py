@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-import read_file as rf
+from . import read_file as rf
 import os.path
-from traj_list import traj_list
+from .traj_list import traj_list
 import numpy as np
-import combine as cb
+from . import combine as cb
 from os import listdir
 from os.path import isfile, join
 import re
@@ -59,7 +59,7 @@ def dismom(psrc,psnk):
         #Bub2
         s = "mom"+rf.ptostr(psrc)
     else:
-        print "Error: bad momenta:",psrc,psnk
+        print("Error: bad momenta:",psrc,psnk)
         exit(1)
     return s
 
@@ -107,8 +107,8 @@ def main():
                     sepstr = "_"
                 outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+momstr
                 if(os.path.isfile(outfile)):
-                    print "Skipping:", outfile
-                    print "File exists."
+                    print("Skipping:", outfile)
+                    print("File exists.")
                     continue
                 #get the data
                 #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
@@ -121,7 +121,7 @@ def main():
                 dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
                 #get the  <><> subtraction array (<> indicates avg over trajectories)
                 if dsrcSub+dsnkSub in lookup:
-                    print "Using prev."
+                    print("Using prev.")
                     arrMinus=lookup[dsrcSub+dsnkSub]
                 else:
                     arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
@@ -152,7 +152,7 @@ def outf(conf,figname,vec,sep,parr,pol1=None, pol2=None):
     elif one and l==3:
         return base+"_mom"+ptostr(parr[0])
     else:
-        print "Error: bad output filename specification."
+        print("Error: bad output filename specification.")
         exit(1)
 
 if __name__ == "__main__":

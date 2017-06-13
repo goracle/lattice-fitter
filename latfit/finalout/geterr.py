@@ -23,7 +23,7 @@ def geterr(result_min, covinv, coords):
 
         #delete this!
         if len(HFUN(result_min.x)) != len(result_min.x):
-            print "huh."
+            print("huh.")
             sys.exit(1)
 
         #compute the gradient and hessian of the fit function
@@ -43,9 +43,9 @@ def geterr(result_min, covinv, coords):
             #HINV = inv(nd.Hessian(HFUNC)(result_min.x)) #debugging function; compare to numerically calculated Hessian
             HINV=inv(Hess)
         except:
-            print "Hessian is singular.  Check your fit function/params."
-            print "Hessian:"
-            print Hess
+            print("Hessian is singular.  Check your fit function/params.")
+            print("Hessian:")
+            print(Hess)
             sys.exit(1)
 
         #compute error matrix; errors in fit parameters are +/- of the diagonal elements
@@ -62,20 +62,20 @@ def geterr(result_min, covinv, coords):
                 param_err[i] = sqrt(delta[i][i])
             #let rounding errors work for us.  given community experience, probably not mathematically sound
             except ValueError:
-                print "***Warning***"
-                print "Hessian inverse has negative diagonal entries,"
-                print "leading to complex errors in some or all of the"
-                print "fit parameters. failing entry:",2*HINV[i][i]
-                print "Attempting to continue with entries zero'd below", cutoff
-                print 'Debugging info:'
-                print '2x Hessian Inverse:'
-                print 2*HINV
-                print 'Hessian:'
-                print HFUN(result_min.x)
-                print 'x: (f(x)-y(x))/sigma(x):'
+                print("***Warning***")
+                print("Hessian inverse has negative diagonal entries,")
+                print("leading to complex errors in some or all of the")
+                print("fit parameters. failing entry:",2*HINV[i][i])
+                print("Attempting to continue with entries zero'd below", cutoff)
+                print('Debugging info:')
+                print('2x Hessian Inverse:')
+                print(2*HINV)
+                print('Hessian:')
+                print(HFUN(result_min.x))
+                print('x: (f(x)-y(x))/sigma(x):')
                 for j in range(len(covinv)):
-                    print j
-                    print covinv[j][j]*(fit_func(coords[j][0],result_min.x)-coords[j][1])**2
+                    print(j)
+                    print(covinv[j][j]*(fit_func(coords[j][0],result_min.x)-coords[j][1])**2)
                 flag = 1
                 break
         if flag == 1:
@@ -83,18 +83,18 @@ def geterr(result_min, covinv, coords):
             try:
                 HINV = inv(HFUN_CUT)
             except:
-                print "Cut Hessian is singular. Cut Hessian:"
-                print HFUN_CUT
+                print("Cut Hessian is singular. Cut Hessian:")
+                print(HFUN_CUT)
                 sys.exit(1)
             for i in range(len(HINV)):
                 try:
                     param_err[i] = sqrt(2*HINV[i][i])
                 except ValueError:
-                    print "***Warning***"
-                    print "Hessian inverse has negative diagonal entries,"
-                    print "leading to complex errors in some or all of the"
-                    print "fit parameters. failing entry:",2*HINV[i][i]
-                    print "Giving up."
+                    print("***Warning***")
+                    print("Hessian inverse has negative diagonal entries,")
+                    print("leading to complex errors in some or all of the")
+                    print("fit parameters. failing entry:",2*HINV[i][i])
+                    print("Giving up.")
                     sys.exit(1)
     return param_err
            

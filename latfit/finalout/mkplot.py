@@ -1,4 +1,4 @@
-from __future__ import division
+
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import matplotlib.pyplot as plt
@@ -59,13 +59,13 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     hfontl = {'fontname':'FreeSans','size':14}
 
     #plotted coordinates setup
-    print "list of plotted points [x,y]:"
-    print coords
+    print("list of plotted points [x,y]:")
+    print(coords)
     XCOORD = [coords[i][0] for i in range(len(coords))]
     YCOORD = [coords[i][1] for i in range(len(coords))]
     ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
-    print "list of point errors (x,yerr):"
-    print zip(XCOORD,ER2)
+    print("list of point errors (x,yerr):")
+    print(list(zip(XCOORD,ER2)))
 
     #print message up here because of weirdness with pdfpages
     if FIT:
@@ -73,24 +73,24 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             sp=np.array(START_PARAMS)
 
             #print plot info
-            print "Minimizer thinks that it worked.  Plotting fit."
-            print "Fit info:"
-            print "Autofit:",AUTO_FIT
-            print "Assisted Fit:",ASSISTED_FIT
-            print "Minimizer (of chi^2) method:",METHOD
+            print("Minimizer thinks that it worked.  Plotting fit.")
+            print("Fit info:")
+            print("Autofit:",AUTO_FIT)
+            print("Assisted Fit:",ASSISTED_FIT)
+            print("Minimizer (of chi^2) method:",METHOD)
             if METHOD == 'L-BFGS-B':
-                print "Bounds:",BINDS
-            print "Guessed params:  ",np.array2string(sp,separator=', ')
-            print "Minimized params:",np.array2string(result_min.x, separator=', ')
-            print "Error in params :",np.array2string(np.array(param_err), separator=', ')
-            print "chi^2 minimized = ", result_min.fun
+                print("Bounds:",BINDS)
+            print("Guessed params:  ",np.array2string(sp,separator=', '))
+            print("Minimized params:",np.array2string(result_min.x, separator=', '))
+            print("Error in params :",np.array2string(np.array(param_err), separator=', '))
+            print("chi^2 minimized = ", result_min.fun)
             dof = len(cov)-len(result_min.x)
             #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
             if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
                 dof-=1
-            print "degrees of freedom = ", dof
+            print("degrees of freedom = ", dof)
             redchisq=result_min.fun/dof
-            print "chi^2 reduced = ", redchisq
+            print("chi^2 reduced = ", redchisq)
 
     with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+'.pdf') as pdf:
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')

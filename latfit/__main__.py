@@ -13,7 +13,7 @@ parts of the graph routine
 #probably needs to be refactored for python3...
 #then sudo pip install numdifftools
 
-from __future__ import division
+
 from collections import namedtuple
 import sys
 import numpy as np
@@ -54,22 +54,22 @@ sys.stdout = Logger()
 sys.stderr = Logger()
 
 def main():
-    print "BEGIN NEW OUTPUT"
+    print("BEGIN NEW OUTPUT")
     t=time.asctime(time.localtime(time.time()))
-    print t
+    print(t)
     CWD=os.getcwd()
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     GITLOG=sp.check_output(['git','rev-parse','HEAD'])
     with open(CWD+'/config.log','a') as conflog:
         conflog.write("BEGIN NEW OUTPUT-------------\n")
         conflog.write(t+'\n')
-        conflog.write("current git commit:"+GITLOG+'\n')
+        conflog.write("current git commit:"+str(GITLOG)+'\n')
         fn=open(os.getcwd()+'/config.py','r')
         for line in fn:
             conflog.write(line)
         conflog.write("END OUTPUT-------------------\n")
     if len(GITLOG.split()) == 1:
-        print "current git commit:",GITLOG
+        print("current git commit:",GITLOG)
     os.chdir(CWD)
     ####set up 1ab
     OPTIONS = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
@@ -107,10 +107,10 @@ def main():
         elif JACKKNIFE == "NO":
             prefactor = (1.0)/((TRIALS-1.0)*(1.0*TRIALS))
         else:
-            print "***ERROR***"
-            print "JACKKNIFE value should be a string with value either"
-            print "YES or NO"
-            print "Please examine the config file."
+            print("***ERROR***")
+            print("JACKKNIFE value should be a string with value either")
+            print("YES or NO")
+            print("Please examine the config file.")
             sys.exit(1)
         err_fit_params = [sqrt(sum([(TRANSPOSE[i][j]-avg_fit_params[i])**2
                                     for j in range(len(
@@ -118,7 +118,7 @@ def main():
                           for i in range(len(TRANSPOSE))]
         printerr(avg_fit_params, err_fit_params)
         sys.exit(0)
-    print "END STDOUT OUTPUT"
+    print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
 if __name__ == "__main__":

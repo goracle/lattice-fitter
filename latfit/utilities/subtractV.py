@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import read_file as rf
-from traj_list import traj_list
+from . import read_file as rf
+from .traj_list import traj_list
 import os
 from os import listdir
 from os.path import isfile, join
@@ -20,8 +20,8 @@ def procV(filen):
         elif len(l)==2:
             ar.itemset(tsrc,complex(l[1]))
         else:
-            print "Not a disconnected or summed diagram.  exiting."
-            print "cause:",filen
+            print("Not a disconnected or summed diagram.  exiting.")
+            print("cause:",filen)
             exit(1)
     return ar
 
@@ -63,9 +63,9 @@ def AvgVdis():
                     continue
                 avg+=np.array(procV(fn2))
                 numt+=1
-            print "Number of configs to average over:",numt,"for outfile:",outfile
+            print("Number of configs to average over:",numt,"for outfile:",outfile)
             rf.write_vec_str(avg/numt,outfile)
-    print "Done writing Vdis averaged over trajectories."
+    print("Done writing Vdis averaged over trajectories.")
     return
 
 def main():

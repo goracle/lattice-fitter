@@ -25,10 +25,10 @@ def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=False):
     args = filename 1, filename 2
     returns an array indexed by tsrc, tdis
     """
-    print "combining", finSrc, finSnk
+    print("combining", finSrc, finSnk)
     Lt = find_dim(finSrc)
     if Lt != find_dim(finSnk):
-        print "Error: dimension mismatch in combine operation."
+        print("Error: dimension mismatch in combine operation.")
         exit(1)
     out = np.zeros(shape=(Lt,Lt),dtype=complex)
     src = build_arr(finSrc)
@@ -48,7 +48,7 @@ def main():
     elif args == 2:
         comb_dis(ar[1],ar[1])
     else:
-        print "wrong num of args.  need two files to combine"
+        print("wrong num of args.  need two files to combine")
         exit(1)
 
 if __name__ == "__main__":

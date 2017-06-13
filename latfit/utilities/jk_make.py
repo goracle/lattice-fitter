@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import read_file as rf
+from . import read_file as rf
 import os.path
 import numpy as np
 import linecache as lc
@@ -20,9 +20,9 @@ def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
         #(a2a since this was written to do all-to-all analyses)
         outfile=outdir+"/a2a."+"jkblk.t"+str(time)
         if(os.path.isfile(outfile)):
-            print "Block exists.  Skipping."
+            print("Block exists.  Skipping.")
             continue
-        print "Writing block:",time,"for diagram:",basename
+        print("Writing block:",time,"for diagram:",basename)
         #trajectory to exclude this line (loop over lines in the block)
         for excl in trajl:
             avg = 0
@@ -39,17 +39,17 @@ def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
                 if l != 3 and l != 2: #if not summed over tsrc, for example
                     readf = "traj_"+str(t)+"_"+basename
                     if not line:
-                        print "Error: file '"+readf+"' not found"
+                        print("Error: file '"+readf+"' not found")
                     else:
-                        print "Error:  Bad filename:'"+readf+"', needs 2 or 3 columns:"
-                        print "only",l,"columns found."
+                        print("Error:  Bad filename:'"+readf+"', needs 2 or 3 columns:")
+                        print("only",l,"columns found.")
                     exit(1)
                 elif l == 2:
                     avg += complex(line[1])/n
                 elif l == 3:
                     avg += complex(float(line[1]),float(line[2]))/n
                 else:
-                    print "How did you get here?"
+                    print("How did you get here?")
                     exit(1)
             #line to write in the block file
             outl=complex('{0:.{1}f}'.format(avg,sys.float_info.dig))
@@ -69,7 +69,7 @@ def allTp(base,trajl):
     for t in trajl:
         test="traj_"+str(t)+"_"+base
         if not (os.path.isfile(test)):
-            print "Missing:",test
+            print("Missing:",test)
             return False
     return True
 
@@ -82,7 +82,7 @@ def tlist(base,onlyfiles=None):
         if baseN(fn2) == base:
             trajl.add(rf.traj(fn2))
     trajl-=set([None])
-    print "Done getting trajectory list. N trajectories = "+str(len(trajl))
+    print("Done getting trajectory list. N trajectories = "+str(len(trajl)))
     return trajl
 
 def main():
@@ -98,14 +98,14 @@ def main():
     for fn in onlyfiles:
         trajl.add(rf.traj(fn))
     trajl-=set([None])
-    print "Done getting max trajectory list. N trajectories = "+str(len(trajl))
+    print("Done getting max trajectory list. N trajectories = "+str(len(trajl)))
     for fn in onlyfiles:
         #get the basename of the file (non-trajectory information)
         base=baseN(fn)
         #continue if bad filename base (skip files that aren't data files), or if we've already hit this file's base
         if not base or base in baseList:
             continue
-        print "Processing base:", base
+        print("Processing base:", base)
         baseList.add(base)
 
         #output directory for the jackknife blocks for this basename
@@ -118,12 +118,12 @@ def main():
 
         #does base exist in all trajectories?
         if not allTp(base, trajl):
-            print "Missing file(s); Attempting to write blocks with remainder."
+            print("Missing file(s); Attempting to write blocks with remainder.")
             write_blocks(tlist(base,onlyfiles),outdir,base,numlines)
         else:
             write_blocks(trajl,outdir,base,numlines)
 
-    print "Done writing jackknife blocks."
+    print("Done writing jackknife blocks.")
     exit(0)
     
 if __name__ == "__main__":

@@ -9,10 +9,10 @@ def sym_check(ccov):
             if ccov[ciii][cjjj] == ccov[cjjj][ciii]:
                 pass
             else:
-                print "***ERROR***"
-                print "The provided covariance matrix is not symmetric."
-                print "Good fits need a symmetric covariance matrix."
-                print "Please provide different data."
-                print "Exiting."
-                print sys.exit(1)
+                print("***ERROR***")
+                print("The provided covariance matrix is not symmetric.")
+                print("Good fits need a symmetric covariance matrix.")
+                print("Please provide different data.")
+                print("Exiting.")
+                print(sys.exit(1))
     return 0
