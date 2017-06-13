@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 #to get files
 import sys
@@ -9,7 +9,7 @@ from os.path import isfile, join
 import numpy as np
 from math import sqrt
 import re
-from .combine import comb_dis
+from combine import comb_dis
 import warnings
 
 #get polarizations from file

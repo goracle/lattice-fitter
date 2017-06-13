@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from . import read_file as rf
 from .traj_list import traj_list

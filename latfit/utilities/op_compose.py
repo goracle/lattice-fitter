@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from math import sqrt
 from .sum_blks import sum_blks
