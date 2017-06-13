@@ -50,6 +50,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     else:
         eff_str=''
     if UNCORR:
+        print "Doing uncorrelated fit."
         uncorr_str='_uncorr_fit'
     else:
         uncorr_str=''
