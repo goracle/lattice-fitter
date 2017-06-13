@@ -12,8 +12,8 @@ EIGCUT = 10**(-20)
 #FIT = False
 FIT = True
 ##Uncorrelated fit? True or False
-UNCORR = True
-#UNCORR = False
+#UNCORR = True
+UNCORR = False
 
 ##Plot Effective Mass? True or False
 EFF_MASS = False
