@@ -313,7 +313,7 @@ def pchange(filename,pnew):
         for i in range(n):
             fn=fn.replace("temp"+str(i),ptostr(pnew[i]),1)
     else:
-        print("Error: bad filename for momentum replacement specified.")    
+        print("Error: bad filename for momentum replacement specified.")
         exit(1)
     fn=re.sub("TEMPsafe",str(t),fn)
     return fn
