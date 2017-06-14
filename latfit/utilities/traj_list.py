@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from . import read_file as rf
+import read_file as rf
 import os.path
 import numpy as np
 import linecache as lc

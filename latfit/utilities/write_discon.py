@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-from . import read_file as rf
+import read_file as rf
 import os.path
-from .traj_list import traj_list
+from traj_list import traj_list
 import numpy as np
-from . import combine as cb
+import combine as cb
 from os import listdir
 from os.path import isfile, join
 import re
@@ -127,7 +127,8 @@ def main():
                     arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
                     lookup[dsrcSub+dsnkSub]=arrMinus
                 #arr = arrPlus - arrMinus
-                rf.write_arr(arrPlus - arrMinus,outfile)
+                #rf.write_arr(arrPlus - arrMinus,outfile)
+                rf.write_arr(arrPlus,outfile)
 
 #to test below this line
 #helper function; builds string corresponding to file

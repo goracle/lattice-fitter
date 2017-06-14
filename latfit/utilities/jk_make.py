@@ -98,7 +98,7 @@ def main():
     for fn in onlyfiles:
         trajl.add(rf.traj(fn))
     trajl-=set([None])
-    #trajl=sorted([int(a) for a in trajl])
+    trajl=sorted([int(a) for a in trajl])
     print("Done getting max trajectory list. N trajectories = "+str(len(trajl)))
     for fn in onlyfiles:
         #get the basename of the file (non-trajectory information)

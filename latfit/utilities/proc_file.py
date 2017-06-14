@@ -1,13 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-from . import read_file as rf
+import read_file as rf
 import re
-from . import jk_make as jk
+import jk_make as jk
 import os.path
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-from . import subtractV as subV
+import subtractV as subV
 import gc
 
 #gets the array from the file

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-from . import read_file as rf
-from .traj_list import traj_list
+import read_file as rf
+from traj_list import traj_list
 import os
 from os import listdir
 from os.path import isfile, join
