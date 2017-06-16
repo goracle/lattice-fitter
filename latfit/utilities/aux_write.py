@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
-from . import read_file as rf
+import read_file as rf
 import re
 import os.path
+from os import listdir
+from os.path import isfile,join
 
 #gets the array from the file, but keeps the values as strings
 def proc_file_str(filename):
@@ -95,10 +97,10 @@ def aux_fn(filename):
     else:
         "Error: nmom does not equal 1,2, or 3."
         exit(1)
-    return call_aux(filename,"aux_diagrams2/"+outfile)
+    return call_aux(filename,"aux_diagrams/"+outfile)
 
 def main():
-    d='aux_diagrams2'
+    d='aux_diagrams'
     if not os.path.isdir(d):
         os.makedirs(d)
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
