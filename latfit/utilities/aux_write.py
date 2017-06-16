@@ -5,6 +5,7 @@ import re
 import os.path
 from os import listdir
 from os.path import isfile,join
+import numpy as np
 
 #gets the array from the file, but keeps the values as strings
 def proc_file_str(filename):
