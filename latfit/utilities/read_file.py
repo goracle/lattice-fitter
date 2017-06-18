@@ -25,6 +25,7 @@ def pol(filename):
 
 #get trajectory from file
 def traj(filename):
+    filename=str(filename)
     m = re.search('traj_([B0-9]+)_[A-Za-z]{1}',filename)
     if m:
         return m.group(1)
