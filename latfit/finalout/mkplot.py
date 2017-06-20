@@ -21,6 +21,7 @@ from latfit.config import AUTO_FIT
 from latfit.config import EFF_MASS
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
+from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
 from matplotlib import rcParams
 import matplotlib.patches as patches
@@ -47,6 +48,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         eff_str='_eff_mass'
         if EFF_MASS_METHOD == 1:
             eff_str+='_meth1'
+            print("C=",C)
     else:
         eff_str=''
     if UNCORR:
@@ -93,6 +95,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             redchisq=result_min.fun/dof
             print("chi^2 reduced = ", redchisq)
 
+    if NO_PLOT: return 0
     with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+'.pdf') as pdf:
         plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:

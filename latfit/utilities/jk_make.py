@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/pypy
 
 import read_file as rf
 import os.path
@@ -12,6 +12,7 @@ import re
 
 #write jackknife blocks for this basename
 def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
+    basename2='_'+basename
     #number of trajectories - 1 (to avg over)
     n = len(trajl)-1
     #loop over lines in the base, each gives a separate jk block of trajs
@@ -34,25 +35,25 @@ def write_blocks(trajl,outdir,basename,Lt, FixNorm = False, Isospin = 0):
                 #readf = "traj_"+str(t)+"_"+basename
                 #grab current file's line corresponding to the block index,
                 #block index is called time
-                line = lc.getline("traj_"+str(t)+"_"+basename, time+1).split()
+                line = lc.getline("traj_"+str(t)+basename2, time+1).split()
                 l = len(line)
-                if l != 3 and l != 2: #if not summed over tsrc, for example
-                    readf = "traj_"+str(t)+"_"+basename
+                if l == 2:
+                    avg += complex(line[1])
+                elif l == 3:
+                    avg += complex(float(line[1]),float(line[2]))
+                elif l != 3 and l != 2: #if not summed over tsrc, for example
+                    readf = "traj_"+str(t)+basename2
                     if not line:
                         print("Error: file '"+readf+"' not found")
                     else:
                         print("Error:  Bad filename:'"+readf+"', needs 2 or 3 columns:")
                         print("only",l,"columns found.")
                     exit(1)
-                elif l == 2:
-                    avg += complex(line[1])/n
-                elif l == 3:
-                    avg += complex(float(line[1]),float(line[2]))/n
                 else:
                     print("How did you get here?")
                     exit(1)
             #line to write in the block file
-            outl=complex('{0:.{1}f}'.format(avg,sys.float_info.dig))
+            outl=complex('{0:.{1}f}'.format(avg/n,sys.float_info.dig))
             outl = str(outl.real)+" "+str(outl.imag)+"\n"
             with open(outfile, "a") as myfile:
                myfile.write(outl)
