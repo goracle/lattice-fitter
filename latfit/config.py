@@ -23,6 +23,11 @@ UNCORR = False
 EFF_MASS = False
 #EFF_MASS = True
 
+#solve the generalized eigenvalue problem (GEVP)
+GEVP=True
+#GEVP=False
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
@@ -89,6 +94,13 @@ def fit_func_exp(ctime, trial_params):
     """
     #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
     return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
+def fit_func_exp_long(ctime, trial_params):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See procargs(argv))
+    """
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
+    #return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
+
     #other test function
     #return trial_params[0]+ctime*(trial_params[1]/(
     #        trial_params[2]+ctime)+fsum([trial_params[ci]/(
@@ -97,7 +109,14 @@ def fit_func_exp(ctime, trial_params):
 
 def fit_func(ctime,trial_params):
     #return trial_params[0]
-    return np.array([fit_func_exp(ctime,trial_params)])
+    try:
+        l=len(ctime)
+    except:
+        return np.array([fit_func_exp(ctime,trial_params)])
+    if l == 2:
+        return np.array([fit_func_exp(ctime[0],trial_params),fit_func_exp_long(ctime[1],trial_params)])
+    else:
+        return None
 
 C=0*5.05447626030778e8 #additive constant added to effective mass functions
 if EFF_MASS:

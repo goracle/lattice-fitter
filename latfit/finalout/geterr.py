@@ -25,19 +25,22 @@ def geterr(result_min, covinv, coords):
         #compute the gradient and hessian of the fit function
         def g(x):
             return np.array([fit_func(coords[i][0],x) for i in range(len(coords))])
+        print(coords[0][0])
+        print(result_min.x)
+        print(fit_func(coords[0][0],result_min.x))
         #fhess=nd.Gradient(nd.Gradient(g))(result_min.x)
         #TODO: allow for this to be entered by hand.
         grad=nd.Gradient(g)(result_min.x)
 
         #compute analytically hessian of chi^2 with respect to fit parameters
         if l_params!=1:
-            #use numeric second deriv of fit fit func.  also unstable (and often wrong)
+            #use numeric second deriv of fit fit func.  also unstable (and often wrong) and out of date
             #Hess=[[2*fsum(np.dot(fhess[i][a][b]*covinv[i][j],(g(result_min.x)[j]-coords[j][1]))+np.dot(grad[i][a]*covinv[i][j],grad[j][b]) for i in range(l_coords) for j in range(l_coords)) for b in range(l_params)] for a in range(l_params)]
-            Hess=[[2*fsum(np.dot(grad[i][a]*covinv[i][j],grad[j][b]) for i in range(l_coords) for j in range(l_coords)) for b in range(l_params)] for a in range(l_params)]
+            Hess=[[2*fsum(np.dot(np.dot(grad[i][a],covinv[i][j]),grad[j][b]) for i in range(l_coords) for j in range(l_coords)) for b in range(l_params)] for a in range(l_params)]
         else:
             #see above about instability of fit func hessian.  this else block is for one parameter fits.
             #Hess=[[2*fsum(np.dot(fhess[i]*covinv[i][j],(g(result_min.x)[j]-coords[j][1]))+np.dot(grad[i]*covinv[i][j],grad[j]) for i in range(l_coords) for j in range(l_coords))]]
-            Hess=[[2*fsum(np.dot(grad[i]*covinv[i][j],grad[j]) for i in range(l_coords) for j in range(l_coords))]]
+            Hess=[[2*fsum(np.dot(np.dot(grad[i],covinv[i][j]),grad[j]) for i in range(l_coords) for j in range(l_coords))]]
 
         #compute hessian inverse of chi^2
         try:

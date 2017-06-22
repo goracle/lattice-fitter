@@ -1,15 +1,18 @@
 import sys
 import os
-from numpy.linalg import inv,det
+from numpy.linalg import inv,det,tensorinv
+from numpy import swapaxes,eye
 
 #import global variables
 from latfit.config import EIGCUT
 from latfit.config import METHOD
 from latfit.config import FIT
+from latfit.config import GEVP
 #package modules
 from latfit.procargs import procargs
 from latfit.extract.errcheck.inputexists import inputexists
 from latfit.extract.extract import extract
+from latfit.extract.gevp import gevp_extract
 from latfit.makemin.DOFerrchk import DOFerrchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
@@ -20,20 +23,34 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     inputexists(INPUT)
 
     ####process the file(s)
-    COORDS, COV = extract(INPUT, XMIN, XMAX, XSTEP)
-    #print COORDS
+    if GEVP:
+        COORDS, COV = gevp_extract(XMIN,XMAX,XSTEP)
+    else:
+        COORDS, COV = extract(INPUT, XMIN, XMAX, XSTEP)
+    #print(COORDS)
 
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     if FIT:
         try:
-            COVINV = inv(COV)
+            dimops=len(COV[0][0])
+        except:
+            dimops=1
+        try:
+            if dimops==1:
+                print("yo")
+                COVINV = inv(COV)
+            else:
+                #swap axes, take inverse, swap back
+                COVINV = swapaxes(tensorinv(swapaxes(COV,1,2)),1,2)
         except:
             print("Covariance matrix is singular.")
             print("Check to make sure plot range does not contain a mirror image.")
             #print "determinant:",det(COV)
-            sys.exit(1)
+            #sys.exit(1)
+    COVINV=eye(len(COORDS)*dimops)
+    COVINV.shape=(len(COORDS),len(COORDS),dimops,dimops)
     print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
