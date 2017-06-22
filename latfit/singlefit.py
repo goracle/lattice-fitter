@@ -18,6 +18,25 @@ from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
 from numpy import sqrt
 
+def maptomat(COV,dimops=1):
+    if dimops==1:
+        return COV
+    else:
+        Lt=len(COV)
+        RETCOV=np.zeros((dimops*Lt,dimops*Lt))
+        for i in range(Lt):
+            for j in range(Lt):
+                for a in range(dimops):
+                    for b in range(dimops):
+                        try:
+                            RETCOV[i*dimops+a][j*dimops+b]=COV[i][a][j][b]
+                        except:
+                            print("***ERROR***")
+                            print("Dimension mismatch in mapping covariance tensor to matrix.")
+                            print("Make sure time indices (i,j) and operator indices (a,b) are like COV[i][a][j][b].")
+                            sys.exit(1)
+        return RETCOV
+
 def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #test to see if file/folder exists
     inputexists(INPUT)
@@ -39,7 +58,6 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
             dimops=1
         try:
             if dimops==1:
-                print("yo")
                 COVINV = inv(COV)
             else:
                 #swap axes, take inverse, swap back
@@ -47,10 +65,21 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         except:
             print("Covariance matrix is singular.")
             print("Check to make sure plot range does not contain a mirror image.")
+            RETCOV=maptomat(COV,dimops)
+            if dimops>1:
+                try:
+                    COVINV=inv(RETCOV)
+                except:
+                    print("Regular matrix inversion also failed")
+                    count=0
+                    for i in RETCOV:
+                        print("row",count,"=",RETCOV[i])
+                        print("column",count,"=",np.transpose(RETCOV)[i])
+                        count+=1
             #print "determinant:",det(COV)
-            #sys.exit(1)
-    COVINV=eye(len(COORDS)*dimops)
-    COVINV.shape=(len(COORDS),len(COORDS),dimops,dimops)
+            sys.exit(1)
+    #COVINV=eye(len(COORDS)*dimops)
+    #COVINV.shape=(len(COORDS),len(COORDS),dimops,dimops)
     print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
