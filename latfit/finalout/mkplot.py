@@ -23,6 +23,7 @@ from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
 from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
+from latfit.config import GEVP
 from matplotlib import rcParams
 import matplotlib.patches as patches
 rcParams.update({'figure.autolayout': True})
@@ -97,7 +98,15 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
 
     if NO_PLOT: return 0
     with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+'.pdf') as pdf:
-        plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
+        dimops=len(fit_func(XCOORD[0],result_min.x))
+        if dimops!=1:
+            lcoord=len(XCOORD)
+            for curve_num in range(dimops):
+                YCURVE=np.array([YCOORD[i][curve_num] for i in range(lcoord)])
+                YERR=np.array([ER2[i][curve_num][curve_num] for i in range(lcoord)])
+                plt.errorbar(XCOORD, YCURVE, yerr=YERR, linestyle='None',ms=3.75,marker='o')
+        else:
+            plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine than the original data points (to show smoothness)
             step_size = abs((XCOORD[len(XCOORD)-1]-XCOORD[0]))/FINE/(len(XCOORD)-1)
@@ -114,6 +123,17 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                 ax = plt.gca()
                 #gca,gcf=getcurrentaxes getcurrentfigure
                 fig = plt.gcf()
+                if GEVP:
+                    for i in range(dimops):
+                        ax.add_patch((
+                            plt.Rectangle(#(11.0, 0.24514532441),3,.001,
+                                (XCOORD[0]-1, result_min.x[i]-param_err[i]),   # (x,y)
+                                XCOORD[len(XCOORD)-1]-XCOORD[0]+2, # width
+                                2*param_err[i],          # height
+                                fill=True,color='k',alpha=0.5,zorder=1000,figure=fig,
+                                #transform=fig.transFigure
+                            )))
+                else:
                 ax.add_patch((
                     plt.Rectangle(#(11.0, 0.24514532441),3,.001,
                         (XCOORD[0]-1, result_min.x[0]-param_err[0]),   # (x,y)
@@ -124,12 +144,17 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                     )))
 
             #annotate plot with fitted energy
-            if len(result_min.x) > 1:
-                estring=str(result_min.x[1])+"+/-"+str(param_err[1])
+            if GEVP:
+                for i,minE in enumerate(result_min.x):
+                    estring=str(minE)+"+/-"+str(param_err[i])
+                    plt.annotate("Energy["+str(i)+"]="+estring,xy=(0.05,0.95-i*.05),xycoords='axes fraction')
             else:
-                #for an effective mass plot
-                estring=str(result_min.x[0])+"+/-"+str(param_err[0])
-            plt.annotate("Energy="+estring,xy=(0.05,0.95),xycoords='axes fraction')
+                if len(result_min.x) > 1:
+                    estring=str(result_min.x[1])+"+/-"+str(param_err[1])
+                else:
+                    #for an effective mass plot
+                    estring=str(result_min.x[0])+"+/-"+str(param_err[0])
+                plt.annotate("Energy="+estring,xy=(0.05,0.95),xycoords='axes fraction')
 
             #if the fit is good, also annotate with reduced chi^2
             if result_min.status == 0:
@@ -139,7 +164,10 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                     else:
                         plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
             if UNCORR:
-                plt.text(XCOORD[3], YCOORD[2],"Uncorrelated fit.")
+                if dimops>1:
+                    plt.annotate("Uncorrelated fit.", xy=(0.05,0.10),xycoords='axes fraction')
+                else:
+                    plt.text(XCOORD[3], YCOORD[2],"Uncorrelated fit.")
 
         #todo: figure out a way to generally assign limits to plot
         #plt.xlim([XCOORD[0], XMAX+1])
