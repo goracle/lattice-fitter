@@ -2,12 +2,15 @@ import sys
 import os
 from numpy.linalg import inv,det,tensorinv
 from numpy import swapaxes,eye
+from collections import namedtuple
 
 #import global variables
 from latfit.config import EIGCUT
 from latfit.config import METHOD
 from latfit.config import FIT
 from latfit.config import GEVP
+from latfit.config import START_PARAMS
+from latfit.mathfun import chi_sq
 #package modules
 from latfit.procargs import procargs
 from latfit.extract.errcheck.inputexists import inputexists
@@ -46,7 +49,10 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     if JACKKNIFE_FIT:
         pass
     else:
-        COORDS, COV = extract(INPUT, XMIN, XMAX, XSTEP)
+        if GEVP:
+            COORDS, COV = gevp_extract(XMIN,XMAX,XSTEP)
+        else:
+            COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
     #print(COORDS)
 
     ###we have data 6ab
@@ -92,17 +98,45 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         #BFGS uses first derivatives of function
         #comment out options{...}, bounds for L-BFGS-B
         ###start minimizer
-        RESULT_MIN = mkmin(COVINV, COORDS)
-
-        ####compute errors 8ab, print results (not needed for plot part)
-        PARAM_ERR = geterr(RESULT_MIN, COVINV, COORDS)
-        #ERR_A0 = sqrt(2*HINV[0][0])
-        #ERR_ENERGY = sqrt(2*HINV[1][1])
-        #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-        #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
-
-        ###plot result
-        #plot the function and the data, with error bars
+        RESULT_MIN=namedtuple('min',['x','fun','status'])
+        RESULT_MIN.status=0
+        if JACKKNIFE == 'Yes':
+            num_configs=len(REUSE[XMIN])
+            prefactor=(num_configs-1.0)/(1.0*num_configs)
+            avg_min=np.zeros(len(START_PARAMS))
+            avg_err=np.zeros(len(START_PARAMS))
+            if FROZEN:
+                covinv_jack=COVINV
+            for config_num in range(num_configs):
+                for time in np.arange(XMIN,XMAX+1,XSTEP):
+                    coords_jack[time][1]=REUSE[time][config_num]
+                if DOUBLE_JACKKNIFE:
+                    for config_num_dj in range(num_configs):
+                        if config_num_dj == config_num:
+                            continue
+                        pass
+                result_min_jack = mkmin(covinv_jack, coords_jack)
+                if result_min.status !=0:
+                    RESULT_MIN.status=result_min_jack.status
+                avg_min += result_min_jack.x
+                avg_err += geterr(result_min_jack, covinv_jack, coords_jack)
+            RESULT_MIN.x=avg_min/num_configs
+            PARAM_ERR=prefactor*avg_err/num_configs
+            RESULT_MIN.fun=chi_sq(RESULT_MIN.x,COVINV,COORDS)
+        elif DOUBLE_JACKKNIFE:
+            print("***ERROR***")
+            print("Double jackknife not implemented yet.")
+            sys.exit(1)
+        else:
+            RESULT_MIN = mkmin(COVINV, COORDS)
+            ####compute errors 8ab, print results (not needed for plot part)
+            PARAM_ERR = geterr(RESULT_MIN, COVINV, COORDS)
+            #ERR_A0 = sqrt(2*HINV[0][0])
+            #ERR_ENERGY = sqrt(2*HINV[1][1])
+            #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
+            #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
+            ###plot result
+            #plot the function and the data, with error bars
         return RESULT_MIN, PARAM_ERR, COORDS, COV
     else:
         return COORDS, COV
