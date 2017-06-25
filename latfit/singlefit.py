@@ -78,12 +78,14 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                     COVINV=inv(RETCOV)
                 except:
                     print("Regular matrix inversion also failed")
-                    count=0
-                    for i in RETCOV:
-                        print("row",count,"=",RETCOV[i])
-                        print("column",count,"=",np.transpose(RETCOV)[i])
-                        count+=1
-            #print "determinant:",det(COV)
+                    print("rows:")
+                    for i in range(len(RETCOV)):
+                        print(np.array2string(RETCOV[i],separator=', '))
+                    print("columns:")
+                    for i in range(len(RETCOV)):
+                        print(np.array2string(np.transpose(RETCOV)[i],separator=', '))
+                    print(np.array2string(RETCOV,separator=', '))
+                    print("det=",det(RETCOV))
             sys.exit(1)
     #COVINV=eye(len(COORDS)*dimops)
     #COVINV.shape=(len(COORDS),len(COORDS),dimops,dimops)
