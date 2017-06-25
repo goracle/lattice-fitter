@@ -135,47 +135,49 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
         print("***ERROR***")
         print("Missing time adjacent file(s).")
         sys.exit(1)
-    if not EFF_MASS:
-        i2file = pifile
-        i3file = pifile
-        j2file = pjfile
-        j3file = pjfile
-    else:
+    if EFF_MASS:
         ifiles=[pifile]
         ifiles.extend([extra_pairs[i][0] for i in range(2)])
         jfiles=[pjfile]
         jfiles.extend([extra_pairs[i][1] for i in range(2)])
     #within true cond. of test, we assume number of columns is one
-    avgone = 0
-    count = 0
     #get the average of the lines in the ith file
-    for linei,linei2,linei3 in zip(open(pifile),open(i2file),open(i3file)):
-        if EFF_MASS:
-            if not linei+linei2+linei3 in reuse:
-                reuse[linei+linei2+linei3]=proc_MEFF(linei,linei2,linei3,ifiles)
-            if reuse[linei+linei2+linei3]==0:
-                reuse[linei+linei2+linei3] = START_PARAMS[1]
-            avgone += reuse[linei+linei2+linei3]
+    try:
+        count=len(reuse['i'])
+    except:
+        reuse['i']=np.array([])
+        if not EFF_MASS:
+            for linei in open(pifile):
+                reuse['i']=np.append(resue['i'],proc_line(linei,pifile))
         else:
-            avgone += proc_line(linei,pifile)
-        count += 1
-    avgone /= count
+            for linei,linei2,linei3 in zip(open(pifile),open(i2file),open(i3file)):
+                if not linei+linei2+linei3 in reuse:
+                    reuse[linei+linei2+linei3]=proc_MEFF(linei,linei2,linei3,ifiles)
+                if reuse[linei+linei2+linei3]==0:
+                    reuse[linei+linei2+linei3] = START_PARAMS[1]
+                reuse['i']=np.append(resue['i'],reuse[linei+linei2+linei3])
+        count=len(reuse['i'])
+    avgone=np.sum(reuse['i'])/count
     #uncorrelated fit
     if UNCORR == True and pjfile != pifile:
         return rets(coord=avgone, covar=0)
-    avgtwo = 0
-    counttest = 0
     #get the average of the lines in the jth file
-    for linej,linej2,linej3 in zip(open(pjfile),open(j2file),open(j3file)):
-        if EFF_MASS:
-            if not linej+linej2+linej3 in reuse:
-                reuse[linej+linej2+linej3]=proc_MEFF(linej,linej2,linej3,jfiles)
-            if reuse[linej+linej2+linej3]==0:
-                reuse[linej+linej2+linej3] = START_PARAMS[1]
-            avgtwo += reuse[linej+linej2+linej3]
+    try:
+        counttest=len(reuse['j'])
+    except:
+        reuse['j']=np.array([])
+        if not EFF_MASS:
+            for linej in open(pjfile):
+                reuse['j'] += np.append(resue['j'],proc_line(linej,pjfile))
         else:
-            avgtwo += proc_line(linej,pjfile)
-        counttest += 1
+            for linej,linej2,linej3 in zip(open(pjfile),open(j2file),open(j3file)):
+                if not linej+linej2+linej3 in reuse:
+                    reuse[linej+linej2+linej3]=proc_MEFF(linej,linej2,linej3,jfiles)
+                if reuse[linej+linej2+linej3]==0:
+                    reuse[linej+linej2+linej3] = START_PARAMS[1]
+                reuse['j']=np.append(resue['j'],reuse[linej+linej2+linej3])
+        counttest=len(reuse['j'])
+    avgtwo=np.sum(reuse['j'])/counttest
     #check to make sure i,j have the same number of lines
     if not counttest == count:
         print("***ERROR***")
@@ -187,10 +189,8 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
         if proc_file.CONFIGSENT != 0:
             print("Number of configurations to average over:",count)
             proc_file.CONFIGSENT = 0
-    avgtwo /= count
-    #cov[I][indexj]=return value for folder-style
-    #applying jackknife correction of (count-1)^2
     if JACKKNIFE == 'YES':
+        #applying jackknife correction of (count-1)^2
         warn("Applying jackknife correction to cov. matrix.")
         prefactor = (count-1.0)/(1.0*count)
     elif JACKKNIFE == 'NO':
@@ -199,9 +199,6 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
         print("Edit the config file.")
         print("Invalid value of parameter JACKKNIFE")
         sys.exit(1)
-    if EFF_MASS:
-        coventry = prefactor*fsum([(reuse[li1+li2+li3]-avgone)*(reuse[lj1+lj2+lj3]-avgtwo) for li1, li2, li3, lj1, lj2, lj3 in zip(open(pifile), open(i2file), open(i3file), open(pjfile), open(j2file), open(j3file))])
-    else:
-        coventry = prefactor*fsum([(proc_line(l1,pifile)-avgone)*(proc_line(l2,pjfile)-avgtwo) for l1, l2 in zip(open(pifile), open(pjfile))])
+    coventry = prefactor*fsum([(reuse['i'][l1]-avgone)*(reuse['j'][l2]-avgtwo) for l1, l2 in zip(reuse['i'],reuse['j'])])
     return rets(coord=avgone, covar=coventry)
 proc_file.CONFIGSENT = object()

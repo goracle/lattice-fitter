@@ -29,8 +29,8 @@ def extract(INPUT, xmin, xmax, xstep):
     """
     #result is returned as a named tuple: RESRET
     RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
-    #reuse results
-    reuse={}
+    #REUSE results
+    REUSE={}
     if os.path.isfile(INPUT):
         RESRET = simple_proc_file(INPUT, xmin, xmax, EIGCUT)
         COV = RESRET.covar
@@ -54,40 +54,52 @@ def extract(INPUT, xmin, xmax, xstep):
         #the ith point with the jth value
         COORDS = [[[0] for _ in range(2)] for _ in range(dimcov)]
         for time in np.arange(xmin, xmax+1, xstep):
+            if time in REUSE:
+                REUSE['i']=REUSE[time]
+            else:
+                REUSE.pop('i')
+                if time!=xmin:
+                    print("***ERROR***")
+                    print("Time slice:",time,", is not being stored for some reason")
+                    sys.exit(1)
             COORDS[i][0] = time
+            #extract file
+            IFILE = proc_folder(INPUT, time)
+            #check for errors
+            IFILE = pre_proc_file(IFILE,INPUT)
+            if EFF_MASS:
+                ti2 = time+xstep
+                ti3 = time+2*xstep
+                I2FILE = proc_folder(INPUT, ti2)
+                I3FILE = proc_folder(INPUT, ti3)
+                I2FILE = pre_proc_file(I2FILE,INPUT)
+                I3FILE = pre_proc_file(I3FILE,INPUT)
             j = 0
             for time2 in np.arange(xmin, xmax+1, xstep):
-                #extract file
-                IFILE = proc_folder(INPUT, time)
+                if time2 in REUSE:
+                    REUSE['j']=REUSE[time2]
+                else:
+                    REUSE.pop('j')
                 JFILE = proc_folder(INPUT, time2)
-                #check for errors
-                IFILE = pre_proc_file(IFILE,INPUT)
                 JFILE = pre_proc_file(JFILE,INPUT)
                 #if plotting effective mass
                 if EFF_MASS:
-                    ti2 = time+xstep
-                    ti3 = time+2*xstep
                     tj2 = time2+xstep
                     tj3 = time2+2*xstep
-                    #print time,ti2,ti3,time2,tj2,tj3
-                    I2FILE = proc_folder(INPUT, ti2)
-                    I3FILE = proc_folder(INPUT, ti3)
                     J2FILE = proc_folder(INPUT, tj2)
                     J3FILE = proc_folder(INPUT, tj3)
-                    I2FILE = pre_proc_file(I2FILE,INPUT)
-                    I3FILE = pre_proc_file(I3FILE,INPUT)
                     J2FILE = pre_proc_file(J2FILE,INPUT)
                     J3FILE = pre_proc_file(J3FILE,INPUT)
-                    #print IFILE,I2FILE,I3FILE,JFILE,J2FILE,J3FILE
                     RESRET = proc_file(IFILE, JFILE,
-                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)],reuse)
+                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)],reuse=REUSE)
                 else:
-                    RESRET = proc_file(IFILE, JFILE)
+                    RESRET = proc_file(IFILE, JFILE,reuse=REUSE)
                 #fill in the covariance matrix
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times
+                REUSE[time2]=REUSE['j']
                 if j == 0:
                     COORDS[i][1] = RESRET.coord
                 j += 1
             i += 1
-    return COORDS, COV
+    return COORDS, COV, REUSE
