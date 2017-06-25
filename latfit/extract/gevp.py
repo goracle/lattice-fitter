@@ -14,6 +14,7 @@ from latfit.extract.proc_file import proc_line
 
 from latfit.config import GEVP_DIRS
 from latfit.config import JACKKNIFE
+from latfit.config import UNCORR
 
 def gevp_extract(XMIN,XMAX,XSTEP):
     i = 0
@@ -37,18 +38,23 @@ def gevp_extract(XMIN,XMAX,XSTEP):
         #extract files
         IFILES = [[proc_folder(GEVP_DIRS[op1][op2],timei) for op1 in range(dimops)] for op2 in range(dimops)]
         IFILES2 = [[proc_folder(GEVP_DIRS[op1][op2],timei2) for op1 in range(dimops)] for op2 in range(dimops)]
+        IFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timei+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
         #check for errors
         IFILES = [[pre_proc_file(IFILES[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
         IFILES2 = [[pre_proc_file(IFILES2[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+        IFILES3 = [[pre_proc_file(IFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
         for timej in np.arange(XMIN, XMAX+1, XSTEP):
             timej2=ceil(float(timej)/2.0/XSTEP)*XSTEP if ceil(float(timej)/2.0)!=timej else max(floor(float(timej)/2.0/XSTEP)*XSTEP,XMIN)
+            TIME_ARR=[timei,timei2,timej,timej2,XSTEP]
             #extract files
             JFILES = [[proc_folder(GEVP_DIRS[op1][op2],timej) for op1 in range(dimops)] for op2 in range(dimops)]
             JFILES2 = [[proc_folder(GEVP_DIRS[op1][op2],timej2) for op1 in range(dimops)] for op2 in range(dimops)]
+            JFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timej+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
             #check for errors
             JFILES = [[pre_proc_file(JFILES[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
             JFILES2 = [[pre_proc_file(JFILES2[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
-            RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2)
+            JFILES3 = [[pre_proc_file(JFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+            RESRET = gevp_proc(IFILES,IFILES2,IFILES3,JFILES,JFILES2,JFILES3,TIME_ARR)
             COV[i][j] = RESRET.covar
             #only store coordinates once.  each file is read many times
             if j == 0:
@@ -57,7 +63,7 @@ def gevp_extract(XMIN,XMAX,XSTEP):
         i+=1
     return COORDS, COV
 
-def gevp_proc(IFILES,IFILES2,JFILES,JFILES2):
+def gevp_proc(IFILES,IFILES2,IFILES3,JFILES,JFILES2,JFILES3,TIME_ARR):
     rets = namedtuple('rets', ['coord', 'covar'])
     #find the averages
     num_configs=sum(1 for _ in open(IFILES[0][0]))
@@ -70,26 +76,61 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2):
     avgone=np.zeros(dimops)
     avgI=0
     avgJ=0
-    CI_LHS=np.zeros((dimops,dimops),dtype=complex)
-    CI_RHS=np.zeros((dimops,dimops),dtype=complex)
-    CJ_LHS=np.zeros((dimops,dimops),dtype=complex)
-    CJ_RHS=np.zeros((dimops,dimops),dtype=complex)
+    CI_LHS=np.zeros((dimops,dimops),dtype=float)
+    CI_RHS=np.zeros((dimops,dimops),dtype=float)
+    CJ_LHS=np.zeros((dimops,dimops),dtype=float)
+    CJ_RHS=np.zeros((dimops,dimops),dtype=float)
+
+    CJP_LHS=np.zeros((dimops,dimops),dtype=float)
+    CIP_LHS=np.zeros((dimops,dimops),dtype=float)
+
     eig_arr=np.zeros((num_configs),dtype=object)
+
     warn("Taking the real (first column).")
+
     for config in range(num_configs):
         for opa in range(dimops):
             for opb in range(dimops):
-                CI_LHS[opa][opb]=complex(getline(IFILES2[opa][opb],config+1).split()[0])
-                CI_RHS[opa][opb]=complex(getline(IFILES[opa][opb],config+1).split()[0])
-                CJ_LHS[opa][opb]=complex(getline(JFILES2[opa][opb],config+1).split()[0])
-                CJ_RHS[opa][opb]=complex(getline(JFILES[opa][opb],config+1).split()[0])
-        eigvalsI,eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-        eigvalsJ,eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-        avgI+=eigvalsI
-        avgJ+=eigvalsJ
-        eig_arr[config]=np.array([eigvalsI,eigvalsJ])
+                CI_LHS[opa][opb]=np.float128(getline(IFILES[opa][opb],config+1).split()[0])
+                CI_RHS[opa][opb]=np.float128(getline(IFILES2[opa][opb],config+1).split()[0])
+                CIP_LHS[opa][opb]=np.float128(getline(IFILES3[opa][opb],config+1).split()[0])
+                CJ_LHS[opa][opb]=np.float128(getline(JFILES[opa][opb],config+1).split()[0])
+                CJ_RHS[opa][opb]=np.float128(getline(JFILES2[opa][opb],config+1).split()[0])
+                CJP_LHS[opa][opb]=np.float128(getline(JFILES3[opa][opb],config+1).split()[0])
+        eigvalsI,eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,check_finite=False)
+        eigvalsIP,eigvecsIP=eig(CIP_LHS,CI_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+        eigvalsJ,eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
+        eigvalsJP,eigvecsJP=eig(CJP_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+        energiesI=np.log(eigvalsI)-np.log(eigvalsIP)
+        energiesJ=np.log(eigvalsJ)-np.log(eigvalsJP)
+        avgI+=energiesI
+        avgJ+=energiesJ
+        eig_arr[config]=np.array([energiesI,energiesJ])
     avgI/=num_configs
     avgJ/=num_configs
+    avgIR=np.zeros(dimops)
+    avgJR=np.zeros(dimops)
+    for i in range(dimops):
+        if avgI[i].imag != 0 or avgJ[i].imag!=0:
+            print("***ERROR***")
+            print("GEVP has negative eigenvalues.")
+            sys.exit(1)
+        #else:
+        #    avgIR[i]=avgI[i].real
+        #    avgJR[i]=avgJ[i].real
     coventry=np.zeros((dimops,dimops))
-    coventry=np.sum([np.outer((avgI-eig_arr[k][0]),(avgJ-eig_arr[k][1])) for k in range(num_configs)])
+    if UNCORR:
+        if TIME_ARR[0]==TIME_ARR[2]:
+            coventry=np.sum([np.outer((avgI-eig_arr[k][0]),(avgJ-eig_arr[k][1])) for k in range(num_configs)],axis=0)
+            for a in range(dimops):
+                for b in range(dimops):
+                    if a!=b:
+                        coventry[a][b]=0
+    else:
+        coventry=np.sum([np.outer((avgI-eig_arr[k][0]),(avgJ-eig_arr[k][1])) for k in range(num_configs)],axis=0)
+    #print(TIME_ARR)
+    #print(avgI,eig_arr[0][0])
+    #print(avgJ,eig_arr[0][0])
+    #print(coventry)
+    #sys.exit(0)
     return rets(coord=avgI, covar=prefactor*coventry)

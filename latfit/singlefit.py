@@ -17,6 +17,7 @@ from latfit.makemin.DOFerrchk import DOFerrchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
 from numpy import sqrt
+import numpy as np
 
 def maptomat(COV,dimops=1):
     if dimops==1:
@@ -29,7 +30,7 @@ def maptomat(COV,dimops=1):
                 for a in range(dimops):
                     for b in range(dimops):
                         try:
-                            RETCOV[i*dimops+a][j*dimops+b]=COV[i][a][j][b]
+                            RETCOV[i*dimops+a][j*dimops+b]=swapaxes(COV,1,2)[i][a][j][b]
                         except:
                             print("***ERROR***")
                             print("Dimension mismatch in mapping covariance tensor to matrix.")
@@ -42,8 +43,8 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     inputexists(INPUT)
 
     ####process the file(s)
-    if GEVP:
-        COORDS, COV = gevp_extract(XMIN,XMAX,XSTEP)
+    if JACKKNIFE_FIT:
+        pass
     else:
         COORDS, COV = extract(INPUT, XMIN, XMAX, XSTEP)
     #print(COORDS)
