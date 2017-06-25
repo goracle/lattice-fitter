@@ -1,4 +1,4 @@
-#!/usr/bin/pypy
+#!/usr/bin/python3
 
 import read_file as rf
 import os.path
