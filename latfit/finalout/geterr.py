@@ -12,7 +12,7 @@ from latfit.mathfun.chi_sq import chi_sq
 
 #compute errors in fit parameters
 def geterr(result_min, covinv, coords):
-    param_err = ["err" for i in range(len(result_min.x))]
+    param_err = np.array(["err" for i in range(len(result_min.x))])
     if result_min.fun > 0 and result_min.status == 0:
         #Numeric Hessian of chi^2 is unstable.  Use at own risk.
         #HFUNC = lambda xrray: chi_sq(xrray, covinv, coords)
@@ -54,9 +54,9 @@ def geterr(result_min, covinv, coords):
 
         #compute error matrix; errors in fit parameters are +/- of the diagonal elements
         if l_params!=1:
-            delta=[[4*fsum(HINV[a][c]*grad[i][c]*covinv[i][j]*grad[j][d]*HINV[d][b] for i in range(l_coords) for j in range(l_coords) for c in range(l_params) for d in range(l_params)) for b in range(l_params)] for a in range(l_params)]
+            delta=[[4*fsum(HINV[a][c]*np.dot(np.dot(grad[i][c],covinv[i][j]),grad[j][d])*HINV[d][b] for i in range(l_coords) for j in range(l_coords) for c in range(l_params) for d in range(l_params)) for b in range(l_params)] for a in range(l_params)]
         else:
-            delta=[[4*fsum(HINV[a][c]*grad[i]*covinv[i][j]*grad[j]*HINV[d][b] for i in range(l_coords) for j in range(l_coords) for c in range(l_params) for d in range(l_params)) for b in range(l_params)] for a in range(l_params)]
+            delta=[[4*fsum(HINV[a][c]*np.dot(np.dot(grad[i],covinv[i][j]),grad[j])*HINV[d][b] for i in range(l_coords) for j in range(l_coords) for c in range(l_params) for d in range(l_params)) for b in range(l_params)] for a in range(l_params)]
 
         #take diagonal elements to be errors in fit parameters, return these
         for i in range(l_params):
