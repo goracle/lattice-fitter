@@ -1,59 +1,44 @@
 import sys
 import os
 from numpy.linalg import inv,det,tensorinv
-from numpy import swapaxes,eye
+from numpy import swapaxes,eye,sqrt
 from collections import namedtuple
+import numpy as np
 
-#import global variables
-from latfit.config import EIGCUT
-from latfit.config import METHOD
-from latfit.config import FIT
-from latfit.config import GEVP
-from latfit.config import START_PARAMS
-from latfit.mathfun import chi_sq
 #package modules
 from latfit.procargs import procargs
 from latfit.extract.errcheck.inputexists import inputexists
+from latfit.checks.maptomat import maptomat
 from latfit.extract.extract import extract
-from latfit.extract.gevp import gevp_extract
+from latfit.extract.gevp_extract import gevp_extract
 from latfit.makemin.DOFerrchk import DOFerrchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
-from numpy import sqrt
-import numpy as np
 
-def maptomat(COV,dimops=1):
-    if dimops==1:
-        return COV
-    else:
-        Lt=len(COV)
-        RETCOV=np.zeros((dimops*Lt,dimops*Lt))
-        for i in range(Lt):
-            for j in range(Lt):
-                for a in range(dimops):
-                    for b in range(dimops):
-                        try:
-                            RETCOV[i*dimops+a][j*dimops+b]=swapaxes(COV,1,2)[i][a][j][b]
-                        except:
-                            print("***ERROR***")
-                            print("Dimension mismatch in mapping covariance tensor to matrix.")
-                            print("Make sure time indices (i,j) and operator indices (a,b) are like COV[i][a][j][b].")
-                            sys.exit(1)
-        return RETCOV
+#import global variables
+from latfit.config import FIT
+from latfit.config import JACKKNIFE
+from latfit.config import GEVP
+from latfit.config import START_PARAMS
+from latfit.mathfun import chi_sq
 
 def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #test to see if file/folder exists
     inputexists(INPUT)
 
     ####process the file(s)
-    if JACKKNIFE_FIT:
-        pass
+    if GEVP:
+        COORDS, COV, REUSE = gevp_extract(XMIN,XMAX,XSTEP)
     else:
-        if GEVP:
-            COORDS, COV = gevp_extract(XMIN,XMAX,XSTEP)
-        else:
-            COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
-    #print(COORDS)
+        COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
+    num_configs=len(REUSE[XMIN])
+    if JACKKNIFE == 'YES':
+        #applying jackknife correction of (count-1)^2
+        warn("Applying jackknife correction to cov. matrix.")
+        prefactor = (num_configs-1.0)/(1.0*num_configs)
+    elif JACKKNIFE == 'NO':
+        prefactor = (1.0)/((num_configs-1.0)*(1.0*num_configs))
+    COV*=prefactor
 
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
@@ -87,8 +72,6 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                     print(np.array2string(RETCOV,separator=', '))
                     print("det=",det(RETCOV))
             sys.exit(1)
-    #COVINV=eye(len(COORDS)*dimops)
-    #COVINV.shape=(len(COORDS),len(COORDS),dimops,dimops)
     print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
 
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
@@ -97,14 +80,11 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     DOFerrchk(len(COV))
 
     if FIT:
-        #BFGS uses first derivatives of function
         #comment out options{...}, bounds for L-BFGS-B
         ###start minimizer
         RESULT_MIN=namedtuple('min',['x','fun','status'])
         RESULT_MIN.status=0
         if JACKKNIFE == 'Yes':
-            num_configs=len(REUSE[XMIN])
-            prefactor=(num_configs-1.0)/(1.0*num_configs)
             avg_min=np.zeros(len(START_PARAMS))
             avg_err=np.zeros(len(START_PARAMS))
             if FROZEN:
