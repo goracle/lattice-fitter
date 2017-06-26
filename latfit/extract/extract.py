@@ -1,26 +1,14 @@
-
 from collections import namedtuple
 import numpy as np
 import os
 
+from latfit.extract.simple_proc_file import simple_proc_file
+from latfit.extract.pre_proc_file import pre_proc_file
+from latfit.extract.proc_file import proc_file
+from latfit.extract.proc_folder import proc_folder
+
 from latfit.config import EIGCUT
 from latfit.config import EFF_MASS
-from latfit.extract.simple_proc_file import simple_proc_file
-from latfit.extract.proc_folder import proc_folder
-from latfit.extract.proc_file import proc_file
-
-def pre_proc_file(IFILE,INPUT):
-    IFILE = INPUT + "/" + IFILE
-    try:
-        TRIAL = open(IFILE, "r")
-    except TypeError:
-        STR1 = "Either domain is invalid,"
-        print(STR1, "or folder is invalid.")
-        print("Double check contents of folder.")
-        print("Offending file(s):")
-        print(IFILE)
-        sys.exit(1)
-    return IFILE
 
 def extract(INPUT, xmin, xmax, xstep):
     """Get covariance matrix, coordinates.
@@ -49,45 +37,46 @@ def extract(INPUT, xmin, xmax, xstep):
         #dimcov is dimensions of the covariance matrix
         dimcov = int((xmax-xmin)/xstep+1)
         #cov is the covariance matrix
-        COV = [[[0] for _ in range(dimcov)] for _ in range(dimcov)]
+        COV = np.zeros((dimcov,dimcov))
         #COORDS are the coordinates to be plotted.
         #the ith point with the jth value
-        COORDS = [[[0] for _ in range(2)] for _ in range(dimcov)]
-        for time in np.arange(xmin, xmax+1, xstep):
-            if time in REUSE:
-                REUSE['i']=REUSE[time]
+        COORDS = np.zeros((dimcov,2))
+        for timei in np.arange(xmin, xmax+1, xstep):
+            if timei in REUSE:
+                REUSE['i']=REUSE[timei]
             else:
                 REUSE.pop('i')
-                if time!=xmin:
+                if timei!=xmin:
+                    #delete me if working!
                     print("***ERROR***")
-                    print("Time slice:",time,", is not being stored for some reason")
+                    print("Time slice:",timei,", is not being stored for some reason")
                     sys.exit(1)
-            COORDS[i][0] = time
+            COORDS[i][0] = timei
             #extract file
-            IFILE = proc_folder(INPUT, time)
+            IFILE = proc_folder(INPUT, timei)
             #check for errors
             IFILE = pre_proc_file(IFILE,INPUT)
             if EFF_MASS:
-                ti2 = time+xstep
-                ti3 = time+2*xstep
-                I2FILE = proc_folder(INPUT, ti2)
-                I3FILE = proc_folder(INPUT, ti3)
+                timei2 = timei+xstep
+                timei3 = timei+2*xstep
+                I2FILE = proc_folder(INPUT, timei2)
+                I3FILE = proc_folder(INPUT, timei3)
                 I2FILE = pre_proc_file(I2FILE,INPUT)
                 I3FILE = pre_proc_file(I3FILE,INPUT)
             j = 0
-            for time2 in np.arange(xmin, xmax+1, xstep):
-                if time2 in REUSE:
-                    REUSE['j']=REUSE[time2]
+            for timej in np.arange(xmin, xmax+1, xstep):
+                if timej in REUSE:
+                    REUSE['j']=REUSE[timej]
                 else:
                     REUSE.pop('j')
-                JFILE = proc_folder(INPUT, time2)
+                JFILE = proc_folder(INPUT, timej)
                 JFILE = pre_proc_file(JFILE,INPUT)
                 #if plotting effective mass
                 if EFF_MASS:
-                    tj2 = time2+xstep
-                    tj3 = time2+2*xstep
-                    J2FILE = proc_folder(INPUT, tj2)
-                    J3FILE = proc_folder(INPUT, tj3)
+                    timej2 = timej+xstep
+                    timej3 = timej+2*xstep
+                    J2FILE = proc_folder(INPUT, timej2)
+                    J3FILE = proc_folder(INPUT, timej3)
                     J2FILE = pre_proc_file(J2FILE,INPUT)
                     J3FILE = pre_proc_file(J3FILE,INPUT)
                     RESRET = proc_file(IFILE, JFILE,
@@ -97,7 +86,7 @@ def extract(INPUT, xmin, xmax, xstep):
                 #fill in the covariance matrix
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times
-                REUSE[time2]=REUSE['j']
+                REUSE[timej]=REUSE['j']
                 if j == 0:
                     COORDS[i][1] = RESRET.coord
                 j += 1

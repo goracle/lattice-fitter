@@ -1,116 +1,15 @@
-
 from collections import namedtuple
 from math import fsum
-
 from warnings import warn
-import re
-from math import log
-from math import acosh
 import sys
 import numpy as np
-from sympy import nsolve,cosh
-from sympy.abc import x,y,z
 
-from latfit.config import JACKKNIFE
+from latfit.mathfun.proc_MEFF import proc_MEFF
+from latfit.extract.proc_line import proc_line
+
 from latfit.config import UNCORR
 from latfit.config import EFF_MASS
-from latfit.config import C
-from latfit.config import EFF_MASS_METHOD
-from latfit.config import FIT
 from latfit.config import START_PARAMS
-from latfit.config import fit_func_3pt_sym
-
-#take the real and test for error
-def proc_line(line,pifile="BLANK"):
-    l = line.split()
-    if len(l) == 2:
-        warn("Taking the real (first column).")
-        return float(l[0])
-    elif len(l) == 1:
-        return np.float128(line)
-    else:
-        print("***ERROR***")
-        print("Unknown block format.")
-        print("File=", pifile)
-        sys.exit(1)
-
-#almost solve a cosh, analytic
-if EFF_MASS_METHOD == 1:
-    def proc_MEFF(line1,line2,line3,files):
-        fn1=files[0]
-        fn2=files[1]
-        fn3=files[2]
-        C1 = proc_line(line1,fn1)
-        C2 = proc_line(line2,fn2)
-        C3 = proc_line(line3,fn3)
-        arg = (C1+C3-2*C)/2/(C2-C)
-        if arg < 1:
-            print("***ERROR***")
-            print("argument to acosh in effective mass calc is less than 1:",arg)
-            print(fn1)
-            print(fn2)
-            print(fn3)
-            sys.exit(1)
-        return acosh(arg)
-
-#numerically solve a system of three transcendental equations
-elif EFF_MASS_METHOD == 2:
-    def proc_MEFF(line1,line2,line3,files):
-        fn1=files[0]
-        fn2=files[1]
-        fn3=files[2]
-        try:
-            t1=float(re.search('t([0-9]+)',fn1).group(1))
-            t2=float(re.search('t([0-9]+)',fn2).group(1))
-            t3=float(re.search('t([0-9]+)',fn3).group(1))
-        except:
-            print("Bad blocks:",fn1,fn2,fn3)
-            print("must have t[0-9] in name, e.g. blk.t3")
-            sys.exit(1)
-        C1 = proc_line(line1,fn1)
-        C2 = proc_line(line2,fn2)
-        C3 = proc_line(line3,fn3)
-        try:
-            sol = nsolve((fit_func_3pt_sym(t1,[x,y,z])-C1, fit_func_3pt_sym(t2,[x,y,z])-C2,fit_func_3pt_sym(t3,[x,y,z])-C3), (x,y,z), START_PARAMS)
-        except ValueError:
-            print("Solution not within tolerance.")
-            print(C1,fn1)
-            print(C2,fn2)
-            print(C3,fn3)
-            return 0
-        if sol[1] < 0:
-            print("***ERROR***")
-            print("negative energy found:",sol[1])
-            print(fn1)
-            print(fn2)
-            print(fn3)
-            sys.exit(1)
-        print("Found solution:",sol[1])
-        return sol[1]
-#fit to a function with one free parameter
-#[ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
-elif EFF_MASS_METHOD == 3 and FIT:
-    def proc_MEFF(line1,line2,line3,files):
-        fn1=files[0]
-        fn2=files[1]
-        fn3=files[2]
-        C1 = proc_line(line1,fn1)
-        C2 = proc_line(line2,fn2)
-        C3 = proc_line(line3,fn3)
-        arg = (C2-C1)/(C3-C2)
-        if arg < 1:
-            print("***ERROR***")
-            print("argument to acosh in effective mass calc is less than 1:",arg)
-            print(fn1)
-            print(fn2)
-            print(fn3)
-            sys.exit(1)
-        #print 'solution =',sol
-        return log(arg)
-else:
-    print("Bad method for finding the effective mass specified:", EFF_MASS_METHOD, "with fit set to", FIT)
-    sys.exit(1)
-
 
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={}):
@@ -157,9 +56,9 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
                     reuse[linei+linei2+linei3] = START_PARAMS[1]
                 reuse['i']=np.append(resue['i'],reuse[linei+linei2+linei3])
         count=len(reuse['i'])
-    avgone=np.sum(reuse['i'])/count
+    avgone=np.sum(reuse['i'],axis=0)/count
     #uncorrelated fit
-    if UNCORR == True and pjfile != pifile:
+    if UNCORR and pjfile != pifile:
         return rets(coord=avgone, covar=0)
     #get the average of the lines in the jth file
     try:
@@ -177,7 +76,7 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
                     reuse[linej+linej2+linej3] = START_PARAMS[1]
                 reuse['j']=np.append(resue['j'],reuse[linej+linej2+linej3])
         counttest=len(reuse['j'])
-    avgtwo=np.sum(reuse['j'])/counttest
+    avgtwo=np.sum(reuse['j'],axis=0)/counttest
     #check to make sure i,j have the same number of lines
     if not counttest == count:
         print("***ERROR***")
@@ -189,16 +88,6 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(None,None),(None,None)],reuse={
         if proc_file.CONFIGSENT != 0:
             print("Number of configurations to average over:",count)
             proc_file.CONFIGSENT = 0
-    if JACKKNIFE == 'YES':
-        #applying jackknife correction of (count-1)^2
-        warn("Applying jackknife correction to cov. matrix.")
-        prefactor = (count-1.0)/(1.0*count)
-    elif JACKKNIFE == 'NO':
-        prefactor = (1.0)/((count-1.0)*(1.0*count))
-    else:
-        print("Edit the config file.")
-        print("Invalid value of parameter JACKKNIFE")
-        sys.exit(1)
-    coventry = prefactor*fsum([(reuse['i'][l1]-avgone)*(reuse['j'][l2]-avgtwo) for l1, l2 in zip(reuse['i'],reuse['j'])])
+    coventry = fsum([(reuse['i'][l1]-avgone)*(reuse['j'][l2]-avgtwo) for l1, l2 in zip(reuse['i'],reuse['j'])])
     return rets(coord=avgone, covar=coventry)
 proc_file.CONFIGSENT = object()
