@@ -9,10 +9,8 @@ usage note(2): MAKE SURE as well that you correct the other "magic"
 parts of the graph routine
 """
 
-#install pip2
-#probably needs to be refactored for python3...
-#then sudo pip install numdifftools
-
+#install pip3
+#then sudo pip3 install numdifftools
 
 from collections import namedtuple
 import sys
