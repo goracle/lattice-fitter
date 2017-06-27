@@ -10,6 +10,10 @@ NO_PLOT = False
 ##Do a fit at all?
 #FIT = False
 FIT = True
+##Jackknife fit?
+#JACKKNIFE_FIT=''
+JACKKNIFE_FIT='DOUBLE'
+#JACKKNIFE_FIT='FROZEN'
 
 ##Uncorrelated fit? True or False
 #UNCORR = True

@@ -1,7 +1,8 @@
 import sys
 import os
 from numpy.linalg import inv,det,tensorinv
-from numpy import swapaxes,eye,sqrt
+from numpy import eye,sqrt
+from numpy import swapaxes as swap
 from collections import namedtuple
 import numpy as np
 
@@ -32,6 +33,8 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     else:
         COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
     num_configs=len(REUSE[XMIN])
+    #do this so REUSE goes from REUSE[time][config] to more convenient REUSE[config][time]
+    REUSE=swap(REUSE,0,1)
     if JACKKNIFE == 'YES':
         #applying jackknife correction of (count-1)^2
         warn("Applying jackknife correction to cov. matrix.")
@@ -39,6 +42,11 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     elif JACKKNIFE == 'NO':
         prefactor = (1.0)/((num_configs-1.0)*(1.0*num_configs))
     COV*=prefactor
+
+    #error handling for Degrees of Freedom <= 0 (it should be > 0).
+    #number of points plotted = len(COV).
+    #DOF = len(COV) - START_PARAMS
+    DOFerrchk(len(COV))
 
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
@@ -53,7 +61,7 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 COVINV = inv(COV)
             else:
                 #swap axes, take inverse, swap back
-                COVINV = swapaxes(tensorinv(swapaxes(COV,1,2)),1,2)
+                COVINV = swap(tensorinv(swap(COV,1,2)),1,2)
         except:
             print("Covariance matrix is singular.")
             print("Check to make sure plot range does not contain a mirror image.")
@@ -74,41 +82,44 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
             sys.exit(1)
     print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
 
-    #error handling for Degrees of Freedom <= 0 (it should be > 0).
-    #number of points plotted = len(COV).
-    #DOF = len(COV) - START_PARAMS
-    DOFerrchk(len(COV))
-
     if FIT:
         #comment out options{...}, bounds for L-BFGS-B
         ###start minimizer
         RESULT_MIN=namedtuple('min',['x','fun','status'])
         RESULT_MIN.status=0
-        if JACKKNIFE == 'Yes':
-            avg_min=np.zeros(len(START_PARAMS))
-            avg_err=np.zeros(len(START_PARAMS))
-            if FROZEN:
+        if JACKKNIFE_FIT:
+            #one fit for every jackknife block (N fits for N configs)
+            time_range=np.arange(XMIN,XMAX+1,XSTEP)
+            coords_jack=np.copy(COORDS)
+            min_arr=np.zeros((num_configs,dimops))
+            if JACKKNIFE_FIT='FROZEN':
                 covinv_jack=COVINV
+            elif JACKKNIFE_FIT='DOUBLE':
+                REUSE_INV=inverse_jk(REUSE,time_range,num_configs)
+            else:
+                print("***ERROR***")
+                print("Bad jackknife_fit value specified.")
+                sys.exit(1)
             for config_num in range(num_configs):
-                for time in np.arange(XMIN,XMAX+1,XSTEP):
-                    coords_jack[time][1]=REUSE[time][config_num]
+                coords_jack[:,1]=REUSE[config_num]
                 if DOUBLE_JACKKNIFE:
-                    for config_num_dj in range(num_configs):
-                        if config_num_dj == config_num:
-                            continue
-                        pass
+                    cov_factor=np.delete(REUSE_INV,config_num,0)-REUSE[config_num]
+                    try:
+                        if dimops==1:
+                            covinv_jack=inv(np.einsum('ai,aj->ij',cov_factor,cov_factor))
+                        else:
+                            covinv_jack=swap(tensorinv(np.einsum('aim,ajn->imjn',temp,temp)),1,2)
+                    except:
+                        print("Covariance matrix is singular in jackknife fit.")
+                        print("Failing config_num=",config_num)
+                        sys.exit(1)
                 result_min_jack = mkmin(covinv_jack, coords_jack)
                 if result_min.status !=0:
                     RESULT_MIN.status=result_min_jack.status
-                avg_min += result_min_jack.x
-                avg_err += geterr(result_min_jack, covinv_jack, coords_jack)
-            RESULT_MIN.x=avg_min/num_configs
-            PARAM_ERR=prefactor*avg_err/num_configs
+                min_arr[config_num]=result_min_jack.x
+            RESULT_MIN.x=np.mean(min_arr,axis=0)
+            PARAM_ERR=sqrt(prefactor*np.sum((min_arr-RESULT_MIN.x)**2))
             RESULT_MIN.fun=chi_sq(RESULT_MIN.x,COVINV,COORDS)
-        elif DOUBLE_JACKKNIFE:
-            print("***ERROR***")
-            print("Double jackknife not implemented yet.")
-            sys.exit(1)
         else:
             RESULT_MIN = mkmin(COVINV, COORDS)
             ####compute errors 8ab, print results (not needed for plot part)
