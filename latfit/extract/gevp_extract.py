@@ -37,15 +37,18 @@ def gevp_extract(XMIN,XMAX,XSTEP):
         timei2=ceil(float(timei)/2.0/XSTEP)*XSTEP if ceil(float(timei)/2.0)!=timei else max(floor(float(timei)/2.0/XSTEP)*XSTEP,XMIN)
         #set the times coordinate
         COORDS[i][0] = timei
-        j=0
         #extract files
         IFILES = [[proc_folder(GEVP_DIRS[op1][op2],timei) for op1 in range(dimops)] for op2 in range(dimops)]
         IFILES2 = [[proc_folder(GEVP_DIRS[op1][op2],timei2) for op1 in range(dimops)] for op2 in range(dimops)]
-        IFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timei+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
         #check for errors
         IFILES = [[pre_proc_file(IFILES[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
         IFILES2 = [[pre_proc_file(IFILES2[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
-        IFILES3 = [[pre_proc_file(IFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+        if EFF_MASS:
+            IFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timei+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
+            IFILES4 = [[proc_folder(GEVP_DIRS[op1][op2],timei+2*XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
+            IFILES3 = [[pre_proc_file(IFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+            IFILES4 = [[pre_proc_file(IFILES4[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+        j=0
         for timej in np.arange(XMIN, XMAX+1, XSTEP):
             if timej in REUSE:
                 REUSE['j']=REUSE[timej]
@@ -53,15 +56,18 @@ def gevp_extract(XMIN,XMAX,XSTEP):
                 REUSE.pop('j')
             timej2=ceil(float(timej)/2.0/XSTEP)*XSTEP if ceil(float(timej)/2.0)!=timej else max(floor(float(timej)/2.0/XSTEP)*XSTEP,XMIN)
             TIME_ARR=[timei,timei2,timej,timej2,XSTEP]
-            #extract files
             JFILES = [[proc_folder(GEVP_DIRS[op1][op2],timej) for op1 in range(dimops)] for op2 in range(dimops)]
-            JFILES2 = [[proc_folder(GEVP_DIRS[op1][op2],timej2) for op1 in range(dimops)] for op2 in range(dimops)]
-            JFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timej+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
-            #check for errors
             JFILES = [[pre_proc_file(JFILES[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+            JFILES2 = [[proc_folder(GEVP_DIRS[op1][op2],timej2) for op1 in range(dimops)] for op2 in range(dimops)]
             JFILES2 = [[pre_proc_file(JFILES2[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
-            JFILES3 = [[pre_proc_file(JFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
-            RESRET = gevp_proc(IFILES,IFILES2,IFILES3,JFILES,JFILES2,JFILES3,TIME_ARR,reuse=REUSE)
+            if EFF_MASS:
+                JFILES3 = [[proc_folder(GEVP_DIRS[op1][op2],timej+XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
+                JFILES4 = [[proc_folder(GEVP_DIRS[op1][op2],timej+2*XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
+                JFILES3 = [[pre_proc_file(JFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+                JFILES4 = [[pre_proc_file(JFILES4[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
+                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,[(I3FILES,J3FILES),(I4FILES,J4FILES)],TIME_ARR,reuse=REUSE)
+            else:
+                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,reuse=REUSE)
             COV[i][j] = RESRET.covar
             #only store coordinates once.  each file is read many times
             if j == 0:
