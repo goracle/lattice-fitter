@@ -16,9 +16,9 @@ def extract(INPUT, xmin, xmax, xstep):
     folders.
     """
     #result is returned as a named tuple: RESRET
-    RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks'])
+    RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks','returnblk'])
     #REUSE results
-    REUSE={}
+    REUSE={xmin:0}
     if os.path.isfile(INPUT):
         RESRET = simple_proc_file(INPUT, xmin, xmax, EIGCUT)
         COV = RESRET.covar
@@ -57,10 +57,8 @@ def extract(INPUT, xmin, xmax, xstep):
             #check for errors
             IFILE = pre_proc_file(IFILE,INPUT)
             if EFF_MASS:
-                timei2 = timei+xstep
-                timei3 = timei+2*xstep
-                I2FILE = proc_folder(INPUT, timei2)
-                I3FILE = proc_folder(INPUT, timei3)
+                I2FILE = proc_folder(INPUT, timei+xstep)
+                I3FILE = proc_folder(INPUT, timei+2*xstep)
                 I2FILE = pre_proc_file(I2FILE,INPUT)
                 I3FILE = pre_proc_file(I3FILE,INPUT)
             j = 0
@@ -73,10 +71,8 @@ def extract(INPUT, xmin, xmax, xstep):
                 JFILE = pre_proc_file(JFILE,INPUT)
                 #if plotting effective mass
                 if EFF_MASS:
-                    timej2 = timej+xstep
-                    timej3 = timej+2*xstep
-                    J2FILE = proc_folder(INPUT, timej2)
-                    J3FILE = proc_folder(INPUT, timej3)
+                    J2FILE = proc_folder(INPUT, timej+xstep)
+                    J3FILE = proc_folder(INPUT, timej+2*xstep)
                     J2FILE = pre_proc_file(J2FILE,INPUT)
                     J3FILE = pre_proc_file(J3FILE,INPUT)
                     RESRET = proc_file(IFILE, JFILE,
@@ -86,7 +82,7 @@ def extract(INPUT, xmin, xmax, xstep):
                 #fill in the covariance matrix
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times
-                REUSE[timej]=REUSE['j']
+                REUSE[timej]=RESRET.returnblk
                 if j == 0:
                     COORDS[i][1] = RESRET.coord
                 j += 1
