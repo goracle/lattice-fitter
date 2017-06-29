@@ -24,6 +24,7 @@ from latfit.config import C
 from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
+from latfit.config import JACKKNIFE_FIT
 from matplotlib import rcParams
 import matplotlib.patches as patches
 rcParams.update({'figure.autolayout': True})
@@ -104,7 +105,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             for curve_num in range(dimops):
                 YCURVE=np.array([YCOORD[i][curve_num] for i in range(lcoord)])
                 YERR=np.array([ER2[i][curve_num][curve_num] for i in range(lcoord)])
-                plt.errorbar(XCOORD, YCURVE, yerr=YERR, linestyle='None',ms=3.75,marker='o')
+                plt.errorbar(XCOORD, YCURVE, yerr=YERR, linestyle='None',ms=3.75,marker='o', label='Energy('+str(curve_num)+')')
         else:
             plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
@@ -145,6 +146,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
 
             #annotate plot with fitted energy
             if GEVP:
+                plt.legend(loc='upper right')
                 for i,minE in enumerate(result_min.x):
                     estring=str(minE)+"+/-"+str(param_err[i])
                     plt.annotate("Energy["+str(i)+"]="+estring,xy=(0.05,0.95-i*.05),xycoords='axes fraction')
@@ -179,10 +181,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                 jk_txt='Avg. fit, jackknife est. cov. matrix'
             else:
                 jk_txt=''
-            if dimops>1:
-                plt.annotate(jk_txt, xy=(0.05,0.20),xycoords='axes fraction')
-            else:
-                plt.text(XCOORD[3], YCOORD[2],jk_txt)
+            plt.annotate(jk_txt, xy=(0.05,0.15),xycoords='axes fraction')
 
         #add axes labels, title
         plt.title(title,**hfontT)
