@@ -47,49 +47,47 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reu
         reuse['i']=np.array([])
         if not EFF_MASS:
             for linei in open(pifile):
-                reuse['i']=np.append(resue['i'],proc_line(linei,pifile))
+                reuse['i']=np.append(reuse['i'],proc_line(linei,pifile))
         else:
             for linei,linei2,linei3 in zip(open(pifile),open(i2file),open(i3file)):
                 if not linei+linei2+linei3 in reuse:
                     reuse[linei+linei2+linei3]=proc_MEFF(linei,linei2,linei3,ifiles)
                 if reuse[linei+linei2+linei3]==0:
                     reuse[linei+linei2+linei3] = START_PARAMS[1]
-                reuse['i']=np.append(resue['i'],reuse[linei+linei2+linei3])
+                reuse['i']=np.append(reuse['i'],reuse[linei+linei2+linei3])
         count=len(reuse['i'])
     if proc_file.CONFIGSENT != 0:
         print("Number of configurations to average over:",count)
         proc_file.CONFIGSENT = 0
     avgone=np.mean(reuse['i'],axis=0)
     if pifile==pjfile:
-        retblk=reuse['i']
-        coventry = np.dot(reuse['i']-avgone,reuse['i']-avgone)
+        reuse['j']=reuse['i']
+    #get the average of the lines in the jth file
+    try:
+        counttest=len(reuse['j'])
+    except:
+        reuse['j']=np.array([])
+        if not EFF_MASS:
+            for linej in open(pjfile):
+                reuse['j'] = np.append(reuse['j'],proc_line(linej,pjfile))
+        else:
+            for linej,linej2,linej3 in zip(open(pjfile),open(j2file),open(j3file)):
+                if not linej+linej2+linej3 in reuse:
+                    reuse[linej+linej2+linej3]=proc_MEFF(linej,linej2,linej3,jfiles)
+                if reuse[linej+linej2+linej3]==0:
+                    reuse[linej+linej2+linej3] = START_PARAMS[1]
+                reuse['j']=np.append(reuse['j'],reuse[linej+linej2+linej3])
+        counttest=len(reuse['j'])
+    #check to make sure i,j have the same number of lines
+    if not counttest == count:
+        print("***ERROR***")
+        print("Number of rows in paired files doesn't match")
+        print(count, counttest)
+        print("Offending files:", pifile, "and", pjfile)
+        sys.exit(1)
+    if UNCORR and pifile!=pjfile:
+        coventry=0
     else:
-        if UNCORR:
-            return rets(coord=avgone, covar=0, returnblk=reuse['i'])
-        #get the average of the lines in the jth file
-        try:
-            counttest=len(reuse['j'])
-        except:
-            reuse['j']=np.array([])
-            if not EFF_MASS:
-                for linej in open(pjfile):
-                    reuse['j'] += np.append(resue['j'],proc_line(linej,pjfile))
-            else:
-                for linej,linej2,linej3 in zip(open(pjfile),open(j2file),open(j3file)):
-                    if not linej+linej2+linej3 in reuse:
-                        reuse[linej+linej2+linej3]=proc_MEFF(linej,linej2,linej3,jfiles)
-                    if reuse[linej+linej2+linej3]==0:
-                        reuse[linej+linej2+linej3] = START_PARAMS[1]
-                    reuse['j']=np.append(resue['j'],reuse[linej+linej2+linej3])
-            counttest=len(reuse['j'])
-        #check to make sure i,j have the same number of lines
-        if not counttest == count:
-            print("***ERROR***")
-            print("Number of rows in paired files doesn't match")
-            print(count, counttest)
-            print("Offending files:", pifile, "and", pjfile)
-            sys.exit(1)
-        retblk=reuse['j']
         coventry = np.dot(reuse['i']-avgone,reuse['j']-np.mean(reuse['j']))
-    return rets(coord=avgone, covar=coventry,returnblk=retblk)
+    return rets(coord=avgone, covar=coventry,returnblk=reuse['j'])
 proc_file.CONFIGSENT = object()

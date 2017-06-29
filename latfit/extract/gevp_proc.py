@@ -13,7 +13,7 @@ from latfit.mathfun.proc_MEFF import proc_MEFF
 from latfit.config import UNCORR
 
 CSENT = object()
-def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],TIME_ARR,reuse={}):
+def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reuse={}):
     #setup global values
     rets = namedtuple('rets', ['coord', 'covar', 'returnblk'])
     dimops=len(IFILES)
@@ -68,7 +68,7 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,extra_pairs=[(CSENT,CSENT),(CSENT,CS
     avgI=np.mean(reuse['i'],axis=0)
     if gevp_proc.CONFIGSENT != 0:
         print("Number of configurations to average over:",num_configs)
-        proc_file.CONFIGSENT = 0
+        gevp_proc.CONFIGSENT = 0
     for test in avgI:
         if test.imag != 0:
             print("***ERROR***")
@@ -76,44 +76,39 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,extra_pairs=[(CSENT,CSENT),(CSENT,CS
             sys.exit(1)
     if (IFILES==JFILES).all():
         retblk=reuse['i']
-        if UNCORR:
-            for a in range(dimops):
-                coventry[a][a]=sum([(avgI[a]-reuse['i'][k][a])*(avgI[a]-reuse['i'][k][a]) for k in range(num_configs)],axis=0)
-        else:
-            coventry=sum([np.outer((avgI-reuse['i'][k]),(avgI-reuse['i'][k])) for k in range(num_configs)],axis=0)
+    try:
+        if not num_configs==len(reuse['j']):
+            print("***ERROR***")
+            print("Number of configs not equal for i and j")
+            print("GEVP covariance matrix entry:",TIME_ARR)
+            sys.exit(1)
+    except:
+        reuse['j']=np.zeros((num_configs,dimops))
+        for config in range(num_configs):
+            for opa in range(dimops):
+                for opb in range(dimops):
+                    CJ_LHS[opa][opb]=proc_line(getline(JFILES[opa][opb],config+1),JFILES[opa][opb])
+                    CJ_RHS[opa][opb]=proc_line(getline(JFILES2[opa][opb],config+1),JFILES2[opa][opb])
+                    if EFF_MASS:
+                        CJP_LHS[opa][opb]=proc_line(getline(JFILES3[opa][opb],config+1),JFILES3[opa][opb])
+                        CJPP_LHS[opa][opb]=proc_line(getline(JFILES4[opa][opb],config+1),JFILES4[opa][opb])
+            if EFF_MASS:
+                eigvalsJ,eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
+                eigvalsJP,eigvecsJP=eig(CJP_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
+                eigvalsJPP,eigvecsJPP=eig(CJPP_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+                reuse['i'][config]=np.array([proc_MEFF(eigvalsJ[op],eigvalsJP[op],eigvalsJPP[op],jfiles_chk[op,:]) for op in range(dimops)])
+            else:
+                reuse['i'][config],eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+    avgJ=np.mean(reuse['j'],axis=0)
+    for test in avgJ:
+        if test.imag != 0:
+            print("***ERROR***")
+            print("GEVP has negative eigenvalues.")
+            sys.exit(1)
+    if UNCORR:
+        for a in range(dimops):
+            coventry[a][a]=sum([(avgI[a]-reuse['i'][k][a])*(avgI[a]-reuse['i'][k][a]) for k in range(num_configs)],axis=0)
     else:
-        if UNCORR:
-            return rets(coord=avgI, covar=coventry,returnblk=reuse['i'])
-        try:
-            if not num_configs==len(reuse['j']):
-                print("***ERROR***")
-                print("Number of configs not equal for i and j")
-                print("GEVP covariance matrix entry:",TIME_ARR)
-                sys.exit(1)
-        except:
-            reuse['j']=np.zeros((num_configs,dimops))
-            for config in range(num_configs):
-                for opa in range(dimops):
-                    for opb in range(dimops):
-                        CJ_LHS[opa][opb]=proc_line(getline(JFILES[opa][opb],config+1),JFILES[opa][opb])
-                        CJ_RHS[opa][opb]=proc_line(getline(JFILES2[opa][opb],config+1),JFILES2[opa][opb])
-                        if EFF_MASS:
-                            CJP_LHS[opa][opb]=proc_line(getline(JFILES3[opa][opb],config+1),JFILES3[opa][opb])
-                            CJPP_LHS[opa][opb]=proc_line(getline(JFILES4[opa][opb],config+1),JFILES4[opa][opb])
-                if EFF_MASS:
-                    eigvalsJ,eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
-                    eigvalsJP,eigvecsJP=eig(CJP_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
-                    eigvalsJPP,eigvecsJPP=eig(CJPP_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-                    reuse['i'][config]=np.array([proc_MEFF(eigvalsJ[op],eigvalsJP[op],eigvalsJPP[op],jfiles_chk[op,:]) for op in range(dimops)])
-                else:
-                    reuse['i'][config],eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-        avgJ=np.mean(reuse['j'],axis=0)
-        for test in avgJ:
-            if test.imag != 0:
-                print("***ERROR***")
-                print("GEVP has negative eigenvalues.")
-                sys.exit(1)
-        retblk=reuse['j']
         coventry=sum([np.outer((avgI-reuse['i'][k]),(avgJ-reuse['j'][k])) for k in range(num_configs)],axis=0)
-    return rets(coord=avgI, covar=coventry,returnblk=retblk)
-proc_file.CONFIGSENT = object()
+    return rets(coord=avgI, covar=coventry,returnblk=reuse['j'])
+gevp_proc.CONFIGSENT = object()
