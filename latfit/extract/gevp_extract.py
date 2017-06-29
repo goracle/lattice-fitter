@@ -1,6 +1,7 @@
 from collections import namedtuple
 import numpy as np
 from numpy import ceil,floor
+import sys
 
 from latfit.extract.gevp_proc import gevp_proc
 from latfit.extract.pre_proc_file import pre_proc_file
@@ -69,6 +70,9 @@ def gevp_extract(XMIN,XMAX,XSTEP):
             else:
                 RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,reuse=REUSE)
             COV[i][j] = RESRET.covar
+            REUSE[timej]=RESRET.returnblk
+            if timei==timej:
+                REUSE['i']=REUSE[timej]
             #only store coordinates once.  each file is read many times
             if j == 0:
                 COORDS[i][1] = RESRET.coord

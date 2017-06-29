@@ -83,6 +83,8 @@ def extract(INPUT, xmin, xmax, xstep):
                 COV[i][j] = RESRET.covar
                 #only store coordinates once.  each file is read many times
                 REUSE[timej]=RESRET.returnblk
+                if timej==timei:
+                    REUSE['i']=REUSE[timej]
                 if j == 0:
                     COORDS[i][0] = timei
                     COORDS[i][1] = RESRET.coord
