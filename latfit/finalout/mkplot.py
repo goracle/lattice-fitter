@@ -134,14 +134,14 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                                 #transform=fig.transFigure
                             )))
                 else:
-                ax.add_patch((
-                    plt.Rectangle(#(11.0, 0.24514532441),3,.001,
-                        (XCOORD[0]-1, result_min.x[0]-param_err[0]),   # (x,y)
-                        XCOORD[len(XCOORD)-1]-XCOORD[0]+2, # width
-                        2*param_err[0],          # height
-                        fill=True,color='k',alpha=0.5,zorder=1000,figure=fig,
-                        #transform=fig.transFigure
-                    )))
+                    ax.add_patch((
+                        plt.Rectangle(#(11.0, 0.24514532441),3,.001,
+                            (XCOORD[0]-1, result_min.x[0]-param_err[0]),   # (x,y)
+                            XCOORD[len(XCOORD)-1]-XCOORD[0]+2, # width
+                            2*param_err[0],          # height
+                            fill=True,color='k',alpha=0.5,zorder=1000,figure=fig,
+                            #transform=fig.transFigure
+                        )))
 
             #annotate plot with fitted energy
             if GEVP:
