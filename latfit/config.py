@@ -16,8 +16,8 @@ FIT = True
 #JACKKNIFE_FIT='DOUBLE'
 JACKKNIFE_FIT='FROZEN'
 ##Uncorrelated fit? True or False
-UNCORR = True
-#UNCORR = False
+#UNCORR = True
+UNCORR = False
 ##Plot Effective Mass? True or False
 EFF_MASS = False
 #EFF_MASS = True
@@ -30,15 +30,14 @@ EFF_MASS = False
 EFF_MASS_METHOD = 1
 
 #solve the generalized eigenvalue problem (GEVP)
-#GEVP=True
-GEVP=False
+GEVP=True
+#GEVP=False
 GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
 
 ###starting values for fit parameters
 if GEVP:
+    EFF_MASS = True # full fits not currently supported
     START_PARAMS=[.5,.5]
-    #START_PARAMS = np.array([7.02356707e+11,   4.47338103e-01,   1.52757540e+11])
-    #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 else:
     START_PARAMS = [7.02356707e+11,   4.47338103e-01,   1.52757540e+11]
     #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
@@ -48,11 +47,11 @@ if EFF_MASS:
     if EFF_MASS_METHOD < 3:
         #additive constant added to effective mass functions
         SCALE=1e11
-        C=1.935*SCALE
+        C=1.935*SCALE*0
         #C=SCALE*0.01563
-        START_PARAMS = [.5]
+        START_PARAMS = [.5] if not GEVP else START_PARAMS
     elif EFF_MASS_METHOD == 3:
-        START_PARAMS = [.5]
+        START_PARAMS = [.5] if not GEVP else START_PARAMS
 
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
@@ -91,13 +90,13 @@ else:
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
         def fit_func(ctime,trial_params):
-            return np.array([trial_params[0]])
+            return np.array([trial_params[0]]) if not GEVP else np.array(trial_params)
     if EFF_MASS_METHOD == 2:
         pass
     if EFF_MASS_METHOD == 3:
         FIT = True
         def fit_func(ctime,trial_params):
-            return np.array([fit_func_1p(ctime,trial_params)])
+            return np.array([fit_func_1p(ctime,trial_params)]) if not GEVP else np.array(trial_params)
 
 ##RARELY EDIT BELOW
 ##bounds for fit parameters
