@@ -4,6 +4,7 @@ from numpy import arange,exp
 from sympy import exp as exps
 import sys
 
+###TYPE OF FIT
 ##plot anything at all?
 NO_PLOT = False
 #NO_PLOT = True
@@ -12,87 +13,46 @@ NO_PLOT = False
 FIT = True
 ##Jackknife fit?
 #JACKKNIFE_FIT=''
-JACKKNIFE_FIT='DOUBLE'
-#JACKKNIFE_FIT='FROZEN'
-
+#JACKKNIFE_FIT='DOUBLE'
+JACKKNIFE_FIT='FROZEN'
 ##Uncorrelated fit? True or False
-#UNCORR = True
-UNCORR = False
-
+UNCORR = True
+#UNCORR = False
 ##Plot Effective Mass? True or False
 EFF_MASS = False
 #EFF_MASS = True
 
+###METHODS/PARAMS
+
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
-EFF_MASS_METHOD = 3
+EFF_MASS_METHOD = 1
 
 #solve the generalized eigenvalue problem (GEVP)
-GEVP=True
-#GEVP=False
+#GEVP=True
+GEVP=False
 GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
 
-##starting values for fit parameters
+###starting values for fit parameters
 if GEVP:
     START_PARAMS=[.5,.5]
     #START_PARAMS = np.array([7.02356707e+11,   4.47338103e-01,   1.52757540e+11])
     #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 else:
-    START_PARAMS = [1.02356707e+11,   4.47338103e-01,   1.52757540e+09]
+    START_PARAMS = [7.02356707e+11,   4.47338103e-01,   1.52757540e+11]
     #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
 
 C=0
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
         #additive constant added to effective mass functions
-        #C=SCALE*1.934*0
-        C=SCALE*0.01563
+        SCALE=1e11
+        C=1.935*SCALE
+        #C=SCALE*0.01563
         START_PARAMS = [.5]
     elif EFF_MASS_METHOD == 3:
         START_PARAMS = [.5]
-
-###-------BEGIN POSSIBLY OBSOLETE------###
-
-##the boundary for when the fitter warns you if the eigenvalues
-##of your covariance are very small
-EIGCUT = 10**(-23)
-
-#if set to true, AUTO_FIT uses curve_fit from scipy.optimize to bootstrap START_PARAMS.  Bounds must still be set manually.
-#Bounds are used to find very rough start parameters: taken as the midpoints
-#Probably, you should set FIT to False to first find some reasonable bounds.
-#If ASSISTED_FIT is also True, use start_params to find the guess for the AUTO fitter
-#(for use with L-BFGS-B)
-
-AUTO_FIT=False
-#AUTO_FIT=False
-#ASSISTED_FIT=True
-ASSISTED_FIT=False
-
-##bounds for fit parameters
-#optional, scale parameter to set binds
-#scale=1e11
-SCALE=1e11
-##for use with L-BFGS-B
-BINDS = ((SCALE*.1,10*SCALE), (.4,.6),(.01*SCALE,.03*SCALE))
-#BINDS = ((scale*.01,30*scale), (0, .8),(.01*scale*0,scale))
-
-##boundary scale for zero'ing out a failing inverse Hessian
-##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
-CUTOFF = 10**(7)
-
-###-------END POSSIBLY OBSOLETE------###
-##fineness of scale to plot (higher is more fine)
-FINE = 1000.0
-##method used by the scipy.optimize.minimize
-##other internals will need to be edited if you change this
-##it's probably not a good idea
-METHOD = 'Nelder-Mead'
-#METHOD = 'L-BFGS-B'
-
-##jackknife correction? "YES" or "NO"
-##correction only happens if multiple files are processed
-JACKKNIFE = 'YES'
 
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
@@ -138,6 +98,50 @@ if EFF_MASS:
         FIT = True
         def fit_func(ctime,trial_params):
             return np.array([fit_func_1p(ctime,trial_params)])
+
+##RARELY EDIT BELOW
+##bounds for fit parameters
+#optional, scale parameter to set binds
+#scale=1e11
+SCALE=1e11
+##for use with L-BFGS-B
+BINDS = ((SCALE*.1,10*SCALE), (.4,.6),(.01*SCALE,.03*SCALE))
+#BINDS = ((scale*.01,30*scale), (0, .8),(.01*scale*0,scale))
+
+##fineness of scale to plot (higher is more fine)
+FINE = 1000.0
+##method used by the scipy.optimize.minimize
+##other internals will need to be edited if you change this
+##it's probably not a good idea
+METHOD = 'Nelder-Mead'
+#METHOD = 'L-BFGS-B'
+
+##jackknife correction? "YES" or "NO"
+##correction only happens if multiple files are processed
+JACKKNIFE = 'YES'
+
+###-------BEGIN POSSIBLY OBSOLETE------###
+
+##the boundary for when the fitter warns you if the eigenvalues
+##of your covariance are very small
+EIGCUT = 10**(-23)
+
+#if set to true, AUTO_FIT uses curve_fit from scipy.optimize to bootstrap START_PARAMS.  Bounds must still be set manually.
+#Bounds are used to find very rough start parameters: taken as the midpoints
+#Probably, you should set FIT to False to first find some reasonable bounds.
+#If ASSISTED_FIT is also True, use start_params to find the guess for the AUTO fitter
+#(for use with L-BFGS-B)
+
+AUTO_FIT=False
+#AUTO_FIT=False
+#ASSISTED_FIT=True
+ASSISTED_FIT=False
+
+##boundary scale for zero'ing out a failing inverse Hessian
+##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
+CUTOFF = 10**(7)
+
+###-------END POSSIBLY OBSOLETE------###
 
 ##DO NOT EDIT BELOW
 #for EFF_MASS_METHOD = 2
