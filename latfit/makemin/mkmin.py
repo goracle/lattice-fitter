@@ -10,14 +10,15 @@ from latfit.config import BINDS
 from latfit.config import AUTO_FIT
 from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
+from latfit.config import JACKKNIFE_FIT
 
 def mkmin(covinv, coords):
     """Minimization of chi^2 section of fitter.
     Return minimized result.
     """
-    x=[coords[i][0] for i in range(len(coords))]
-    y=[coords[i][1] for i in range(len(coords))]
     if AUTO_FIT:
+        x=[coords[i][0] for i in range(len(coords))]
+        y=[coords[i][1] for i in range(len(coords))]
         if ASSISTED_FIT:
             guess = START_PARAMS
         else:
@@ -45,11 +46,12 @@ def mkmin(covinv, coords):
         RESULT_MIN = minimize(chi_sq, start_params, (covinv, coords),
                               method=METHOD, bounds=BINDS,
                               options={'disp': True})
-        print("number of iterations = ", RESULT_MIN.nit)
     #print "minimized params = ", RESULT_MIN.x
-    print("successfully minimized = ", RESULT_MIN.success)
-    print("status of optimizer = ", RESULT_MIN.status)
-    print("message of optimizer = ", RESULT_MIN.message)
+    if not JACKKNIFE_FIT:
+        print("number of iterations = ", RESULT_MIN.nit)
+        print("successfully minimized = ", RESULT_MIN.success)
+        print("status of optimizer = ", RESULT_MIN.status)
+        print("message of optimizer = ", RESULT_MIN.message)
     #print "chi^2 minimized = ", RESULT_MIN.fun
     #print "chi^2 minimized check = ",chi_sq(RESULT_MIN.x,covinv,coords)
     #print covinv

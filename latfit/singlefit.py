@@ -13,6 +13,7 @@ from latfit.extract.errcheck.inputexists import inputexists
 from latfit.checks.maptomat import maptomat
 from latfit.extract.extract import extract
 from latfit.extract.gevp_extract import gevp_extract
+from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.DOFerrchk import DOFerrchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr

@@ -168,10 +168,21 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
                     plt.annotate("Uncorrelated fit.", xy=(0.05,0.10),xycoords='axes fraction')
                 else:
                     plt.text(XCOORD[3], YCOORD[2],"Uncorrelated fit.")
-
-        #todo: figure out a way to generally assign limits to plot
-        #plt.xlim([XCOORD[0], XMAX+1])
-        #plt.ylim([0, 0.1])
+            if JACKKNIFE_FIT:
+                if JACKKNIFE_FIT=='FROZEN' or JACKKNIFE_FIT=='SINGLE':
+                    jk_txt='Frozen (single) jackknife fit.'
+                elif JACKKNIFE_FIT=='DOUBLE':
+                    jk_txt='Double jackknife fit.'
+                else:
+                    jk_txt=''
+            elif JACKKNIFE:
+                jk_txt='Avg. fit, jackknife est. cov. matrix'
+            else:
+                jk_txt=''
+            if dimops>1:
+                plt.annotate(jk_txt, xy=(0.05,0.20),xycoords='axes fraction')
+            else:
+                plt.text(XCOORD[3], YCOORD[2],jk_txt)
 
         #add axes labels, title
         plt.title(title,**hfontT)
