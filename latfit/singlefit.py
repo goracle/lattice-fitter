@@ -5,6 +5,7 @@ from numpy import eye,sqrt
 from numpy import swapaxes as swap
 from collections import namedtuple
 import numpy as np
+from warnings import warn
 
 #package modules
 from latfit.procargs import procargs
@@ -19,9 +20,10 @@ from latfit.finalout.geterr import geterr
 #import global variables
 from latfit.config import FIT
 from latfit.config import JACKKNIFE
+from latfit.config import JACKKNIFE_FIT
 from latfit.config import GEVP
 from latfit.config import START_PARAMS
-from latfit.mathfun import chi_sq
+from latfit.mathfun.chi_sq import chi_sq
 
 def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #test to see if file/folder exists
@@ -34,7 +36,9 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
     num_configs=len(REUSE[XMIN])
     #do this so REUSE goes from REUSE[time][config] to more convenient REUSE[config][time]
-    REUSE=swap(REUSE,0,1)
+    time_range=np.arange(XMIN,XMAX+1,XSTEP)
+    #REUSE=swap(REUSE,0,1)
+    REUSE=np.array([[REUSE[time][config] for time in time_range] for config in range(num_configs)])
     if JACKKNIFE == 'YES':
         #applying jackknife correction of (count-1)^2
         warn("Applying jackknife correction to cov. matrix.")
@@ -91,10 +95,10 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
             #one fit for every jackknife block (N fits for N configs)
             time_range=np.arange(XMIN,XMAX+1,XSTEP)
             coords_jack=np.copy(COORDS)
-            min_arr=np.zeros((num_configs,dimops))
-            if JACKKNIFE_FIT='FROZEN':
+            min_arr=np.zeros((num_configs,dimops*len(START_PARAMS)))
+            if JACKKNIFE_FIT=='FROZEN':
                 covinv_jack=COVINV
-            elif JACKKNIFE_FIT='DOUBLE':
+            elif JACKKNIFE_FIT=='DOUBLE':
                 REUSE_INV=inverse_jk(REUSE,time_range,num_configs)
             else:
                 print("***ERROR***")
@@ -102,7 +106,7 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 sys.exit(1)
             for config_num in range(num_configs):
                 coords_jack[:,1]=REUSE[config_num]
-                if DOUBLE_JACKKNIFE:
+                if JACKKNIFE_FIT == 'DOUBLE':
                     cov_factor=np.delete(REUSE_INV,config_num,0)-REUSE[config_num]
                     try:
                         if dimops==1:
@@ -114,11 +118,13 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                         print("Failing config_num=",config_num)
                         sys.exit(1)
                 result_min_jack = mkmin(covinv_jack, coords_jack)
-                if result_min.status !=0:
+                if result_min_jack.status !=0:
                     RESULT_MIN.status=result_min_jack.status
+                print("config",config_num,":",result_min_jack.x)
                 min_arr[config_num]=result_min_jack.x
             RESULT_MIN.x=np.mean(min_arr,axis=0)
-            PARAM_ERR=sqrt(prefactor*np.sum((min_arr-RESULT_MIN.x)**2))
+            PARAM_ERR=np.sqrt(prefactor*np.sum((min_arr-RESULT_MIN.x)**2,0))
+            print(PARAM_ERR)
             RESULT_MIN.fun=chi_sq(RESULT_MIN.x,COVINV,COORDS)
         else:
             RESULT_MIN = mkmin(COVINV, COORDS)

@@ -2,6 +2,9 @@
 from numpy import arccosh,log
 from sympy import nsolve,cosh
 from sympy.abc import x,y,z
+import sys
+
+from latfit.extract.proc_line import proc_line
 
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
