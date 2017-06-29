@@ -14,7 +14,7 @@ def gevp_extract(XMIN,XMAX,XSTEP):
     #result is returned as a named tuple: RESRET
     RESRET = namedtuple('ret', ['coord', 'covar'])
     #Reuse results
-    REUSE={}
+    REUSE={xmin:0}
     #dimcov is dimensions of the covariance matrix
     dimcov = int((XMAX-XMIN)/XSTEP+1)
     #dimops is the dimension of the correlator matrix
@@ -53,7 +53,7 @@ def gevp_extract(XMIN,XMAX,XSTEP):
             if timej in REUSE:
                 REUSE['j']=REUSE[timej]
             else:
-                REUSE.pop('j')
+                REUSE['j']=0
             timej2=ceil(float(timej)/2.0/XSTEP)*XSTEP if ceil(float(timej)/2.0)!=timej else max(floor(float(timej)/2.0/XSTEP)*XSTEP,XMIN)
             TIME_ARR=[timei,timei2,timej,timej2,XSTEP]
             JFILES = [[proc_folder(GEVP_DIRS[op1][op2],timej) for op1 in range(dimops)] for op2 in range(dimops)]
@@ -65,13 +65,14 @@ def gevp_extract(XMIN,XMAX,XSTEP):
                 JFILES4 = [[proc_folder(GEVP_DIRS[op1][op2],timej+2*XSTEP) for op1 in range(dimops)] for op2 in range(dimops)]
                 JFILES3 = [[pre_proc_file(JFILES3[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
                 JFILES4 = [[pre_proc_file(JFILES4[op1][op2],GEVP_DIRS[op1][op2]) for op1 in range(dimops)] for op2 in range(dimops)]
-                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,[(I3FILES,J3FILES),(I4FILES,J4FILES)],TIME_ARR,reuse=REUSE)
+                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,[(I3FILES,J3FILES),(I4FILES,J4FILES)],reuse=REUSE)
             else:
                 RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,reuse=REUSE)
             COV[i][j] = RESRET.covar
             #only store coordinates once.  each file is read many times
             if j == 0:
                 COORDS[i][1] = RESRET.coord
+                COORDS[i][0] = timei
             j+=1
         i+=1
     return COORDS, COV, REUSE
