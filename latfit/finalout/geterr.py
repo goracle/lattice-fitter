@@ -12,7 +12,7 @@ from latfit.mathfun.chi_sq import chi_sq
 
 #compute errors in fit parameters
 def geterr(result_min, covinv, coords):
-    param_err = np.array(["err" for i in range(len(result_min.x))])
+    param_err = ["err" for i in range(len(result_min.x))]
     if result_min.fun > 0 and result_min.status == 0:
         #Numeric Hessian of chi^2 is unstable.  Use at own risk.
         #HFUNC = lambda xrray: chi_sq(xrray, covinv, coords)
@@ -25,9 +25,6 @@ def geterr(result_min, covinv, coords):
         #compute the gradient and hessian of the fit function
         def g(x):
             return np.array([fit_func(coords[i][0],x) for i in range(len(coords))])
-        print(coords[0][0])
-        print(result_min.x)
-        print(fit_func(coords[0][0],result_min.x))
         #fhess=nd.Gradient(nd.Gradient(g))(result_min.x)
         #TODO: allow for this to be entered by hand.
         grad=nd.Gradient(g)(result_min.x)
@@ -101,5 +98,5 @@ def geterr(result_min, covinv, coords):
                     print("fit parameters. failing entry:",2*HINV[i][i])
                     print("Giving up.")
                     sys.exit(1)
-    return param_err
+    return np.array(param_err)
            
