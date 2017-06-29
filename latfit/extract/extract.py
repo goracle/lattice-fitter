@@ -1,6 +1,7 @@
 from collections import namedtuple
 import numpy as np
 import os
+import sys
 
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.pre_proc_file import pre_proc_file
@@ -51,7 +52,6 @@ def extract(INPUT, xmin, xmax, xstep):
                     print("***ERROR***")
                     print("Time slice:",timei,", is not being stored for some reason")
                     sys.exit(1)
-            COORDS[i][0] = timei
             #extract file
             IFILE = proc_folder(INPUT, timei)
             #check for errors
@@ -66,7 +66,7 @@ def extract(INPUT, xmin, xmax, xstep):
                 if timej in REUSE:
                     REUSE['j']=REUSE[timej]
                 else:
-                    REUSE.pop('j')
+                    REUSE['j']=0
                 JFILE = proc_folder(INPUT, timej)
                 JFILE = pre_proc_file(JFILE,INPUT)
                 #if plotting effective mass
@@ -84,6 +84,7 @@ def extract(INPUT, xmin, xmax, xstep):
                 #only store coordinates once.  each file is read many times
                 REUSE[timej]=RESRET.returnblk
                 if j == 0:
+                    COORDS[i][0] = timei
                     COORDS[i][1] = RESRET.coord
                 j += 1
             i += 1
