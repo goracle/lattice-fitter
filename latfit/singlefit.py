@@ -82,7 +82,6 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                     print("columns:")
                     for i in range(len(RETCOV)):
                         print(np.array2string(np.transpose(RETCOV)[i],separator=', '))
-                    print(np.array2string(RETCOV,separator=', '))
                     print("det=",det(RETCOV))
             sys.exit(1)
     print("(Rough) scale of errors in data points = ", sqrt(COV[0][0]))
@@ -96,7 +95,7 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
             #one fit for every jackknife block (N fits for N configs)
             time_range=np.arange(XMIN,XMAX+1,XSTEP)
             coords_jack=np.copy(COORDS)
-            min_arr=np.zeros((num_configs,dimops*len(START_PARAMS)))
+            min_arr=np.zeros((num_configs,len(START_PARAMS)))
             if JACKKNIFE_FIT=='FROZEN':
                 covinv_jack=COVINV
             elif JACKKNIFE_FIT=='DOUBLE':
@@ -106,7 +105,12 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 print("Bad jackknife_fit value specified.")
                 sys.exit(1)
             for config_num in range(num_configs):
-                coords_jack[:,1]=REUSE[config_num]
+                #if config_num>160: break #for debugging only
+                if dimops>1:
+                    for time in range(len(time_range)):
+                        coords_jack[time,1]=REUSE[config_num][time]
+                else:
+                    coords_jack[:,1]=REUSE[config_num]
                 if JACKKNIFE_FIT == 'DOUBLE':
                     cov_factor=np.delete(REUSE_INV,config_num,0)-REUSE[config_num]
                     try:
@@ -125,18 +129,11 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 min_arr[config_num]=result_min_jack.x
             RESULT_MIN.x=np.mean(min_arr,axis=0)
             PARAM_ERR=np.sqrt(prefactor*np.sum((min_arr-RESULT_MIN.x)**2,0))
-            print(PARAM_ERR)
             RESULT_MIN.fun=chi_sq(RESULT_MIN.x,COVINV,COORDS)
         else:
             RESULT_MIN = mkmin(COVINV, COORDS)
             ####compute errors 8ab, print results (not needed for plot part)
             PARAM_ERR = geterr(RESULT_MIN, COVINV, COORDS)
-            #ERR_A0 = sqrt(2*HINV[0][0])
-            #ERR_ENERGY = sqrt(2*HINV[1][1])
-            #print "a0 = ", RESULT_MIN.x[0], "+/-", ERR_A0
-            #print "energy = ", RESULT_MIN.x[1], "+/-", ERR_ENERGY
-            ###plot result
-            #plot the function and the data, with error bars
         return RESULT_MIN, PARAM_ERR, COORDS, COV
     else:
         return COORDS, COV
