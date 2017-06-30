@@ -27,7 +27,7 @@ EFF_MASS = False
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
-EFF_MASS_METHOD = 1
+EFF_MASS_METHOD = 3
 
 #solve the generalized eigenvalue problem (GEVP)
 GEVP=True

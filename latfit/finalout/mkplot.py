@@ -24,6 +24,7 @@ from latfit.config import C
 from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
+from latfit.config import GEVP_DIRS
 from latfit.config import JACKKNIFE_FIT
 from matplotlib import rcParams
 import matplotlib.patches as patches
@@ -58,6 +59,10 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
         uncorr_str='_uncorr_fit'
     else:
         uncorr_str=''
+    if GEVP:
+        gevp_str='GEVP_'+len(GEVP_DIRS)+'dim'
+    else:
+        gevp_str=''
 
     #setup fonts
     hfontT = {'fontname':'FreeSans','size':12}
@@ -98,7 +103,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print("chi^2 reduced = ", redchisq)
 
     if NO_PLOT: return 0
-    with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+'.pdf') as pdf:
+    with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+gevp_str+'.pdf') as pdf:
         dimops=len(fit_func(XCOORD[0],result_min.x))
         if dimops!=1:
             lcoord=len(XCOORD)
