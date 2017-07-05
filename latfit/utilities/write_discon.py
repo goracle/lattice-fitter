@@ -127,8 +127,8 @@ def main():
                     arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
                     lookup[dsrcSub+dsnkSub]=arrMinus
                 #arr = arrPlus - arrMinus
-                #rf.write_arr(arrPlus - arrMinus,outfile)
-                rf.write_arr(arrPlus,outfile)
+                rf.write_arr(arrPlus - arrMinus,outfile)
+                #rf.write_arr(arrPlus,outfile)
 
 #to test below this line
 #helper function; builds string corresponding to file
