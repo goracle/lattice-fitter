@@ -60,7 +60,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     else:
         uncorr_str=''
     if GEVP:
-        gevp_str='GEVP_'+len(GEVP_DIRS)+'dim'
+        gevp_str='GEVP_'+str(len(GEVP_DIRS))+'dim'
     else:
         gevp_str=''
 
