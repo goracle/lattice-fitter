@@ -94,6 +94,8 @@ def norm_fix(fn):
         norm = 4.0
     elif(name == 'Cv3'):
         norm = 2.0
+    elif(name == 'Cv3R'):
+        norm = 2.0
     return norm
 
 def isospin_coeff(fn,I):
