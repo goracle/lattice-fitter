@@ -89,6 +89,7 @@ elif EFF_MASS_METHOD == 3 and FIT:
         if arg < 1:
             print("***ERROR***")
             print("argument to acosh in effective mass calc is less than 1:",arg)
+            print(C1,C2,C3)
             if files:
                 print(files[0])
                 print(files[1])

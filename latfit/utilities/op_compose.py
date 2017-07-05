@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
 from math import sqrt
-from .sum_blks import sum_blks
-from . import read_file as rf
+from sum_blks import sum_blks
+import read_file as rf
 import os
+import sys
+import re
 
 def momstr(psrc,psnk):
     pipi = ''
@@ -33,7 +35,9 @@ def momstr(psrc,psnk):
     return pstr
         
 
-A_1plus=[(1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),(1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),(1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),(1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),(1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),(1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]])]
+A_1plus=[(1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),(1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),(1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),(1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),(1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),(1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]]),(1,'sigma',[0,0,0]),(1,'S_pipi',[[0,0,0],[0,0,0]])]
+
+#A_1plus_sigma=[(1,'sigma',[0,0,0])]
 
 T_1_1minus=[(-1/2,'pipi',[[1,0,0],[-1,0,0]]),(complex(0,-1/2),'pipi',[[0,1,0],[0,-1,0]]),(1/2,'pipi',[[-1,0,0],[1,0,0]]),(complex(0,-1/2),'pipi',[[0,-1,0],[0,1,0]])]
 
@@ -42,10 +46,10 @@ T_1_3minus=[(1/2,'pipi',[[1,0,0],[-1,0,0]]),(complex(0,-1/2),'pipi',[[0,1,0],[0,
 T_1_2minus=[(1/sqrt(2),'pipi',[[0,0,1],[0,0,-1]]),(-1/sqrt(2),'pipi',[[0,0,-1],[0,0,1]])]
 
 oplist={'A_1plus':A_1plus,'T_1_1minus':T_1_1minus,'T_1_3minus':T_1_3minus,'T_1_2minus':T_1_2minus}
-partlist=set([])
+part_list=set([])
 for op in oplist:
     for item in oplist[op]:
-        partlist.add(item[1])
+        part_list.add(item[1])
 
 def partstr(srcpart,snkpart):
     if srcpart == snkpart and srcpart == 'pipi':
@@ -54,67 +58,43 @@ def partstr(srcpart,snkpart):
         particles = snkpart+srcpart
     return particles
 
+part_combs=set([])
+for src in part_list:
+    for snk in part_list:
+        part_combs.add(partstr(src,snk))
+
 def op_list():
-    for srcpart in partlist:
-        for snkpart in partlist:
-            partchk=partstr(srcpart,snkpart)
-            for op in oplist:
-                print("Doing op:",op,"for particles:",partchk)
-                coeffs_arr = []
-                for src in oplist[op]:
-                    for snk in oplist[op]:
-                        if src[1] == 'pipi' and snk[1] == 'pipi':
-                            partS='pipi'
-                        else:
-                            partS=snk[1]+src[1]
-                        if partS != partchk:
-                            continue
-                        coeff=src[0]*snk[0]
-                        pstr=momstr(src[2],snk[2])
-                        d = partS+"_"+pstr
-                        if not os.path.isdir(d):
-                            print("dir",d,"is missing")
-                            sys.exit(1)
-                        coeffs_arr.append((d,coeff))
-                outdir=partchk+"_"+op
-                sum_blks(outdir,coeffs_arr)
+    for op in oplist:
+        coeffs_tuple = []
+        for src in oplist[op]:
+            for snk in oplist[op]:
+                part_str=partstr(src[1],snk[1])
+                coeff=src[0]*snk[0]
+                p_str=momstr(src[2],snk[2])
+                d = part_str+"_"+p_str
+                d=re.sub('S_','',d)
+                d=re.sub('pipipipi','pipi',d)
+                if not os.path.isdir(d):
+                    if not os.path.isdir('sep4/'+d):
+                        print("dir",d,"is missing")
+                        sys.exit(1)
+                    else:
+                        d='sep4/'+d
+                coeffs_tuple.append((d,coeff,part_str))
+        coeffs_arr=[]
+        print("trying",op)
+        for parts in part_combs:
+            outdir=parts+"_"+op
+            coeffs_arr=[(tup[0],tup[1]) for tup in coeffs_tuple if tup[2] == parts]
+            if not coeffs_arr:
+                continue
+            print("Doing",op,"for particles",parts)
+            sum_blks(outdir,coeffs_arr)
     print("End of operator list.")
     return
-            
-
-
-
-
-
-
-
 
 def main():
     op_list()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
