@@ -22,8 +22,8 @@ UNCORR = True
 EFF_MASS = False
 #EFF_MASS = True
 #solve the generalized eigenvalue problem (GEVP)
-#GEVP=True
-GEVP=False
+GEVP=True
+#GEVP=False
 
 ###METHODS/PARAMS
 
@@ -32,7 +32,17 @@ GEVP=False
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
 EFF_MASS_METHOD = 3
 
+#GEVP_DIRS=[['S_pipiS_pipi_A_1plus','S_pipipipi_A_1plus','S_pipisigma_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus','pipisigma_A_1plus'],['sigmaS_pipi_A_1plus','sigmaS_pipi_A_1plus','sigmasigma_mom000']]
 GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+###DISPLAY PARAMETERS
+#no title given takes the current working directory as the title
+TITLE_PREFIX = ''
+TITLE = ''
+XLABEL = r'$t/a$'
+if EFF_MASS:
+    YLABEL = r'$am_{res}^{eff}}(t)$'
+else:
+    YLABEL = 'C(t)'
 
 ###starting values for fit parameters
 if GEVP:
@@ -52,16 +62,6 @@ if EFF_MASS:
         START_PARAMS = [.5] if not GEVP else START_PARAMS
     elif EFF_MASS_METHOD == 3:
         START_PARAMS = [.5] if not GEVP else START_PARAMS
-
-###DISPLAY PARAMETERS
-#no title given takes the current working directory as the title
-TITLE_PREFIX = 'TEST '
-TITLE = ''
-XLABEL = r'$t/a$'
-if EFF_MASS:
-    YLABEL = r'$am_{res}^{eff}}(t)$'
-else:
-    YLABEL = 'C(t)'
 
 ###setup is for cosh fit, but one can easily modify it.
 
