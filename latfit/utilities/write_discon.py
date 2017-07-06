@@ -89,22 +89,21 @@ def main():
                 outfig = comb_fig(dsrc,dsnk)
                 if not outfig:
                     continue
-                sep1 = rf.sep(dsrc)
-                sep2 = rf.sep(dsnk)
-                if outfig == 'V' and sep1 != sep2:
+                sepsrc = rf.sep(dsrc)
+                sepsnk = rf.sep(dsnk)
+                if outfig == 'V' and sepsrc != sepsnk:
                         continue
-                if sep1:
-                    sep = sep1
+                sepVal=0
+                sep = None
+                sepstr = "_"
+                if sepsrc:
+                    sep = sepsrc
+                    #sepVal=0 #we do this because src pipi bubbles don't need a separation offset when combining
+                    sepstr += "sep"+str(sep)+"_"
+                elif sepsnk:
+                    sep = sepsnk
                     sepVal=int(sep)
-                    sepstr = "_sep"+str(sep)+"_"
-                elif sep2:
-                    sep = sep2
-                    sepVal=int(sep)
-                    sepstr = "_sep"+str(sep)+"_"
-                else:
-                    sep = None
-                    sepVal = 0
-                    sepstr = "_"
+                    sepstr += "sep"+str(sep)+"_"
                 outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+momstr
                 if(os.path.isfile(outfile)):
                     print("Skipping:", outfile)
@@ -129,32 +128,6 @@ def main():
                 #arr = arrPlus - arrMinus
                 rf.write_arr(arrPlus - arrMinus,outfile)
                 #rf.write_arr(arrPlus,outfile)
-
-#to test below this line
-#helper function; builds string corresponding to file
-def outf(conf,figname,vec,sep,parr,pol1=None, pol2=None):
-    v=""
-    if(vec):
-        v="_vec"
-    base="traj_"+str(conf)+"_Figure"+str(figname)+v
-    if not pol2 and pol1:
-        base+="_pol_snk_"+str(pol1)
-        base2=base+"_sep"+str(sep)
-    elif pol2 and pol1:
-        base+="_pol_src-snk_"+str(pol1)+"-"+str(pol2)
-    else:
-        base2=base+"_sep"+str(sep)
-    l=len(parr)
-    one=(type(parr[0]) is int)
-    if not one and l==3:
-        return base2+"_mom1src"+ptostr(parr[0])+"_mom2src"+ptostr(parr[1])+"_mom1snk"+ptostr(parr[2])
-    elif not one and l==2:
-        return base2+"_momsrc"+ptostr(parr[0])+"_momsnk"+ptostr(parr[1])
-    elif one and l==3:
-        return base+"_mom"+ptostr(parr[0])
-    else:
-        print("Error: bad output filename specification.")
-        exit(1)
 
 if __name__ == "__main__":
     main()
