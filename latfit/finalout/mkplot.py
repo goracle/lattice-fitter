@@ -46,7 +46,11 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     else:
         title=TITLE
     title=TITLE_PREFIX+title
+    #brief attempt at sanitization
     title=re.sub('_',' ',title)
+    title=re.sub('\$','',title)
+    title=re.sub(r'\\','',title)
+    title=re.sub(r',','',title)
     if EFF_MASS:
         eff_str='_eff_mass'
         if EFF_MASS_METHOD == 1:
