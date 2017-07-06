@@ -29,7 +29,7 @@ def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=False):
     Lt = find_dim(finSrc)
     if Lt != find_dim(finSnk):
         print("Error: dimension mismatch in combine operation.")
-        exit(1)
+        sys.exit(1)
     out = np.zeros(shape=(Lt,Lt),dtype=complex)
     src = build_arr(finSrc)
     snk = build_arr(finSnk)
