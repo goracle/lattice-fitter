@@ -24,6 +24,8 @@ EFF_MASS = False
 #solve the generalized eigenvalue problem (GEVP)
 GEVP=True
 #GEVP=False
+if GEVP:
+    EFF_MASS = True # full fits not currently supported
 
 ###METHODS/PARAMS
 
@@ -32,11 +34,13 @@ GEVP=True
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
 EFF_MASS_METHOD = 3
 
-#GEVP_DIRS=[['S_pipiS_pipi_A_1plus','S_pipipipi_A_1plus','S_pipisigma_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus','pipisigma_A_1plus'],['sigmaS_pipi_A_1plus','sigmaS_pipi_A_1plus','sigmasigma_mom000']]
-GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
-TITLE_PREFIX = ''
+TITLE_PREFIX = '2x2 GEVP, $\pi\pi, \sigma$, momtotal000 '
+#TITLE_PREFIX = '3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
+#TITLE_PREFIX = 'TEST '
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
@@ -46,7 +50,6 @@ else:
 
 ###starting values for fit parameters
 if GEVP:
-    EFF_MASS = True # full fits not currently supported
     START_PARAMS=[.5,.5]
 else:
     START_PARAMS = [7.02356707e+11,   4.47338103e-01,   1.52757540e+11]
