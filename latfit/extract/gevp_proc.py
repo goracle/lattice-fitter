@@ -15,7 +15,7 @@ from latfit.config import UNCORR
 from latfit.config import EFF_MASS
 
 CSENT = object()
-def gevp_proc(IFILES,I2FILES,JFILES,J2FILES,TIME_ARR,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reuse={}):
+def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reuse={}):
     #setup global values
     rets = namedtuple('rets', ['coord', 'covar', 'returnblk'])
     dimops=len(IFILES)
@@ -23,11 +23,14 @@ def gevp_proc(IFILES,I2FILES,JFILES,J2FILES,TIME_ARR,extra_pairs=[(CSENT,CSENT),
 
     if EFF_MASS:
         #extra files for effective mass
-        I3FILES=extra_pairs[0][0]
-        J3FILES=extra_pairs[0][1]
-        I4FILES=extra_pairs[1][0]
-        J4FILES=extra_pairs[1][1]
-        if I3FILES == CSENT or J3FILES == CSENT:
+        IFILES3=extra_pairs[0][0]
+        JFILES3=extra_pairs[0][1]
+        IFILES4=extra_pairs[1][0]
+        JFILES4=extra_pairs[1][1]
+        try:
+            len(IFILES3)
+            len(JFILES3)
+        except:
             print("***ERROR***")
             print("Missing time adjacent file(s).")
             sys.exit(1)
@@ -56,10 +59,10 @@ def gevp_proc(IFILES,I2FILES,JFILES,J2FILES,TIME_ARR,extra_pairs=[(CSENT,CSENT),
             for opa in range(dimops):
                 for opb in range(dimops):
                     CI_LHS[opa][opb]=proc_line(getline(IFILES[opa][opb],config+1),IFILES[opa][opb])
-                    CI_RHS[opa][opb]=proc_line(getline(I2FILES[opa][opb],config+1),I2FILES[opa][opb])
+                    CI_RHS[opa][opb]=proc_line(getline(IFILES2[opa][opb],config+1),IFILES2[opa][opb])
                     if EFF_MASS:
-                        CIP_LHS[opa][opb]=proc_line(getline(I3FILES[opa][opb],config+1),I3FILES[opa][opb])
-                        CIPP_LHS[opa][opb]=proc_line(getline(I4FILES[opa][opb],config+1),I4FILES[opa][opb])
+                        CIP_LHS[opa][opb]=proc_line(getline(IFILES3[opa][opb],config+1),IFILES3[opa][opb])
+                        CIPP_LHS[opa][opb]=proc_line(getline(IFILES4[opa][opb],config+1),IFILES4[opa][opb])
             if EFF_MASS:
                 eigvalsI,eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,check_finite=False)
                 eigvalsIP,eigvecsIP=eig(CIP_LHS,CI_RHS,overwrite_a=True,check_finite=False)
@@ -90,10 +93,10 @@ def gevp_proc(IFILES,I2FILES,JFILES,J2FILES,TIME_ARR,extra_pairs=[(CSENT,CSENT),
             for opa in range(dimops):
                 for opb in range(dimops):
                     CJ_LHS[opa][opb]=proc_line(getline(JFILES[opa][opb],config+1),JFILES[opa][opb])
-                    CJ_RHS[opa][opb]=proc_line(getline(J2FILES[opa][opb],config+1),J2FILES[opa][opb])
+                    CJ_RHS[opa][opb]=proc_line(getline(JFILES2[opa][opb],config+1),JFILES2[opa][opb])
                     if EFF_MASS:
-                        CJP_LHS[opa][opb]=proc_line(getline(J3FILES[opa][opb],config+1),J3FILES[opa][opb])
-                        CJPP_LHS[opa][opb]=proc_line(getline(J4FILES[opa][opb],config+1),J4FILES[opa][opb])
+                        CJP_LHS[opa][opb]=proc_line(getline(JFILES3[opa][opb],config+1),JFILES3[opa][opb])
+                        CJPP_LHS[opa][opb]=proc_line(getline(JFILES4[opa][opb],config+1),JFILES4[opa][opb])
             #print(CJ_LHS,CJ_RHS)
             if EFF_MASS:
                 eigvalsJ,eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,check_finite=False)

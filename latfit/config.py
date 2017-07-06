@@ -26,6 +26,9 @@ GEVP=True
 #GEVP=False
 if GEVP:
     EFF_MASS = True # full fits not currently supported
+##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
+NUM_PENCILS=0 #if non-zero, set to 1 (only do one pencil, more than one is supported, but probably not a good idea - see ref above)
+PENCIL_SHIFT=1 #paper set this to 4
 
 ###METHODS/PARAMS
 
