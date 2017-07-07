@@ -6,6 +6,7 @@ from numpy import swapaxes as swap
 from collections import namedtuple
 import numpy as np
 from warnings import warn
+from copy import copy
 
 #package modules
 from latfit.procargs import procargs
@@ -51,16 +52,16 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     #error handling for Degrees of Freedom <= 0 (it should be > 0).
     #number of points plotted = len(COV).
     #DOF = len(COV) - START_PARAMS
-    DOFerrchk(len(COV))
+    try:
+        dimops=len(COV[0][0])
+    except:
+        dimops=1
+    DOFerrchk(len(COV),dimops)
 
     ###we have data 6ab
     #at this point we have the covariance matrix, and coordinates
     #compute inverse of covariance matrix
     if FIT:
-        try:
-            dimops=len(COV[0][0])
-        except:
-            dimops=1
         try:
             if dimops==1:
                 COVINV = inv(COV)
@@ -112,16 +113,27 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 else:
                     coords_jack[:,1]=REUSE[config_num]
                 if JACKKNIFE_FIT == 'DOUBLE':
-                    cov_factor=np.delete(REUSE_INV,config_num,0)-REUSE[config_num]
-                    try:
-                        if dimops==1:
-                            covinv_jack=inv(np.einsum('ai,aj->ij',cov_factor,cov_factor))
+                    flag=2
+                    while flag>0:
+                        if flag==1:
+                            if len(coords_jack==1):
+                                print("Continuation failed.")
+                                sys.exit(1)
+                            coords_jack=coords_jack[1::2]
+                            cov_factor=np.delete(np.delete(REUSE_INV,config_num,0)-REUSE[config_num],np.s_[::2],1)
                         else:
-                            covinv_jack=swap(tensorinv(np.einsum('aim,ajn->imjn',temp,temp)),1,2)
-                    except:
-                        print("Covariance matrix is singular in jackknife fit.")
-                        print("Failing config_num=",config_num)
-                        sys.exit(1)
+                            cov_factor=np.delete(REUSE_INV,config_num,0)-REUSE[config_num]
+                        try:
+                            if dimops==1:
+                                covinv_jack=inv(np.einsum('ai,aj->ij',cov_factor,cov_factor))
+                            else:
+                                covinv_jack=swap(tensorinv(np.einsum('aim,ajn->imjn',cov_factor,cov_factor)),1,2)
+                            flag=0
+                        except:
+                            print("Covariance matrix is singular in jackknife fit.")
+                            print("Failing config_num=",config_num)
+                            print("Attempting to continue fit with every other time slice eliminated.")
+                            flag=1
                 result_min_jack = mkmin(covinv_jack, coords_jack)
                 if result_min_jack.status !=0:
                     RESULT_MIN.status=result_min_jack.status
