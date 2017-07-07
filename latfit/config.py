@@ -13,8 +13,8 @@ NO_PLOT = False
 FIT = True
 ##Jackknife fit?
 #JACKKNIFE_FIT=''
-#JACKKNIFE_FIT='DOUBLE'
-JACKKNIFE_FIT='FROZEN'
+JACKKNIFE_FIT='DOUBLE'
+#JACKKNIFE_FIT='FROZEN'
 ##Uncorrelated fit? True or False
 #UNCORR = True
 UNCORR = False
@@ -41,7 +41,7 @@ GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc0
 #GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
-TITLE_PREFIX = '2x2 GEVP, $\pi\pi, \sigma$, momtotal000 '
+TITLE_PREFIX = '$\pi\pi, \sigma$, momtotal000 '
 #TITLE_PREFIX = '3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
 #TITLE_PREFIX = 'TEST '
 TITLE = ''
@@ -149,6 +149,14 @@ CUTOFF = 10**(7)
 ###-------END POSSIBLY OBSOLETE------###
 
 ##DO NOT EDIT BELOW
+
+#for general pencil of function
+from copy import copy
+fit_func_copy=copy(fit_func)
+def fit_func(ctime,trial_params):
+    return np.hstack([fit_func_copy(ctime,trial_params[i*len(START_PARAMS):(i+1)*len(START_PARAMS)]) for i in range(2**NUM_PENCILS)])
+START_PARAMS=list(START_PARAMS)*2**NUM_PENCILS
+
 #for EFF_MASS_METHOD = 2
 def fit_func_3pt_sym(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
