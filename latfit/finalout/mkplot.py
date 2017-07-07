@@ -1,10 +1,10 @@
-
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import matplotlib.pyplot as plt
 import os.path
 import os
 import re
+import sys
 
 from latfit.config import fit_func
 from latfit.config import FINE
@@ -33,6 +33,12 @@ rcParams.update({'figure.autolayout': True})
 def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     """Plot the fitted graph."""
 
+    #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
+    try:
+        dimops=len(cov[0][0])
+    except:
+        dimops=1
+
     #title/filename stuff
     if TITLE == '' or not TITLE:
         #then plot title should be the location directory of the jk blocks
@@ -46,11 +52,17 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     else:
         title=TITLE
     title=TITLE_PREFIX+title
-    #brief attempt at sanitization
     title=re.sub('_',' ',title)
-    title=re.sub('\$','',title)
-    title=re.sub(r'\\','',title)
-    title=re.sub(r',','',title)
+    #brief attempt at sanitization
+    title_safe=re.sub('\$','',title)
+    title_safe=re.sub(r'\\','',title_safe)
+    title_safe=re.sub(r',','',title_safe)
+    if JACKKNIFE_FIT=='DOUBLE':
+        jk_str='_2xjk'
+    elif JACKKNIFE_FIT=='FROZEN':
+        jk_str='_1xjk'
+    else:
+        jk_str=''
     if EFF_MASS:
         eff_str='_eff_mass'
         if EFF_MASS_METHOD == 1:
@@ -64,7 +76,7 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     else:
         uncorr_str=''
     if GEVP:
-        gevp_str='GEVP_'+str(len(GEVP_DIRS))+'dim'
+        gevp_str=' GEVP '+str(dimops)+'dim'
     else:
         gevp_str=''
 
@@ -98,17 +110,23 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print("Minimized params:",np.array2string(result_min.x, separator=', '))
             print("Error in params :",np.array2string(np.array(param_err), separator=', '))
             print("chi^2 minimized = ", result_min.fun)
-            dof = len(cov)-len(result_min.x)
+            dof = len(cov)*dimops-len(result_min.x)
             #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
             if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
                 dof-=1
             print("degrees of freedom = ", dof)
             redchisq=result_min.fun/dof
             print("chi^2 reduced = ", redchisq)
+            dimops_chk=len(fit_func(XCOORD[0],result_min.x))
+            if dimops!=dimops_chk:
+                print("***ERROR***")
+                print("Fit function length does not match cov. mat.")
+                print("Debug of config necessary.")
+                print(dimops,dimops_chk)
+                sys.exit(1)
 
     if NO_PLOT: return 0
-    with PdfPages(re.sub(' ','_',title)+eff_str+uncorr_str+gevp_str+'.pdf') as pdf:
-        dimops=len(fit_func(XCOORD[0],result_min.x))
+    with PdfPages(re.sub(' ','_',title_safe+eff_str+uncorr_str+gevp_str+jk_str+'.pdf')) as pdf:
         if dimops!=1:
             lcoord=len(XCOORD)
             for curve_num in range(dimops):
