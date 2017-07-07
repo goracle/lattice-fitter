@@ -13,7 +13,7 @@ from latfit.config import fit_func_3pt_sym
 
 #almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
-    def proc_MEFF(line1,line2,line3,files=None):
+    def proc_MEFF(line1,line2,line3,files=None,time_arr=None):
         if not files:
             C1=line1
             C2=line2
@@ -35,7 +35,7 @@ if EFF_MASS_METHOD == 1:
 
 #numerically solve a system of three transcendental equations
 elif EFF_MASS_METHOD == 2:
-    def proc_MEFF(line1,line2,line3,files=None):
+    def proc_MEFF(line1,line2,line3,files=None,time_arr=None):
         if not files:
             C1=line1
             C2=line2
@@ -76,7 +76,7 @@ elif EFF_MASS_METHOD == 2:
 #fit to a function with one free parameter
 #[ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
 elif EFF_MASS_METHOD == 3 and FIT:
-    def proc_MEFF(line1,line2,line3,files=None):
+    def proc_MEFF(line1,line2,line3,files=None,time_arr=None):
         if not files:
             C1=line1
             C2=line2
@@ -94,6 +94,8 @@ elif EFF_MASS_METHOD == 3 and FIT:
                 print(files[0])
                 print(files[1])
                 print(files[2])
+            if not time_arr == None:
+                print(time_arr)
             sys.exit(1)
         return log(arg)
 else:

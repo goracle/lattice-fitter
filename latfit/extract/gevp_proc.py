@@ -103,7 +103,7 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
                 #print(eigvalsJ,TIME_ARR[2])
                 eigvalsJP,eigvecsJP=eig(CJP_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
                 eigvalsJPP,eigvecsJPP=eig(CJPP_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-                reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op].real,eigvalsJP[op].real,eigvalsJPP[op].real) for op in range(dimops)])
+                reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op].real,eigvalsJP[op].real,eigvalsJPP[op].real,time_arr=TIME_ARR) for op in range(dimops)])
             else:
                 reuse['j'][config],eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
     avgJ=np.mean(reuse['j'],axis=0)

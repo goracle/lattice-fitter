@@ -37,8 +37,8 @@ PENCIL_SHIFT=1 #paper set this to 4
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
 EFF_MASS_METHOD = 3
 
-GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
-#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
 TITLE_PREFIX = '$\pi\pi, \sigma$, momtotal000 '
@@ -53,7 +53,7 @@ else:
 
 ###starting values for fit parameters
 if GEVP:
-    START_PARAMS=[.5,.5]
+    START_PARAMS=[.5]*len(GEVP_DIRS)
 else:
     START_PARAMS = [7.02356707e+11,   4.47338103e-01,   1.52757540e+11]
     #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
