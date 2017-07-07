@@ -109,14 +109,24 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             print("Guessed params:  ",np.array2string(sp,separator=', '))
             print("Minimized params:",np.array2string(result_min.x, separator=', '))
             print("Error in params :",np.array2string(np.array(param_err), separator=', '))
-            print("chi^2 minimized = ", result_min.fun)
+            chisq_str=str(result_min.fun)
+            if JACKKNIFE_FIT:
+                chisq_str+='+/-'+str(result_min.err_in_chisq)
+            print("chi^2 minimized = ", chisq_str)
             dof = len(cov)*dimops-len(result_min.x)
             #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
             if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
                 dof-=1
             print("degrees of freedom = ", dof)
             redchisq=result_min.fun/dof
-            print("chi^2 reduced = ", redchisq)
+            redchisq_str=str(redchisq)
+            if JACKKNIFE_FIT:
+                redchisq_str+='+/-'+str(result_min.err_in_chisq/dof)
+                if (redchisq > 10 or redchisq<.1) or (result_min.err_in_chisq/dof > 10 or result_min.err_in_chisq/dof < .1):
+                    redchisq_round_str='{:0.7e}'.format(redchisq)+'+/-'+'{:0.7e}'.format(result_min.err_in_chisq/dof)
+                else:
+                    redchisq_round_str='{:0.8}'.format(redchisq)+'+/-'+'{:0.8}'.format(result_min.err_in_chisq/dof)
+            print("chi^2 reduced = ", redchisq_str)
             dimops_chk=len(fit_func(XCOORD[0],result_min.x))
             if dimops!=dimops_chk:
                 print("***ERROR***")
@@ -189,9 +199,9 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             if result_min.status == 0:
                 if redchisq<2:
                     if EFF_MASS_METHOD == 3:
-                        plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
+                        plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
                     else:
-                        plt.annotate("Reduced "+r"$\chi^2=$"+str(redchisq)+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
+                        plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
             if UNCORR:
                 if dimops>1:
                     plt.annotate("Uncorrelated fit.", xy=(0.05,0.10),xycoords='axes fraction')

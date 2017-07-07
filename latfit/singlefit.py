@@ -90,13 +90,14 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
     if FIT:
         #comment out options{...}, bounds for L-BFGS-B
         ###start minimizer
-        RESULT_MIN=namedtuple('min',['x','fun','status'])
+        RESULT_MIN=namedtuple('min',['x','fun','status','err_in_chisq'])
         RESULT_MIN.status=0
         if JACKKNIFE_FIT:
             #one fit for every jackknife block (N fits for N configs)
             time_range=np.arange(XMIN,XMAX+1,XSTEP)
             coords_jack=np.copy(COORDS)
             min_arr=np.zeros((num_configs,len(START_PARAMS)))
+            chisq_min_arr=np.zeros(num_configs)
             if JACKKNIFE_FIT=='FROZEN':
                 covinv_jack=COVINV
             elif JACKKNIFE_FIT=='DOUBLE':
@@ -137,11 +138,13 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                 result_min_jack = mkmin(covinv_jack, coords_jack)
                 if result_min_jack.status !=0:
                     RESULT_MIN.status=result_min_jack.status
-                print("config",config_num,":",result_min_jack.x)
+                print("config",config_num,":",result_min_jack.x,"chisq=",result_min_jack.fun)
+                chisq_min_arr[config_num]=result_min_jack.fun
                 min_arr[config_num]=result_min_jack.x
             RESULT_MIN.x=np.mean(min_arr,axis=0)
             PARAM_ERR=np.sqrt(prefactor*np.sum((min_arr-RESULT_MIN.x)**2,0))
-            RESULT_MIN.fun=chi_sq(RESULT_MIN.x,COVINV,COORDS)
+            RESULT_MIN.fun=np.mean(chisq_min_arr)
+            RESULT_MIN.err_in_chisq=np.sqrt(prefactor*np.sum((chisq_min_arr-RESULT_MIN.fun)**2))
         else:
             RESULT_MIN = mkmin(COVINV, COORDS)
             ####compute errors 8ab, print results (not needed for plot part)
