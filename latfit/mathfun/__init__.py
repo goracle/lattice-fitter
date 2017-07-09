@@ -1,1 +1,1 @@
-__all__ = ["chi_sq","proc_MEFF"]
+__all__ = ["chi_sq","proc_MEFF", "elim_jkconfigs"]

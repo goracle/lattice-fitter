@@ -9,6 +9,7 @@ from warnings import warn
 from itertools import chain
 
 from latfit.mathfun.proc_MEFF import proc_MEFF
+from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.extract.proc_line import proc_line
 
 from latfit.config import UNCORR
@@ -70,6 +71,9 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
                 reuse['i'][config]=np.array([proc_MEFF(eigvalsI[op].real,eigvalsIP[op].real,eigvalsIPP[op].real) for op in range(dimops)])
             else:
                 reuse['i'][config],eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+        if ELIM_JKCONF_LIST:
+            reuse['i']=elim_jkconfigs(reuse['i'])
+            num_configs=len(reuse['i'])
     avgI=np.mean(reuse['i'],axis=0)
     if gevp_proc.CONFIGSENT != 0:
         print("Number of configurations to average over:",num_configs)
@@ -106,6 +110,9 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
                 reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op].real,eigvalsJP[op].real,eigvalsJPP[op].real,time_arr=TIME_ARR) for op in range(dimops)])
             else:
                 reuse['j'][config],eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
+        if ELIM_JKCONF_LIST:
+            reuse['j']=elim_jkconfigs(reuse['j'])
+            num_configs=len(reuse['j'])
     avgJ=np.mean(reuse['j'],axis=0)
     for test in avgJ:
         if test.imag != 0:

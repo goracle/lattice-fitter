@@ -5,6 +5,7 @@ import sys
 import numpy as np
 
 from latfit.mathfun.proc_MEFF import proc_MEFF
+from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.extract.proc_line import proc_line
 
 from latfit.config import UNCORR
@@ -55,6 +56,8 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reu
                 if reuse[linei+linei2+linei3]==0:
                     reuse[linei+linei2+linei3] = START_PARAMS[1]
                 reuse['i']=np.append(reuse['i'],reuse[linei+linei2+linei3])
+        if ELIM_JKCONF_LIST:
+            reuse['i']=elim_jkconfigs(reuse['i'])
         count=len(reuse['i'])
     if proc_file.CONFIGSENT != 0:
         print("Number of configurations to average over:",count)
@@ -77,6 +80,8 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reu
                 if reuse[linej+linej2+linej3]==0:
                     reuse[linej+linej2+linej3] = START_PARAMS[1]
                 reuse['j']=np.append(reuse['j'],reuse[linej+linej2+linej3])
+        if ELIM_JKCONF_LIST:
+            reuse['j']=elim_jkconfigs(reuse['i'])
         counttest=len(reuse['j'])
     #check to make sure i,j have the same number of lines
     if not counttest == count:
