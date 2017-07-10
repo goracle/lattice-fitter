@@ -19,6 +19,13 @@ def gevp_extract(xmin,xmax,xstep):
     #result is returned as a named tuple: resret
     resret = namedtuple('ret', ['coord', 'covar'])
 
+    #if simple file, do that extraction
+    if os.path.isfile(input_f):
+        resret = simple_proc_file(input_f, xmin, xmax, EIGCUT)
+        cov = resret.covar
+        coords = resret.coord
+        dimcov = resret.numblocks
+
     #dimcov is dimensions of the covariance matrix
     dimcov = int((xmax-xmin)/xstep+1)
 
@@ -41,13 +48,12 @@ def gevp_extract(xmin,xmax,xstep):
         #coords[i][0] = timei
 
         reuse_ij(reuse, timei, 'i')
-        timei2, ifiles_tup=gevp_getfiles(timei, xstep, xmin)
+        ifiles_tup=getfiles(timei, xstep, xmin)
 
         for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
 
             reuse_ij(reuse, timej, 'j')
-            timej2,jfile_tup=gevp_getfiles(timej, xstep, xmin)
-            time_arr=[timei,timei2,timej,timej2,xstep]
+            jfile_tup=gevp_getfiles(timej, xstep, xmin)
 
             #get the cov entry and the block
             resret = proc_ijfile(ifile_tup, jfile_tup,

@@ -4,12 +4,11 @@ import os
 import numpy as np
 
 from latfit.extract.simple_proc_file import simple_proc_file
-from latfit.extract.pre_proc_file import pre_proc_file
 from latfit.extract.proc_ijfile import proc_ijfile
-from latfit.extract.proc_folder import proc_folder
 
+from latfit.config import GEVP_DIRS
 from latfit.config import EIGCUT
-from latfit.config import EFF_MASS
+from latfit.config import NUM_PENCILS
 
 def extract(input_f, xmin, xmax, xstep):
     """Get covariance matrix, coordinates, jackknife blocks.
@@ -29,20 +28,12 @@ def extract(input_f, xmin, xmax, xstep):
     #test if directory
     elif os.path.isdir(input_f):
 
-        #dimcov is dimensions of the covariance matrix
-        dimcov = int((xmax-xmin)/xstep+1)
-
         #reuse results
         reuse = {xmin:0}
 
         ##allocate space for return values
 
-        #cov is the covariance matrix
-        cov = np.zeros((dimcov, dimcov))
-
-        #coords are the coordinates to be plotted.
-        #the ith point with the jth value
-        coords = np.zeros((dimcov, 2))
+        coords, cov = allocate(xmin, xmax, xstep)
 
         for i, timei in enumerate(np.arange(xmin, xmax+1, xstep)):
 
@@ -51,13 +42,13 @@ def extract(input_f, xmin, xmax, xstep):
             reuse_ij(reuse, timei, 'i')
 
             #get the ifile(s)
-            ifile_tup = ij_file_prep(timei, input_f, xstep)
+            ifile_tup = getfiles(timei, xstep, xmin, input_f)
 
             for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
 
                 #same for j
                 reuse_ij(reuse, timej, 'j')
-                jfile_tup = ij_file_prep(timej, input_f, xstep)
+                jfile_tup = getfiles(timej, xstep, xmin, input_f)
 
                 #get the cov entry and the block
                 resret = proc_ijfile(ifile_tup, jfile_tup, reuse=reuse)
@@ -79,21 +70,6 @@ def extract(input_f, xmin, xmax, xstep):
 
     return coords, cov, reuse
 
-def ij_file_prep(time, input_f, xstep):
-    """Get files for a given time slice."""
-    #extract file
-    ijfile = proc_folder(input_f, time)
-    #check for errors
-    ijfile = pre_proc_file(ijfile, input_f)
-    if EFF_MASS:
-        ij2file = proc_folder(input_f, time+xstep)
-        ij3file = proc_folder(input_f, time+2*xstep)
-        ij2file = pre_proc_file(ij2file, input_f)
-        ij3file = pre_proc_file(ij3file, input_f)
-        ijfile_tup = (ijfile, ij2file, ij3file)
-    else:
-        ijfile_tup = (ijfile)
-    return ijfile_tup
 
 #side effects warning
 def reuse_ij(reuse, time, ij_str):
@@ -105,3 +81,28 @@ def reuse_ij(reuse, time, ij_str):
         reuse[ij_str] = reuse[time]
     else:
         reuse[ij_str] = 0
+
+if GEVP:
+    def allocate(xmin, xmax, xstep):
+        #dimcov is dimensions of the covariance matrix
+        dimcov = int((xmax-xmin)/xstep+1)
+        #dimops is the dimension of the correlator matrix
+        dimops = len(GEVP_DIRS)
+        #cov is the covariance matrix
+        cov = np.zeros((dimcov,dimcov,dimops*(NUM_PENCILS+1),dimops*(NUM_PENCILS+1)),dtype=np.complex128)
+
+        #coords are the coordinates to be plotted.
+        #the ith point with the jth value
+        coords = np.zeros((dimcov, 2, dimops))
+    return coords, cov
+
+else:
+    def allocate(xmin, xmax, xstep):
+        #dimcov is dimensions of the covariance matrix
+        dimcov = int((xmax-xmin)/xstep+1)
+        #cov is the covariance matrix
+        cov = np.zeros((dimcov, dimcov))
+        #coords are the coordinates to be plotted.
+        #the ith point with the jth value
+        coords = np.zeros((dimcov, 2))
+    return coords, cov
