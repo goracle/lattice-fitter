@@ -124,8 +124,8 @@ METHOD = 'Nelder-Mead'
 ##jackknife correction? "YES" or "NO"
 ##correction only happens if multiple files are processed
 JACKKNIFE = 'YES'
-##eliminate problematic configs.  Simply set this to a list of ints indexing the configs, e.g. ELIM_JKCONF_LIST=[0,1] will eliminate the first two configs
-ELIM_JKCONF_LIST=None
+##eliminate problematic configs.  Simply set this to a list of ints indexing the configs, e.g. elim_jkconf_list=[0,1] will eliminate the first two configs
+elim_jkconf_list=[]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
 ##the boundary for when the fitter warns you if the eigenvalues

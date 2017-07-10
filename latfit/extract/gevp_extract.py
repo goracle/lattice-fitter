@@ -1,67 +1,71 @@
+"""Extract cov. matrix and jackknife blocks."""
 from collections import namedtuple
 import numpy as np
 import sys
 
-from latfit.extract.gevp_proc import gevp_proc
+from latfit.extract.gevp_proc import gevp_proc_ijfile
 from latfit.extract.gevp_getfiles import gevp_getfiles
+from latfit.extract.extract import reuse_ij
 
 from latfit.config import GEVP_DIRS
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
 
-def gevp_extract(xmin,xmax,XSTEP):
-    i = 0
-    #result is returned as a named tuple: RESRET
-    RESRET = namedtuple('ret', ['coord', 'covar'])
-    #Reuse results (store all read-in data)
-    REUSE={xmin:0}
+def gevp_extract(xmin,xmax,xstep):
+    """Get covariance matrix, coordinates, jackknife blocks.
+    This is the meta-extractor.  It processes both individual files and
+    folders.
+    """
+    #result is returned as a named tuple: resret
+    resret = namedtuple('ret', ['coord', 'covar'])
+
     #dimcov is dimensions of the covariance matrix
-    dimcov = int((xmax-xmin)/XSTEP+1)
+    dimcov = int((xmax-xmin)/xstep+1)
+
+    #Reuse results (store all read-in data)
+    reuse={xmin:0}
+    
     #dimops is the dimension of the correlator matrix
     dimops = len(GEVP_DIRS)
+
     #cov is the covariance matrix
-    COV = np.zeros((dimcov,dimcov,dimops*(NUM_PENCILS+1),dimops*(NUM_PENCILS+1)),dtype=np.complex128)
-    #COORDS are the coordinates to be plotted.
+    cov = np.zeros((dimcov,dimcov,dimops*(NUM_PENCILS+1),dimops*(NUM_PENCILS+1)),dtype=np.complex128)
+
+    #coords are the coordinates to be plotted.
     #the ith point with the jth value
-    COORDS = np.zeros((dimcov,2),dtype=object)
-    for timei in np.arange(xmin, xmax+1, XSTEP):
+    coords = np.zeros((dimcov, 2, dimops))
+
+    for i, timei in enumerate(np.arange(xmin, xmax+1, xstep)):
+
         #set the times coordinate
-        COORDS[i][0] = timei
-        if timei in REUSE:
-            REUSE['i']=REUSE[timei]
-        else:
-            REUSE.pop('i')
-            if timei!=xmin:
-                #delete me if working!
-                print("***ERROR***")
-                print("Time slice:",timei,", is not being stored for some reason")
-                sys.exit(1)
-        if EFF_MASS:
-            timei2,IFILES,IFILES2,IFILES3,IFILES4=gevp_getfiles(timei,XSTEP,xmin)
-        else:
-            timei2,IFILES,IFILES2=gevp_getfiles(timei,XSTEP,xmin)
-        j=0
-        for timej in np.arange(xmin, xmax+1, XSTEP):
-            if timej in REUSE:
-                REUSE['j']=REUSE[timej]
-            else:
-                REUSE['j']=0
-            if EFF_MASS:
-                timej2,JFILES,JFILES2,JFILES3,JFILES4=gevp_getfiles(timej,XSTEP,xmin)
-                TIME_ARR=[timei,timei2,timej,timej2,XSTEP]
-                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,[(IFILES3,JFILES3),(IFILES4,JFILES4)],reuse=REUSE)
-            else:
-                timej2,JFILES,JFILES2=gevp_getfiles(timej,XSTEP,xmin)
-                TIME_ARR=[timei,timei2,timej,timej2,XSTEP]
-                RESRET = gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,reuse=REUSE)
-            COV[i][j] = RESRET.covar
-            REUSE[timej]=RESRET.returnblk
-            if timei==timej:
-                REUSE['i']=REUSE[timej]
-            #only store coordinates once.  each file is read many times
+        #coords[i][0] = timei
+
+        reuse_ij(reuse, timei, 'i')
+        timei2, ifiles_tup=gevp_getfiles(timei, xstep, xmin)
+
+        for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
+
+            reuse_ij(reuse, timej, 'j')
+            timej2,jfile_tup=gevp_getfiles(timej, xstep, xmin)
+            time_arr=[timei,timei2,timej,timej2,xstep]
+
+            #get the cov entry and the block
+            resret = gevp_proc_ijfile(ifile_tup, jfile_tup,
+                                      time_arr, reuse=reuse)
+
+            #fill in the covariance matrix
+            cov[i][j] = resret.covar
+
+            #fill in dictionary for reusing already extracted blocks
+            #with the newest block
+            if i == 0:
+                reuse[timej]=resret.returnblk
+
             if j == 0:
-                COORDS[i][1] = RESRET.coord
-                COORDS[i][0] = timei
-            j+=1
-        i+=1
-    return COORDS, COV, REUSE
+                #only when j=0 does the i block need updating
+                reuse['i'] = reuse[timej]
+                #only store coordinates once.
+                coords[i][0] = timei
+                coords[i][1] = resret.coord
+
+    return coords, cov, reuse

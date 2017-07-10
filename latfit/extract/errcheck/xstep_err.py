@@ -1,26 +1,28 @@
-from latfit.procargs import procargs
+"""Check stepsize for errors."""
 import os
 
-def xstep_err(xstep, INPUT):
+from latfit.procargs import procargs
+
+def xstep_err(xstep, input_f):
     """Check for error in the domain step size.
     Return the step size.
     """
-    XSTEP = -1
+    xstep = -1
     if isinstance(xstep, str):
         try:
-            OPSTEMP = xstep
-            OPSTEMP = float(OPSTEMP)
+            opstemp = xstep
+            opstemp = float(opstemp)
         except ValueError:
             print("***ERROR***")
             print("Invalid step size.")
             print("Expecting an float >= 0.")
             procargs(["h"])
-        if OPSTEMP >= 0:
-            XSTEP = OPSTEMP
+        if opstemp >= 0:
+            xstep = opstemp
         else:
-            XSTEP = -1
+            xstep = -1
     #We only care about step size for multi file setup
-    if XSTEP == -1 and os.path.isdir(INPUT):
+    if xstep == -1 and os.path.isdir(input_f):
         print("Assuming domain step size is 1 (int).")
-        XSTEP = 1
-    return XSTEP
+        xstep = 1
+    return xstep

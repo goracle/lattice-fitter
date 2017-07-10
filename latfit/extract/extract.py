@@ -1,93 +1,107 @@
+"""Extract cov. matrix and jackknife blocks."""
 from collections import namedtuple
-import numpy as np
 import os
-import sys
+import numpy as np
 
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.pre_proc_file import pre_proc_file
-from latfit.extract.proc_file import proc_file
+from latfit.extract.proc_ijfile import proc_ijfile
 from latfit.extract.proc_folder import proc_folder
 
 from latfit.config import EIGCUT
 from latfit.config import EFF_MASS
 
-def extract(INPUT, xmin, xmax, xstep):
-    """Get covariance matrix, coordinates.
+def extract(input_f, xmin, xmax, xstep):
+    """Get covariance matrix, coordinates, jackknife blocks.
     This is the meta-extractor.  It processes both individual files and
     folders.
     """
-    #result is returned as a named tuple: RESRET
-    RESRET = namedtuple('ret', ['coord', 'covar', 'numblocks','returnblk'])
-    #REUSE results
-    REUSE={xmin:0}
-    if os.path.isfile(INPUT):
-        RESRET = simple_proc_file(INPUT, xmin, xmax, EIGCUT)
-        COV = RESRET.covar
-        COORDS = RESRET.coord
-        #dimcov is dimensions of the covariance matrix
-        dimcov = RESRET.numblocks
-        #then find out domain of files to process
-    ####process individual files in dir 5ab
-    #error handling, test to see if time value goes out of range,
-    #i.e. if data isn't available to match the requested time domain
-    #i,j are new indices, shifting xmin to the origin
-    #j = 0 # initialized below
+    #result is returned as a named tuple: resret
+    resret = namedtuple('ret', ['coord', 'covar', 'numblocks', 'returnblk'])
+
+    #if simple file, do that extraction
+    if os.path.isfile(input_f):
+        resret = simple_proc_file(input_f, xmin, xmax, EIGCUT)
+        cov = resret.covar
+        coords = resret.coord
+        dimcov = resret.numblocks
+
     #test if directory
-    elif os.path.isdir(INPUT):
-        i = 0
+    elif os.path.isdir(input_f):
+
         #dimcov is dimensions of the covariance matrix
         dimcov = int((xmax-xmin)/xstep+1)
+
+        #reuse results
+        reuse = {xmin:0}
+
+        ##allocate space for return values
+
         #cov is the covariance matrix
-        COV = np.zeros((dimcov,dimcov))
-        #COORDS are the coordinates to be plotted.
+        cov = np.zeros((dimcov, dimcov))
+
+        #coords are the coordinates to be plotted.
         #the ith point with the jth value
-        COORDS = np.zeros((dimcov,2))
-        for timei in np.arange(xmin, xmax+1, xstep):
-            if timei in REUSE:
-                REUSE['i']=REUSE[timei]
-            else:
-                REUSE.pop('i')
-                if timei!=xmin:
-                    #delete me if working!
-                    print("***ERROR***")
-                    print("Time slice:",timei,", is not being stored for some reason")
-                    sys.exit(1)
-            #extract file
-            IFILE = proc_folder(INPUT, timei)
-            #check for errors
-            IFILE = pre_proc_file(IFILE,INPUT)
-            if EFF_MASS:
-                I2FILE = proc_folder(INPUT, timei+xstep)
-                I3FILE = proc_folder(INPUT, timei+2*xstep)
-                I2FILE = pre_proc_file(I2FILE,INPUT)
-                I3FILE = pre_proc_file(I3FILE,INPUT)
-            j = 0
-            for timej in np.arange(xmin, xmax+1, xstep):
-                if timej in REUSE:
-                    REUSE['j']=REUSE[timej]
-                else:
-                    REUSE['j']=0
-                JFILE = proc_folder(INPUT, timej)
-                JFILE = pre_proc_file(JFILE,INPUT)
-                #if plotting effective mass
-                if EFF_MASS:
-                    J2FILE = proc_folder(INPUT, timej+xstep)
-                    J3FILE = proc_folder(INPUT, timej+2*xstep)
-                    J2FILE = pre_proc_file(J2FILE,INPUT)
-                    J3FILE = pre_proc_file(J3FILE,INPUT)
-                    RESRET = proc_file(IFILE, JFILE,
-                                       [(I2FILE,J2FILE),(I3FILE,J3FILE)],reuse=REUSE)
-                else:
-                    RESRET = proc_file(IFILE, JFILE,reuse=REUSE)
+        coords = np.zeros((dimcov, 2))
+
+        for i, timei in enumerate(np.arange(xmin, xmax+1, xstep)):
+
+            #setup the reuse block for 'i' so proc_ijfile can remain
+            #time agnostic
+            reuse_ij(reuse, timei, 'i')
+
+            #get the ifile(s)
+            ifile_tup = ij_file_prep(timei, input_f, xstep)
+
+            for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
+
+                #same for j
+                reuse_ij(reuse, timej, 'j')
+                jfile_tup = ij_file_prep(timej, input_f, xstep)
+
+                #get the cov entry and the block
+                resret = proc_ijfile(ifile_tup, jfile_tup, reuse=reuse)
+
                 #fill in the covariance matrix
-                COV[i][j] = RESRET.covar
-                #only store coordinates once.  each file is read many times
-                REUSE[timej]=RESRET.returnblk
-                if timej==timei:
-                    REUSE['i']=REUSE[timej]
+                cov[i][j] = resret.covar
+
+                #fill in dictionary for reusing already extracted blocks
+                #with the newest block
+                if i == 0:
+                    reuse[timej] = resret.returnblk
+
                 if j == 0:
-                    COORDS[i][0] = timei
-                    COORDS[i][1] = RESRET.coord
-                j += 1
-            i += 1
-    return COORDS, COV, REUSE
+                    #only when j=0 does the i block need updating
+                    reuse['i'] = reuse[timej]
+                    #only store coordinates once.
+                    coords[i][0] = timei
+                    coords[i][1] = resret.coord
+
+    return coords, cov, reuse
+
+def ij_file_prep(time, input_f, xstep):
+    """Get files for a given time slice."""
+    #extract file
+    ijfile = proc_folder(input_f, time)
+    #check for errors
+    ijfile = pre_proc_file(ijfile, input_f)
+    if EFF_MASS:
+        ij2file = proc_folder(input_f, time+xstep)
+        ij3file = proc_folder(input_f, time+2*xstep)
+        ij2file = pre_proc_file(ij2file, input_f)
+        ij3file = pre_proc_file(ij3file, input_f)
+        ijfile_tup = (ijfile, ij2file, ij3file)
+    else:
+        ijfile_tup = (ijfile)
+    return ijfile_tup
+
+#side effects warning
+def reuse_ij(reuse, time, ij_str):
+    """Prepare reuse container with proper block for i or j
+    This allows proc_ijfile to remain agnostic as to where it is in the
+    structure of the covariance matrix.
+    """
+    if time in reuse:
+        reuse[ij_str] = reuse[time]
+    else:
+        reuse[ij_str] = 0

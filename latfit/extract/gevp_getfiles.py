@@ -22,7 +22,7 @@ if EFF_MASS:
             FILES3 =pencil_shift_lhs(time+XSTEP,XSTEP)
             FILES4 = pencil_shift_lhs(time+2*XSTEP,XSTEP)
         #eff mass stuff
-        return time2,FILES,FILES2,FILES3,FILES4
+        return time2,(FILES,FILES2,FILES3,FILES4)
 else:
     def gevp_getfiles(time,XSTEP,xmin):
         time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
@@ -34,4 +34,4 @@ else:
             FILES=pencil_shift_lhs(time,XSTEP)
             FILES2=pencil_shift_rhs(time2,XSTEP)
         #eff mass stuff
-        return time2,FILES,FILES2
+        return time2,(FILES,FILES2)

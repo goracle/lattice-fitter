@@ -1,10 +1,13 @@
+"""Check to see if matrix is symmetric"""
+import sys
+
 def sym_check(ccov):
     """Perform a symmetry check on the covariance matrix, just in case
     Note, pos def => symmetric.
     I don't know why the covariance matrix would ever be non-symmetric
     unless the data were mangled.
     """
-    for ciii in range(len(ccov)):
+    for ciii in enumerate(ccov):
         for cjjj in range(ciii+1, len(ccov)):
             if ccov[ciii][cjjj] == ccov[cjjj][ciii]:
                 pass

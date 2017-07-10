@@ -1,4 +1,8 @@
+"""Check to see if covariance matrix is positive definite."""
+import sys
+import numpy as np
 from numpy.linalg import cholesky as posdefexcept
+from numpy.linalg import eigvals
 
 def pos_def_check(ccov):
     """Check to see if (cov) matrix is positive definite.  If it is, then
