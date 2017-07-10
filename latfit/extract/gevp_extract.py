@@ -50,7 +50,7 @@ def gevp_extract(xmin,xmax,xstep):
             time_arr=[timei,timei2,timej,timej2,xstep]
 
             #get the cov entry and the block
-            resret = gevp_proc_ijfile(ifile_tup, jfile_tup,
+            resret = proc_ijfile(ifile_tup, jfile_tup,
                                       time_arr, reuse=reuse)
 
             #fill in the covariance matrix
