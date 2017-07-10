@@ -23,7 +23,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
         reuse['i'] = np.array([])
         getblock(ifile_tup, reuse, 'i')
         num_configs = len(reuse['i'])
-    avgI = np.mean(reuse['i'], axis=0)
+    avg_i = np.mean(reuse['i'], axis=0)
 
     #print num of configs
     if proc_ijfile.CONFIGSENT != 0:
@@ -48,9 +48,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
             reuse['j'] = deque()
             getblock(jfile_tup, reuse, 'j')
 
-    return rets(coord=avgI, covar=get_coventry(reuse, sameblk, avgI), returnblk=reuse['j'])
+    return rets(coord=avg_i, covar=get_coventry(reuse, sameblk, avg_i), returnblk=reuse['j'])
 
 #test to see if we've already printed the number of configurations
 proc_ijfile.CONFIGSENT = object()
-
-

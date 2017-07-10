@@ -5,8 +5,10 @@ import numpy as np
 
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_ijfile import proc_ijfile
+from latfit.extract.getfiles import getfiles
 
 from latfit.config import GEVP_DIRS
+from latfit.config import GEVP
 from latfit.config import EIGCUT
 from latfit.config import NUM_PENCILS
 
@@ -23,7 +25,6 @@ def extract(input_f, xmin, xmax, xstep):
         resret = simple_proc_file(input_f, xmin, xmax, EIGCUT)
         cov = resret.covar
         coords = resret.coord
-        dimcov = resret.numblocks
 
     #test if directory
     elif os.path.isdir(input_f):
@@ -84,20 +85,22 @@ def reuse_ij(reuse, time, ij_str):
 
 if GEVP:
     def allocate(xmin, xmax, xstep):
+        """Allocate blank coords, covariance matrix (GEVP)."""
         #dimcov is dimensions of the covariance matrix
         dimcov = int((xmax-xmin)/xstep+1)
         #dimops is the dimension of the correlator matrix
         dimops = len(GEVP_DIRS)
         #cov is the covariance matrix
-        cov = np.zeros((dimcov,dimcov,dimops*(NUM_PENCILS+1),dimops*(NUM_PENCILS+1)),dtype=np.complex128)
-
+        cov = np.zeros((dimcov, dimcov, dimops*(NUM_PENCILS+1),
+                        dimops*(NUM_PENCILS+1)), dtype=np.complex)
         #coords are the coordinates to be plotted.
         #the ith point with the jth value
         coords = np.zeros((dimcov, 2, dimops))
-    return coords, cov
+        return coords, cov
 
 else:
     def allocate(xmin, xmax, xstep):
+        """Allocate blank coords, covariance matrix."""
         #dimcov is dimensions of the covariance matrix
         dimcov = int((xmax-xmin)/xstep+1)
         #cov is the covariance matrix
@@ -105,4 +108,4 @@ else:
         #coords are the coordinates to be plotted.
         #the ith point with the jth value
         coords = np.zeros((dimcov, 2))
-    return coords, cov
+        return coords, cov

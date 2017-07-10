@@ -28,10 +28,7 @@ def singlefit(input_f, xmin, xmax, xstep):
     inputexists(input_f)
 
     ####process the file(s)
-    if GEVP:
-        coords, cov, reuse = gevp_extract(xmin, xmax, xstep)
-    else:
-        coords, cov, reuse = extract(input_f, xmin, xmax, xstep)
+    coords, cov, reuse = extract(input_f, xmin, xmax, xstep)
     #do this so reuse goes from reuse[time][config] to more convenient reuse[config][time]
 
     ##Now that we have the data to fit, do pre-proccess it

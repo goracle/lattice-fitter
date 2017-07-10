@@ -23,20 +23,19 @@ if EFF_MASS:
         C_RHS=np.zeros((dimops,dimops),dtype=float)
         C2_LHS=np.zeros((dimops,dimops),dtype=float)
         C3_LHS=np.zeros((dimops,dimops),dtype=float)
-        for opa in range(dimops):
-            for opb in range(dimops):
-                for line_lhs, line_rhs, line2_lhs, line3_lhs in zip(
-                        open(file_tup[0][opa][opb]),
-                        open(files_tup[1][opa][opb])):
-                        open(files_tup[2][opa][opb])):
-                        open(files_tup[3][opa][opb])):
-                
-                C_LHS[opa][opb]=proc_line(line_lhs,
+        for line_lhs, line_rhs, line2_lhs, line3_lhs in zip(
+                open(file_tup[0]),
+                open(files_tup[1]),
+                open(files_tup[2]),
+                open(files_tup[3])):
+            for opa in range(dimops):
+                for opb in range(dimops):
+                    C_LHS[opa][opb]=proc_line(line_lhs,
                                            file_tup[0][opa][opb])
-                C_RHS[opa][opb]=proc_line(line_rhs,
+                    C_RHS[opa][opb]=proc_line(line_rhs,
                                            file_tup[1][opa][opb])
-                C2_LHS[opa][opb]=proc_line(line_lhs2,file_tup[2][opa][opb])
-                C3_LHS[opa][opb]=proc_line(line_lhs3,file_tup[3][opa][opb])
+                    C2_LHS[opa][opb]=proc_line(line_lhs2,file_tup[2][opa][opb])
+                    C3_LHS[opa][opb]=proc_line(line_lhs3,file_tup[3][opa][opb])
                 eigvals,eigvecs=eig(C_LHS,C_RHS,
                                     overwrite_a=True,check_finite=False)
                 eigvals2,eigvecs2=eig(C2_LHS,C_RHS,
