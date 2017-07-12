@@ -16,19 +16,22 @@ FIT = True
 JACKKNIFE_FIT='DOUBLE'
 #JACKKNIFE_FIT='FROZEN'
 ##Uncorrelated fit? True or False
-#UNCORR = True
-UNCORR = False
+UNCORR = True
+#UNCORR = False
 ##Plot Effective Mass? True or False
 EFF_MASS = False
 #EFF_MASS = True
 #solve the generalized eigenvalue problem (GEVP)
-GEVP=True
-#GEVP=False
+#GEVP=True
+GEVP=False
 if GEVP:
     EFF_MASS = True # full fits not currently supported
 ##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 NUM_PENCILS=0 #if non-zero, set to 1 (only do one pencil, more than one is supported, but probably not a good idea - see ref above)
 PENCIL_SHIFT=1 #paper set this to 4
+#print correlation function, and sqrt(diag(cov)) and exit
+PRINT_CORR=False
+#PRINT_CORR=True
 
 ###METHODS/PARAMS
 
@@ -37,13 +40,18 @@ PENCIL_SHIFT=1 #paper set this to 4
 #EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
 EFF_MASS_METHOD = 3
 
-#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
-GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+NORMS = [[1.0/(16**6),1.0/(16**3)],[1.0/(16**3),1]]
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
-TITLE_PREFIX = '$\pi\pi, \sigma$, momtotal000 '
-#TITLE_PREFIX = '3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
-#TITLE_PREFIX = 'TEST '
+if GEVP:
+    if len(GEVP_DIRS)==2:
+        TITLE_PREFIX = '$\pi\pi, \sigma$, momtotal000 '
+    elif len(GEVP_DIRS)==3:
+        TITLE_PREFIX = '3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
+else:
+    TITLE_PREFIX = 'TEST2 '
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
@@ -51,23 +59,6 @@ if EFF_MASS:
 else:
     YLABEL = 'C(t)'
 
-###starting values for fit parameters
-if GEVP:
-    START_PARAMS=[.5]*len(GEVP_DIRS)
-else:
-    START_PARAMS = [7.02356707e+11,   4.47338103e-01,   1.52757540e+11]
-    #START_PARAMS = [6.68203895e+05,   2.46978036e-01]
-
-C=0
-if EFF_MASS:
-    if EFF_MASS_METHOD < 3:
-        #additive constant added to effective mass functions
-        SCALE=1e11
-        C=1.935*SCALE*0
-        #C=SCALE*0.01563
-        START_PARAMS = [.5] if not GEVP else START_PARAMS
-    elif EFF_MASS_METHOD == 3:
-        START_PARAMS = [.5] if not GEVP else START_PARAMS
 
 ###setup is for cosh fit, but one can easily modify it.
 
@@ -82,7 +73,7 @@ def fit_func_exp_long(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))+trial_params[2]
 
 ##select which of the above functions to use
 if GEVP:
@@ -90,8 +81,8 @@ if GEVP:
         return np.array(trial_params)
 else:
     def fit_func(ctime,trial_params):
-        return np.array([fit_func_exp(ctime,trial_params)])
-        #return np.array([fit_func_exp_long(ctime,trial_params)])
+        #return np.array([fit_func_exp(ctime,trial_params)])
+        return np.array([fit_func_exp_long(ctime,trial_params)])
 
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
@@ -103,6 +94,24 @@ if EFF_MASS:
         FIT = True
         def fit_func(ctime,trial_params):
             return np.array([fit_func_1p(ctime,trial_params)]) if not GEVP else np.array(trial_params)
+
+###starting values for fit parameters
+if GEVP:
+    START_PARAMS=[.5]*len(GEVP_DIRS)
+else:
+    START_PARAMS = [-1.02356707e+04,   4.47338103e-01,   1.52757540e+00]
+    #START_PARAMS = [1.68203895e+02,   6.46978036e-01]
+
+C=0
+if EFF_MASS:
+    if EFF_MASS_METHOD < 3:
+        #additive constant added to effective mass functions
+        SCALE=1e11
+        C=1.935*SCALE*0
+        #C=SCALE*0.01563
+        START_PARAMS = [.5] if not GEVP else START_PARAMS
+    elif EFF_MASS_METHOD == 3:
+        START_PARAMS = [.5] if not GEVP else START_PARAMS
 
 ##RARELY EDIT BELOW
 ##bounds for fit parameters
@@ -125,7 +134,8 @@ METHOD = 'Nelder-Mead'
 ##correction only happens if multiple files are processed
 JACKKNIFE = 'YES'
 ##eliminate problematic configs.  Simply set this to a list of ints indexing the configs, e.g. ELIM_JKCONF_LIST=[0,1] will eliminate the first two configs
-ELIM_JKCONF_LIST=None
+#ELIM_JKCONF_LIST=range(48)
+ELIM_JKCONF_LIST=[]
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
 ##the boundary for when the fitter warns you if the eigenvalues
