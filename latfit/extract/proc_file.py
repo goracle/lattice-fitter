@@ -11,6 +11,7 @@ from latfit.extract.proc_line import proc_line
 from latfit.config import UNCORR
 from latfit.config import EFF_MASS
 from latfit.config import START_PARAMS
+from latfit.config import ELIM_JKCONF_LIST
 
 CSENT = object()
 def proc_file(pifile, pjfile=CSENT,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reuse={}):
@@ -81,7 +82,7 @@ def proc_file(pifile, pjfile=CSENT,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reu
                     reuse[linej+linej2+linej3] = START_PARAMS[1]
                 reuse['j']=np.append(reuse['j'],reuse[linej+linej2+linej3])
         if ELIM_JKCONF_LIST:
-            reuse['j']=elim_jkconfigs(reuse['i'])
+            reuse['j']=elim_jkconfigs(reuse['j'])
         counttest=len(reuse['j'])
     #check to make sure i,j have the same number of lines
     if not counttest == count:
