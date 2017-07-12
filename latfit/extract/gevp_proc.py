@@ -14,6 +14,8 @@ from latfit.extract.proc_line import proc_line
 
 from latfit.config import UNCORR
 from latfit.config import EFF_MASS
+from latfit.config import ELIM_JKCONF_LIST
+from latfit.config import NORMS
 
 CSENT = object()
 def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),(CSENT,CSENT)],reuse={}):
@@ -59,11 +61,11 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
         for config in range(num_configs):
             for opa in range(dimops):
                 for opb in range(dimops):
-                    CI_LHS[opa][opb]=proc_line(getline(IFILES[opa][opb],config+1),IFILES[opa][opb])
-                    CI_RHS[opa][opb]=proc_line(getline(IFILES2[opa][opb],config+1),IFILES2[opa][opb])
+                    CI_LHS[opa][opb]=proc_line(getline(IFILES[opa][opb],config+1),IFILES[opa][opb])*NORMS[opa][opb]
+                    CI_RHS[opa][opb]=proc_line(getline(IFILES2[opa][opb],config+1),IFILES2[opa][opb])*NORMS[opa][opb]
                     if EFF_MASS:
-                        CIP_LHS[opa][opb]=proc_line(getline(IFILES3[opa][opb],config+1),IFILES3[opa][opb])
-                        CIPP_LHS[opa][opb]=proc_line(getline(IFILES4[opa][opb],config+1),IFILES4[opa][opb])
+                        CIP_LHS[opa][opb]=proc_line(getline(IFILES3[opa][opb],config+1),IFILES3[opa][opb])*NORMS[opa][opb]
+                        CIPP_LHS[opa][opb]=proc_line(getline(IFILES4[opa][opb],config+1),IFILES4[opa][opb])*NORMS[opa][opb]
             if EFF_MASS:
                 eigvalsI,eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,check_finite=False)
                 eigvalsIP,eigvecsIP=eig(CIP_LHS,CI_RHS,overwrite_a=True,check_finite=False)
@@ -85,15 +87,21 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
             sys.exit(1)
     if np.array_equal(IFILES,JFILES):
         reuse['j']=reuse['i']
+    flag=0
     try:
         if not num_configs==len(reuse['j']):
             print("***ERROR***")
             print("Number of configs not equal for i and j")
             print("GEVP covariance matrix entry:",TIME_ARR)
+            print(num_configs, len(reuse['j']))
+            flag=1
             sys.exit(1)
     except:
-        reuse['j']=np.zeros((num_configs,dimops))
-        for config in range(num_configs):
+        if flag==1:
+            sys.exit(1)
+        standard_num=sum(1 for _ in open(JFILES[0][0]))
+        reuse['j']=np.zeros((standard_num,dimops))
+        for config in range(standard_num):
             for opa in range(dimops):
                 for opb in range(dimops):
                     CJ_LHS[opa][opb]=proc_line(getline(JFILES[opa][opb],config+1),JFILES[opa][opb])
