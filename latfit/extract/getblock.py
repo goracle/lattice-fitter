@@ -2,6 +2,8 @@
 import numpy as np
 
 from scipy.linalg import eig
+import linecache as lc
+
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.extract.proc_line import proc_line
@@ -16,26 +18,27 @@ if EFF_MASS:
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
+        files_tup[2] is the t+1 lhs
+        files_tup[3] is the t+2 lhs
+        C(t)v=Eigval*C(t_0)v
         """
         dimops=len(file_tup[0])
-        #C(t)v=Eigval*C(t_0)v
+        num_configs=sum(1 for _ in open(file_tup[0][0][0]))
         C_LHS=np.zeros((dimops,dimops),dtype=float)
         C_RHS=np.zeros((dimops,dimops),dtype=float)
         C2_LHS=np.zeros((dimops,dimops),dtype=float)
         C3_LHS=np.zeros((dimops,dimops),dtype=float)
-        for line_lhs, line_rhs, line2_lhs, line3_lhs in zip(
-                open(file_tup[0]),
-                open(files_tup[1]),
-                open(files_tup[2]),
-                open(files_tup[3])):
+        for num in num_configs:
             for opa in range(dimops):
                 for opb in range(dimops):
-                    C_LHS[opa][opb]=proc_line(line_lhs,
-                                           file_tup[0][opa][opb])
-                    C_RHS[opa][opb]=proc_line(line_rhs,
-                                           file_tup[1][opa][opb])
-                    C2_LHS[opa][opb]=proc_line(line_lhs2,file_tup[2][opa][opb])
-                    C3_LHS[opa][opb]=proc_line(line_lhs3,file_tup[3][opa][opb])
+                    C_LHS[opa][opb]=proc_line(getline(file_tup[0][opa][opb],num+1),
+                                               file_tup[0][opa][opb])
+                    C_RHS[opa][opb]=proc_line(getline(file_tup[1][opa][opb],num+1),
+                                               file_tup[1][opa][opb])
+                    C2_LHS[opa][opb]=proc_line(getline(file_tup[2][opa][opb],num+1),
+                                               file_tup[2][opa][opb])
+                    C3_LHS[opa][opb]=proc_line(getline(file_tup[3][opa][opb],num+1),
+                                               file_tup[3][opa][opb])
                 eigvals,eigvecs=eig(C_LHS,C_RHS,
                                     overwrite_a=True,check_finite=False)
                 eigvals2,eigvecs2=eig(C2_LHS,C_RHS,
@@ -43,7 +46,8 @@ if EFF_MASS:
                 eigvals3,eigvecs3=eig(C3_LHS,C_RHS,
                     overwrite_a=True,overwrite_b=True,check_finite=False)
                 reuse[ij_str].append(np.array([proc_meff(
-                    eigvals[op].real,eigvals2[op].real,
+                    eigvals[op].real,
+                    eigvals2[op].real,
                     eigvals3[op].real) for op in range(dimops)]))
         if elim_jkconf_list:
             reuse[ij_str]=elim_jkconfigs(reuse[ij_str])
@@ -53,17 +57,18 @@ else:
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
+        C(t)v=Eigval*C(t_0)v
         """
         dimops=len(file_tup[0])
+        num_configs=sum(1 for _ in open(file_tup[0][0][0]))
         C_LHS=np.zeros((dimops,dimops),dtype=float)
         C_RHS=np.zeros((dimops,dimops),dtype=float)
-        for opa in range(dimops):
-            for opb in range(dimops):
-                for line_lhs, line_rhs in zip(open(file_tup[0][opa][opb]),
-                                              open(files_tup[1][opa][opb])):
-                    C_LHS[opa][opb]=proc_line(line_lhs,
+        for num in range(num_configs):
+            for opa in range(dimops):
+                for opb in range(dimops):
+                    C_LHS[opa][opb]=proc_line(getline(file_tup[0][opa][opb],num+1),
                                                file_tup[0][opa][opb])
-                    C_RHS[opa][opb]=proc_line(line_rhs,
+                    C_RHS[opa][opb]=proc_line(getline(file_tup[1][opa][opb],num+1),
                                                file_tup[1][opa][opb])
             eigvals,eigvecsI=eig(C_LHS,C_RHS,overwrite_a=True,
                 overwrite_b=True,check_finite=False)
