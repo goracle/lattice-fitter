@@ -25,6 +25,7 @@ from latfit.config import JACKKNIFE
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import GEVP
 from latfit.config import START_PARAMS
+from latfit.config import PRINT_CORR
 from latfit.mathfun.chi_sq import chi_sq
 
 def singlefit(INPUT, XMIN, XMAX, XSTEP):
@@ -36,6 +37,10 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         COORDS, COV, REUSE = gevp_extract(XMIN,XMAX,XSTEP)
     else:
         COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
+    if PRINT_CORR:
+        print(COORDS)
+        print(np.sqrt(np.diag(COV)))
+        sys.exit(0)
     num_configs=len(REUSE[XMIN])
     #do this so REUSE goes from REUSE[time][config] to more convenient REUSE[config][time]
     time_range=np.arange(XMIN,XMAX+1,XSTEP)
