@@ -30,7 +30,7 @@ def gevp_extract(xmin,xmax,XSTEP):
         if timei in REUSE:
             REUSE['i']=REUSE[timei]
         else:
-            REUSE.pop('i')
+            REUSE['i']=0
             if timei!=xmin:
                 #delete me if working!
                 print("***ERROR***")
