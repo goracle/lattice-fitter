@@ -87,6 +87,9 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
             sys.exit(1)
     if np.array_equal(IFILES,JFILES):
         reuse['j']=reuse['i']
+        sameblk = True
+    else:
+        sameblk = False
     flag=0
     try:
         if not num_configs==len(reuse['j']):
@@ -128,8 +131,11 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
             print("GEVP has negative eigenvalues.")
             sys.exit(1)
     if UNCORR:
-        for a in range(dimops):
-            coventry[a][a]=np.sum([(avgI[a]-reuse['i'][k][a])*(avgI[a]-reuse['i'][k][a]) for k in range(num_configs)],axis=0)
+        if sameblk:
+            for a in range(dimops):
+                coventry[a][a]=np.sum([(avgI[a]-reuse['i'][k][a])*(avgI[a]-reuse['i'][k][a]) for k in range(num_configs)],axis=0)
+        else:
+            coventry = 0
     else:
         coventry=np.sum([np.outer((avgI-reuse['i'][k]),(avgJ-reuse['j'][k])) for k in range(num_configs)],axis=0)
     return rets(coord=avgI, covar=coventry,returnblk=reuse['j'])
