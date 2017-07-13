@@ -1,8 +1,9 @@
+"""get file from folder"""
 import re
 import os
 import sys
 
-def proc_folder(folder, ctime, other_regex = ""):
+def proc_folder(folder, ctime, other_regex=""):
     """Process folder where blocks to be averaged are stored.
     Return file corresponding to current ensemble (lattice time slice).
     Assumes file is <anything>t<time><anything>
@@ -20,39 +21,14 @@ def proc_folder(folder, ctime, other_regex = ""):
     flag2 = 0
     temp4 = object()
     retname = temp4
-    if not type(ctime) is int:
+    if not isinstance(ctime, int):
         if int(str(ctime-int(ctime))[2:]) == 0:
             my_regex2 = r"t" + str(int(ctime))
             regex_reject2 = my_regex2+r"[0-9]"
-    temp1 = ""
-    temp2 = ""
-    for root, dirs, files in os.walk(folder):
-        for name in files:
-            #logic: if the search matches either int or float ctime
-            #test for int match first
-            if not regex_reject2 == "":
-                if re.search(my_regex2, name) and (
-                        not re.search(regex_reject2, name)):
-                    #logic: if we found another matching file in
-                    #the folder already, then flag it
-                    if not retname == temp4:
-                        flag2 = 1
-                    retname = name
-            #then test for a float match
-            if re.search(my_regex, name) and (
-                    not re.search(regex_reject1, name)):
-                #logic: if we found another matching file in
-                #the folder already, then flag it
-                if not retname == temp4:
-                    flag2 = 1
-                #logic: else save the file name to return after folder walk
-                retname = name
-            else:
-                #gather debugging information.
-                temp1 = root
-                temp2 = dirs
+    retname, flag2, debug = lookat_dir(
+        folder, my_regex, [regex_reject1, regex_reject2], temp4, retname)
     #logic: if we found at least one match
-    if not retname == temp4:
+    if retname != temp4:
         #logic: if we found >1 match
         if flag2 == 1:
             print("***ERROR***")
@@ -62,10 +38,37 @@ def proc_folder(folder, ctime, other_regex = ""):
             print("Offending files:", retname)
             sys.exit(1)
         return retname
-    print(temp1)
-    print(temp2)
+    print(debug[0])
+    print(debug[1])
     print(folder)
     print("***ERROR***")
     print("Can't find file corresponding to x-value = ", ctime)
     print("regex = ", my_regex)
     sys.exit(1)
+
+def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
+    """loop on dir, look for file we want"""
+    for root, dirs, files in os.walk(folder):
+        for name in files:
+            #logic: if the search matches either int or float ctime
+            #test for int match first
+            if regex_reject[1] != "":
+                if re.search(my_regex[1], name) and (
+                        not re.search(regex_reject[1], name)):
+                    #logic: if we found another matching file in
+                    #the folder already, then flag it
+                    if retname != temp4:
+                        flag2 = 1
+                    retname = name
+            #then test for a float match
+            if re.search(my_regex[0], name) and (
+                    not re.search(regex_reject[0], name)):
+                #logic: if we found another matching file in
+                #the folder already, then flag it
+                if retname != temp4:
+                    flag2 = 1
+                #logic: else save the file name to return after folder walk
+                retname = name
+            else:
+                debug = [root, dirs]
+    return retname, flag2, debug

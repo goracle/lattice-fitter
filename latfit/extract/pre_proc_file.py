@@ -1,14 +1,15 @@
+"""test if file exists"""
 import sys
 
-def pre_proc_file(IFILE,INPUT):
-    IFILE = INPUT + "/" + IFILE
+def pre_proc_file(ifile, input_f):
+    """Try to open file, print error if not found"""
+    ifile = input_f + "/" + ifile
     try:
-        TRIAL = open(IFILE, "r")
+        open(ifile, "r")
     except TypeError:
-        STR1 = "Either domain is invalid,"
-        print(STR1, "or folder is invalid.")
+        print("Either domain is invalid,", "or folder is invalid.")
         print("Double check contents of folder.")
         print("Offending file(s):")
-        print(IFILE)
+        print(ifile)
         sys.exit(1)
-    return IFILE
+    return ifile

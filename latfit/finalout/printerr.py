@@ -1,7 +1,9 @@
-def printerr(result_min, PARAM_ERR):
-    for i in range(len(PARAM_ERR)):
+"""Print error"""
+def printerr(result_min, param_err):
+    """Print the param error"""
+    for i, err in enumerate(param_err):
         print("Minimized parameter #", i, " = ")
-        print(result_min[i], "+/-", PARAM_ERR[i])
+        print(result_min[i], "+/-", err)
     return 0
         #ERR_A0 = sqrt(2*HINV[0][0])
         #ERR_ENERGY = sqrt(2*HINV[1][1])

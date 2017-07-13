@@ -33,7 +33,7 @@ def singlefit(input_f, xmin, xmax, xstep):
 
     ##Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs', 'prefactor'])
-    params = get_fit_params(cov, reuse)
+    params = get_fit_params(cov, reuse, xmin)
 
     time_range = np.arange(xmin, xmax+1, xstep)
     #reuse = swap(reuse, 0, 1)

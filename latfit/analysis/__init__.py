@@ -1,3 +1,3 @@
 """Analysis of extracted and params"""
 
-all = ["get_fit_params"]
+__all__ = ["get_fit_params"]

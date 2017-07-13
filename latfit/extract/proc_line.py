@@ -1,15 +1,16 @@
+"""Process the line."""
+import sys
 from warnings import warn
 import numpy as np
-import sys
 
-#take the real and test for error
-def proc_line(line,pifile="BLANK"):
-    l = line.split()
-    if len(l) == 2:
+def proc_line(line, pifile="BLANK"):
+    """take the real and test for error"""
+    linesp = line.split()
+    if len(linesp) == 2:
         warn("Taking the real (first column).")
-        return float(l[0])
-    elif len(l) == 1:
-        return np.float128(line)
+        return float(linesp[0])
+    elif len(linesp) == 1:
+        return np.float(line)
     else:
         print("***ERROR***")
         print("Unknown block format.")

@@ -1,18 +1,40 @@
 """Get the data block."""
+from linecache import getline
 import numpy as np
-
 from scipy.linalg import eig
-import linecache as lc
 
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.extract.proc_line import proc_line
 
-from latfit.config import UNCORR
 from latfit.config import EFF_MASS
+from latfit.config import GEVP
+from latfit.config import START_PARAMS
 from latfit.config import elim_jkconf_list
 
 #todo, check for neg/imag eigenvals
+
+def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
+    """get the nth generalized eigenvalue from matrices of files
+    file_tup_lhs, file_tup_rhs
+    optionally, overwrite the rhs matrix we get if we don't need it anymore.
+    """
+    dimops = len(file_tup_lhs)
+    c_lhs = np.zeros((dimops, dimops), dtype=float)
+    c_rhs = np.zeros((dimops, dimops), dtype=float)
+    for opa in range(dimops):
+        for opb in range(dimops):
+            c_lhs[opa][opb] = proc_line(
+                getline(file_tup_lhs[opa][opb], num+1),
+                file_tup_lhs[opa][opb])
+            c_rhs[opa][opb] = proc_line(
+                getline(file_tup_rhs[opa][opb], num+1),
+                file_tup_rhs[opa][opb])
+    eigvals, _ = eig(c_lhs, c_rhs,
+                     overwrite_a=True, overwrite_b=overb, check_finite=False)
+    return eigvals
+
+
 if EFF_MASS:
     def getblock_gevp(file_tup, reuse, ij_str):
         """Given file tuple (for eff_mass),
@@ -20,61 +42,34 @@ if EFF_MASS:
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
         files_tup[2] is the t+1 lhs
         files_tup[3] is the t+2 lhs
-        C(t)v=Eigval*C(t_0)v
+        C(t)v = Eigval*C(t_0)v
         """
-        dimops=len(file_tup[0])
-        num_configs=sum(1 for _ in open(file_tup[0][0][0]))
-        C_LHS=np.zeros((dimops,dimops),dtype=float)
-        C_RHS=np.zeros((dimops,dimops),dtype=float)
-        C2_LHS=np.zeros((dimops,dimops),dtype=float)
-        C3_LHS=np.zeros((dimops,dimops),dtype=float)
+        dimops = len(file_tup[0])
+        num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         for num in num_configs:
-            for opa in range(dimops):
-                for opb in range(dimops):
-                    C_LHS[opa][opb]=proc_line(getline(file_tup[0][opa][opb],num+1),
-                                               file_tup[0][opa][opb])
-                    C_RHS[opa][opb]=proc_line(getline(file_tup[1][opa][opb],num+1),
-                                               file_tup[1][opa][opb])
-                    C2_LHS[opa][opb]=proc_line(getline(file_tup[2][opa][opb],num+1),
-                                               file_tup[2][opa][opb])
-                    C3_LHS[opa][opb]=proc_line(getline(file_tup[3][opa][opb],num+1),
-                                               file_tup[3][opa][opb])
-                eigvals,eigvecs=eig(C_LHS,C_RHS,
-                                    overwrite_a=True,check_finite=False)
-                eigvals2,eigvecs2=eig(C2_LHS,C_RHS,
-                                      overwrite_a=True,check_finite=False)
-                eigvals3,eigvecs3=eig(C3_LHS,C_RHS,
-                    overwrite_a=True,overwrite_b=True,check_finite=False)
-                reuse[ij_str].append(np.array([proc_meff(
-                    eigvals[op].real,
-                    eigvals2[op].real,
-                    eigvals3[op].real) for op in range(dimops)]))
+            eigvals = get_eigvals(num, file_tup[0], file_tup[1])
+            eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
+            eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
+            reuse[ij_str].append(np.array([proc_meff(
+                eigvals[op].real,
+                eigvals2[op].real,
+                eigvals3[op].real) for op in range(dimops)]))
         if elim_jkconf_list:
-            reuse[ij_str]=elim_jkconfigs(reuse[ij_str])
+            reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
 
 else:
     def getblock_gevp(file_tup, reuse, ij_str):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
-        C(t)v=Eigval*C(t_0)v
+        C(t)v = Eigval*C(t_0)v
         """
-        dimops=len(file_tup[0])
-        num_configs=sum(1 for _ in open(file_tup[0][0][0]))
-        C_LHS=np.zeros((dimops,dimops),dtype=float)
-        C_RHS=np.zeros((dimops,dimops),dtype=float)
+        num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         for num in range(num_configs):
-            for opa in range(dimops):
-                for opb in range(dimops):
-                    C_LHS[opa][opb]=proc_line(getline(file_tup[0][opa][opb],num+1),
-                                               file_tup[0][opa][opb])
-                    C_RHS[opa][opb]=proc_line(getline(file_tup[1][opa][opb],num+1),
-                                               file_tup[1][opa][opb])
-            eigvals,eigvecsI=eig(C_LHS,C_RHS,overwrite_a=True,
-                overwrite_b=True,check_finite=False)
+            eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             reuse[ij_str].append(eigvals)
         if elim_jkconf_list:
-            reuse[ij_str]=elim_jkconfigs(reuse[ij_str])
+            reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
 
 if EFF_MASS:
     def getblock_simple(file_tup, reuse, ij_str):
@@ -96,7 +91,7 @@ if EFF_MASS:
 
 else:
     def getblock_simple(ijfile, reuse, ij_str):
-        """Given file, 
+        """Given file,
         get block, store in reuse[ij_str]
         """
         for line in open(ijfile):

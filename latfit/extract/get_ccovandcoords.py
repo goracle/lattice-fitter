@@ -1,4 +1,6 @@
+"""Extract precomputed cov. mat."""
 from collections import defaultdict
+import sys
 
 def tree():
     """Return a multidimensional dict"""
@@ -23,7 +25,7 @@ def get_ccovandcoords(kfile, cxmin, cxmax):
             #two columns mean coordinate section, 3 covariance section
         elif len(cols) == 3:
             cdict[cols[0]][cols[1]] = cols[2]
-        elif (not len(cols) == 2) and (not len(cols(3))):
+        elif not len(cols) == 2 and not len(cols) == 3:
             print("***Error***")
             print("mangled file:")
             print(kfile)
