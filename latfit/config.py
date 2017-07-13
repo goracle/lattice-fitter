@@ -13,18 +13,18 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-#FIT = False
-FIT = True
+FIT = False
+#FIT = True
 
 ##Jackknife fit?
 #JACKKNIFE_FIT=''
-#JACKKNIFE_FIT='DOUBLE'
-JACKKNIFE_FIT='FROZEN'
+JACKKNIFE_FIT='DOUBLE'
+#JACKKNIFE_FIT='FROZEN'
 
 ##Uncorrelated fit? True or False
 
-UNCORR = True
-#UNCORR = False
+#UNCORR = True
+UNCORR = False
 
 ##Plot Effective Mass? True or False
 
@@ -32,15 +32,12 @@ EFF_MASS = False
 #EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
-#GEVP=True
-GEVP=False
-if GEVP:
-    EFF_MASS = True # full fits not currently supported
-
+GEVP=True
+#GEVP=False
 
 #print correlation function, and sqrt(diag(cov)) and exit
-PRINT_CORR=False
-#PRINT_CORR=True
+#PRINT_CORR=False
+PRINT_CORR=True
 
 ###METHODS/PARAMS
 
@@ -54,13 +51,12 @@ ADD_CONST=True
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit
-EFF_MASS_METHOD = 3
+EFF_MASS_METHOD = 1
 
-GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
-#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
+#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','S_pipipipi_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus']]
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
 
-#NORMS = [[1.0/(16**6),1.0/(16**3)],[1.0/(16**3),1]]
-NORMS = [[1.0,1.0],[1.0,1.0]]
 
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
@@ -74,7 +70,7 @@ else:
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
-    YLABEL = r'$am^{eff}}(t)$'
+    YLABEL = r'$am_{eff}}(t)$'
 else:
     YLABEL = 'C(t)'
 
@@ -82,12 +78,14 @@ else:
 
 ###starting values for fit parameters
 if GEVP:
-    START_PARAMS=[.5]*len(GEVP_DIRS)
+    mult=len(GEVP_DIRS)
 else:
-    if ADD_CONST:
-        START_PARAMS = [-1.02356707e+04,   4.47338103e-01,   1.52757540e+00]
-    else:
-        START_PARAMS = [1.68203895e+02,   6.46978036e-01]
+    mult=1
+if ADD_CONST:
+    #START_PARAMS = [1.02356707e+04,   4.47338103e-01,   1.52757540e+00]*mult
+    START_PARAMS = [4.47e-01,   1,   4.47e-01,   1]
+else:
+    START_PARAMS = [1.68203895e+02,   6.46978036e-01]*mult
 
 ##library of functions to fit.  define them in the usual way
 #setup is for simple exponential fit, but one can easily modify it.
@@ -103,10 +101,22 @@ def fit_func_exp_add(ctime, trial_params):
     """
     return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(LT-ctime)))+trial_params[2]
 
+def fit_func_exp_gevp(ctime, trial_params):
+    """Give result of function computed to fit the data given in <inputfile>
+    (See procargs(argv)) GEVP, cosh+const
+    """
+    return ((exp(-trial_params[0]*ctime)+exp(-trial_params[1]*(LT-ctime)))+trial_params[1])/(
+        (exp(-trial_params[0]*(ctime-1))+exp(-trial_params[1]*(LT-(ctime-1))))+trial_params[1])
+
 ##select which of the above functions to use
 if GEVP:
-    def fit_func(ctime,trial_params):
-        return np.array(trial_params)
+    origl=int(len(START_PARAMS)/mult)
+    if EFF_MASS:
+        def fit_func(ctime,trial_params):
+            return np.array([fit_func_1p(ctime,trial_params[j:(j+1)]) for j in range(mult)])
+    else:
+        def fit_func(ctime, trial_params):
+            return np.array([fit_func_exp_gevp(ctime,trial_params[j*origl:(j+1)*origl]) for j in range(mult)])
 else:
     if ADD_CONST:
         def fit_func(ctime,trial_params):
@@ -115,7 +125,7 @@ else:
         def fit_func(ctime,trial_params):
             return np.array([fit_func_exp(ctime,trial_params)])
 
-if EFF_MASS:
+if EFF_MASS and not GEVP:
     if EFF_MASS_METHOD < 3:
         def fit_func(ctime,trial_params):
             return np.array([trial_params[0]]) if not GEVP else np.array(trial_params)
@@ -134,9 +144,9 @@ if EFF_MASS:
         SCALE=1e11
         C=1.935*SCALE*0
         #C=SCALE*0.01563
-        START_PARAMS = [.5] if not GEVP else START_PARAMS
+        START_PARAMS = [.5]*mult
     elif EFF_MASS_METHOD == 3:
-        START_PARAMS = [.5] if not GEVP else START_PARAMS
+        START_PARAMS = [.5]*mult
 
 ##RARELY EDIT BELOW
 ##bounds for fit parameters
@@ -159,9 +169,13 @@ METHOD = 'Nelder-Mead'
 ##correction only happens if multiple files are processed
 JACKKNIFE = 'YES'
 ##eliminate problematic configs.  Simply set this to a list of ints indexing the configs, e.g. ELIM_JKCONF_LIST=[0,1] will eliminate the first two configs
-#ELIM_JKCONF_LIST=range(48)
-ELIM_JKCONF_LIST=[]
+ELIM_JKCONF_LIST=range(48)
+#ELIM_JKCONF_LIST=[]
 ###-------BEGIN POSSIBLY OBSOLETE------###
+
+#multiply both sides of the gevp matrix by norms
+#NORMS = [[1.0/(16**6),1.0/(16**3)],[1.0/(16**3),1]]
+NORMS = [[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]]
 
 ##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 NUM_PENCILS=0 #if non-zero, set to 1 (only do one pencil, more than one is supported, but probably not a good idea - see ref above)
