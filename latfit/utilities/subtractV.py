@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from collections import deque
 import read_file as rf
 from traj_list import traj_list
 import os
@@ -52,6 +53,7 @@ def AvgVdis():
             avg = np.array(procV(fn))
             numt=1
             #use this first file to bootstrap the rest of the files (traj substitution)
+            err_fact=deque()
             for traj in tlist:
                 if traj == rf.traj(fn):
                     continue
@@ -61,10 +63,15 @@ def AvgVdis():
                     open(fn2,'r')
                 except:
                     continue
+                b.append(procV(fn2))
                 avg+=np.array(procV(fn2))
                 numt+=1
             print("Number of configs to average over:",numt,"for outfile:",outfile)
             rf.write_vec_str(avg/numt,outfile)
+            err_fact=np.array(err_fact)
+            err_fact-=avg/numt
+            err_bub=np.sqrt(np.diag(np.einsum('ai,aj->ij',err_fact,err_fact))/(numt*(numt-1)))
+            rf.write_vec_str(err_bub,outfile+'_err')
     print("Done writing Vdis averaged over trajectories.")
     return
 
