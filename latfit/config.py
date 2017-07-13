@@ -35,14 +35,22 @@ PRINT_CORR=False
 
 ###METHODS/PARAMS
 
+#time extent
+LT=24
+#additive constant
+ADD_CONST=True
+
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations (bad for all cases; DO NOT USE.  It doesn't converge very often.)
-#EFF_MASS_METHOD 3: one param fit (bad when additive constant = 0)
+#EFF_MASS_METHOD 3: one param fit
 EFF_MASS_METHOD = 3
 
 GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
 #GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
-NORMS = [[1.0/(16**6),1.0/(16**3)],[1.0/(16**3),1]]
+
+#NORMS = [[1.0/(16**6),1.0/(16**3)],[1.0/(16**3),1]]
+NORMS = [[1.0,1.0],[1.0,1.0]]
+
 ###DISPLAY PARAMETERS
 #no title given takes the current working directory as the title
 if GEVP:
@@ -59,7 +67,6 @@ if EFF_MASS:
 else:
     YLABEL = 'C(t)'
 
-
 ###setup is for cosh fit, but one can easily modify it.
 
 ##library of functions to fit.  define them in the usual way
@@ -68,21 +75,24 @@ def fit_func_exp(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(24-ctime)))+trial_params[2]
-def fit_func_exp_long(ctime, trial_params):
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(LT-ctime)))
+def fit_func_exp_add(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
     """
-    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(32-ctime)))+trial_params[2]
+    return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(LT-ctime)))+trial_params[2]
 
 ##select which of the above functions to use
 if GEVP:
     def fit_func(ctime,trial_params):
         return np.array(trial_params)
 else:
-    def fit_func(ctime,trial_params):
-        #return np.array([fit_func_exp(ctime,trial_params)])
-        return np.array([fit_func_exp_long(ctime,trial_params)])
+    if ADD_CONST:
+        def fit_func(ctime,trial_params):
+            return np.array([fit_func_exp_add(ctime,trial_params)])
+    else:
+        def fit_func(ctime,trial_params):
+            return np.array([fit_func_exp(ctime,trial_params)])
 
 if EFF_MASS:
     if EFF_MASS_METHOD < 3:
@@ -178,9 +188,9 @@ def fit_func_3pt_sym(ctime, trial_params):
 
 #for EFF_MASS_METHOD = 3
 def fit_func_1p(ctime,trial_params):
-    C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(24-ctime))
-    C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(24-(ctime+1)))
-    C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(24-(ctime+2)))
+    C1 = exp(-trial_params[0]*ctime)+exp(-trial_params[0]*(LT-ctime))
+    C2 = exp(-trial_params[0]*(ctime+1))+exp(-trial_params[0]*(LT-(ctime+1)))
+    C3 = exp(-trial_params[0]*(ctime+2))+exp(-trial_params[0]*(LT-(ctime+2)))
     arg = (C2-C1)/(C3-C2)
     if arg <= 0:
         print("imaginary effective mass.")
