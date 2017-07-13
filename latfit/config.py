@@ -5,30 +5,39 @@ from sympy import exp as exps
 import sys
 
 ###TYPE OF FIT
+
 ##plot anything at all?
+
 NO_PLOT = False
 #NO_PLOT = True
+
 ##Do a fit at all?
+
 #FIT = False
 FIT = True
+
 ##Jackknife fit?
 #JACKKNIFE_FIT=''
-JACKKNIFE_FIT='DOUBLE'
-#JACKKNIFE_FIT='FROZEN'
+#JACKKNIFE_FIT='DOUBLE'
+JACKKNIFE_FIT='FROZEN'
+
 ##Uncorrelated fit? True or False
+
 UNCORR = True
 #UNCORR = False
+
 ##Plot Effective Mass? True or False
+
 EFF_MASS = False
 #EFF_MASS = True
+
 #solve the generalized eigenvalue problem (GEVP)
 #GEVP=True
 GEVP=False
 if GEVP:
     EFF_MASS = True # full fits not currently supported
-##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
-NUM_PENCILS=0 #if non-zero, set to 1 (only do one pencil, more than one is supported, but probably not a good idea - see ref above)
-PENCIL_SHIFT=1 #paper set this to 4
+
+
 #print correlation function, and sqrt(diag(cov)) and exit
 PRINT_CORR=False
 #PRINT_CORR=True
@@ -36,8 +45,10 @@ PRINT_CORR=False
 ###METHODS/PARAMS
 
 #time extent
+
 LT=24
 #additive constant
+
 ADD_CONST=True
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh (good for when additive const = 0)
@@ -63,11 +74,20 @@ else:
 TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
-    YLABEL = r'$am_{res}^{eff}}(t)$'
+    YLABEL = r'$am^{eff}}(t)$'
 else:
     YLABEL = 'C(t)'
 
 ###setup is for cosh fit, but one can easily modify it.
+
+###starting values for fit parameters
+if GEVP:
+    START_PARAMS=[.5]*len(GEVP_DIRS)
+else:
+    if ADD_CONST:
+        START_PARAMS = [-1.02356707e+04,   4.47338103e-01,   1.52757540e+00]
+    else:
+        START_PARAMS = [1.68203895e+02,   6.46978036e-01]
 
 ##library of functions to fit.  define them in the usual way
 #setup is for simple exponential fit, but one can easily modify it.
@@ -76,6 +96,7 @@ def fit_func_exp(ctime, trial_params):
     (See procargs(argv))
     """
     return trial_params[0]*(exp(-trial_params[1]*ctime)+exp(-trial_params[1]*(LT-ctime)))
+
 def fit_func_exp_add(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv))
@@ -105,12 +126,6 @@ if EFF_MASS:
         def fit_func(ctime,trial_params):
             return np.array([fit_func_1p(ctime,trial_params)]) if not GEVP else np.array(trial_params)
 
-###starting values for fit parameters
-if GEVP:
-    START_PARAMS=[.5]*len(GEVP_DIRS)
-else:
-    START_PARAMS = [-1.02356707e+04,   4.47338103e-01,   1.52757540e+00]
-    #START_PARAMS = [1.68203895e+02,   6.46978036e-01]
 
 C=0
 if EFF_MASS:
@@ -147,6 +162,11 @@ JACKKNIFE = 'YES'
 #ELIM_JKCONF_LIST=range(48)
 ELIM_JKCONF_LIST=[]
 ###-------BEGIN POSSIBLY OBSOLETE------###
+
+##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
+NUM_PENCILS=0 #if non-zero, set to 1 (only do one pencil, more than one is supported, but probably not a good idea - see ref above)
+PENCIL_SHIFT=1 #paper set this to 4
+
 
 ##the boundary for when the fitter warns you if the eigenvalues
 ##of your covariance are very small
