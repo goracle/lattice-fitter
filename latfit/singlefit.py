@@ -134,6 +134,7 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
                                 covinv_jack=inv(np.einsum('ai,aj->ij',cov_factor,cov_factor))
                             else:
                                 covinv_jack=swap(tensorinv(np.einsum('aim,ajn->imjn',cov_factor,cov_factor)),1,2)
+                            covinv_jack*=((num_configs)*(num_configs-1))
                             flag=0
                         except:
                             print("Covariance matrix is singular in jackknife fit.")
