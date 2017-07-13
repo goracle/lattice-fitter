@@ -10,7 +10,8 @@ from latfit.config import NUM_PENCILS
 if EFF_MASS:
     def gevp_getfiles(time,XSTEP,xmin):
         #time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
-        time2=time-1
+        #time2=time-1
+        time2=xmin-2*xstep
         #extract files
         if NUM_PENCILS < 1:
             FILES=gevp_getfiles_onetime(time)
@@ -26,7 +27,8 @@ if EFF_MASS:
         return time2,FILES,FILES2,FILES3,FILES4
 else:
     def gevp_getfiles(time,XSTEP,xmin):
-        time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
+        #time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
+        time2=xmin-2*xstep
         #extract files
         if NUM_PENCILS < 1:
             FILES=gevp_getfiles_onetime(time)
