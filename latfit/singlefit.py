@@ -39,7 +39,11 @@ def singlefit(INPUT, XMIN, XMAX, XSTEP):
         COORDS, COV, REUSE = extract(INPUT, XMIN, XMAX, XSTEP)
     if PRINT_CORR:
         print(COORDS)
-        print(np.sqrt(np.diag(COV)))
+        if GEVP:
+            err_coor = [sqrt(np.diag(COV[i][i])) for i in range(len(COV))]
+        else:
+            err_coor = [sqrt(COV[i][i]) for i in range(len(COV))]
+        print(err_coor)
         sys.exit(0)
     num_configs=len(REUSE[XMIN])
     #do this so REUSE goes from REUSE[time][config] to more convenient REUSE[config][time]
