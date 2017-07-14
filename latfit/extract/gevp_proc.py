@@ -70,7 +70,8 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
                 eigvalsI,eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,check_finite=False)
                 eigvalsIP,eigvecsIP=eig(CIP_LHS,CI_RHS,overwrite_a=True,check_finite=False)
                 eigvalsIPP,eigvecsIPP=eig(CIPP_LHS,CI_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-                reuse['i'][config]=np.array([proc_MEFF(eigvalsI[op].real,eigvalsIP[op].real,eigvalsIPP[op].real) for op in range(dimops)])
+                #reuse['i'][config]=np.array([proc_MEFF(eigvalsI[op].real,eigvalsIP[op].real,eigvalsIPP[op].real) for op in range(dimops)])
+                reuse['i'][config]=np.array([proc_MEFF(eigvalsI[op],eigvalsIP[op],eigvalsIPP[op]) for op in range(dimops)])
             else:
                 reuse['i'][config],eigvecsI=eig(CI_LHS,CI_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
         if ELIM_JKCONF_LIST:
@@ -80,11 +81,12 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
     if gevp_proc.CONFIGSENT != 0:
         print("Number of configurations to average over:",num_configs)
         gevp_proc.CONFIGSENT = 0
-    for test in avgI:
-        if test.imag != 0:
-            print("***ERROR***")
-            print("GEVP has negative eigenvalues.")
-            sys.exit(1)
+    for test1 in reuse['i']:
+        for test in test1:
+            if test.imag != 0:
+                print("***ERROR***")
+                print("GEVP has negative eigenvalues.")
+                sys.exit(1)
     if np.array_equal(IFILES,JFILES):
         reuse['j']=reuse['i']
         sameblk = True
@@ -118,18 +120,20 @@ def gevp_proc(IFILES,IFILES2,JFILES,JFILES2,TIME_ARR,extra_pairs=[(CSENT,CSENT),
                 #print(eigvalsJ,TIME_ARR[2])
                 eigvalsJP,eigvecsJP=eig(CJP_LHS,CJ_RHS,overwrite_a=True,check_finite=False)
                 eigvalsJPP,eigvecsJPP=eig(CJPP_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
-                reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op].real,eigvalsJP[op].real,eigvalsJPP[op].real,time_arr=TIME_ARR) for op in range(dimops)])
+                #reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op].real,eigvalsJP[op].real,eigvalsJPP[op].real,time_arr=TIME_ARR) for op in range(dimops)])
+                reuse['j'][config]=np.array([proc_MEFF(eigvalsJ[op],eigvalsJP[op],eigvalsJPP[op],time_arr=TIME_ARR) for op in range(dimops)])
             else:
                 reuse['j'][config],eigvecsJ=eig(CJ_LHS,CJ_RHS,overwrite_a=True,overwrite_b=True,check_finite=False)
         if ELIM_JKCONF_LIST:
             reuse['j']=elim_jkconfigs(reuse['j'])
             num_configs=len(reuse['j'])
     avgJ=np.mean(reuse['j'],axis=0)
-    for test in avgJ:
-        if test.imag != 0:
-            print("***ERROR***")
-            print("GEVP has negative eigenvalues.")
-            sys.exit(1)
+    for test1 in reuse['j']:
+        for test in test1:
+            if test.imag != 0:
+                print("***ERROR***")
+                print("GEVP has negative eigenvalues.")
+                sys.exit(1)
     if UNCORR:
         if sameblk:
             for a in range(dimops):

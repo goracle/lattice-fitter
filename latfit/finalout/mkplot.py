@@ -5,6 +5,7 @@ import os.path
 import os
 import re
 import sys
+from warnings import warn
 
 from latfit.config import fit_func
 from latfit.config import FINE
@@ -89,7 +90,10 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
     print(coords)
     XCOORD = [coords[i][0] for i in range(len(coords))]
     YCOORD = [coords[i][1] for i in range(len(coords))]
-    ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
+    if GEVP:
+        ER2 = np.array([np.sqrt(np.diag(cov[i][i])) for i in range(len(coords))])
+    else:
+        ER2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
     print("list of point errors (x,yerr):")
     print(list(zip(XCOORD,ER2)))
 
@@ -141,13 +145,18 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             lcoord=len(XCOORD)
             for curve_num in range(dimops):
                 YCURVE=np.array([YCOORD[i][curve_num] for i in range(lcoord)])
-                YERR=np.array([ER2[i][curve_num][curve_num] for i in range(lcoord)])
+                YERR=np.array([ER2[i][curve_num] for i in range(lcoord)])
+                print("yerr("+str(curve_num)+")=",YERR)
                 plt.errorbar(XCOORD, YCURVE, yerr=YERR, linestyle='None',ms=3.75,marker='o', label='Energy('+str(curve_num)+')')
         else:
             plt.errorbar(XCOORD, YCOORD, yerr=ER2, linestyle='None',ms=3.75,marker='o')
         if FIT:
             #the fit function is plotted on a scale FINE times more fine than the original data points (to show smoothness)
-            step_size = abs((XCOORD[len(XCOORD)-1]-XCOORD[0]))/FINE/(len(XCOORD)-1)
+            if EFF_MASS and EFF_MASS_METHOD==3:
+                warn('step size assumed 1 for fitted plot.')
+                step_size = 1
+            else:
+                step_size = abs((XCOORD[len(XCOORD)-1]-XCOORD[0]))/FINE/(len(XCOORD)-1)
             XFIT = np.arange(XCOORD[0], XCOORD[len(XCOORD)-1]+step_size,step_size)
             for curve_num in range(len(fit_func(XFIT[0],result_min.x))):
                 #result_min.x is is the array of minimized fit params
@@ -199,7 +208,10 @@ def mkplot(coords, cov, INPUT,result_min=None, param_err=None):
             if result_min.status == 0:
                 if redchisq<2:
                     if EFF_MASS_METHOD == 3:
-                        plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.85),xycoords='axes fraction')
+                        if GEVP:
+                            plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.85-.05*(len(result_min.x)-2)),xycoords='axes fraction')
+                        else:
+                            plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.85-.05*(len(result_min.x)-2)),xycoords='axes fraction')
                     else:
                         plt.annotate("Reduced "+r"$\chi^2=$"+redchisq_round_str+",dof="+str(dof),xy=(0.05,0.05),xycoords='axes fraction')
             if UNCORR:
