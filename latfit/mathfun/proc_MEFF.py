@@ -3,6 +3,7 @@ from numpy import arccosh,log
 from sympy import nsolve,cosh
 from sympy.abc import x,y,z
 import sys
+from warnings import warn
 
 from latfit.extract.proc_line import proc_line
 
@@ -86,9 +87,9 @@ elif EFF_MASS_METHOD == 3 and FIT:
             C2 = proc_line(line2,files[1])
             C3 = proc_line(line3,files[2])
         arg = (C2-C1)/(C3-C2)
-        if arg < 0:
-            print("***ERROR***")
-            print("argument to log in effective mass calc is less than 0:",arg)
+        if arg < 0 and proc_MEFF.sent != 0:
+            #print("***ERROR***")
+            warn("argument to log in effective mass calc is less than 0:"+str(arg))
             print(C1,C2,C3)
             if files:
                 print(files[0])
@@ -96,8 +97,10 @@ elif EFF_MASS_METHOD == 3 and FIT:
                 print(files[2])
             if not time_arr == None:
                 print(time_arr)
-            sys.exit(1)
-        return log(arg)
+            #sys.exit(1)
+            proc_MEFF.sent = 0
+        return (arg)
 else:
     print("Bad method for finding the effective mass specified:", EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
+proc_MEFF.sent=object()
