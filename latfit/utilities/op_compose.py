@@ -35,7 +35,28 @@ def momstr(psrc,psnk):
     return pstr
         
 
-A_1plus=[(1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),(1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),(1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),(1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),(1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),(1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]]),(1,'S_pipi',[[0,0,0],[0,0,0]])]
+A_1plus=[
+    (1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),
+    (1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),
+    (1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),
+    (1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),
+    (1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),
+    (1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]]),
+    (1,'S_pipi',[[0,0,0],[0,0,0]]),
+#    (1,'sigma',[0,0,0]),
+    (1/sqrt(12),'UUpipi',[[0,1,1],[0,-1,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,0,1],[-1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,1,0],[-1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,1,1],[0,-1,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,0,1],[-1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,1,0],[-1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,-1,1],[0,1,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,0,1],[1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,1,0],[1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,-1,1],[0,1,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,0,1],[1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,1,0],[1,-1,0]]),
+]
 
 #A_1plus_sigma=[(1,'sigma',[0,0,0])]
 
@@ -73,9 +94,11 @@ def op_list():
                 p_str=momstr(src[2],snk[2])
                 d = part_str+"_"+p_str
                 d=re.sub('S_','',d)
+                d=re.sub('UU','',d)
                 d=re.sub('pipipipi','pipi',d)
                 if not os.path.isdir(d):
                     if not os.path.isdir('sep4/'+d):
+                        print("For op:", op)
                         print("dir",d,"is missing")
                         sys.exit(1)
                     else:
