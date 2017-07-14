@@ -165,9 +165,12 @@ def momtotal(pl,fig=None):
 
 def main(fixn,DIRNUM):
     d='.'
-    dlist=[os.path.join(d,o) for o in os.listdir(d) if os.path.isdir(os.path.join(d,o))]
+    #dlist=[os.path.join(d,o) for o in os.listdir(d) if os.path.isdir(os.path.join(d,o)) and rf.figure(os.path.join(d,o))]
+    dlist=[os.path.join(d,o) for o in os.listdir(d)]
     seplist=set()
     momlist=set()
+    momlistD={}
+    seplistD={}
     pion=set(['pioncorr'])
     pipi=set(['C','D','R','V'])
     pipirho=set(['T'])
@@ -177,11 +180,27 @@ def main(fixn,DIRNUM):
     sigmasigma=set(['Hbub','Bub2','bub2'])
     rhorho=set(['Hbub'])
     #def is a tuple consisting of list of particles, Isospin, and whether the diagram is a reverse diagram
-    filterlist={'pion':(pion,[1],False),'pipi':(pipi,[0,1,2],False),'pipirho':(pipirho,[1],True),'pipisigma':(pipisigma,[0],True),
-                'sigmasigma':(sigmasigma,[0],False),'rhorho':(rhorho,[1],False),'sigmapipi':(sigmapipi,[0],False),'rhopipi':(rhopipi,[1],False)}
+    filterlist={'pion':(pion,[1],False),
+                'pipi':(pipi,[0,1,2],False),
+                'pipirho':(pipirho,[1],True),
+                'pipisigma':(pipisigma,[0],True),
+                'sigmasigma':(sigmasigma,[0],False),
+                'rhorho':(rhorho,[1],False),
+                'sigmapipi':(sigmapipi,[0],False),
+                'rhopipi':(rhopipi,[1],False)}
     for d in dlist:
-        seplist.add(rf.sep(d))
-        momlist.add(rf.getmomstr(d))
+        momstr=rf.getmomstr(d)
+        sep=rf.sep(d)
+        seplist.add(sep)
+        momlist.add(momstr)
+        if not momstr in momlistD:
+            momlistD[momstr]=set()
+        else:
+            momlistD[momstr].add(d)
+        if not sep in seplistD:
+            seplistD[sep]=set()
+        else:
+            seplistD[sep].add(d)
         #mom1=rf.mom(d)
         #if not mom1:
         #    continue
@@ -191,17 +210,15 @@ def main(fixn,DIRNUM):
         #    momlist.add(tuple(momtotal(mom1)))
     for op in filterlist:
         for I in filterlist[op][1]:
-            for sep in seplist:
-                for mom in momlist:
+            if I == 0 or  I==1:
+                continue
+            for sep in seplistD:
+                for mom in momlistD:
                     #mom=list(mom)
                     coeffs_arr = []
-                    for d in dlist:
+                    for d in seplistD[sep] & momlistD[mom]:
                         #if momtotal(rf.mom(d),d) != mom:
-                        if rf.getmomstr(d) != mom:
-                            continue
                         if not rf.figure(d) in filterlist[op][0]:
-                            continue
-                        if rf.sep(d) != sep:
                             continue
                         if rf.reverseP(d) is not filterlist[op][2]:
                             continue
