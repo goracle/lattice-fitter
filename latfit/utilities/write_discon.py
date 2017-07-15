@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 import read_file as rf
 import os.path
 from traj_list import traj_list
@@ -66,68 +67,83 @@ def dismom(psrc,psnk):
 def main():
     d='summed_tsrc_diagrams/'
     onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
-    tlist = traj_list(onlyfiles)
     lookup = {}
-    for traj in tlist:
-        disfiles=[]
-        for fn in onlyfiles:
-            if rf.traj(fn) != traj:
-                continue
-            fign = rf.figure(fn)
-            if not fign in ["scalar-bubble","Vdis"]:
-                continue
-            disfiles.append(fn)
-        for dsrc in disfiles:
-            for dsnk in disfiles:
-                momsrc = rf.mom(dsrc)
-                momsnk = rf.mom(dsnk)
-                mt1 = momtotal(momsrc)
-                mt2 = momtotal(momsnk)
-                if not np.array_equal(mt1,mt2):
-                    continue
-                momstr = dismom(momsrc,momsnk)
-                outfig = comb_fig(dsrc,dsnk)
-                if not outfig:
-                    continue
-                sepsrc = rf.sep(dsrc)
-                sepsnk = rf.sep(dsnk)
-                if outfig == 'V' and sepsrc != sepsnk:
+    file_lookup = {}
+    for fn in onlyfiles:
+        fign = rf.figure(fn)
+        if not fign in ["scalar-bubble","Vdis"]:
+            continue
+        traj = rf.traj(fn)
+        mom = rf.mom(fn)
+        file_lookup.setdefault(traj,{}).setdefault(
+            rf.ptostr(momtotal(mom)),[]).append((fn,mom))
+    for traj in file_lookup:
+        for mt1 in file_lookup[traj]: 
+            for dsrc, momsrc in file_lookup[traj][mt1]:
+                for dsnk, momsnk in file_lookup[traj][mt1]:
+                    outfig = comb_fig(dsrc,dsnk)
+                    sepsrc = rf.sep(dsrc)
+                    sepsnk = rf.sep(dsnk)
+                    if outfig == 'V' and sepsrc != sepsnk:
+                            continue
+                    momstr = dismom(momsrc,momsnk)
+                    sepVal=0
+                    sep = None
+                    sepstr = "_"
+                    if sepsrc:
+                        sep = sepsrc
+                        #sepVal=0
+                        #we do this because src pipi bubbles don't
+                        #need a separation offset when combining
+                        sepstr += "sep"+str(sep)+"_"
+                    elif sepsnk:
+                        sep = sepsnk
+                        sepVal=int(sep)
+                        sepstr += "sep"+str(sep)+"_"
+                    outfile = "traj_"+str(
+                        traj)+"_Figure"+outfig+sepstr+momstr
+                    flag = 0
+                    if(os.path.isfile(outfile)):
+                        print("Skipping:", outfile)
+                        print("File exists.")
+                        #skip the latter write if so
+                        flag = 1
+                    else:
+                        #get the non vac subtraction data
+                        #Note:  cb.comb_dis defaults to
+                        #not taking the complex conjugate.
+                        arrPlus = np.array(cb.comb_dis(dsrc,dsnk,sepVal))
+                    outavg = 'AvgVac_Figure'+outfig+sepstr+momstr
+                    if os.path.isfile(outavg):
+                        print("Skipping:", outavg)
+                        print("File exists.")
                         continue
-                sepVal=0
-                sep = None
-                sepstr = "_"
-                if sepsrc:
-                    sep = sepsrc
-                    #sepVal=0 #we do this because src pipi bubbles don't need a separation offset when combining
-                    sepstr += "sep"+str(sep)+"_"
-                elif sepsnk:
-                    sep = sepsnk
-                    sepVal=int(sep)
-                    sepstr += "sep"+str(sep)+"_"
-                outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+momstr
-                if(os.path.isfile(outfile)):
-                    print("Skipping:", outfile)
-                    print("File exists.")
-                    continue
-                #get the data
-                #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
-                arrPlus = np.array(cb.comb_dis(dsrc,dsnk,sepVal))
-                srcFig=rf.figure(dsrc)
-                snkFig=rf.figure(dsnk)
-                dsrcSub = re.sub(srcFig,"Avg_"+srcFig,d+dsrc)
-                dsnkSub = re.sub(snkFig,"Avg_"+snkFig,d+dsnk)
-                dsrcSub = re.sub('traj_(\d)+_Figure_','',dsrcSub)
-                dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
-                #get the  <><> subtraction array (<> indicates avg over trajectories)
-                if dsrcSub+dsnkSub in lookup:
-                    print("Using prev.")
-                    arrMinus=lookup[dsrcSub+dsnkSub]
-                else:
-                    arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
-                    lookup[dsrcSub+dsnkSub]=arrMinus
-                #arr = arrPlus - arrMinus
-                rf.write_arr(arrPlus - arrMinus,outfile)
-                #rf.write_arr(arrPlus,outfile)
+                    srcFig=rf.figure(dsrc)
+                    snkFig=rf.figure(dsnk)
+                    dsrcSub = re.sub(srcFig,"Avg_"+srcFig,d+dsrc)
+                    dsnkSub = re.sub(snkFig,"Avg_"+snkFig,d+dsnk)
+                    dsrcSub = re.sub('traj_(\d)+_Figure_','',dsrcSub)
+                    dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
+                    if not os.path.isfile(dsrcSub) or not os.path.isfile(
+                            dsnkSub):
+                        print("Please do the bubble averaging first.")
+                        print("Missing either",dsrcSub,'or',dsnkSub)
+                        sys.exit(1)
+                    #get the  <><> subtraction array
+                    #(<> indicates avg over trajectories)
+                    if dsrcSub+dsnkSub in lookup:
+                        print("Using prev.")
+                        arrMinus=lookup[dsrcSub+dsnkSub]
+                    else:
+                        arrMinus = np.array(
+                            cb.comb_dis(dsrcSub,dsnkSub,sepVal))
+                        if not os.path.isfile(outavg):
+                            rf.write_arr(arrMinus, outavg)
+                        lookup[dsrcSub+dsnkSub]=arrMinus
+                    #arr = arrPlus - arrMinus
+                    if flag == 0:
+                        rf.write_arr(arrPlus - arrMinus,outfile)
+                    #rf.write_arr(arrPlus,outfile)
 
 if __name__ == "__main__":
     main()
