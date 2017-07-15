@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 from collections import deque
 import read_file as rf
 from traj_list import traj_list
@@ -23,7 +24,7 @@ def procV(filen):
         else:
             print("Not a disconnected or summed diagram.  exiting.")
             print("cause:",filen)
-            exit(1)
+            sys.exit(1)
     return ar
 
 def AvgVdis():
@@ -48,12 +49,20 @@ def AvgVdis():
             else:
                 sepstr=""
             outfile = d+"Avg_"+fign+sepstr+momstr
+            flag=0
             if os.path.isfile(outfile):
-                continue
+                flag=1
+            outerr=outfile+'_err'
+            flag2=0
+            if os.path.isfile(outfile+'_err'):
+                flag2=1
+                if flag2 == flag:
+                    continue
             avg = np.array(procV(fn))
             numt=1
             #use this first file to bootstrap the rest of the files (traj substitution)
             err_fact=deque()
+            err_fact.append(avg)
             for traj in tlist:
                 if traj == rf.traj(fn):
                     continue
@@ -63,15 +72,22 @@ def AvgVdis():
                     open(fn2,'r')
                 except:
                     continue
-                b.append(procV(fn2))
-                avg+=np.array(procV(fn2))
+                retarr=np.array(procV(fn2))
+                print(retarr)
+                print(fn2)
+                sys.exit(0)
+                err_fact.append(retarr)
+                avg+=retarr
                 numt+=1
             print("Number of configs to average over:",numt,"for outfile:",outfile)
-            rf.write_vec_str(avg/numt,outfile)
-            err_fact=np.array(err_fact)
-            err_fact-=avg/numt
-            err_bub=np.sqrt(np.diag(np.einsum('ai,aj->ij',err_fact,err_fact))/(numt*(numt-1)))
-            rf.write_vec_str(err_bub,outfile+'_err')
+            if flag==0:
+                rf.write_vec_str(avg/numt,outfile)
+            if flag2==0:
+                err_fact=np.array(err_fact)
+                err_fact=err_fact-avg/numt
+                err_bub=np.sqrt(np.diag(
+                    np.einsum('ai,aj->ij',err_fact,err_fact))/(numt*(numt-1)))
+                rf.write_vec_str(err_bub,outerr)
     print("Done writing Vdis averaged over trajectories.")
     return
 

@@ -55,9 +55,10 @@ EFF_MASS_METHOD = 3
 
 #GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000']]
 #GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','S_pipipipi_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus']]
-#GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
+#####3x3, I0
+GEVP_DIRS=[['sep4/pipi_mom1src000_mom2src000_mom1snk000','sep4/pipisigma_momsrc000_momsnk000','S_pipipipi_A_1plus'],['sep4/sigmapipi_momsrc000_momsnk000','sigmasigma_mom000','sigmaS_pipi_A_1plus'],['pipiS_pipi_A_1plus','pipisigma_A_1plus','pipi_A_1plus']]
 #####3x3, I2, pipi, 000, 100, 110
-GEVP_DIRS=[['S_pipiS_pipi_A_1plus','S_pipipipi_A_1plus','S_pipiUUpipi_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus','pipiUUpipi_A_1plus'],['UUpipiS_pipi_A_1plus','UUpipipipi_A_1plus','UUpipiUUpipi_A_1plus']]
+#GEVP_DIRS=[['S_pipiS_pipi_A_1plus','S_pipipipi_A_1plus','S_pipiUUpipi_A_1plus'],['pipiS_pipi_A_1plus','pipi_A_1plus','pipiUUpipi_A_1plus'],['UUpipiS_pipi_A_1plus','UUpipipipi_A_1plus','UUpipiUUpipi_A_1plus']]
 
 
 ###DISPLAY PARAMETERS
