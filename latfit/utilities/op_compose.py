@@ -39,15 +39,28 @@ def momstr(psrc, psnk):
             pstr = 'mom'+rf.ptostr(psrc)
     return pstr
 
-A_1PLUS = [
-    (1/sqrt(6), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
-    (1/sqrt(6), 'pipi', [[0, 1, 0], [0, -1, 0]]),
-    (1/sqrt(6), 'pipi', [[0, 0, 1], [0, 0, -1]]),
-    (1/sqrt(6), 'pipi', [[-1, 0, 0], [1, 0, 0]]),
-    (1/sqrt(6), 'pipi', [[0, -1, 0], [0, 1, 0]]),
-    (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
-    (1, 'sigma', [0, 0, 0]),
-    (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]])]
+A_1plus=[
+    (1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),
+    (1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),
+    (1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),
+    (1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),
+    (1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),
+    (1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]]),
+    (1,'S_pipi',[[0,0,0],[0,0,0]]),
+#    (1,'sigma',[0,0,0]),
+    (1/sqrt(12),'UUpipi',[[0,1,1],[0,-1,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,0,1],[-1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,1,0],[-1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,1,1],[0,-1,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,0,1],[-1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[1,1,0],[-1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,-1,1],[0,1,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,0,1],[1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,1,0],[1,-1,0]]),
+    (1/sqrt(12),'UUpipi',[[0,-1,1],[0,1,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,0,1],[1,0,-1]]),
+    (1/sqrt(12),'UUpipi',[[-1,1,0],[1,-1,0]]),
+]
 
 #A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
@@ -101,6 +114,7 @@ def op_list():
                 p_str = momstr(src[2], snk[2])
                 dur = part_str+"_"+p_str
                 dur = re.sub('S_', '', dur)
+                dur = re.sub('UU', '', dur)
                 dur = re.sub('pipipipi', 'pipi', dur)
                 if not os.path.isdir(dur):
                     if not os.path.isdir('sep4/'+dur):
