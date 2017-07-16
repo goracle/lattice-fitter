@@ -36,10 +36,8 @@ else:
         return tuple(ijfile)
 
 if EFF_MASS:
-    def getfiles_gevp(time, xstep, xmin):
+    def getfiles_gevp(time, time2, xstep):
         """Get files, gevp, eff_mass"""
-        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
-            float(time)/2.0) != time else max(floor(float(time)/2.0/xstep)*xstep, xmin)
         #extract files
         if NUM_PENCILS < 1:
             files = gevp_getfiles_onetime(time)
@@ -52,12 +50,10 @@ if EFF_MASS:
             files3 = pencil_shift_lhs(time+xstep, xstep)
             files4 = pencil_shift_lhs(time+2*xstep, xstep)
         #eff mass stuff
-        return time2, (files, files2, files3, files4)
+        return (files, files2, files3, files4)
 else:
-    def getfiles_gevp(time, xstep, xmin):
+    def getfiles_gevp(time, time2, xstep):
         """Get files, gevp"""
-        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
-            float(time)/2.0) != time else max(floor(float(time)/2.0/xstep)*xstep, xmin)
         #extract files
         if NUM_PENCILS < 1:
             files = gevp_getfiles_onetime(time)
@@ -66,14 +62,18 @@ else:
             files = pencil_shift_lhs(time, xstep)
             files2 = pencil_shift_rhs(time2, xstep)
         #eff mass stuff
-        return time2, (files, files2)
+        return (files, files2)
 
 if GEVP:
     def getfiles(time, xstep, xmin, input_f):
         """Get files, gevp (meta)"""
         if input_f:
             pass
-        return getfiles_gevp(time, xstep, xmin)
+        #time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
+        #    float(time)/2.0) != time else max(
+        #        floor(float(time)/2.0/xstep)*xstep, xmin)
+        time2 = xmin-2*xstep
+        return time2, getfiles_gevp(time, xstep, xmin, time2)
 else:
     def getfiles(time, xstep, xmin, input_f):
         """Get files, (meta)"""
