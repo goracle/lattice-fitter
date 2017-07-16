@@ -25,17 +25,14 @@ else:
         coventry = np.zeros((dimops, dimops))
         num_configs = len(reuse['i'])
         if sameblk:
-            coventry = np.sum(
-                [np.outer(
-                    (avgi-reuse['i'][k]),
-                    (avgi-reuse['i'][k]))
-                 for k in range(num_configs)], axis=0)
+            coventry = np.sum([np.outer(
+                (avgi-reuse['i'][k]),
+                (avgi-reuse['i'][k])) for k in range(num_configs)], axis=0)
         else:
-            coventry = np.sum(
-                [np.outer(
-                    (avgi-reuse['i'][k]),
-                    (np.mean(reuse['j'], axis=0)-reuse['j'][k]))
-                 for k in range(num_configs)], axis=0)
+            coventry = np.sum([np.outer(
+                (avgi-reuse['i'][k]),
+                (np.mean(reuse['j'], axis=0)-reuse['j'][k]))
+                               for k in range(num_configs)], axis=0)
         return coventry
 
 if UNCORR:
@@ -53,7 +50,8 @@ else:
         if sameblk:
             coventry = np.dot(reuse['i']-avgi, reuse['i']-avgi)
         else:
-            coventry = np.dot(reuse['i']-avgi, reuse['i']-np.mean(reuse['j']))
+            coventry = np.dot(reuse['i']-avgi,
+                              reuse['i']-np.mean(reuse['j']))
         return coventry
 
 if GEVP:
