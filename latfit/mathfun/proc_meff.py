@@ -104,8 +104,9 @@ elif EFF_MASS_METHOD == 3 and FIT:
             corr2 = proc_line(line2, files[1])
             corr3 = proc_line(line3, files[2])
         arg = (corr2-corr1)/(corr3-corr2)
-        if arg < 0:
-            print("***ERROR***")
+        if arg < 0 and proc_meff.sent != 0:
+            #print("***ERROR***")
+            warn("argument to log in eff. mass calc is than 0:", str(arg))
             print("argument to log in effective mass calc is less than 0:", arg)
             print(corr1, corr2, corr3)
             if files:
@@ -114,9 +115,10 @@ elif EFF_MASS_METHOD == 3 and FIT:
                 print(files[2])
             if not time_arr is None:
                 print(time_arr)
-            sys.exit(1)
-        return log(arg)
+            proc_meff.sent = 0
+        return arg
 else:
     print("Bad method for finding the effective mass specified:",
           EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
+proc_meff.sent=object()

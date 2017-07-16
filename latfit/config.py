@@ -74,7 +74,7 @@ TITLE = ''
 XLABEL = r'$t/a$'
 if EFF_MASS:
     if EFF_MASS_METHOD == 3:
-        YLABEL = r'ratio of $\cosh(am_{eff})(t)+const$'
+        YLABEL = r'one param fit'
     else:
         YLABEL = r'$am_{eff}(t)$'
 else:
