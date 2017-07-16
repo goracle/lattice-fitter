@@ -1,133 +1,157 @@
 #!/usr/bin/python3
-
-import read_file as rf
+"""Write disconnected diagrams"""
 import os.path
-from traj_list import traj_list
-import numpy as np
-import combine as cb
 from os import listdir
 from os.path import isfile, join
 import re
+import numpy as np
+import read_file as rf
+from traj_list import traj_list
+import combine as cb
 #gets the array from the file, but keeps the values as strings
 
-def comb_fig(dsrc,dsnk):
-    figSrc = rf.figure(dsrc)
-    figSnk = rf.figure(dsnk)
-    if figSrc == 'scalar-bubble' and figSnk == 'scalar-bubble':
+def comb_fig(dsrc, dsnk):
+    """Get combined figure name from bubble figure names."""
+    figsrc = rf.figure(dsrc)
+    figsnk = rf.figure(dsnk)
+    if figsrc == 'scalar-bubble' and figsnk == 'scalar-bubble':
         return 'Bub2'
-    elif figSrc == 'scalar-bubble' and figSnk == 'Vdis':
+    elif figsrc == 'scalar-bubble' and figsnk == 'Vdis':
         return 'Cv3'
-    elif figSrc == 'Vdis' and figSnk == 'scalar-bubble':
+    elif figsrc == 'Vdis' and figsnk == 'scalar-bubble':
         return 'Cv3R'
-    elif figSrc == 'Vdis' and figSnk == 'Vdis':
+    elif figsrc == 'Vdis' and figsnk == 'Vdis':
         return 'V'
 
-def singleP(p):
-    if len(p) == 3 and type(p[0]) is int:
-        return True
-    else:
-        return False
+def single_p(ptest):
+    """is the momentum array only a single momentum?"""
+    return bool((len(ptest) == 3 and isinstance(ptest[0], int)))
 
 def momtotal(mom):
-    if singleP(mom):
-        return mom
+    """Find total center of mass momenta from momenta array"""
+    if single_p(mom):
+        momret = mom
     else:
-        p1=np.array(mom[0])
-        p2=np.array(mom[1])
-        return p1+p2
+        mom1 = np.array(mom[0])
+        mom2 = np.array(mom[1])
+        momret = mom1+mom2
+    return momret
 
-def dismom(psrc,psnk):
-    l = len(psrc)+len(psnk)
-    if l == 4:
+def dismom(psrc, psnk):
+    """Get combined momentum string from disconnected momenta"""
+    lenp = len(psrc)+len(psnk)
+    if lenp == 4:
         #V
-        p1src=psrc[0]
-        p2src=psrc[1]
+        mom1src = psrc[0]
+        mom2src = psrc[1]
         #reverse meaning of inner and outer, so take [1] for inner
-        p1snk=psnk[1]
-        s = "mom1src"+rf.ptostr(p1src)+"_mom2src"+rf.ptostr(p2src)+"_mom1snk"+rf.ptostr(p1snk)
-    elif l == 5:
+        mom1snk = psnk[1]
+        momstr = "mom1src"+rf.ptostr(
+            mom1src)+"_mom2src"+rf.ptostr(
+                mom2src)+"_mom1snk"+rf.ptostr(mom1snk)
+    elif lenp == 5:
         #Cv3
-        if singleP(psrc):
+        if single_p(psrc):
             momsrc = psrc
             #reverse meaning of inner and outer, so take [1] for inner
             momsnk = psnk[1]
-        elif singleP(psnk):
+        elif single_p(psnk):
             momsnk = psnk
             momsrc = psrc[0]
-        s = "momsrc"+rf.ptostr(momsrc)+"_momsnk"+rf.ptostr(momsnk)
-    elif l == 6:
+        momstr = "momsrc"+rf.ptostr(momsrc)+"_momsnk"+rf.ptostr(momsnk)
+    elif lenp == 6:
         #Bub2
-        s = "mom"+rf.ptostr(psrc)
+        momstr = "mom"+rf.ptostr(psrc)
     else:
-        print("Error: bad momenta:",psrc,psnk)
+        print("Error: bad momenta:", psrc, psnk)
         exit(1)
-    return s
+    return momstr
+
+def get_disfiles(traj, onlyfiles):
+    """Get bubbles for a given trajectory."""
+    disfiles = []
+    for filen in onlyfiles:
+        if rf.traj(filen) != traj:
+            continue
+        fign = rf.figure(filen)
+        if not fign in ["scalar-bubble", "Vdis"]:
+            continue
+        disfiles.append(filen)
+    return disfiles
 
 def main():
-    d='summed_tsrc_diagrams/'
-    onlyfiles=[f for f in listdir('.') if isfile(join('.',f))]
-    tlist = traj_list(onlyfiles)
+    """Write disconnected diagrams, main"""
+    dur = 'summed_tsrc_diagrams/'
+    onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     lookup = {}
-    for traj in tlist:
-        disfiles=[]
-        for fn in onlyfiles:
-            if rf.traj(fn) != traj:
-                continue
-            fign = rf.figure(fn)
-            if not fign in ["scalar-bubble","Vdis"]:
-                continue
-            disfiles.append(fn)
+    for traj in traj_list(onlyfiles):
+        disfiles = get_disfiles(traj, onlyfiles)
         for dsrc in disfiles:
             for dsnk in disfiles:
                 momsrc = rf.mom(dsrc)
                 momsnk = rf.mom(dsnk)
-                mt1 = momtotal(momsrc)
-                mt2 = momtotal(momsnk)
-                if not np.array_equal(mt1,mt2):
+                if not np.array_equal(momtotal(momsrc), momtotal(momsnk)):
                     continue
-                momstr = dismom(momsrc,momsnk)
-                outfig = comb_fig(dsrc,dsnk)
+                outfig = comb_fig(dsrc, dsnk)
                 if not outfig:
                     continue
-                sepsrc = rf.sep(dsrc)
-                sepsnk = rf.sep(dsnk)
-                if outfig == 'V' and sepsrc != sepsnk:
-                        continue
-                sepVal=0
-                sep = None
-                sepstr = "_"
-                if sepsrc:
-                    sep = sepsrc
-                    #sepVal=0 #we do this because src pipi bubbles don't need a separation offset when combining
-                    sepstr += "sep"+str(sep)+"_"
-                elif sepsnk:
-                    sep = sepsnk
-                    sepVal=int(sep)
-                    sepstr += "sep"+str(sep)+"_"
-                outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+momstr
-                if(os.path.isfile(outfile)):
+                try:
+                    sepstr, sepval = get_sep(dsrc, dsnk, outfig)
+                except TypeError:
+                    continue
+                outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+dismom(
+                    momsrc, momsnk)
+                if os.path.isfile(outfile):
                     print("Skipping:", outfile)
                     print("File exists.")
                     continue
-                #get the data
-                #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
-                arrPlus = np.array(cb.comb_dis(dsrc,dsnk,sepVal))
-                srcFig=rf.figure(dsrc)
-                snkFig=rf.figure(dsnk)
-                dsrcSub = re.sub(srcFig,"Avg_"+srcFig,d+dsrc)
-                dsnkSub = re.sub(snkFig,"Avg_"+snkFig,d+dsnk)
-                dsrcSub = re.sub('traj_(\d)+_Figure_','',dsrcSub)
-                dsnkSub = re.sub('traj_(\d)+_Figure_','',dsnkSub)
-                #get the  <><> subtraction array (<> indicates avg over trajectories)
-                if dsrcSub+dsnkSub in lookup:
-                    print("Using prev.")
-                    arrMinus=lookup[dsrcSub+dsnkSub]
-                else:
-                    arrMinus = np.array(cb.comb_dis(dsrcSub,dsnkSub,sepVal))
-                    lookup[dsrcSub+dsnkSub]=arrMinus
-                #arr = arrPlus - arrMinus
-                rf.write_arr(arrPlus - arrMinus,outfile)
-                #rf.write_arr(arrPlus,outfile)
+                arr_plus, arr_minus = get_data(dsrc, dsnk,
+                                               sepval, dur, lookup)
+                rf.write_arr(arr_plus - arr_minus, outfile)
+                #rf.write_arr(arr_plus, outfile)
+
+def get_sep(dsrc, dsnk, outfig):
+    """Get time sep info"""
+    sepsrc = rf.sep(dsrc)
+    sepsnk = rf.sep(dsnk)
+    if outfig == 'V' and sepsrc != sepsnk:
+        retsep = None
+    else:
+        sepval = 0
+        sep = None
+        sepstr = "_"
+        if sepsrc:
+            sep = sepsrc
+            #sepval = 0
+            #we do this because src pipi bubbles don't need a
+            #separation offset when combining
+            sepstr += "sep"+str(sep)+"_"
+        elif sepsnk:
+            sep = sepsnk
+            sepval = int(sep)
+            sepstr += "sep"+str(sep)+"_"
+        retsep = sepstr, sepval
+    return retsep
+
+def get_data(dsrc, dsnk, sepval, dur, lookup):
+    """Get regular data and vac subtraction diagram"""
+    #get the data
+    #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
+    arr_plus = np.array(cb.comb_dis(dsrc, dsnk, sepval))
+    src_fig = rf.figure(dsrc)
+    snk_fig = rf.figure(dsnk)
+    dsrc_sub = re.sub(src_fig, "Avg_"+src_fig, dur+dsrc)
+    dsnk_sub = re.sub(snk_fig, "Avg_"+snk_fig, dur+dsnk)
+    dsrc_sub = re.sub(r'traj_(\d)+_Figure_', '', dsrc_sub)
+    dsnk_sub = re.sub(r'traj_(\d)+_Figure_', '', dsnk_sub)
+    #get the  <><> subtraction array (<> indicates avg over trajectories)
+    if dsrc_sub+dsnk_sub in lookup:
+        print("Using prev.")
+        arr_minus = lookup[dsrc_sub+dsnk_sub]
+    else:
+        arr_minus = np.array(cb.comb_dis(dsrc_sub, dsnk_sub, sepval))
+        lookup[dsrc_sub+dsnk_sub] = arr_minus
+    return arr_plus, arr_minus
 
 if __name__ == "__main__":
     main()

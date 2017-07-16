@@ -6,6 +6,7 @@ import os.path
 from os.path import isfile, join
 from math import sqrt
 import sys
+from collections import namedtuple
 import numpy as np
 import read_file as rf
 
@@ -227,22 +228,25 @@ def get_sep_mom(dlist):
         #    momlist.add(tuple(momtotal(mom1)))
     return seplist, momlist
 
-def get_norm(dur, mom, sep, opa):
-    #if momtotal(rf.mom(d), d) != mom:
-    if rf.getmomstr(dur) != mom:
+def get_norm(loop, dur, fixn):
+    """Get norm given loop variables, direction dur to check,
+    and whether to fix norms (fixn)
+    """
+    #if momtotal(rf.mom(d), d) != loop.mom:
+    if rf.getmomstr(dur) != loop.mom:
         norm = None
-    elif not rf.figure(dur) in FILTERLIST[opa][0]:
+    elif not rf.figure(dur) in FILTERLIST[loop.opa][0]:
         norm = None
-    elif rf.sep(dur) != sep:
+    elif rf.sep(dur) != loop.sep:
         norm = None
-    elif rf.reverse_p(dur) is not FILTERLIST[opa][2]:
+    elif rf.reverse_p(dur) is not FILTERLIST[loop.opa][2]:
         norm = None
     elif re.search('Check', dur) or re.search(
             'Chk', dur) or re.search(
                 'chk', dur) or re.search('check', dur):
         norm = None
     else:
-        norm1 = isospin_coeff(dur, iso)
+        norm1 = isospin_coeff(dur, loop.iso)
         if not norm1:
             norm = None
         elif fixn:
@@ -252,47 +256,52 @@ def get_norm(dur, mom, sep, opa):
         norm = norm1*norm2
     return norm
 
-def get_outdir(dirnum, sep, iso, opa, mom):
+def get_outdir(loop, dirnum):
     """Get output directory for new linear combination of jackknife blocks.
     """
     if dirnum == 0:
         sepstr = ''
-        if sep:
-            sepstr = sepstr+"sep"+str(sep)+'/'
-        #outdir = opa+"_I"+str(iso)+sepstr+mom
-        outdir = 'I'+str(iso)+'/'+sepstr+opa+'_'+mom
+        if loop.sep:
+            sepstr = sepstr+"sep"+str(loop.sep)+'/'
+        #outdir = loop.opa+"_I"+str(loop.iso)+sepstr+loop.mom
+        outdir = 'I'+str(loop.iso)+'/'+sepstr+loop.opa+'_'+loop.mom
     elif dirnum == 1:
         sepstr = '_'
-        if sep:
-            sepstr = sepstr+"sep"+str(sep)+'_'
-        #outdir = opa+"_I"+str(iso)+sepstr+"_momtotal"+rf.ptostr(mom)
-        outdir = opa+"_I"+str(iso)+sepstr+mom
+        if loop.sep:
+            sepstr = sepstr+"sep"+str(loop.sep)+'_'
+        #outdir = loop.opa+"_I"+str(loop.iso)+sepstr+"_momtotal"+rf.ptostr(loop.mom)
+        outdir = loop.opa+"_I"+str(loop.iso)+sepstr+loop.mom
+    else:
+        print("Error: bad flag specified. dirnum =", dirnum)
+        sys.exit(1)
     return outdir
 
-def get_coeffs_arr()
+def get_coeffs_arr(loop, fixn, dlist):
+    """Get array of coefficients for jackknife block sum.
+    """
+    coeffs_arr = []
+    for dur in dlist:
+        norm = get_norm(loop, dur, fixn)
+        if not norm:
+            continue
+        coeffs_arr.append((dur, norm))
+    return coeffs_arr
 
 def main(fixn, dirnum):
     """Isospin projection of jackknife blocks (main)"""
     dur = '.'
     dlist = [os.path.join(dur, o) for o in os.listdir(dur) if os.path.isdir(os.path.join(dur, o))]
     seplist, momlist = get_sep_mom(dlist)
-    for opa in FILTERLIST:
-        for iso in FILTERLIST[opa][1]:
-            for sep in seplist:
-                for mom in momlist:
-                    #mom = list(mom)
-                    coeffs_arr = []
-                    for dur in dlist:
-                        norm = get_norm(dur, mom, sep, opa)
-                        if not norm:
-                            continue
-                        coeffs_arr.append((dur, norm))
+    loop = namedtuple('loop', ('opa', 'iso', 'sep', 'mom'))
+    for loop.opa in FILTERLIST:
+        for loop.iso in FILTERLIST[loop.opa][1]:
+            for loop.sep in seplist:
+                for loop.mom in momlist:
+                    #loop.mom = list(loop.mom)
+                    coeffs_arr = get_coeffs_arr(loop, fixn, dlist)
                     if coeffs_arr == []:
                         continue
-                    else:
-                        print("Error: bad flag specified. dirnum =", dirnum)
-                        sys.exit(1)
-                    outdir = get_outdir(dirnum, sep, iso, opa, mom)
+                    outdir = get_outdir(loop, dirnum)
                     sum_blks(outdir, coeffs_arr)
     print("Done writing jackknife sums.")
 
