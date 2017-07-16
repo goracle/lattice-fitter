@@ -3,6 +3,7 @@ import os.path
 import os
 import re
 import sys
+from warnings import warn
 from collections import namedtuple
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -145,7 +146,11 @@ def get_coord(coords, cov):
     print(coords)
     xcoord = [coords[i][0] for i in range(len(coords))]
     ycoord = [coords[i][1] for i in range(len(coords))]
-    error2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
+    if GEVP:
+        error2 = np.array([np.sqrt(np.diag(cov[i][i]))
+                           for i in range(len(coords))])
+    else:
+        error2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
     print("list of point errors (x, yerr):")
     print(list(zip(xcoord, error2)))
     return xcoord, ycoord, error2
@@ -205,8 +210,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
         for curve_num in range(dimops):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])
-            yerr = np.array([error2[i][curve_num][curve_num]
-                             for i in range(lcoord)])
+            yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
             plt.errorbar(xcoord, ycurve, yerr=yerr,
                          linestyle='None', ms=3.75, marker='o',
                          label='Energy('+str(curve_num)+')')
@@ -219,8 +223,12 @@ def plot_fit(xcoord, result_min):
     the fit function is plotted on a scale FINE times more fine
     than the original data points (to show smoothness)
     """
-    step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
-        len(xcoord)-1)
+    if EFF_MASS and EFF_MASS_METHOD == 3:
+        warn('step size assumed 1 for fitted plot.')
+        step_size = 1
+    else:
+        step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
+            len(xcoord)-1)
     xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
                      step_size)
     for curve_num in range(len(fit_func(xfit[0], result_min.x))):
@@ -286,17 +294,30 @@ else:
         plt.annotate("Energy="+estring, xy=(0.05, 0.95), xycoords='axes fraction')
 
 if EFF_MASS and EFF_MASS_METHOD == 3:
-    def annotate_chisq(redchisq_round_str, dof):
-        """Annotate with resultant chi^2 (eff mass, eff mass method 3)
-        """
-        rcp = "Reduced "+r"$\chi^2 = $"
-        rcp += redchisq_round_str+", dof = "+str(dof)
-        plt.annotate(rcp, xy=(0.05, 0.85),
-                     xycoords='axes fraction')
+    if GEVP:
+        def annotate_chisq(redchisq_round_str, dof, result_min):
+            """Annotate with resultant chi^2 (eff mass, eff mass method 3)
+            """
+            rcp = "Reduced "+r"$\chi^2 = $"
+            rcp += redchisq_round_str+", dof = "+str(dof)
+            plt.annotate(rcp, xy=(0.05, 0.85-.05*(len(result_min.x)-2)),
+                         xycoords='axes fraction')
+    else:
+        def annotate_chisq(redchisq_round_str, dof, result_min):
+            """Annotate with resultant chi^2 (eff mass, eff mass method 3)
+            """
+            if result_min:
+                pass
+            rcp = "Reduced "+r"$\chi^2 = $"
+            rcp += redchisq_round_str+", dof = "+str(dof)
+            plt.annotate(rcp, xy=(0.05, 0.85),
+                         xycoords='axes fraction')
 else:
-    def annotate_chisq(redchisq_round_str, dof):
+    def annotate_chisq(redchisq_round_str, dof, result_min=None):
         """Annotate with resultant chi^2
         """
+        if result_min:
+            pass
         plt.annotate(
             "Reduced "+r"$\chi^2=$"+redchisq_round_str+", dof="+str(dof),
             xy=(0.05, 0.05),
@@ -355,7 +376,8 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
     """
     annotate_energy(result_min, param_err)
     if result_min.status == 0 and param_chisq.redchisq < 2:
-        annotate_chisq(param_chisq.redchisq_round_str, param_chisq.dof)
+        annotate_chisq(param_chisq.redchisq_round_str,
+                       param_chisq.dof, result_min)
     annotate_jack()
     annotate_uncorr(coords, dimops)
     annotate_uncorr(dimops)
