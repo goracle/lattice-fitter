@@ -20,8 +20,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
     try:
         num_configs = len(reuse['i'])
     except TypeError:
-        reuse['i'] = np.array([])
-        getblock(ifile_tup, reuse, 'i')
+        reuse['i'] = getblock(ifile_tup, reuse, 'i')
         num_configs = len(reuse['i'])
     avg_i = np.mean(reuse['i'], axis=0)
 
@@ -45,8 +44,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
                 print("Offending files:", ifile_tup, "\nand", jfile_tup)
                 sys.exit(1)
         except TypeError:
-            reuse['j'] = deque()
-            getblock(jfile_tup, reuse, 'j')
+            reuse['j'] = getblock(jfile_tup, reuse, 'j')
 
     return rets(coord=avg_i, covar=get_coventry(reuse, sameblk, avg_i), returnblk=reuse['j'])
 
