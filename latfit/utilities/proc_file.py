@@ -7,7 +7,7 @@ from os.path import isfile, join
 import numpy as np
 import jk_make as jk
 import read_file as rf
-import subtractV as subV
+import avg_vac as avac
 
 def proc_file(filename, sum_tsrc=True):
     """gets the array from the file
@@ -60,7 +60,7 @@ def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
         if not already_summed:
             data = proc_file(filen, True)
         else:
-            data = subV.procV(filen)
+            data = avac.proc_vac(filen)
         if data is None:
             print("Skipping file", filen, "should be 4 numbers per line, non-4 value found.")
     return data, outfile
