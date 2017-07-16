@@ -120,6 +120,8 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
                 covinv_jack = swap(
                     tensorinv(np.einsum('aim,ajn->imjn', cov_factor,
                                         cov_factor)), 1, 2)
+            #do the proper normalization of the covinv
+            covinv_jack*=((num_configs)*(num_configs-1))
             flag = 0
         except np.linalg.linalg.LinAlgError as err:
             if str(err) == 'Singular matrix':
