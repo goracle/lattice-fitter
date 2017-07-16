@@ -17,6 +17,7 @@ from latfit.analysis.get_fit_params import get_fit_params
 from latfit.config import FIT
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
+from latfit.config import PRINT_CORR
 
 def singlefit(input_f, xmin, xmax, xstep):
     """Get data to fit
@@ -28,6 +29,14 @@ def singlefit(input_f, xmin, xmax, xstep):
     ####process the file(s)
     coords, cov, reuse = extract(input_f, xmin, xmax, xstep)
     #do this so reuse goes from reuse[time][config] to more convenient reuse[config][time]
+
+    if PRINT_CORR:
+        print(COORDS)
+        if GEVP:
+            print([sqrt(np.diag(cov[i][i])) for i in range(len(cov))])
+        else:
+            print([sqrt(cov[i][i]) for i in range(len(cov))])
+        sys.exit(0)
 
     ##Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs', 'prefactor'])
