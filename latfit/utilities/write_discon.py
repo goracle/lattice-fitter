@@ -6,11 +6,10 @@ from os.path import isfile, join
 import re
 import numpy as np
 
-from traj_list import traj_list
 import read_file as rf
 import combine as cb
-#gets the array from the file, but keeps the values as strings
 
+#gets the array from the file, but keeps the values as strings
 def comb_fig(dsrc, dsnk):
     """Get combined figure name from bubble figure names."""
     figsrc = rf.figure(dsrc)
@@ -68,48 +67,46 @@ def dismom(psrc, psnk):
         exit(1)
     return momstr
 
-def get_disfiles(traj, onlyfiles):
-    """Get bubbles for a given trajectory."""
-    disfiles = []
+def get_disfiles(onlyfiles):
+    """Get bubbles."""
+    file_lookup = {}
     for filen in onlyfiles:
-        if rf.traj(filen) != traj:
-            continue
         fign = rf.figure(filen)
         if not fign in ["scalar-bubble", "Vdis"]:
             continue
-        disfiles.append(filen)
-    return disfiles
+        traj = rf.traj(filen)
+        mom = rf.mom(filen)
+        file_lookup.setdefault(traj, {}).setdefault(
+            rf.ptostr(momtotal(mom)), []).append((filen, mom))
+    return file_lookup
 
 def main():
     """Write disconnected diagrams, main"""
     dur = 'summed_tsrc_diagrams/'
-    onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     lookup = {}
-    for traj in traj_list(onlyfiles):
-        disfiles = get_disfiles(traj, onlyfiles)
-        for dsrc in disfiles:
-            for dsnk in disfiles:
-                momsrc = rf.mom(dsrc)
-                momsnk = rf.mom(dsnk)
-                if not np.array_equal(momtotal(momsrc), momtotal(momsnk)):
-                    continue
-                outfig = comb_fig(dsrc, dsnk)
-                if not outfig:
-                    continue
-                try:
-                    sepstr, sepval = get_sep(dsrc, dsnk, outfig)
-                except TypeError:
-                    continue
-                outfile = "traj_"+str(traj)+"_Figure"+outfig+sepstr+dismom(
-                    momsrc, momsnk)
-                if os.path.isfile(outfile):
-                    print("Skipping:", outfile)
-                    print("File exists.")
-                    continue
-                arr_plus, arr_minus = get_data(dsrc, dsnk,
-                                               sepval, dur, lookup)
-                rf.write_arr(arr_plus - arr_minus, outfile)
-                #rf.write_arr(arr_plus, outfile)
+    file_lookup = get_disfiles([
+        f for f in listdir('.') if isfile(join('.', f))])
+    for traj in file_lookup:
+        for mt1 in file_lookup[traj]:
+            for dsrc, momsrc in file_lookup[traj][mt1]:
+                for dsnk, momsnk in file_lookup[traj][mt1]:
+                    outfig = comb_fig(dsrc, dsnk)
+                    if not outfig:
+                        continue
+                    try:
+                        sepstr, sepval = get_sep(dsrc, dsnk, outfig)
+                    except TypeError:
+                        continue
+                    outfile = "traj_"+str(
+                        traj)+"_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
+                    if os.path.isfile(outfile):
+                        print("Skipping:", outfile)
+                        print("File exists.")
+                        continue
+                    arr_plus, arr_minus = get_data(dsrc, dsnk, sepval,
+                                                   dur, lookup)
+                    rf.write_arr(arr_plus - arr_minus, outfile)
+                    #rf.write_arr(arr_plus, outfile)
 
 def get_sep(dsrc, dsnk, outfig):
     """Get time sep info"""
