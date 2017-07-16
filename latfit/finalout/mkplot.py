@@ -3,6 +3,7 @@ import os.path
 import os
 import re
 import sys
+from collections import namedtuple
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
@@ -33,30 +34,27 @@ rcParams.update({'figure.autolayout': True})
 def mkplot(coords, cov, input_f, result_min=None, param_err=None):
     """Plot the fitted graph."""
 
+    ###GET COORDS
+    xcoord, ycoord, error2 = get_coord(coords, cov)
+
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
-    try:
-        dimops = len(cov[0][0])
-    except TypeError:
-        dimops = 1
+    dimops = get_dimops(cov, result_min, coords)
 
     ###GET STRINGS
-    title, title_safe = get_title(input_f)
-    file_str = get_file_string()
-    jk_str, eff_str, uncorr_str, gevp_str = get_file_string()
+    title = get_title(input_f)
+    file_str = get_file_string(title, dimops)
 
-
-    ###GET COORDS
-    xcoord, ycoord, error2 = get_coord(coords)
     if FIT:
         if result_min.status == 0:
-            param_chisq = print_messages(result_min, param_err, xcoord, dimops)
+            param_chisq = get_param_chisq(coords, dimops, result_min)
+            print_messages(result_min, param_err, param_chisq)
 
     ###STOP IF NO PLOT
     if NO_PLOT:
         return 0
 
     ###DO PLOT
-    with PdfPages(re.sub(' ', '_', title_safe+eff_str+uncorr_str+gevp_str+jk_str+'.pdf')) as pdf:
+    with PdfPages(re.sub(' ', '_', +file_str+'.pdf')) as pdf:
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             #plot fit function
@@ -64,14 +62,31 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
 
             #tolerance box plot
             if EFF_MASS:
-                plot_box(dimops, xcoord, result_min, param_err)
+                plot_box(xcoord, result_min, param_err, dimops)
 
-            annotate(dimops, result_min, param_err, param_chisq)
+            annotate(dimops, result_min, param_err, param_chisq, coords)
 
         #save, output
         do_plot(title, pdf)
 
     return 0
+
+def get_dimops(cov, result_min, coords):
+    """Get dimension of GEVP matrix or return 1 if not GEVP
+    """
+    try:
+        dimops = len(cov[0][0])
+    except TypeError:
+        dimops = 1
+    coords = np.array(coords)
+    dimops_chk = len(fit_func(coords[:, 0], result_min.x))
+    if dimops != dimops_chk:
+        print("***ERROR***")
+        print("Fit function length does not match cov. mat.")
+        print("Debug of config necessary.")
+        print(dimops, dimops_chk)
+        sys.exit(1)
+    return dimops
 
 def get_title(input_f):
     """get title info"""
@@ -89,14 +104,16 @@ def get_title(input_f):
         title = TITLE
     title = TITLE_PREFIX+title
     title = re.sub('_', ' ', title)
+    return title
+
+def get_file_string(title, dimops):
+    """get strings"""
+
     #brief attempt at sanitization
     title_safe = re.sub(r'\$', '', title)
     title_safe = re.sub(r'\\', '', title_safe)
     title_safe = re.sub(r', ', '', title_safe)
-    return title, title_safe
 
-def get_strings():
-    """get strings"""
     if JACKKNIFE_FIT == 'DOUBLE':
         jk_str = '_2xjk'
     elif JACKKNIFE_FIT == 'FROZEN':
@@ -119,9 +136,9 @@ def get_strings():
         gevp_str = ' GEVP '+str(dimops)+'dim'
     else:
         gevp_str = ''
-    return jk_str, eff_str, uncorr_str, gevp_str
+    return title_safe + eff_str + uncorr_str + gevp_str + jk_str
 
-def get_coord(coords):
+def get_coord(coords, cov):
     """Plotted coordinates setup
     """
     print("list of plotted points [x, y]:")
@@ -133,7 +150,7 @@ def get_coord(coords):
     print(list(zip(xcoord, error2)))
     return xcoord, ycoord, error2
 
-def print_messages(result_min, param_err, xcoord, dimops):
+def print_messages(result_min, param_err, param_chisq):
     """print message up here because of weirdness with pdfpages
     """
     startp = np.array(START_PARAMS)
@@ -152,34 +169,33 @@ def print_messages(result_min, param_err, xcoord, dimops):
     if JACKKNIFE_FIT:
         chisq_str += '+/-'+str(result_min.err_in_chisq)
     print("chi^2 minimized = ", chisq_str)
-    dof = len(xcoord)*dimops-len(result_min.x)
+    print("degrees of freedom = ", param_chisq.dof)
+    redchisq_str = str(param_chisq.redchisq)
+    print("chi^2 reduced = ", redchisq_str)
+
+def get_param_chisq(coords, dimops, result_min):
+    """Get chi^2 parameters."""
+    param_chisq = namedtuple('param_chisq', ('redchisq', 'redchisq_round_str', 'dof'))
+    param_chisq.dof = len(coords)*dimops-len(result_min.x)
     #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
-        dof -= 1
-    print("degrees of freedom = ", dof)
-    redchisq = result_min.fun/dof
-    redchisq_str = str(redchisq)
+        param_chisq.dof -= 1
+    param_chisq.redchisq = result_min.fun/param_chisq.dof
     if JACKKNIFE_FIT:
-        redchisq_str += '+/-'+str(result_min.err_in_chisq/dof)
-        if (redchisq > 10 or redchisq < 0.1) or (
-                result_min.err_in_chisq/dof > 10
-                or result_min.err_in_chisq/dof < .1):
-            redchisq_round_str = '{:0.7e}'.format(redchisq)+'+/-'
-            redchisq_round_str += '{:0.7e}'.format(
-                result_min.err_in_chisq/dof)
+        redchisq_str = str(param_chisq.redchisq)
+        redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
+        if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
+                result_min.err_in_chisq/param_chisq.dof > 10
+                or result_min.err_in_chisq/param_chisq.dof < .1):
+            param_chisq.redchisq_round_str = '{:0.7e}'.format(param_chisq.redchisq)+'+/-'
+            param_chisq.redchisq_round_str += '{:0.7e}'.format(
+                result_min.err_in_chisq/param_chisq.dof)
         else:
-            redchisq_round_str = '{:0.8}'.format(redchisq)
-            redchisq_round_str += '+/-'+'{:0.8}'.format(
-                result_min.err_in_chisq/dof)
-    print("chi^2 reduced = ", redchisq_str)
-    dimops_chk = len(fit_func(xcoord[0], result_min.x))
-    if dimops != dimops_chk:
-        print("***ERROR***")
-        print("Fit function length does not match cov. mat.")
-        print("Debug of config necessary.")
-        print(dimops, dimops_chk)
-        sys.exit(1)
-    return redchisq, redchisq_round_str, dof
+            param_chisq.redchisq_round_str = '{:0.8}'.format(param_chisq.redchisq)
+            param_chisq.redchisq_round_str += '+/-'+'{:0.8}'.format(
+                result_min.err_in_chisq/param_chisq.dof)
+    return param_chisq
+
 
 def plot_errorbar(dimops, xcoord, ycoord, error2):
     """plot data error bars
@@ -206,7 +222,7 @@ def plot_fit(xcoord, result_min):
     step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
         len(xcoord)-1)
     xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                        step_size)
+                     step_size)
     for curve_num in range(len(fit_func(xfit[0], result_min.x))):
         #result_min.x is is the array of minimized fit params
         yfit = np.array([
@@ -216,7 +232,7 @@ def plot_fit(xcoord, result_min):
         if result_min.status == 0:
             plt.plot(xfit, yfit)
 if GEVP:
-    def plot_box(dimops, xcoord, result_min, param_err):
+    def plot_box(xcoord, result_min, param_err, dimops):
         """plot tolerance box around straight line fit for effective mass
         """
         axvar = plt.gca()
@@ -232,7 +248,7 @@ if GEVP:
                     #transform=fig.transFigure
                 )))
 else:
-    def plot_box(dimops, xcoord, result_min, param_err):
+    def plot_box(xcoord, result_min, param_err):
         """plot tolerance box around straight line fit for effective mass
         """
         axvar = plt.gca()
@@ -290,32 +306,34 @@ if JACKKNIFE_FIT:
     if JACKKNIFE_FIT == 'FROZEN' or JACKKNIFE_FIT == 'SINGLE':
         def annotate_jack():
             """Annotate jackknife type (frozen)"""
-            plt.annotate('Frozen (single) jackknife fit.', xy=(0.05, 0.15), xycoords='axes fraction')
+            plt.annotate('Frozen (single) jackknife fit.', xy=(
+                0.05, 0.15), xycoords='axes fraction')
     elif JACKKNIFE_FIT == 'DOUBLE':
         def annotate_jack():
             """Annotate jackknife type (double)"""
-            plt.annotate('Double jackknife fit.', xy=(0.05, 0.15), xycoords='axes fraction')
+            plt.annotate('Double jackknife fit.', xy=(
+                0.05, 0.15), xycoords='axes fraction')
 elif JACKKNIFE:
     def annotate_jack():
         """Annotate jackknife type (only avg)"""
         plt.annotate('Avg. fit, jackknife est. cov. matrix',
-                    xy=(0.05, 0.15), xycoords='axes fraction')
+                     xy=(0.05, 0.15), xycoords='axes fraction')
 else:
     def annotate_jack():
         """Annotate jackknife type (none)"""
         pass
 if UNCORR:
-    def annotate_uncorr(dimops=1):
+    def annotate_uncorr(coords, dimops):
         """Annotate plot with uncorr"""
         if dimops > 1:
             plt.annotate("Uncorrelated fit.", xy=(0.05, 0.10),
                          xycoords='axes fraction')
         else:
-            plt.text(xcoord[3], ycoord[2], "Uncorrelated fit.")
+            plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
 else:
-    def annotate_uncorr(dimops=1):
+    def annotate_uncorr(*args):
         """Annotate plot with uncorr"""
-        pass
+        return args
 
 def do_plot(title, pdf):
     """Do the plot, given the title."""
@@ -331,12 +349,13 @@ def do_plot(title, pdf):
     #show the plot
     plt.show()
 
-def annotate(dimops, result_min, param_err, param_chisq):
+def annotate(dimops, result_min, param_err, param_chisq, coords):
     """Annotate plot.
     param_chisq=[redchisq, redchisq_round_str, dof]
     """
     annotate_energy(result_min, param_err)
-    if result_min.status == 0 and param_chisq[0] < 2:
-        annotate_chisq(param_chisq[1], param_chisq[2])
+    if result_min.status == 0 and param_chisq.redchisq < 2:
+        annotate_chisq(param_chisq.redchisq_round_str, param_chisq.dof)
     annotate_jack()
+    annotate_uncorr(coords, dimops)
     annotate_uncorr(dimops)

@@ -1,3 +1,4 @@
+"""Combine two disconnected bubbles."""
 #!/usr/bin/python3
 
 import sys
@@ -5,48 +6,49 @@ import numpy as np
 
 def build_arr(fin):
     """Read the file and build the array"""
-    fn = open(fin,'r')
-    out = np.array([],dtype=complex)
-    for line in fn:
-        l=line.split()
+    filen = open(fin, 'r')
+    out = np.array([], dtype=complex)
+    for line in filen:
+        lsp = line.split()
         try:
-            out=np.append(out,complex(float(l[1]),float(l[2])))
-        except:
-            out=np.append(out,complex(l[1]))
+            out = np.append(out, complex(float(lsp[1]), float(lsp[2])))
+        except IndexError:
+            out = np.append(out, complex(lsp[1]))
     return np.array(out)
 
 def find_dim(fin):
-    nl = sum(1 for line in open(fin))
-    return nl
+    """Find dimensions of the bubble in time direction."""
+    return sum(1 for line in open(fin))
 
-def comb_dis(finSrc,finSnk,sep=0,starSnk=False,starSrc=False):
+def comb_dis(finsrc, finsnk, sep=0, starsnk=False, starsrc=False):
     """Combine disconnected diagrams into an array.
 
     args = filename 1, filename 2
     returns an array indexed by tsrc, tdis
     """
-    print("combining", finSrc, finSnk)
-    Lt = find_dim(finSrc)
-    if Lt != find_dim(finSnk):
+    print("combining", finsrc, finsnk)
+    len_t = find_dim(finsrc)
+    if len_t != find_dim(finsnk):
         print("Error: dimension mismatch in combine operation.")
         sys.exit(1)
-    out = np.zeros(shape=(Lt,Lt),dtype=complex)
-    src = build_arr(finSrc)
-    snk = build_arr(finSnk)
-    for tsrc in range(Lt):
-        for tsnk in range(Lt):
-            srcNum=src[tsrc].conjugate() if starSrc==True else src[tsrc]
-            snkNum=snk[(tsnk+sep)%Lt] if starSnk==False else snk[(tsnk+sep)%Lt].conjugate()
-            out.itemset(tsrc,(tsnk-tsrc+Lt)%Lt,srcNum*snkNum)
+    out = np.zeros(shape=(len_t, len_t), dtype=complex)
+    src = build_arr(finsrc)
+    snk = build_arr(finsnk)
+    for tsrc in range(len_t):
+        for tsnk in range(len_t):
+            srcnum = src[tsrc].conjugate() if starsrc else src[tsrc]
+            snknum = snk[(tsnk+sep)%len_t] if not starsnk else snk[(tsnk+sep)%len_t].conjugate()
+            out.itemset(tsrc, (tsnk-tsrc+len_t)%len_t, srcnum*snknum)
     return out
 
 def main():
-    args=len(sys.argv)
-    ar=sys.argv
+    """Main for combine"""
+    args = len(sys.argv)
+    arr = sys.argv
     if args == 3:
-        comb_dis(ar[1],ar[2])
+        comb_dis(arr[1], arr[2])
     elif args == 2:
-        comb_dis(ar[1],ar[1])
+        comb_dis(arr[1], arr[1])
     else:
         print("wrong num of args.  need two files to combine")
         exit(1)

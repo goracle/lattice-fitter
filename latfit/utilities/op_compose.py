@@ -1,28 +1,33 @@
 #!/usr/bin/python3
-
+"""Irrep projection."""
 from math import sqrt
-from sum_blks import sum_blks
-import read_file as rf
 import os
 import sys
 import re
+from sum_blks import sum_blks
+import read_file as rf
 
-def momstr(psrc,psnk):
+def momstr(psrc, psnk):
+    """Take psrc and psnk and return a diagram string of the combination.
+    """
     pipi = ''
     if len(psrc) == 2 and len(psnk) == 2:
         vertices = 4
-    elif len(psrc) == 3 and type(psrc[0]) is int and len(psnk) == 2:
+    elif len(psrc) == 3 and isinstance(psrc[0], int) and len(psnk) == 2:
         vertices = 3
         pipi = 'snk'
-    elif len(psnk) == 3 and type(psnk[0]) is int and len(psrc) == 2:
+    elif len(psnk) == 3 and isinstance(psnk[0], int) and len(psrc) == 2:
         vertices = 3
         pipi = 'src'
-    elif len(psnk) == len(psrc) and len(psrc) == 3 and type(psrc[0]) is int:
+    elif len(psnk) == len(psrc) and len(psrc) == 3 and isinstance(
+            psrc[0], int):
         vertices = 2
     else:
         pstr = None
     if vertices == 4:
-        pstr = 'mom1src'+rf.ptostr(psrc[0])+'_mom2src'+rf.ptostr(psrc[1])+'_mom1snk'+rf.ptostr(psnk[0])
+        pstr = 'mom1src'+rf.ptostr(
+            psrc[0])+'_mom2src'+rf.ptostr(
+                psrc[1])+'_mom1snk'+rf.ptostr(psnk[0])
     elif vertices == 3 and pipi == 'src':
         pstr = 'momsrc'+rf.ptostr(psrc[0])+'_momsnk'+rf.ptostr(psnk)
     elif vertices == 3 and pipi == 'snk':
@@ -33,70 +38,92 @@ def momstr(psrc,psnk):
         else:
             pstr = 'mom'+rf.ptostr(psrc)
     return pstr
-        
 
-A_1plus=[(1/sqrt(6),'pipi',[[1,0,0],[-1,0,0]]),(1/sqrt(6),'pipi',[[0,1,0],[0,-1,0]]),(1/sqrt(6),'pipi',[[0,0,1],[0,0,-1]]),(1/sqrt(6),'pipi',[[-1,0,0],[1,0,0]]),(1/sqrt(6),'pipi',[[0,-1,0],[0,1,0]]),(1/sqrt(6),'pipi',[[0,0,-1],[0,0,1]]),(1,'sigma',[0,0,0]),(1,'S_pipi',[[0,0,0],[0,0,0]])]
+A_1PLUS = [
+    (1/sqrt(6), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 1, 0], [0, -1, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 0, 1], [0, 0, -1]]),
+    (1/sqrt(6), 'pipi', [[-1, 0, 0], [1, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, -1, 0], [0, 1, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
+    (1, 'sigma', [0, 0, 0]),
+    (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]])]
 
-#A_1plus_sigma=[(1,'sigma',[0,0,0])]
+#A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
-T_1_1minus=[(-1/2,'pipi',[[1,0,0],[-1,0,0]]),(complex(0,-1/2),'pipi',[[0,1,0],[0,-1,0]]),(1/2,'pipi',[[-1,0,0],[1,0,0]]),(complex(0,-1/2),'pipi',[[0,-1,0],[0,1,0]])]
+T_1_1MINUS = [
+    (-1/2, 'pipi', [[1, 0, 0], [-1, 0, 0]]),
+    (complex(0, -1/2), 'pipi', [[0, 1, 0], [0, -1, 0]]),
+    (1/2, 'pipi', [[-1, 0, 0], [1, 0, 0]]),
+    (complex(0, -1/2), 'pipi', [[0, -1, 0], [0, 1, 0]])]
 
-T_1_3minus=[(1/2,'pipi',[[1,0,0],[-1,0,0]]),(complex(0,-1/2),'pipi',[[0,1,0],[0,-1,0]]),(-1/2,'pipi',[[-1,0,0],[1,0,0]]),(complex(0,1/2),'pipi',[[0,-1,0],[0,1,0]])]
+T_1_3MINUS = [
+    (1/2, 'pipi', [[1, 0, 0], [-1, 0, 0]]),
+    (complex(0, -1/2), 'pipi', [[0, 1, 0], [0, -1, 0]]),
+    (-1/2, 'pipi', [[-1, 0, 0], [1, 0, 0]]),
+    (complex(0, 1/2), 'pipi', [[0, -1, 0], [0, 1, 0]])]
 
-T_1_2minus=[(1/sqrt(2),'pipi',[[0,0,1],[0,0,-1]]),(-1/sqrt(2),'pipi',[[0,0,-1],[0,0,1]])]
+T_1_2MINUS = [
+    (1/sqrt(2), 'pipi', [[0, 0, 1], [0, 0, -1]]),
+    (-1/sqrt(2), 'pipi', [[0, 0, -1], [0, 0, 1]])]
 
-oplist={'A_1plus':A_1plus,'T_1_1minus':T_1_1minus,'T_1_3minus':T_1_3minus,'T_1_2minus':T_1_2minus}
-part_list=set([])
-for op in oplist:
-    for item in oplist[op]:
-        part_list.add(item[1])
+OPLIST = {'A_1PLUS':A_1PLUS,
+          'T_1_1MINUS':T_1_1MINUS,
+          'T_1_3MINUS':T_1_3MINUS,
+          'T_1_2MINUS':T_1_2MINUS}
+PART_LIST = set([])
+for opa_out in OPLIST:
+    for item in OPLIST[opa_out]:
+        PART_LIST.add(item[1])
 
-def partstr(srcpart,snkpart):
+def partstr(srcpart, snkpart):
+    """Get string from particle strings at source and sink"""
     if srcpart == snkpart and srcpart == 'pipi':
         particles = 'pipi'
     else:
         particles = snkpart+srcpart
     return particles
 
-part_combs=set([])
-for src in part_list:
-    for snk in part_list:
-        part_combs.add(partstr(src,snk))
+PART_COMBS = set([])
+for srcout in PART_LIST:
+    for snkout in PART_LIST:
+        PART_COMBS.add(partstr(srcout, snkout))
 
 def op_list():
-    for op in oplist:
+    """Compose irrep operators at source and sink to do irrep projection.
+    """
+    for opa in OPLIST:
         coeffs_tuple = []
-        for src in oplist[op]:
-            for snk in oplist[op]:
-                part_str=partstr(src[1],snk[1])
-                coeff=src[0]*snk[0]
-                p_str=momstr(src[2],snk[2])
-                d = part_str+"_"+p_str
-                d=re.sub('S_','',d)
-                d=re.sub('pipipipi','pipi',d)
-                if not os.path.isdir(d):
-                    if not os.path.isdir('sep4/'+d):
-                        print("dir",d,"is missing")
+        for src in OPLIST[opa]:
+            for snk in OPLIST[opa]:
+                part_str = partstr(src[1], snk[1])
+                coeff = src[0]*snk[0]
+                p_str = momstr(src[2], snk[2])
+                dur = part_str+"_"+p_str
+                dur = re.sub('S_', '', dur)
+                dur = re.sub('pipipipi', 'pipi', dur)
+                if not os.path.isdir(dur):
+                    if not os.path.isdir('sep4/'+dur):
+                        print("dir", dur, "is missing")
                         sys.exit(1)
                     else:
-                        d='sep4/'+d
-                coeffs_tuple.append((d,coeff,part_str))
-        coeffs_arr=[]
-        print("trying",op)
-        for parts in part_combs:
-            outdir=parts+"_"+op
-            coeffs_arr=[(tup[0],tup[1]) for tup in coeffs_tuple if tup[2] == parts]
+                        dur = 'sep4/'+dur
+                coeffs_tuple.append((dur, coeff, part_str))
+        coeffs_arr = []
+        print("trying", opa)
+        for parts in PART_COMBS:
+            outdir = parts+"_"+opa
+            coeffs_arr = [(tup[0], tup[1]) for tup in coeffs_tuple if tup[2] == parts]
             if not coeffs_arr:
                 continue
-            print("Doing",op,"for particles",parts)
-            sum_blks(outdir,coeffs_arr)
+            print("Doing", opa, "for particles", parts)
+            sum_blks(outdir, coeffs_arr)
     print("End of operator list.")
     return
 
 def main():
+    """Do irrep projection (main)"""
     op_list()
-
 
 if __name__ == "__main__":
     main()
-

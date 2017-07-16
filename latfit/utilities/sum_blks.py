@@ -78,7 +78,7 @@ def norm_fix(fn):
     if(name == 'R'):
         norm = 1.0
     elif(name == 'T'):
-        if rf.vecp(fn) and not rf.reverseP(fn):
+        if rf.vecp(fn) and not rf.reverse_p(fn):
             norm = -1.0
         else:
             norm = 1.0
@@ -203,7 +203,7 @@ def main(fixn,DIRNUM):
                             continue
                         if rf.sep(d) != sep:
                             continue
-                        if rf.reverseP(d) is not filterlist[op][2]:
+                        if rf.reverse_p(d) is not filterlist[op][2]:
                             continue
                         if re.search('Check',d) or re.search('Chk',d) or re.search('chk',d) or re.search('check',d):
                             continue

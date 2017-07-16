@@ -2,7 +2,7 @@
 #from math import log, acosh
 import sys
 import re
-from numpy import arccosh, log
+from math import acosh, log
 from sympy import nsolve
 from sympy.abc import x, y, z
 
@@ -18,9 +18,11 @@ from latfit.config import START_PARAMS
 if EFF_MASS_METHOD == 1:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """Gets the effective mass, given three points
-        Solve an arccosh.  (Needs a user input on the addititive const)
+        Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
+        if time_arr:
+            pass
         if not files:
             corr1 = line1
             corr2 = line2
@@ -38,13 +40,15 @@ if EFF_MASS_METHOD == 1:
                 print(files[1])
                 print(files[2])
             sys.exit(1)
-        return arccosh(arg)
+        return acosh(arg)
 
 elif EFF_MASS_METHOD == 2:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """numerically solve a system of three transcendental equations
         return the eff. mass
         """
+        if time_arr:
+            pass
         if not files:
             corr1 = line1
             corr2 = line2

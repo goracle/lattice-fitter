@@ -1,7 +1,8 @@
-from numpy import ceil,floor
+"""Get files"""
+from numpy import ceil, floor
 
 from latfit.extract.gevp_getfiles_onetime import gevp_getfiles_onetime
-from latfit.extract.pencil_shift import pencil_shift_lhs,pencil_shift_rhs
+from latfit.extract.pencil_shift import pencil_shift_lhs, pencil_shift_rhs
 from latfit.extract.pre_proc_file import pre_proc_file
 from latfit.extract.proc_folder import proc_folder
 
@@ -11,7 +12,7 @@ from latfit.config import GEVP
 
 
 if EFF_MASS:
-    def getfiles_simple(time, xstep, input_f):
+    def getfiles_simple(time, input_f, xstep):
         """Get files for a given time slice."""
         #extract file
         ijfile = proc_folder(input_f, time)
@@ -24,46 +25,58 @@ if EFF_MASS:
         return (ijfile, ij2file, ij3file)
 
 else:
-    def getfiles_simple(time, xstep, input_f):
+    def getfiles_simple(time, input_f, *args):
         """Get files for a given time slice."""
         #extract file
         ijfile = proc_folder(input_f, time)
         #check for errors
         ijfile = pre_proc_file(ijfile, input_f)
-        return (ijfile)
+        if args:
+            pass
+        return tuple(ijfile)
 
 if EFF_MASS:
-    def getfiles_gevp(time,XSTEP,xmin):
-        time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
+    def getfiles_gevp(time, xstep, xmin):
+        """Get files, gevp, eff_mass"""
+        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
+            float(time)/2.0) != time else max(floor(float(time)/2.0/xstep)*xstep, xmin)
         #extract files
         if NUM_PENCILS < 1:
-            FILES=gevp_getfiles_onetime(time)
-            FILES2 =gevp_getfiles_onetime(time2)
-            FILES3 = gevp_getfiles_onetime(time+XSTEP)
-            FILES4 = gevp_getfiles_onetime(time+2*XSTEP)
+            files = gevp_getfiles_onetime(time)
+            files2 = gevp_getfiles_onetime(time2)
+            files3 = gevp_getfiles_onetime(time+xstep)
+            files4 = gevp_getfiles_onetime(time+2*xstep)
         else:
-            FILES=pencil_shift_lhs(time,XSTEP)
-            FILES2=pencil_shift_rhs(time2,XSTEP)
-            FILES3 =pencil_shift_lhs(time+XSTEP,XSTEP)
-            FILES4 = pencil_shift_lhs(time+2*XSTEP,XSTEP)
+            files = pencil_shift_lhs(time, xstep)
+            files2 = pencil_shift_rhs(time2, xstep)
+            files3 = pencil_shift_lhs(time+xstep, xstep)
+            files4 = pencil_shift_lhs(time+2*xstep, xstep)
         #eff mass stuff
-        return time2,(FILES,FILES2,FILES3,FILES4)
+        return time2, (files, files2, files3, files4)
 else:
-    def getfiles_gevp(time,XSTEP,xmin):
-        time2=ceil(float(time)/2.0/XSTEP)*XSTEP if ceil(float(time)/2.0)!=time else max(floor(float(time)/2.0/XSTEP)*XSTEP,xmin)
+    def getfiles_gevp(time, xstep, xmin):
+        """Get files, gevp"""
+        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
+            float(time)/2.0) != time else max(floor(float(time)/2.0/xstep)*xstep, xmin)
         #extract files
         if NUM_PENCILS < 1:
-            FILES=gevp_getfiles_onetime(time)
-            FILES2 =gevp_getfiles_onetime(time2)
+            files = gevp_getfiles_onetime(time)
+            files2 = gevp_getfiles_onetime(time2)
         else:
-            FILES=pencil_shift_lhs(time,XSTEP)
-            FILES2=pencil_shift_rhs(time2,XSTEP)
+            files = pencil_shift_lhs(time, xstep)
+            files2 = pencil_shift_rhs(time2, xstep)
         #eff mass stuff
-        return time2,(FILES,FILES2)
+        return time2, (files, files2)
 
 if GEVP:
     def getfiles(time, xstep, xmin, input_f):
+        """Get files, gevp (meta)"""
+        if input_f:
+            pass
         return getfiles_gevp(time, xstep, xmin)
 else:
     def getfiles(time, xstep, xmin, input_f):
-        return getfiles_simple(time, xstep, input_f)
+        """Get files, (meta)"""
+        if xmin:
+            pass
+        return getfiles_simple(time, input_f, xstep)

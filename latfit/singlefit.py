@@ -6,7 +6,6 @@ import numpy as np
 #package modules
 from latfit.extract.errcheck.inputexists import inputexists
 from latfit.extract.extract import extract
-from latfit.extract.gevp_extract import gevp_extract
 from latfit.makemin.dof_errchk import dof_errchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
@@ -18,7 +17,6 @@ from latfit.analysis.get_fit_params import get_fit_params
 from latfit.config import FIT
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
-from latfit.config import GEVP
 
 def singlefit(input_f, xmin, xmax, xstep):
     """Get data to fit

@@ -12,21 +12,20 @@ def maptomat(cov, dimops=1):
     if dimops == 1:
         retcov = cov
     else:
-        len_time = len(cov)
-        retcov = np.zeros((dimops*len_time, dimops*len_time))
-        for i in range(len_time):
-            for j in range(len_time):
-                for a in range(dimops):
-                    for b in range(dimops):
-                        try:
-                            retcov[i*dimops+a][j*dimops+b] = swapaxes(
-                                cov, 1, 2)[i][a][j][b]
-                        except IndexError:
-                            print("***ERROR***")
-                            print("Dimension mismatch in mapping covariance",
-                                  "tensor to matrix.")
-                            print("Make sure time indices (i,j) and",
-                                  "operator indices (a,b) are like",
-                                  "cov[i][a][j][b].")
-                            sys.exit(1)
+        dimcov = len(cov)
+        retcov = np.zeros((dimops*dimcov, dimops*dimcov))
+
+    try:
+        retcov = np.array(
+            [[swapaxes(cov, 1, 2)[i][opa][j][opb]
+              for j in range(dimcov) for opb in range(dimops)]
+             for i in range(dimcov) for opa in range(dimops)])
+    except IndexError:
+        print("***ERROR***")
+        print("Dimension mismatch in mapping covariance",
+              "tensor to matrix.")
+        print("Make sure time indices (i,j) and",
+              "operator indices (a,b) are like",
+              "cov[i][a][j][b].")
+        sys.exit(1)
     return retcov
