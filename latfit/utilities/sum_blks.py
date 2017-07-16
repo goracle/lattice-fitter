@@ -127,7 +127,7 @@ def isospin_coeff(filen, iso):
     return norm
 
 def iso2(vecp, name):
-    """Isospin coeff, I=2"""
+    """Isospin coeff, I = 2"""
     if name == 'D' and not vecp:
         norm = 2.0
     elif name == 'C':
@@ -137,7 +137,7 @@ def iso2(vecp, name):
     return norm
 
 def iso1(vecp, name):
-    """Isospin coeff, I=1"""
+    """Isospin coeff, I = 1"""
     if (name == 'Hbub' and vecp) or name == 'pioncorr':
         norm = 1.0
     elif name == 'T' and vecp:
@@ -151,7 +151,7 @@ def iso1(vecp, name):
     return norm
 
 def iso0(vecp, name):
-    """Isospin coeff, I=0"""
+    """Isospin coeff, I = 0"""
     if name == 'V':
         norm = 3.0
     elif name == 'D' and not vecp:
@@ -212,13 +212,21 @@ FILTERLIST = {'pion':(PION, [1], False),
 
 def get_sep_mom(dlist):
     """Get momentum and time separation lists"""
-    seplist = set()
-    momlist = set()
+    momlist = {}
+    seplist = {}
     #def is a tuple consisting of list of particles, Isospin,
     #and whether the diagram is a reverse diagram
     for dur in dlist:
-        seplist.add(rf.sep(dur))
-        momlist.add(rf.getmomstr(dur))
+        momstr = rf.getmomstr(dur)
+        sep = rf.sep(dur)
+        if not momstr in momlist:
+            momlist[momstr] = set()
+        else:
+            momlist[momstr].add(dur)
+        if sep not in seplist:
+            seplist[sep] = set()
+        else:
+            seplist[sep].add(dur)
         #mom1 = rf.mom(d)
         #if not mom1:
         #    continue
@@ -233,11 +241,7 @@ def get_norm(loop, dur, fixn):
     and whether to fix norms (fixn)
     """
     #if momtotal(rf.mom(d), d) != loop.mom:
-    if rf.getmomstr(dur) != loop.mom:
-        norm = None
-    elif not rf.figure(dur) in FILTERLIST[loop.opa][0]:
-        norm = None
-    elif rf.sep(dur) != loop.sep:
+    if not rf.figure(dur) in FILTERLIST[loop.opa][0]:
         norm = None
     elif rf.reverse_p(dur) is not FILTERLIST[loop.opa][2]:
         norm = None
@@ -298,7 +302,8 @@ def main(fixn, dirnum):
             for loop.sep in seplist:
                 for loop.mom in momlist:
                     #loop.mom = list(loop.mom)
-                    coeffs_arr = get_coeffs_arr(loop, fixn, dlist)
+                    coeffs_arr = get_coeffs_arr(
+                        loop, fixn, seplist[loop.sep] & momlist[loop.mom])
                     if coeffs_arr == []:
                         continue
                     outdir = get_outdir(loop, dirnum)
