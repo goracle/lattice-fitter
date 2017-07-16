@@ -2,12 +2,12 @@
 import sys
 import numpy as np
 
-from latfit.config import elim_jkconf_list
+from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import JACKKNIFE
 
 def elim_jkconfigs(jkblk):
     """Takes a jackknife block as an argument, eliminates configs
-    corresponding to elim_jkconf_list, then returns the new jackknife block.
+    corresponding to ELIM_JKCONF_LIST, then returns the new jackknife block.
     """
     if not JACKKNIFE:
         print("***ERROR***")
@@ -16,7 +16,7 @@ def elim_jkconfigs(jkblk):
         sys.exit(1)
     else:
         try:
-            elim_list = tuple(elim_jkconf_list)
+            elim_list = tuple(ELIM_JKCONF_LIST)
         except (NameError, TypeError):
             print("***ERROR***")
             print("Not eliminating any configs because of misconfigured")

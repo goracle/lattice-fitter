@@ -1,1 +1,5 @@
-__all__ = ['jk_make.py', 'sum_blks.py', 'combine.py', 'proc_file.py', 'subtractV.py', 'aux_write.py', 'read_file.py', 'write_discon.py', 'traj_list.py']
+"""Utilities to prepare production data for fitting."""
+__all__ = ['jk_make', 'op_compose',
+           'sum_blks', 'combine', 'proc_file',
+           'aux_write', 'read_file',
+           'write_discon', 'traj_list', 'avg_vac']

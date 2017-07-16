@@ -5,8 +5,9 @@ from os import listdir
 from os.path import isfile, join
 import re
 import numpy as np
-import read_file as rf
+
 from traj_list import traj_list
+import read_file as rf
 import combine as cb
 #gets the array from the file, but keeps the values as strings
 

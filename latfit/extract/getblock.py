@@ -10,7 +10,7 @@ from latfit.extract.proc_line import proc_line
 from latfit.config import EFF_MASS
 from latfit.config import GEVP
 from latfit.config import START_PARAMS
-from latfit.config import elim_jkconf_list
+from latfit.config import ELIM_JKCONF_LIST
 
 #todo, check for neg/imag eigenvals
 
@@ -54,7 +54,7 @@ if EFF_MASS:
                 eigvals[op].real,
                 eigvals2[op].real,
                 eigvals3[op].real) for op in range(dimops)]))
-        if elim_jkconf_list:
+        if ELIM_JKCONF_LIST:
             reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
 
 else:
@@ -68,7 +68,7 @@ else:
         for num in range(num_configs):
             eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             reuse[ij_str].append(eigvals)
-        if elim_jkconf_list:
+        if ELIM_JKCONF_LIST:
             reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
 
 if EFF_MASS:
@@ -86,7 +86,7 @@ if EFF_MASS:
             if reuse[line+line2+line3] == 0:
                 reuse[line+line2+line3] = START_PARAMS[1]
             reuse[ij_str].append(reuse[line+line2+line3])
-        if elim_jkconf_list:
+        if ELIM_JKCONF_LIST:
             reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
 
 else:
@@ -112,5 +112,5 @@ else:
 def getblock(file_tup, reuse, ij_str):
     """get the block and subtract any bad configs"""
     getblock_plus(file_tup, reuse, ij_str)
-    if elim_jkconf_list:
+    if ELIM_JKCONF_LIST:
         reuse[ij_str] = elim_jkconfigs(reuse[ij_str])
