@@ -32,7 +32,7 @@ def covinv_avg(cov, dimops=1):
                     if err == 'Singular matrix':
                         print("Regular matrix inversion also failed")
                         print("rows:")
-                        for i in enumerate(retcov):
+                        for i, _ in enumerate(retcov):
                             print(np.array2string(retcov[i], separator=', '))
                         print("columns:")
                         for i in range(len(retcov)):

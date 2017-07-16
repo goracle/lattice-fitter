@@ -7,7 +7,7 @@ def sym_check(ccov):
     I don't know why the covariance matrix would ever be non-symmetric
     unless the data were mangled.
     """
-    for ciii in enumerate(ccov):
+    for ciii, _ in enumerate(ccov):
         for cjjj in range(ciii+1, len(ccov)):
             if ccov[ciii][cjjj] == ccov[cjjj][ciii]:
                 pass
