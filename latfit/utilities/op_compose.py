@@ -118,6 +118,7 @@ def op_list():
                 dur = re.sub('pipipipi', 'pipi', dur)
                 if not os.path.isdir(dur):
                     if not os.path.isdir('sep4/'+dur):
+                        print("For op:", op)
                         print("dir", dur, "is missing")
                         sys.exit(1)
                     else:
