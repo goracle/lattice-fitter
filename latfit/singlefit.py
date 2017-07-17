@@ -1,4 +1,5 @@
 """Standard fit branch"""
+import sys
 from collections import namedtuple
 from numpy import sqrt
 import numpy as np
@@ -18,6 +19,7 @@ from latfit.config import FIT
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
+from latfit.config import GEVP
 
 def singlefit(input_f, xmin, xmax, xstep):
     """Get data to fit
@@ -31,7 +33,7 @@ def singlefit(input_f, xmin, xmax, xstep):
     #do this so reuse goes from reuse[time][config] to more convenient reuse[config][time]
 
     if PRINT_CORR:
-        print(COORDS)
+        print(coords)
         if GEVP:
             print([sqrt(np.diag(cov[i][i])) for i in range(len(cov))])
         else:

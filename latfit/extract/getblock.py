@@ -1,7 +1,9 @@
 """Get the data block."""
+import sys
+from collections import deque
 from linecache import getline
-import numpy as np
 from scipy.linalg import eig
+import numpy as np
 
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
@@ -38,7 +40,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
 
 
 if EFF_MASS:
-    def getblock_gevp(file_tup, reuse):
+    def getblock_gevp(file_tup):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -55,11 +57,11 @@ if EFF_MASS:
             eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
             retblk.append(np.array([proc_meff(
                 eigvals[op], eigvals2[op], eigvals3[op])
-                                           for op in range(dimops)]))
+                                    for op in range(dimops)]))
         return retblk
 
 else:
-    def getblock_gevp(file_tup, reuse):
+    def getblock_gevp(file_tup):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -95,6 +97,8 @@ else:
         """Given file,
         get block, store in reuse[ij_str]
         """
+        if reuse:
+            pass
         retblk = deque()
         for line in open(ijfile):
             retblk.append(proc_line(line, ijfile))
@@ -105,6 +109,7 @@ else:
 
 if GEVP:
     def test_imagblk(blk):
+        """test block for imaginary eigenvalues in gevp"""
         for test1 in blk:
             for test in test1:
                 if test.imag != 0:
@@ -113,7 +118,9 @@ if GEVP:
                     sys.exit(1)
     def getblock_plus(file_tup, reuse):
         """get the block"""
-        retblk = getblock_gevp(file_tup, reuse)
+        if reuse:
+            pass
+        retblk = getblock_gevp(file_tup)
         test_imagblk(retblk)
         return retblk
 else:
@@ -123,6 +130,6 @@ else:
 
 def getblock(file_tup, reuse):
     """get the block and subtract any bad configs"""
-    retblk = np.array(getblock_plus(file_tup, reuse, ij_str))
+    retblk = np.array(getblock_plus(file_tup, reuse))
     if ELIM_JKCONF_LIST:
         return elim_jkconfigs(retblk)

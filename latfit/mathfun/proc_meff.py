@@ -2,7 +2,8 @@
 #from math import log, acosh
 import sys
 import re
-from math import acosh, log
+from warnings import warn
+from math import acosh
 from sympy import nsolve
 from sympy.abc import x, y, z
 
@@ -121,4 +122,4 @@ else:
     print("Bad method for finding the effective mass specified:",
           EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
-proc_meff.sent=object()
+proc_meff.sent = object()
