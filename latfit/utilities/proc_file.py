@@ -5,7 +5,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-import avg_vac as avac
+import avgvac as avac
 import jk_make as jk
 import read_file as rf
 

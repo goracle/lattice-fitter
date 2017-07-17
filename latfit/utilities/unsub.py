@@ -5,7 +5,7 @@ import sys
 import os
 import os.path
 import numpy as np
-from avg_vac import proc_vac
+from avgvac import proc_vac
 
 def get_block_data(filen, onlydirs):
     """Get array of jackknife block data (from single time slice file, e.g.)
