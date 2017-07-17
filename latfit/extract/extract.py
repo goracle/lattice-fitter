@@ -40,7 +40,7 @@ def extract(input_f, xmin, xmax, xstep):
 
             #setup the reuse block for 'i' so proc_ijfile can remain
             #time agnostic
-            reuse_ij(reuse, timei, 'i')
+            reuse['i'] = reuse_ij(reuse, timei)
 
             #get the ifile(s)
             ifile_tup = getfiles(timei, xstep, xmin, input_f)
@@ -48,7 +48,7 @@ def extract(input_f, xmin, xmax, xstep):
             for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
 
                 #same for j
-                reuse_ij(reuse, timej, 'j')
+                reuse['j'] = reuse_ij(reuse, timej)
                 jfile_tup = getfiles(timej, xstep, xmin, input_f)
 
                 #get the cov entry and the block
@@ -73,15 +73,16 @@ def extract(input_f, xmin, xmax, xstep):
 
 
 #side effects warning
-def reuse_ij(reuse, time, ij_str):
+def reuse_ij(reuse, time):
     """Prepare reuse container with proper block for i or j
     This allows proc_ijfile to remain agnostic as to where it is in the
     structure of the covariance matrix.
     """
     if time in reuse:
-        reuse[ij_str] = reuse[time]
+        retblk = reuse[time]
     else:
-        reuse[ij_str] = 0
+        retblk = 0
+    return retblk
 
 if GEVP:
     def allocate(xmin, xmax, xstep):
