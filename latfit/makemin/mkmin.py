@@ -17,6 +17,9 @@ def mkmin(covinv, coords):
     Return minimized result.
     """
     if AUTO_FIT:
+        if GEVP:
+            print("untested, unsupported.")
+            sys.exit(0)
         xcoords = [coords[i][0] for i in range(len(coords))]
         ycoords = [coords[i][1] for i in range(len(coords))]
         if ASSISTED_FIT:

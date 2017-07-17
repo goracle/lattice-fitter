@@ -30,10 +30,10 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
         for opb in range(dimops):
             c_lhs[opa][opb] = proc_line(
                 getline(file_tup_lhs[opa][opb], num+1),
-                file_tup_lhs[opa][opb])*NORMS[opa]*NORMS[opb]
+                file_tup_lhs[opa][opb])*NORMS[opa][opb]
             c_rhs[opa][opb] = proc_line(
                 getline(file_tup_rhs[opa][opb], num+1),
-                file_tup_rhs[opa][opb])*NORMS[opa]*NORMS[opb]
+                file_tup_rhs[opa][opb])*NORMS[opa][opb]
     eigvals, _ = eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
     return eigvals
@@ -51,7 +51,7 @@ if EFF_MASS:
         retblk = deque()
         dimops = len(file_tup[0])
         num_configs = sum(1 for _ in open(file_tup[0][0][0]))
-        for num in num_configs:
+        for num in range(num_configs):
             eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
             eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)

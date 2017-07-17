@@ -9,34 +9,34 @@ def xlim_err(xmin, xmax):
     """
     sent1 = object()
     sent2 = object()
-    xmin = sent1
-    xmax = sent2
+    xmin1 = sent1
+    xmax1 = sent2
     if isinstance(xmax, str):
         try:
-            xmax = float(xmax)
+            xmax1 = float(xmax)
         except ValueError:
             print("***ERROR***")
             print("Invalid xmax.")
             procargs(["h"])
     if isinstance(xmin, str):
         try:
-            xmin = float(xmin)
+            xmin1 = float(xmin)
         except ValueError:
             print("***ERROR***")
             print("Invalid xmin.")
             procargs(["h"])
-    if xmin == sent1 or xmax == sent2:
+    if xmin1 == sent1 or xmax1 == sent2:
         print("Now, input valid domain (abscissa).")
         print("xmin<=x<=xmax")
-        if xmin == sent1:
+        if xmin1 == sent1:
             print("x min=")
-            xmin = float(input())
-        if xmax == sent2:
+            xmin1 = float(input())
+        if xmax1 == sent2:
             print("x max=")
-            xmax = float(input())
-    if xmax < xmin:
-        swap_minmax(xmin, xmax)
-    return xmin, xmax
+            xmax1 = float(input())
+    if xmax1 < xmin1:
+        xmin1, xmax1 = swap_minmax(xmin1, xmax1)
+    return xmin1, xmax1
 
 def swap_minmax(xmin, xmax):
     """Try to swap xmin with xmax if xmax < xmin"""

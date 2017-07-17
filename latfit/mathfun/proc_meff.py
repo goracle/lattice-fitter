@@ -107,7 +107,7 @@ elif EFF_MASS_METHOD == 3 and FIT:
         arg = (corr2-corr1)/(corr3-corr2)
         if arg < 0 and proc_meff.sent != 0:
             #print("***ERROR***")
-            warn("argument to log in eff. mass calc is than 0:", str(arg))
+            warn("argument to log in eff. mass calc is than 0: "+str(arg))
             print("argument to log in effective mass calc is less than 0:", arg)
             print(corr1, corr2, corr3)
             if files:

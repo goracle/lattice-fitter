@@ -1,5 +1,5 @@
 """Get files"""
-#from numpy import ceil, floor
+from numpy import ceil, floor
 
 from latfit.extract.gevp_getfiles_onetime import gevp_getfiles_onetime
 from latfit.extract.pencil_shift import pencil_shift_lhs, pencil_shift_rhs
@@ -69,11 +69,11 @@ if GEVP:
         """Get files, gevp (meta)"""
         if input_f:
             pass
-        #time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
-        #    float(time)/2.0) != time else max(
-        #        floor(float(time)/2.0/xstep)*xstep, xmin)
-        time2 = xmin-2*xstep
-        return time2, getfiles_gevp(time, xstep, xmin, time2)
+        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
+            float(time)/2.0) != time else max(
+                floor(float(time)/2.0/xstep)*xstep, xmin)
+        #time2 = xmin-2*xstep
+        return getfiles_gevp(time, time2, xstep)
 else:
     def getfiles(time, xstep, xmin, input_f):
         """Get files, (meta)"""

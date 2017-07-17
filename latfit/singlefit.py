@@ -62,14 +62,17 @@ def singlefit(input_f, xmin, xmax, xstep):
     if FIT:
         covinv = covinv_avg(cov, params.dimops)
 
-    print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
+    if GEVP:
+        print("(Rough) scale of errors in data points = ", np.diag(sqrt(cov[0][0])))
+    else:
+        print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
     if FIT:
         #comment out options{...}, bounds for L-BFGS-B
         ###start minimizer
         #result_min = namedtuple('min', ['x', 'fun', 'status', 'err_in_chisq'])
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
-            result_min, param_err = jackknife_fit(params)
+            result_min, param_err = jackknife_fit(params, reuse, coords, time_range, covinv)
         else:
             result_min = mkmin(covinv, coords)
             ####compute errors 8ab, print results (not needed for plot part)

@@ -3,7 +3,7 @@ import os.path
 import os
 import re
 import sys
-from warnings import warn
+#from warnings import warn
 from collections import namedtuple
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -55,7 +55,7 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
         return 0
 
     ###DO PLOT
-    with PdfPages(re.sub(' ', '_', +file_str+'.pdf')) as pdf:
+    with PdfPages(file_str) as pdf:
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             #plot fit function
@@ -113,7 +113,7 @@ def get_file_string(title, dimops):
     #brief attempt at sanitization
     title_safe = re.sub(r'\$', '', title)
     title_safe = re.sub(r'\\', '', title_safe)
-    title_safe = re.sub(r', ', '', title_safe)
+    title_safe = re.sub(r', ', ' ', title_safe)
 
     if JACKKNIFE_FIT == 'DOUBLE':
         jk_str = '_2xjk'
@@ -137,7 +137,9 @@ def get_file_string(title, dimops):
         gevp_str = ' GEVP '+str(dimops)+'dim'
     else:
         gevp_str = ''
-    return title_safe + eff_str + uncorr_str + gevp_str + jk_str
+    file_str = title_safe + eff_str + uncorr_str + gevp_str + jk_str
+    file_str = re.sub(' ', '_', file_str) + '.pdf'
+    return file_str
 
 def get_coord(coords, cov):
     """Plotted coordinates setup
@@ -211,7 +213,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
-            plt.errorbar(xcoord, ycurve, yerr=yerr,
+            plt.errorbar(np.array(xcoord)[:,0], ycurve, yerr=yerr,
                          linestyle='None', ms=3.75, marker='o',
                          label='Energy('+str(curve_num)+')')
     else:
@@ -224,13 +226,24 @@ def plot_fit(xcoord, result_min):
     than the original data points (to show smoothness)
     """
     if EFF_MASS and EFF_MASS_METHOD == 3:
-        warn('step size assumed 1 for fitted plot.')
-        step_size = 1
+        pass
+        #warn('step size assumed 1 for fitted plot.')
+        #step_size = 1
+    else:
+        pass
+    if GEVP:
+        step_size = abs((xcoord[len(xcoord)-1][0]-xcoord[0][0]))/FINE/(
+            len(xcoord)-1)
     else:
         step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
             len(xcoord)-1)
-    xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                     step_size)
+    try:
+        len(xcoord[0])
+        xfit = np.arange(xcoord[0][0], xcoord[len(xcoord)-1][0]+step_size,
+                         step_size)
+    except TypeError:
+        xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
+                         step_size)
     for curve_num in range(len(fit_func(xfit[0], result_min.x))):
         #result_min.x is is the array of minimized fit params
         yfit = np.array([
@@ -249,8 +262,8 @@ if GEVP:
         for i in range(dimops):
             axvar.add_patch((
                 plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
-                    (xcoord[0]-1, result_min.x[i]-param_err[i]),   # (x, y)
-                    xcoord[len(xcoord)-1]-xcoord[0]+2, # width
+                    (xcoord[0][0]-1, result_min.x[i]-param_err[i]),  # (x, y)
+                    xcoord[len(xcoord)-1][0]-xcoord[0][0]+2, # width
                     2*param_err[i],          # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                     #transform=fig.transFigure

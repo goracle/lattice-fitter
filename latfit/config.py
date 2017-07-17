@@ -19,8 +19,8 @@ FIT = True
 
 ##Jackknife fit?
 
-#JACKKNIFE_FIT = ''
 JACKKNIFE_FIT = 'DOUBLE'
+#JACKKNIFE_FIT = ''
 #JACKKNIFE_FIT = 'FROZEN'
 
 ##Uncorrelated fit? True or False
@@ -30,8 +30,8 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-EFF_MASS = False
-#EFF_MASS = True
+#EFF_MASS = False
+EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -68,19 +68,20 @@ ADD_CONST = True
 EFF_MASS_METHOD = 3
 
 #####2x2 I=0
-#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-#'sep4/pipisigma_momsrc000_momsnk000'],
-#['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
+GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
+'sep4/pipisigma_momsrc000_momsnk000'],
+['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
+
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'S_pipipipi_A_1plus'], ['pipiS_pipi_A_1plus', 'pipi_A_1plus']]
 
 #####3x3, I0
-GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-              'sep4/pipisigma_momsrc000_momsnk000',
-              'S_pipipipi_A_1plus'],
-             ['sep4/sigmapipi_momsrc000_momsnk000',
-              'sigmasigma_mom000', 'sigmaS_pipi_A_1plus'],
-             ['pipiS_pipi_A_1plus', 'pipisigma_A_1plus', 'pipi_A_1plus']]
+#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
+#              'sep4/pipisigma_momsrc000_momsnk000',
+#              'S_pipipipi_A_1plus'],
+#             ['sep4/sigmapipi_momsrc000_momsnk000',
+#              'sigmasigma_mom000', 'sigmaS_pipi_A_1plus'],
+#             ['pipiS_pipi_A_1plus', 'pipisigma_A_1plus', 'pipi_A_1plus']]
 
 #####3x3, I2, pipi, 000, 100, 110
 #GEVP_DIRS = [['S_pipiS_pipi_A_1plus', 'S_pipipipi_A_1plus',
@@ -270,7 +271,7 @@ JACKKNIFE = 'YES'
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = range(14)
+ELIM_JKCONF_LIST = range(48)
 #ELIM_JKCONF_LIST = []
 
 ###-------BEGIN POSSIBLY OBSOLETE------###

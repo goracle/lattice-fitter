@@ -15,14 +15,32 @@ if GEVP:
         #print(covinv)
         #print("break 2")
         #print(coords[0][1]-fit_func(coords[0][0], trial_params))
-        retval = np.sum([dot(dot((
-            coords[outer][1]- fit_func(coords[outer][0], trial_params)),
-                                 covinv[outer][inner]),
-                             (coords[inner][1]-fit_func(coords[inner][0],
+        retval = np.sum([dot(dot((coords[outer][1]- fit_func(coords[outer][0][0], trial_params)), covinv[outer][inner]),
+                             (coords[inner][1]-fit_func(coords[inner][0][0],
                                                         trial_params)))
                          for outer in range(len(coords))
                          for inner in range(len(coords))])
         if retval.imag != 0:
+            llll = [dot(dot((coords[outer][1]- fit_func(coords[outer][0][0], trial_params)), covinv[outer][inner]),
+                             (coords[inner][1]-fit_func(coords[inner][0][0],
+                                                        trial_params)))
+                         for outer in range(len(coords))
+                         for inner in range(len(coords))]
+            print("***ERROR***")
+            print("imaginary part of chi^2 is non-zero")
+            print(coords[0][0])
+            print("sep")
+            print(coords[0][1])
+            print("sep1")
+            print((coords[0][1]-fit_func(coords[0][0][0], trial_params)))
+            print("sep2")
+            print(covinv[0][0])
+            print("sep3")
+            print(dot((coords[0][1]- fit_func(coords[0][0][0], trial_params)), covinv[0][0]))
+            print("sep4")
+            print(llll)
+            print("sep5")
+            print(np.sum(llll))
             sys.exit(1)
         return retval.real
 else:

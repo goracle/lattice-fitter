@@ -12,7 +12,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 
 if JACKKNIFE_FIT == 'FROZEN':
-    def jackknife_fit(params, reuse, coords, covinv, time_range):
+    def jackknife_fit(params, reuse, coords, time_range, covinv):
         """Fit under a frozen (single) jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -50,13 +50,15 @@ if JACKKNIFE_FIT == 'FROZEN':
         return result_min, param_err
 
 elif JACKKNIFE_FIT == 'DOUBLE':
-    def jackknife_fit(params, reuse, coords, time_range):
+    def jackknife_fit(params, reuse, coords, time_range, covinv=None):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
         and whether the minimizer succeeded on all fits
         ('status' == 0 if all were successful)
         """
+        if covinv is None:
+            pass
         result_min = namedtuple('min',
                                 ['x', 'fun', 'status', 'err_in_chisq'])
         result_min.status = 0
@@ -72,8 +74,8 @@ elif JACKKNIFE_FIT == 'DOUBLE':
                     coords_jack[time, 1] = reuse[config_num][time]
             else:
                 coords_jack[:, 1] = reuse[config_num]
-                coords_jack, covinv_jack = get_doublejk_data(
-                    params, coords_jack, reuse, config_num, reuse_inv)
+            coords_jack, covinv_jack = get_doublejk_data(
+                params, coords_jack, reuse, config_num, reuse_inv)
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status

@@ -26,7 +26,7 @@ def proc_folder(folder, ctime, other_regex=""):
             my_regex2 = r"t" + str(int(ctime))
             regex_reject2 = my_regex2+r"[0-9]"
     retname, flag2, debug = lookat_dir(
-        folder, my_regex, [regex_reject1, regex_reject2], temp4, retname)
+        folder, [my_regex, my_regex2], [regex_reject1, regex_reject2], temp4, retname)
     #logic: if we found at least one match
     if retname != temp4:
         #logic: if we found >1 match
@@ -48,6 +48,7 @@ def proc_folder(folder, ctime, other_regex=""):
 
 def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
     """loop on dir, look for file we want"""
+    flag2 = 0
     for root, dirs, files in os.walk(folder):
         for name in files:
             #logic: if the search matches either int or float ctime
