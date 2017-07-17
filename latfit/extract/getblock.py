@@ -11,6 +11,7 @@ from latfit.config import EFF_MASS
 from latfit.config import GEVP
 from latfit.config import START_PARAMS
 from latfit.config import ELIM_JKCONF_LIST
+from latfit.config import NORMS
 
 #todo, check for neg/imag eigenvals
 
@@ -27,10 +28,10 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
         for opb in range(dimops):
             c_lhs[opa][opb] = proc_line(
                 getline(file_tup_lhs[opa][opb], num+1),
-                file_tup_lhs[opa][opb])
+                file_tup_lhs[opa][opb])*NORMS[opa]*NORMS[opb]
             c_rhs[opa][opb] = proc_line(
                 getline(file_tup_rhs[opa][opb], num+1),
-                file_tup_rhs[opa][opb])
+                file_tup_rhs[opa][opb])*NORMS[opa]*NORMS[opb]
     eigvals, _ = eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
     return eigvals
