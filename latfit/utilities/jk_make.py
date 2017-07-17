@@ -47,10 +47,10 @@ def write_blocks(trajl, outdir, basename, len_t):
                     else:
                         print("Error:  Bad filename:'"+readf+"', needs 2 or 3 columns:")
                         print("only", lsp, "columns found.")
-                    exit(1)
+                    sys.exit(1)
                 else:
                     print("How did you get here?")
-                    exit(1)
+                    sys.exit(1)
             #line to write in the block file
             avg = complex('{0:.{1}f}'.format(avg/num_configs,
                                              sys.float_info.dig))
@@ -133,7 +133,7 @@ def main():
             write_blocks(trajl, outdir, base, numlines)
 
     print("Done writing jackknife blocks.")
-    exit(0)
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

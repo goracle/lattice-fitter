@@ -151,7 +151,7 @@ def main():
     elif as1 == 'n':
         already_summed = False
     else:
-        exit(1)
+        sys.exit(1)
     #end global params
     for binsize in [mdstep, 20, 40, 60, 80]:
         if binsize == mdstep:

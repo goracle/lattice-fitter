@@ -90,7 +90,7 @@ def nmom_arr(pret):
         return nmom1
     else:
         print("Error: bad momentum container.")
-        exit(1)
+        sys.exit(1)
 
 def nmom(filename):
     """Get number of momenta from filename"""
@@ -103,7 +103,7 @@ def procmom(mstr):
     bmat = re.findall(r'_*\d', mstr)
     if len(bmat) != 3:
         print("Error: bad filename, number of momenta")
-        exit(1)
+        sys.exit(1)
     return [int(bmat[i].replace('_', '-')) for i in range(len(bmat))]
 
 def getmomstr(filename):
@@ -131,7 +131,7 @@ def mom(filename):
             pret = (mom1, mom2)
         else:
             print("Error: bad filename, mom2 not found", filename)
-            exit(1)
+            sys.exit(1)
     elif lmat:
         psrc = procmom(lmat.group(1))
         lmat = re.search(r'momsnk((_?\d+){3})', filename)
@@ -140,7 +140,7 @@ def mom(filename):
             pret = (psrc, psnk)
         else:
             print("Error: bad filename, psnk not found", filename)
-            exit(1)
+            sys.exit(1)
     elif mat:
         pret = three_mat(mat, filename)
     elif nmat:
@@ -149,7 +149,7 @@ def mom(filename):
         print("Error: bad filename= '"+str(filename)+"' no momenta found.  Attempting to continue.")
         pret = None
     return pret
-        #exit(1)
+        #sys.exit(1)
 
 def three_mat(mat, filename):
     """get three 3 momenta from filename; called by mom(filename)"""
@@ -163,10 +163,10 @@ def three_mat(mat, filename):
             pret = (psrc1, psrc2, psnk1)
         else:
             print("Error: bad filename, psnk1 not found", filename)
-            exit(1)
+            sys.exit(1)
     else:
         print("Error: bad filename, psrc2 not found.", filename)
-        exit(1)
+        sys.exit(1)
     return pret
 
 def pion_sep(filename):
@@ -237,7 +237,7 @@ def write_mat_str(data, outfile):
     len_t = len(data[0])
     if len_t != len(data):
         print("Error: non-square matrix.")
-        exit(1)
+        sys.exit(1)
     for tsrc in range(len_t):
         for tdis in range(len_t):
             cnum = data[tsrc][tdis]
@@ -264,7 +264,7 @@ def write_arr(data, outfile):
     len_t = len(data[0])
     if len_t != len(data):
         print("Error: non-square matrix. outfile = ", outfile)
-        exit(1)
+        sys.exit(1)
     for tsrc in range(len_t):
         for tdis in range(len_t):
             cnum = data[tsrc][tdis]
@@ -286,7 +286,7 @@ def pchange(filename, pnew):
     filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename)
     if nnew != nold:
         print("Error: filename momentum mismatch")
-        exit(1)
+        sys.exit(1)
     nmom1 = nold
     if nmom1 == 1:
         filen = filen.replace(ptostr(pold), ptostr(pnew))
@@ -297,7 +297,7 @@ def pchange(filename, pnew):
             filen = filen.replace("temp"+str(i), ptostr(pnew[i]), 1)
     else:
         print("Error: bad filename for momentum replacement specified.")
-        exit(1)
+        sys.exit(1)
     filen = re.sub("TEMPsafe", str(traj1), filen)
     return filen
 

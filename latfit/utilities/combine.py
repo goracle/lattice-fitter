@@ -51,7 +51,7 @@ def main():
         comb_dis(arr[1], arr[1])
     else:
         print("wrong num of args.  need two files to combine")
-        exit(1)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

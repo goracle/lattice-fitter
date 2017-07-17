@@ -30,7 +30,7 @@ def proc_file_str(filename):
             tdis2 = (len_t-tdis)%len_t
         else:
             print("Error: bad filename, error in proc_file_str")
-            exit(1)
+            sys.exit(1)
         out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
     return out
 
@@ -112,7 +112,7 @@ def main():
     for filen in onlyfiles:
         aux_filen(filen)
     print("Done writing auxiliary periodic bc files")
-    exit(0)
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

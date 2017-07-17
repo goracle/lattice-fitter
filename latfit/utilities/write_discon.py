@@ -64,7 +64,7 @@ def dismom(psrc, psnk):
         momstr = "mom"+rf.ptostr(psrc)
     else:
         print("Error: bad momenta:", psrc, psnk)
-        exit(1)
+        sys.exit(1)
     return momstr
 
 def get_disfiles(onlyfiles):
