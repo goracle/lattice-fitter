@@ -11,18 +11,14 @@ import read_file as rf
 #from traj_list import traj_list
 import traj_list as tl
 
-def write_blocks(trajl, outfiles, basename):
+def write_blocks(trajl, basename, outfiles):
     """write jackknife blocks for this basename
     """
     basename2 = '_'+basename
-    #number of trajectories - 1 (to avg over)
-    num_configs = len(trajl)-1
-    outfile2 = outdir+"/a2a.jkblk.t"
     #loop over lines in the base, each gives a separate jk block of trajs
-    for time in range(len_t):
+    for time, outfile in enumerate(outfiles):
         #block file name to append to
         #(a2a since this was written to do all-to-all analyses)
-        outfile=outfile2+str(time)
         if os.path.isfile(outfile):
             print("Block exists.  Skipping.")
             continue
@@ -86,6 +82,7 @@ def main():
     for base in lookup:
         numlines = sum(1 for line in open(lookup[base][0]))
         break
+    base_blks = ['/a2a.jkblk.t'+str(i) for i in range(numlines)]
     lenb = len(lookup)
     for ibase, base in enumerate(lookup):
         outdir = dur+base
@@ -98,12 +95,13 @@ def main():
         print("Processing base:", base, ibase, "of", lenb)
 
         #does base exist in all trajectories?
+        outfiles = [outdir+i for i in base_blks]
         if not lookup_t[base] == trajl_set:
             print("Missing file(s); Attempting to write blocks with remainder.")
             write_blocks(tl.traj_list(onlyfiles=lookup[base], base=base),
-                         outdir, base, numlines)
+                         base, outfiles)
         else:
-            write_blocks(trajl, outdir, base, numlines)
+            write_blocks(trajl, base, outfiles)
 
     print("Done writing jackknife blocks.")
     sys.exit(0)
