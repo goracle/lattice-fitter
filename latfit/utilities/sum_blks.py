@@ -257,7 +257,8 @@ def get_norm(loop, dur, fixn):
             norm2 = norm_fix(dur)
         else:
             norm2 = 1.0
-        norm = norm1*norm2
+        if norm1 and norm2:
+            norm = norm1*norm2
     return norm
 
 def get_outdir(loop, dirnum):
