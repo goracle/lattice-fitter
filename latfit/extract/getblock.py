@@ -85,7 +85,7 @@ if EFF_MASS:
                 open(file_tup[1], 'r'),
                 open(file_tup[2], 'r')):
             if not line+line2+line3 in reuse:
-                reuse[line+line2+line3] = proc_meff(
+                reuse[str(line)+" "+str(line2)+" "+str(line3)] = proc_meff(
                     line, line2, line3, file_tup)
             if reuse[line+line2+line3] == 0:
                 reuse[line+line2+line3] = START_PARAMS[1]
