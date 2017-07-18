@@ -105,8 +105,8 @@ def main():
                         continue
                     arr_plus, arr_minus = get_data(dsrc, dsnk, sepval,
                                                    dur, lookup)
-                    rf.write_arr(arr_plus - arr_minus, outfile)
-                    #rf.write_arr(arr_plus, outfile)
+                    #rf.write_arr(arr_plus - arr_minus, outfile)
+                    rf.write_arr(arr_plus, outfile)
 
 def get_sep(dsrc, dsnk, outfig):
     """Get time sep info"""
@@ -118,13 +118,17 @@ def get_sep(dsrc, dsnk, outfig):
         sepval = 0
         sep = None
         sepstr = "_"
-        if sepsrc:
+        if sepsrc and not sepsnk:
             sep = sepsrc
-            #sepval = 0
+            #sepval = sep
             #we do this because src pipi bubbles don't need a
             #separation offset when combining
             sepstr += "sep"+str(sep)+"_"
-        elif sepsnk:
+        elif sepsnk and not sepsrc:
+            sep = sepsnk
+            sepval = int(sep)
+            sepstr += "sep"+str(sep)+"_"
+        elif sepsnk and sepsrc:
             sep = sepsnk
             sepval = int(sep)
             sepstr += "sep"+str(sep)+"_"
