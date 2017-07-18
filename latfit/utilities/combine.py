@@ -12,7 +12,7 @@ def build_arr(fin):
         lsp = line.split()
         try:
             out = np.append(out, complex(float(lsp[1]), float(lsp[2])))
-        except IndexError:
+        except ValueError:
             out = np.append(out, complex(lsp[1]))
     return np.array(out)
 
@@ -20,7 +20,7 @@ def find_dim(fin):
     """Find dimensions of the bubble in time direction."""
     return sum(1 for line in open(fin))
 
-def comb_dis(finsrc, finsnk, sep=0, starsnk=False, starsrc=False):
+def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False):
     """Combine disconnected diagrams into an array.
 
     args = filename 1, filename 2
