@@ -41,7 +41,6 @@ GEVP = True
 #print correlation function, and sqrt(diag(cov)) and exit
 
 PRINT_CORR = False
-
 #PRINT_CORR = True
 
 ###METHODS/PARAMS
@@ -51,6 +50,7 @@ PRINT_CORR = False
 LT = 24
 
 #rhs time separation (t0) of GEVP matrix
+#(used for non eff mass fits)
 
 TRHS = 3
 
@@ -127,6 +127,7 @@ if GEVP:
 else:
     MULT = 1
 
+C = 0
 if EFF_MASS:
     C = 0
     START_PARAMS = [.5]*MULT
@@ -137,7 +138,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [3.02356707e+02, 4.47338103e-01, -4.5270e+01]*MULT
+        START_PARAMS = [6.02356707e+11, 4.47338103e-01, 1.5270e+11]*MULT
     else:
         START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
 
@@ -207,7 +208,7 @@ else:
         ###check len of start params
         if ORIGL != 2:
             print("***ERROR***")
-            print("length of start_params invalid")
+            print("flag 1 length of start_params invalid")
             sys.exit(1)
         ###select fit function
         def prefit_func(ctime, trial_params):
@@ -220,7 +221,7 @@ else:
             ###check len of start params
             if ORIGL != 3:
                 print("***ERROR***")
-                print("length of start_params invalid")
+                print("flag 2 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
             def prefit_func(ctime, trial_params):
@@ -231,7 +232,7 @@ else:
             ###check len of start params
             if ORIGL != 2:
                 print("***ERROR***")
-                print("length of start_params invalid")
+                print("flag 3 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
             def prefit_func(ctime, trial_params):
