@@ -3,16 +3,19 @@
 from os import listdir
 from os.path import isfile, join
 import read_file as rf
+import jk_make as jk
 
-def traj_list(onlyfiles=None):
+def traj_list(onlyfiles=None, base=None):
     """get list of trajectories from file list
     """
     trajl = set()
     if not onlyfiles:
         onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     for fn2 in onlyfiles:
-        trajl.add(rf.traj(fn2))
+        if base is None or jk.base_name(fn2) == base: 
+            trajl.add(rf.traj(fn2))
     trajl -= set([None])
+    trajl = sorted([int(a) for a in trajl])    
     print("Done getting trajectory list. N trajectories = "+str(len(trajl)))
     return trajl
 
