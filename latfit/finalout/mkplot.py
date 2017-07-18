@@ -215,7 +215,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
-            plt.errorbar(np.array(xcoord)[:,0], ycurve, yerr=yerr,
+            plt.errorbar(xcoord, ycurve, yerr=yerr,
                          linestyle='None', ms=3.75, marker='o',
                          label='Energy('+str(curve_num)+')')
     else:
