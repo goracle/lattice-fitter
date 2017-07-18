@@ -64,7 +64,7 @@ def extract(input_f, xmin, xmax, xstep):
 
                 if j == 0:
                     #only when j=0 does the i block need updating
-                    reuse['i'] = reuse[timej]
+                    reuse['i'] = reuse[timei]
                     #only store coordinates once.
                     coords[i][0] = timei
                     coords[i][1] = resret.coord
