@@ -80,13 +80,14 @@ def get_dimops(cov, result_min, coords):
     except TypeError:
         dimops = 1
     coords = np.array(coords)
-    dimops_chk = len(fit_func(coords[:, 0], result_min.x))
-    if dimops != dimops_chk:
-        print("***ERROR***")
-        print("Fit function length does not match cov. mat.")
-        print("Debug of config necessary.")
-        print(dimops, dimops_chk)
-        sys.exit(1)
+    if FIT:
+        dimops_chk = len(fit_func(coords[:, 0], result_min.x))
+        if dimops != dimops_chk:
+            print("***ERROR***")
+            print("Fit function length does not match cov. mat.")
+            print("Debug of config necessary.")
+            print(dimops, dimops_chk)
+            sys.exit(1)
     return dimops
 
 def get_title(input_f):
@@ -149,6 +150,7 @@ def get_coord(coords, cov):
     xcoord = [coords[i][0] for i in range(len(coords))]
     ycoord = [coords[i][1] for i in range(len(coords))]
     if GEVP:
+        xcoord = list(np.array(xcoord)[:,0])
         error2 = np.array([np.sqrt(np.diag(cov[i][i]))
                            for i in range(len(coords))])
     else:
@@ -231,19 +233,10 @@ def plot_fit(xcoord, result_min):
         #step_size = 1
     else:
         pass
-    if GEVP:
-        step_size = abs((xcoord[len(xcoord)-1][0]-xcoord[0][0]))/FINE/(
-            len(xcoord)-1)
-    else:
-        step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
-            len(xcoord)-1)
-    try:
-        len(xcoord[0])
-        xfit = np.arange(xcoord[0][0], xcoord[len(xcoord)-1][0]+step_size,
-                         step_size)
-    except TypeError:
-        xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                         step_size)
+    step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
+        len(xcoord)-1)
+    xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
+                     step_size)
     for curve_num in range(len(fit_func(xfit[0], result_min.x))):
         #result_min.x is is the array of minimized fit params
         yfit = np.array([
@@ -262,8 +255,8 @@ if GEVP:
         for i in range(dimops):
             axvar.add_patch((
                 plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
-                    (xcoord[0][0]-1, result_min.x[i]-param_err[i]),  # (x, y)
-                    xcoord[len(xcoord)-1][0]-xcoord[0][0]+2, # width
+                    (xcoord[0]-1, result_min.x[i]-param_err[i]),  # (x, y)
+                    xcoord[len(xcoord)-1]-xcoord[0]+2, # width
                     2*param_err[i],          # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                     #transform=fig.transFigure
