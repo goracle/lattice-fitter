@@ -272,7 +272,7 @@ JACKKNIFE = 'YES'
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = range(48)
+ELIM_JKCONF_LIST = range(14)
 #ELIM_JKCONF_LIST = []
 
 ###-------BEGIN POSSIBLY OBSOLETE------###
