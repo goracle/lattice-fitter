@@ -1,9 +1,12 @@
 """Config for lattice fitter."""
 import sys
 from copy import copy
+from math import log
 import numpy as np
 from numpy import exp
 from sympy import exp as exps
+
+from latfit.mathfun.proc_meff import test_arg
 
 ###TYPE OF FIT
 
@@ -58,7 +61,6 @@ TRHS = 3
 
 ADD_CONST = True
 
-
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
 #EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
@@ -66,6 +68,11 @@ ADD_CONST = True
 #EFF_MASS_METHOD 3: one param fit
 
 EFF_MASS_METHOD = 3
+
+#Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
+
+#LOG=True
+LOG=False
 
 #####2x2 I=0
 GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -113,7 +120,10 @@ XLABEL = r'$t/a$'
 
 if EFF_MASS:
     if EFF_MASS_METHOD == 3:
-        YLABEL = r'one param fit'
+        if LOG:
+            YLABEL = r'one param fit'
+        else:
+            YLABEL = r'log(one param fit)'
     else:
         YLABEL = r'$am_{eff}(t)$'
 else:
@@ -347,12 +357,22 @@ def fit_func_1p(ctime, trial_params):
         -trial_params[0]*(LT-(ctime+1)))
     corr3 = exp(-trial_params[0]*(ctime+2))+exp(
         -trial_params[0]*(LT-(ctime+2)))
-#    arg = (corr2-corr1)/(corr3-corr2)
-#    if arg <= 0:
-#        print("imaginary effective mass.")
-#        print("problematic time slices:", ctime, ctime+1, ctime+2)
-#        print("corr1 = ", corr1)
-#        print("corr2 = ", corr2)
-#        print("corr3 = ", corr3)
-        #sys.exit(1)
-    return (corr2-corr1)/(corr3-corr2)
+    if corr3 == corr2:
+        print("imaginary effective mass.")
+        print("problematic time slices:", ctime, ctime+1, ctime+2)
+        print("corr1 = ", corr1)
+        print("corr2 = ", corr2)
+        print("corr3 = ", corr3)
+        sys.exit(1)
+    sol = (corr2-corr1)/(corr3-corr2)
+    if LOG:
+        if not test_arg(sol, config.sent):
+            print("problematic time slices:", ctime, ctime+1, ctime+2)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
+            print("corr3 = ", corr3)
+            sys.exit(1)
+    else:
+        pass
+    return sol
+config.sent = object()
