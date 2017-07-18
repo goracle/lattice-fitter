@@ -33,7 +33,7 @@ else:
         ijfile = pre_proc_file(ijfile, input_f)
         if args:
             pass
-        return tuple(ijfile)
+        return ijfile
 
 if EFF_MASS:
     def getfiles_gevp(time, time2, xstep):
