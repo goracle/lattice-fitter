@@ -6,6 +6,7 @@ import os
 import os.path
 import numpy as np
 from avgvac import proc_vac
+import re
 
 def get_block_data(filen, onlydirs):
     """Get array of jackknife block data (from single time slice file, e.g.)
@@ -27,34 +28,36 @@ def get_block_data(filen, onlydirs):
 
 def unsub():
     """Do the un-subtraction of vacuum bubbles on jk blks"""
-    print("edit this.  think carefully before proceeding")
-    sys.exit(0)
     dur = '.'
-    cwd = os.getcwd()
     onlydirs = [os.path.join(dur, o)
                 for o in os.listdir(dur)
                 if os.path.isdir(os.path.join(dur, o))]
-    for lindex, pdir in enumerate(onlydirs):
-        pdir = pdir[2:]
-        os.chdir(cwd)
-        subfile = '..'+'/AvgVac_'+pdir
+    for lindex, datadir in enumerate(onlydirs):
+        #get rid of preceding slash
+        datadir = datadir[2:]
+        subfile = '../AvgVac_'+datadir
         print("starting subfile:", subfile)
         if not os.path.isfile(subfile):
             continue
         subarr = proc_vac(subfile)
         print("Got unsub array from subfile:", subfile)
-        os.chdir(pdir)
-        for i, avgi in enumerate(subarr):
-            outfile = 'a2a.jkblk.t'+str(i)
-            mainarr = get_block_data(outfile, onlydirs[:lindex+1])
-            mainarr += avgi #edit this line
-            print("rewriting block:", outfile)
-            with open(outfile, "w") as myfile:
-                for numj in mainarr:
-                    outl = complex('{0:.{1}f}'.format(
-                        numj, sys.float_info.dig))
-                    outl = str(outl.real)+" "+str(outl.imag)+"\n"
-                    myfile.write(outl)
+        #average buble with respect to time
+        mean_bubble = np.repeat(np.mean(subarr), len(subarr))
+        outdirs = [datadir+'_sub', datadir+'_avgsub']
+        coeffs = [-1, -1]
+        subarrs = [subarr, mean_bubble]
+        write_blocks_todirs(datadir, outdirs, subarrs,
+                            coeffs, onlydirs[:lindex+1])
+
+def write_blocks_todirs(datadir, outdirs, subarr, coeffs, onlydirs):
+    """Get jackknife blocks, then for each one
+    write several versions of it"""
+    for i, avgs in enumerate(zip(*subarrs)):
+        outfile = 'a2a.jkblk.t'+str(i)
+        mainarr = get_block_data(datadir+'/'+outfile, onlydirs)
+        for avgi, cfm, odir in zip(coeffs, avgs, outdirs):
+            write_block(mainarr+cfm*avgi,
+                        odir+'/'+outfile, already_checked=False)
 
 def main():
     """unsub main"""
