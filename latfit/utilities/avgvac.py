@@ -61,7 +61,7 @@ def avg_vdis():
             #slightly less stringent checking here on substitute:
             #no checking of anything following second underscore.
             #probably fine since user warned above.
-            filen2 = re.sub('traj_([B0-9]+)_', 'traj_'+traj+'_', filen)
+            filen2 = re.sub('traj_([B0-9]+)_', 'traj_'+str(traj)+'_', filen)
             try:
                 open(filen2, 'r')
             except IOError:
