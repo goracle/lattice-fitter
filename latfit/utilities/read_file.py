@@ -283,7 +283,7 @@ def write_block(block, outfile, already_checked=False):
         for line in block:
             if not isinstance(line, str):
                 line = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
-                line = str(avg.real)+" "+str(avg.imag)+'\n'
+                line = str(line.real)+" "+str(line.imag)+'\n'
             myfile.write(line)
 
 def ptostr(ploc):

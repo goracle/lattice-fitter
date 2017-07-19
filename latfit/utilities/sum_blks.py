@@ -300,6 +300,8 @@ def main(fixn, dirnum):
     loop = namedtuple('loop', ('opa', 'iso', 'sep', 'mom'))
     for loop.opa in FILTERLIST:
         for loop.iso in FILTERLIST[loop.opa][1]:
+            if loop.iso == 1:
+                continue
             for loop.sep in seplist:
                 for loop.mom in momlist:
                     #loop.mom = list(loop.mom)
