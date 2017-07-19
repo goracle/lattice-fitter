@@ -97,16 +97,19 @@ def main():
                         sepstr, sepval = get_sep(dsrc, dsnk, outfig)
                     except TypeError:
                         continue
+                    outstr = "_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
                     outfile = "traj_"+str(
-                        traj)+"_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
-                    if os.path.isfile(outfile):
-                        print("Skipping:", outfile)
+                        traj)+outstr
+                    outavg = "AvgVac"+outstr
+                    if os.path.isfile(outfile) and os.path.isfile(outavg):
+                        print("Skipping:", outfile, outavg)
                         print("File exists.")
                         continue
                     arr_plus, arr_minus = get_data(dsrc, dsnk, sepval,
                                                    dur, lookup)
                     #rf.write_arr(arr_plus - arr_minus, outfile)
                     rf.write_arr(arr_plus, outfile)
+                    rf.write_arr(arr_minus, outavg)
 
 def get_sep(dsrc, dsnk, outfig):
     """Get time sep info"""
