@@ -248,11 +248,6 @@ def write_mat_str(data, outfile):
     print("Done writing file:", outfile)
     filen.close()
 
-def ptostr(ploc):
-    """makes momentum array into a string
-    """
-    return (str(ploc[0])+str(ploc[1])+str(ploc[2])).replace("-", "_")
-
 def write_arr(data, outfile):
     """write built array to file (for use in building disconnected diagrams)
     """
@@ -275,6 +270,26 @@ def write_arr(data, outfile):
             filen.write(line)
     print("Done writing file:", outfile)
     filen.close()
+
+def write_block(block, outfile, already_checked=False):
+    """write two columns of floats.  (real and imag parts of jackknife block)
+    """
+    if not already_checked:
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+    with open(outfile, "a") as myfile:
+        for line in block:
+            if not isinstance(line, str):
+                line = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
+                line = str(avg.real)+" "+str(avg.imag)+'\n'
+            myfile.write(line)
+
+def ptostr(ploc):
+    """makes momentum array into a string
+    """
+    return (str(ploc[0])+str(ploc[1])+str(ploc[2])).replace("-", "_")
 
 def pchange(filename, pnew):
     """replace momenta in filename

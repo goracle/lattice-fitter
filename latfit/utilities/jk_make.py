@@ -37,9 +37,7 @@ def write_blocks(trajl, basename, outfiles):
             avg = complex('{0:.{1}f}'.format(avg, sys.float_info.dig))
             avg = str(avg.real)+" "+str(avg.imag)+'\n'
             outarr[i] = avg
-        with open(outfile, "a") as myfile:
-            for line in outarr:
-                myfile.write(line)
+        rf.write_block(outarr, outfile, already_checked=True)
 
 def base_name(filen):
     """get basename of file
