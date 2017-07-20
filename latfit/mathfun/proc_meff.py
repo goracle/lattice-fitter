@@ -3,7 +3,7 @@
 import sys
 import re
 from warnings import warn
-from math import acosh
+from math import acosh, log
 from sympy import nsolve
 from sympy.abc import x, y, z
 
@@ -14,6 +14,7 @@ from latfit.config import C
 from latfit.config import FIT
 from latfit.config import fit_func_3pt_sym
 from latfit.config import START_PARAMS
+from latfit.config import LOG
 
 #almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
@@ -126,6 +127,7 @@ elif EFF_MASS_METHOD == 3 and FIT:
                 if not time_arr is None:
                     print(time_arr)
                 proc_meff.sent = 0
+                sys.exit(1)
             sol = log(sol)
         else:
             pass

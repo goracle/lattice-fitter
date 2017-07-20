@@ -6,7 +6,19 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 
-from latfit.mathfun.proc_meff import test_arg
+#from latfit.mathfun.proc_meff import test_arg
+def test_arg(arg, sent=None):
+    """Test if arg to log is less than zero (imaginary mass)
+    """
+    if arg <= 0 and sent != 0:
+        #print("***ERROR***")
+        warn("argument to log in eff. mass"+" calc is than 0: "+str(
+            arg))
+        print("argument to log in effective mass",
+                "calc is less than 0:", arg)
+        return False
+    return True
+
 
 ###TYPE OF FIT
 
@@ -75,26 +87,26 @@ EFF_MASS_METHOD = 3
 LOG=False
 
 #####2x2 I=0
-GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-'sep4/pipisigma_momsrc000_momsnk000'],
-['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
-
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-#'S_pipipipi_A_1plus'], ['pipiS_pipi_A_1plus', 'pipi_A_1plus']]
+#'sep4/pipisigma_momsrc000_momsnk000'],
+#['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
+
+GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
+'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
 #####3x3, I0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #              'sep4/pipisigma_momsrc000_momsnk000',
-#              'S_pipipipi_A_1plus'],
+#              'S_pipipipi_A_1PLUS'],
 #             ['sep4/sigmapipi_momsrc000_momsnk000',
-#              'sigmasigma_mom000', 'sigmaS_pipi_A_1plus'],
-#             ['pipiS_pipi_A_1plus', 'pipisigma_A_1plus', 'pipi_A_1plus']]
+#              'sigmasigma_mom000', 'sigmaS_pipi_A_1PLUS'],
+#             ['pipiS_pipi_A_1PLUS', 'pipisigma_A_1PLUS', 'pipi_A_1PLUS']]
 
 #####3x3, I2, pipi, 000, 100, 110
-#GEVP_DIRS = [['S_pipiS_pipi_A_1plus', 'S_pipipipi_A_1plus',
-#'S_pipiUUpipi_A_1plus'],
-#['pipiS_pipi_A_1plus', 'pipi_A_1plus', 'pipiUUpipi_A_1plus'],
-#['UUpipiS_pipi_A_1plus', 'UUpipipipi_A_1plus', 'UUpipiUUpipi_A_1plus']]
+#GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',
+#'S_pipiUUpipi_A_1PLUS'],
+#['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS', 'pipiUUpipi_A_1PLUS'],
+#['UUpipiS_pipi_A_1PLUS', 'UUpipipipi_A_1PLUS', 'UUpipiUUpipi_A_1PLUS']]
 
 
 ###DISPLAY PARAMETERS
@@ -357,7 +369,7 @@ def fit_func_1p(ctime, trial_params):
         -trial_params[0]*(LT-(ctime+1)))
     corr3 = exp(-trial_params[0]*(ctime+2))+exp(
         -trial_params[0]*(LT-(ctime+2)))
-    if corr3 == corr2:
+    if np.array_equal(corr3, corr2):
         print("imaginary effective mass.")
         print("problematic time slices:", ctime, ctime+1, ctime+2)
         print("corr1 = ", corr1)
@@ -375,4 +387,4 @@ def fit_func_1p(ctime, trial_params):
     else:
         pass
     return sol
-config.sent = object()
+#config.sent = object()

@@ -56,7 +56,7 @@ def avg_vdis():
         err_fact = deque()
         err_fact.append(avg)
         for traj in traj_list(onlyfiles):
-            if traj == rf.traj(filen):
+            if str(traj) == rf.traj(filen) or int(traj) == rf.traj(filen):
                 continue
             #slightly less stringent checking here on substitute:
             #no checking of anything following second underscore.
