@@ -15,6 +15,7 @@ from latfit.config import FIT
 from latfit.config import fit_func_3pt_sym
 from latfit.config import START_PARAMS
 from latfit.config import LOG
+from latfit.analysis.test_arg import test_arg
 
 #almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
@@ -138,14 +139,3 @@ else:
     sys.exit(1)
 proc_meff.sent = object()
 
-def test_arg(arg, sent=None):
-    """Test if arg to log is less than zero (imaginary mass)
-    """
-    if arg <= 0 and sent != 0:
-        #print("***ERROR***")
-        warn("argument to log in eff. mass"+" calc is than 0: "+str(
-            arg))
-        print("argument to log in effective mass",
-                "calc is less than 0:", arg)
-        return False
-    return True
