@@ -7,6 +7,7 @@ import numpy as np
 
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
+from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 
 from latfit.config import EFF_MASS
@@ -132,4 +133,7 @@ def getblock(file_tup, reuse):
     """get the block and subtract any bad configs"""
     retblk = np.array(getblock_plus(file_tup, reuse))
     if ELIM_JKCONF_LIST:
-        return elim_jkconfigs(retblk)
+        retblk = elim_jkconfigs(retblk)
+    if BINNUM != 1:
+        retblk = binconf(retblk)
+    return retblk

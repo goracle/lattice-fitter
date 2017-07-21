@@ -6,6 +6,8 @@ import numpy as np
 from latfit.extract.getblock import getblock
 from latfit.extract.get_coventry import get_coventry
 
+from latfit.config import BINNUM
+
 def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
     """Process the current file.
     Return covariance matrix entry I, indexj in the case of multi-file
@@ -27,6 +29,8 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None):
     #print num of configs
     if proc_ijfile.CONFIGSENT != 0:
         print("Number of configurations to average over:", num_configs)
+        if BINNUM != 1:
+            print("Configs per bin:", BINNUM)
         proc_ijfile.CONFIGSENT = 0
 
     #check if we're on the same block (i==j)
