@@ -90,19 +90,19 @@ LOG=False
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = range(14)
+ELIM_JKCONF_LIST = range(48)
 #ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
 #####2x2 I=0
-#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-#'sep4/pipisigma_momsrc000_momsnk000'],
-#['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
-
 GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
+'sep4/pipisigma_momsrc000_momsnk000'],
+['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
+
+#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
+#'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
 #####3x3, I0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',

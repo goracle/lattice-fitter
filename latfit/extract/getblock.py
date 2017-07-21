@@ -15,6 +15,7 @@ from latfit.config import GEVP
 from latfit.config import START_PARAMS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS
+from latfit.config import BINNUM
 
 #todo, check for neg/imag eigenvals
 
