@@ -3,37 +3,25 @@
 
 import sys
 import numpy as np
+import read_file as rf
 
-def build_arr(fin):
-    """Read the file and build the array"""
-    filen = open(fin, 'r')
-    out = np.array([], dtype=complex)
-    for line in filen:
-        lsp = line.split()
-        try:
-            out = np.append(out, complex(float(lsp[1]), float(lsp[2])))
-        except ValueError:
-            out = np.append(out, complex(lsp[1]))
-    return np.array(out)
-
-def find_dim(fin):
-    """Find dimensions of the bubble in time direction."""
-    return sum(1 for line in open(fin))
-
-def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False):
+def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False,):
     """Combine disconnected diagrams into an array.
-
     args = filename 1, filename 2
     returns an array indexed by tsrc, tdis
     """
-    print("combining", finsrc, finsnk)
-    len_t = find_dim(finsrc)
-    if len_t != find_dim(finsnk):
-        print("Error: dimension mismatch in combine operation.")
+    if isinstance(finsrc, str) and isinstance(finsnk, str):
+        print("combining", finsrc, finsnk)
+        src = rf.proc_vac(finsrc)
+        snk = rf.proc_vac(finsnk)
+    else:
+        src = finsrc
+        snk = finsnk
+    len_t = len(src)
+    if len_t != len(snk):
+        print("Error: src snk combo dim mismatch.")
         sys.exit(1)
-    out = np.zeros(shape=(len_t, len_t), dtype=complex)
-    src = build_arr(finsrc)
-    snk = build_arr(finsnk)
+    out = np.zeros((len_t, len_t), dtype=complex)
     for tsrc in range(len_t):
         for tsnk in range(len_t):
             srcnum = src[tsrc].conjugate() if starsrc else src[tsrc]

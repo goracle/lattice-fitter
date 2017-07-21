@@ -21,6 +21,59 @@ def pol(filename):
         polret = None
     return polret
 
+def discon_test():
+    filen = open(filename, 'r')
+    for line in filen:
+        if len(line.split()) < 4:
+            print("Disconnected.  Skipping.")
+            return False
+    return True
+
+def getaux_filestrs(filename):
+    """gets the array from the file, but keeps the values as strings
+    """
+    len_t = rf.find_dim(filename)
+    tsep = rf.pion_sep(filename)
+    nmom = rf.nmom(filename)
+    out = np.zeros((len_t, len_t), dtype=np.object)
+    filen = open(filename, 'r')
+    for line in filen:
+        lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
+        tsrc = int(lsp[0])
+        tdis = int(lsp[1])
+        if nmom == 3:
+            tsrc2 = (tsrc+tdis+tsep)%len_t
+            tdis2 = (3*len_t-2*tsep-tdis)%len_t
+        elif nmom == 2:
+            tsrc2 = (tdis+tsrc)%len_t
+            tdis2 = (2*len_t-tsep-tdis)%len_t
+        elif nmom == 1:
+            tsrc2 = (tdis+tsrc)%len_t
+            tdis2 = (len_t-tdis)%len_t
+        else:
+            print("Error: bad filename, error in getaux_filestrs")
+            sys.exit(1)
+        out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
+    return out
+
+def get_block_data(filen, onlydirs):
+    """Get array of jackknife block data (from single time slice file, e.g.)
+    """
+    retarr = np.array([], dtype=complex)
+    filen = open(filen, 'r')
+    for line in filen:
+        lsp = line.split()
+        if len(lsp) == 2:
+            retarr = np.append(retarr, complex(float(lsp[0]), float(lsp[1])))
+        elif len(lsp) == 1:
+            retarr = np.append(retarr, complex(lsp[0]))
+        else:
+            print("Not a jackknife block.  exiting.")
+            print("cause:", filen)
+            print(onlydirs)
+            sys.exit(1)
+    return retarr
+
 def traj(filename):
     """Get trajectory info from filename"""
     filename = str(filename)
@@ -320,6 +373,46 @@ def remp(mom1, mom2, mom3=(0, 0, 0)):
     """helper function; find remaining momentum
     """
     return np.array(mom1)+np.array(mom2)-np.array(mom3)
+
+def proc_vac_real(filen):
+    """Get the bubble from the file
+    """
+    len_t = sum(1 for line in open(filen))
+    retarr = np.zeros(shape=(len_t), dtype=complex)
+    filen = open(filen, 'r')
+    for line in filen:
+        lsp = line.split()
+        tsrc = int(lsp[0])
+        if len(lsp) == 3:
+            retarr.itemset(tsrc, float(lsp[1]))
+        elif len(lsp) == 2:
+            retarr.itemset(tsrc, complex(lsp[1]).real)
+        else:
+            print("Not a disconnected or summed diagram.  exiting.")
+            print("cause:", filen)
+            sys.exit(1)
+    return retarr
+
+def proc_vac(filen):
+    """Get the bubble from the file
+    """
+    len_t = sum(1 for line in open(filen))
+    retarr = np.zeros(shape=(len_t), dtype=complex)
+    filen = open(filen, 'r')
+    for line in filen:
+        lsp = line.split()
+        tsrc = int(lsp[0])
+        if len(lsp) == 3:
+            retarr.itemset(tsrc, complex(float(lsp[1]), float(lsp[2])))
+        elif len(lsp) == 2:
+            retarr.itemset(tsrc, complex(lsp[1]))
+        else:
+            print("Not a disconnected or summed diagram.  exiting.")
+            print("cause:", filen)
+            sys.exit(1)
+    return retarr
+
+
 
 if __name__ == '__main__':
     pass

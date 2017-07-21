@@ -7,49 +7,19 @@ from os.path import isfile, join
 import numpy as np
 import read_file as rf
 
-def proc_file_str(filename):
-    """gets the array from the file, but keeps the values as strings
-    """
-    len_t = rf.find_dim(filename)
-    tsep = rf.pion_sep(filename)
-    nmom = rf.nmom(filename)
-    out = np.zeros((len_t, len_t), dtype=np.object)
-    filen = open(filename, 'r')
-    for line in filen:
-        lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
-        tsrc = int(lsp[0])
-        tdis = int(lsp[1])
-        if nmom == 3:
-            tsrc2 = (tsrc+tdis+tsep)%len_t
-            tdis2 = (3*len_t-2*tsep-tdis)%len_t
-        elif nmom == 2:
-            tsrc2 = (tdis+tsrc)%len_t
-            tdis2 = (2*len_t-tsep-tdis)%len_t
-        elif nmom == 1:
-            tsrc2 = (tdis+tsrc)%len_t
-            tdis2 = (len_t-tdis)%len_t
-        else:
-            print("Error: bad filename, error in proc_file_str")
-            sys.exit(1)
-        out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
-    return out
-
 def call_aux(filen, out):
     """Intermediate function.  test if file; if not, write"""
     if os.path.isfile(out):
         print("Skipping:'"+out+"'.  File exists.")
     else:
-        rf.write_mat_str(proc_file_str(filen), out)
+        rf.write_mat_str(rf.getaux_filestrs(filen), out)
     return
 
 def aux_filen(filename):
     """Write aux diagram corresponding to filename"""
     print("Processing:", filename)
-    filen = open(filename, 'r')
-    for line in filen:
-        if len(line.split()) < 4:
-            print("Disconnected.  Skipping.")
-            return
+    if not rf.discon_test(filename):
+        return
     pret = np.array(rf.mom(filename))
     nmom = rf.nmom(filename)
     plist = nmom*[0]

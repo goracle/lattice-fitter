@@ -10,24 +10,6 @@ import numpy as np
 import read_file as rf
 from traj_list import traj_list
 
-def proc_vac(filen):
-    """Get the bubble from the file
-    """
-    len_t = sum(1 for line in open(filen))
-    retarr = np.zeros(shape=(len_t), dtype=complex)
-    filen = open(filen, 'r')
-    for line in filen:
-        lsp = line.split()
-        tsrc = int(lsp[0])
-        if len(lsp) == 3:
-            retarr.itemset(tsrc, complex(float(lsp[1]), float(lsp[2])))
-        elif len(lsp) == 2:
-            retarr.itemset(tsrc, complex(lsp[1]))
-        else:
-            print("Not a disconnected or summed diagram.  exiting.")
-            print("cause:", filen)
-            sys.exit(1)
-    return retarr
 
 def avg_vdis():
     """Do the averaging over trajecetories of the bubbles."""
@@ -62,10 +44,6 @@ def avg_vdis():
             #no checking of anything following second underscore.
             #probably fine since user warned above.
             filen2 = re.sub('traj_([B0-9]+)_', 'traj_'+str(traj)+'_', filen)
-            try:
-                open(filen2, 'r')
-            except IOError:
-                continue
             retarr = np.array(proc_vac(filen2))
             err_fact.append(retarr)
             avg += retarr

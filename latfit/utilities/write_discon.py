@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 """Write disconnected diagrams"""
+import sys
 import os.path
 from os import listdir
 from os.path import isfile, join
+from collections import namedtuple
 import re
 import numpy as np
 
@@ -80,6 +82,7 @@ def get_disfiles(onlyfiles):
             rf.ptostr(momtotal(mom)), []).append((filen, mom))
     return file_lookup
 
+ZERO='000'
 def main():
     """Write disconnected diagrams, main"""
     dur = 'summed_tsrc_diagrams/'
@@ -87,7 +90,12 @@ def main():
     file_lookup = get_disfiles([
         f for f in listdir('.') if isfile(join('.', f))])
     for traj in file_lookup:
+        #count = 0
         for mt1 in file_lookup[traj]:
+            if mt1 == ZERO:
+                oreal = True
+            else:
+                oreal = False
             for dsrc, momsrc in file_lookup[traj][mt1]:
                 for dsnk, momsnk in file_lookup[traj][mt1]:
                     outfig = comb_fig(dsrc, dsnk)
@@ -97,18 +105,20 @@ def main():
                         sepstr, sepval = get_sep(dsrc, dsnk, outfig)
                     except TypeError:
                         continue
-                    outstr = "_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
+                    #count += 1
+                    #print(count)
                     outfile = "traj_"+str(
-                        traj)+outstr
-                    outavg = "AvgVac"+outstr
+                        traj)+"_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
+                    outavg = outfile+'_avgsub'
                     if os.path.isfile(outfile) and os.path.isfile(outavg):
                         print("Skipping:", outfile, outavg)
                         print("File exists.")
                         continue
-                    arr_plus, arr_minus = get_data(dsrc, dsnk, sepval,
-                                                   dur, lookup)
+                    arr_plus, arr_minus = get_data(
+                        get_fourfn(dsrc, dsnk, dur), sepval,
+                        lookup, onlyreal=oreal)
                     #rf.write_arr(arr_plus - arr_minus, outfile)
-                    rf.write_arr(arr_plus, outfile)
+                    #rf.write_arr(arr_plus, outfile)
                     rf.write_arr(arr_minus, outavg)
 
 def get_sep(dsrc, dsnk, outfig):
@@ -138,24 +148,54 @@ def get_sep(dsrc, dsnk, outfig):
         retsep = sepstr, sepval
     return retsep
 
-def get_data(dsrc, dsnk, sepval, dur, lookup):
+def get_fourfn(dsrc, dsnk, dur):
+    """Get average bubble names"""
+    bubs = namedtuple('bubs',['dsrc','dsnk','dsrc_sub','dsnk_sub'])
+    bubs.dsrc = dsrc
+    bubs.dsnk = dsnk
+    src_fig = rf.figure(dsrc)
+    snk_fig = rf.figure(dsnk)
+    bubs.dsrc_sub = re.sub(src_fig, "Avg_"+src_fig, dur+dsrc)
+    bubs.dsnk_sub = re.sub(snk_fig, "Avg_"+snk_fig, dur+dsnk)
+    bubs.dsrc_sub = re.sub(r'traj_(\d)+_Figure_', '', bubs.dsrc_sub)
+    bubs.dsnk_sub = re.sub(r'traj_(\d)+_Figure_', '', bubs.dsnk_sub)
+    return bubs
+
+def get_data(bubs, sepval, lookup, onlyreal=False):
     """Get regular data and vac subtraction diagram"""
     #get the data
     #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
-    arr_plus = np.array(cb.comb_dis(dsrc, dsnk, sepval))
-    src_fig = rf.figure(dsrc)
-    snk_fig = rf.figure(dsnk)
-    dsrc_sub = re.sub(src_fig, "Avg_"+src_fig, dur+dsrc)
-    dsnk_sub = re.sub(snk_fig, "Avg_"+snk_fig, dur+dsnk)
-    dsrc_sub = re.sub(r'traj_(\d)+_Figure_', '', dsrc_sub)
-    dsnk_sub = re.sub(r'traj_(\d)+_Figure_', '', dsnk_sub)
-    #get the  <><> subtraction array (<> indicates avg over trajectories)
-    if dsrc_sub+dsnk_sub in lookup:
-        print("Using prev.")
-        arr_minus = lookup[dsrc_sub+dsnk_sub]
+
+    if bubs.dsrc_sub in lookup:
+        arr_minus_src = lookup[bubs.dsrc_sub]
     else:
-        arr_minus = np.array(cb.comb_dis(dsrc_sub, dsnk_sub, sepval))
-        lookup[dsrc_sub+dsnk_sub] = arr_minus
+        if onlyreal:
+            arr_minus_src = rf.proc_vac_real(bubs.dsrc_sub)
+        else:
+            arr_minus_src = rf.proc_vac(bubs.dsrc_sub)
+        lookup[bubs.dsrc_sub] = arr_minus_src
+    if bubs.dsnk_sub in lookup:
+        arr_minus_snk = lookup[bubs.dsnk_sub]
+    else:
+        if onlyreal:
+            arr_minus_snk = rf.proc_vac_real(bubs.dsnk_sub)
+        else:
+            arr_minus_snk = rf.proc_vac(bubs.dsnk_sub)
+        lookup[bubs.dsnk_sub] = arr_minus_snk
+
+    if onlyreal:
+        src = rf.proc_vac_real(bubs.dsrc)
+        snk = rf.proc_vac_real(bubs.dsnk)
+    else:
+        src = rf.proc_vac(bubs.dsrc)
+        snk = rf.proc_vac(bubs.dsnk)
+
+    print("combining:", bubs.dsrc, bubs.dsnk)
+    print("sub bubs:", bubs.dsrc_sub, bubs.dsnk_sub)
+    arr_plus = cb.comb_dis(src, snk, sepval)
+    arr_minus = cb.comb_dis(src-np.mean(arr_minus_src),
+                            snk-np.mean(arr_minus_snk), sepval)
+    #get the  <><> subtraction array (<> indicates avg over trajectories)
     return arr_plus, arr_minus
 
 if __name__ == "__main__":
