@@ -3,6 +3,8 @@ import re
 import os
 import sys
 
+from latfit.config import GEVP
+
 def proc_folder(folder, ctime, other_regex=""):
     """Process folder where blocks to be averaged are stored.
     Return file corresponding to current ensemble (lattice time slice).
@@ -38,8 +40,9 @@ def proc_folder(folder, ctime, other_regex=""):
             print("Offending files:", retname)
             sys.exit(1)
         return retname
-    print(debug[0])
-    print(debug[1])
+    if not GEVP:
+        print(debug[0])
+        print(debug[1])
     print(folder)
     print("***ERROR***")
     print("Can't find file corresponding to x-value = ", ctime)
@@ -49,6 +52,7 @@ def proc_folder(folder, ctime, other_regex=""):
 def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
     """loop on dir, look for file we want"""
     flag2 = 0
+    debug =[None, None]
     for root, dirs, files in os.walk(folder):
         for name in files:
             #logic: if the search matches either int or float ctime
@@ -62,7 +66,7 @@ def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
                         flag2 = 1
                     retname = name
             #then test for a float match
-            if re.search(my_regex[0], name) and (
+            elif re.search(my_regex[0], name) and (
                     not re.search(regex_reject[0], name)):
                 #logic: if we found another matching file in
                 #the folder already, then flag it
