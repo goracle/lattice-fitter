@@ -6,19 +6,7 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 
-#from latfit.mathfun.proc_meff import test_arg
-def test_arg(arg, sent=None):
-    """Test if arg to log is less than zero (imaginary mass)
-    """
-    if arg <= 0 and sent != 0:
-        #print("***ERROR***")
-        warn("argument to log in eff. mass"+" calc is than 0: "+str(
-            arg))
-        print("argument to log in effective mass",
-                "calc is less than 0:", arg)
-        return False
-    return True
-
+from latfit.analysis.test_arg import test_arg
 
 ###TYPE OF FIT
 
