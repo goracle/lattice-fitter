@@ -86,6 +86,16 @@ EFF_MASS_METHOD = 3
 #LOG=True
 LOG=False
 
+##eliminate problematic configs.
+#Simply set this to a list of ints indexing the configs,
+#e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
+
+ELIM_JKCONF_LIST = range(14)
+#ELIM_JKCONF_LIST = []
+
+##dynamic binning of configs.  BINNUM is number of configs per bin.
+BINNUM = 1
+
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'sep4/pipisigma_momsrc000_momsnk000'],
@@ -289,13 +299,6 @@ METHOD = 'Nelder-Mead'
 ##correction only happens if multiple files are processed
 
 JACKKNIFE = 'YES'
-
-##eliminate problematic configs.
-#Simply set this to a list of ints indexing the configs,
-#e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
-
-ELIM_JKCONF_LIST = range(14)
-#ELIM_JKCONF_LIST = []
 
 ###-------BEGIN POSSIBLY OBSOLETE------###
 
