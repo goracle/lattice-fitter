@@ -31,7 +31,7 @@ def avg_vdis():
             flag2 = 1
             if flag2 == flag:
                 continue
-        avg = np.array(proc_vac(filen))
+        avg = np.array(rf.proc_vac(filen))
         numt = 1
         #use this first file to bootstrap the rest of the files
         #(traj substitution)
@@ -44,7 +44,7 @@ def avg_vdis():
             #no checking of anything following second underscore.
             #probably fine since user warned above.
             filen2 = re.sub('traj_([B0-9]+)_', 'traj_'+str(traj)+'_', filen)
-            retarr = np.array(proc_vac(filen2))
+            retarr = np.array(rf.proc_vac(filen2))
             err_fact.append(retarr)
             avg += retarr
             numt += 1
