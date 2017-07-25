@@ -96,11 +96,10 @@ def main():
                 oreal = True
             else:
                 oreal = False
+            lookup_local = {}
             for dsrc, momsrc in file_lookup[traj][mt1]:
                 for dsnk, momsnk in file_lookup[traj][mt1]:
                     outfig = comb_fig(dsrc, dsnk)
-                    if not outfig:
-                        continue
                     try:
                         sepstr, sepval = get_sep(dsrc, dsnk, outfig)
                     except TypeError:
@@ -110,13 +109,14 @@ def main():
                     outfile = "traj_"+str(
                         traj)+"_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
                     outavg = outfile+'_avgsub'
-                    if os.path.isfile(outfile) and os.path.isfile(outavg):
-                        print("Skipping:", outfile, outavg)
+                    if os.path.isfile(outavg):
+                        print("Skipping:", outavg)
                         print("File exists.")
                         continue
-                    arr_plus, arr_minus = get_data(
+                    #arr_plus, arr_minus = get_data(
+                    arr_minus, lookup_local = get_data(
                         get_fourfn(dsrc, dsnk, dur), sepval,
-                        lookup, onlyreal=oreal)
+                        lookup, onlyreal=oreal, lookup_local=lookup_local)
                     #rf.write_arr(arr_plus - arr_minus, outfile)
                     #rf.write_arr(arr_plus, outfile)
                     rf.write_arr(arr_minus, outavg)
@@ -161,7 +161,7 @@ def get_fourfn(dsrc, dsnk, dur):
     bubs.dsnk_sub = re.sub(r'traj_(\d)+_Figure_', '', bubs.dsnk_sub)
     return bubs
 
-def get_data(bubs, sepval, lookup, onlyreal=False):
+def get_data(bubs, sepval, lookup, onlyreal=False, lookup_local=()):
     """Get regular data and vac subtraction diagram"""
     #get the data
     #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
@@ -183,20 +183,31 @@ def get_data(bubs, sepval, lookup, onlyreal=False):
             arr_minus_snk = rf.proc_vac(bubs.dsnk_sub)
         lookup[bubs.dsnk_sub] = arr_minus_snk
 
-    if onlyreal:
-        src = rf.proc_vac_real(bubs.dsrc)
-        snk = rf.proc_vac_real(bubs.dsnk)
+    if bubs.dsrc in lookup_local:
+        src = lookup_local[bubs.dsrc]
     else:
-        src = rf.proc_vac(bubs.dsrc)
-        snk = rf.proc_vac(bubs.dsnk)
+        if onlyreal:
+            src = rf.proc_vac_real(bubs.dsrc)
+        else:
+            src = rf.proc_vac(bubs.dsrc)
+        lookup_local[bubs.dsrc] = src
+    if bubs.dsnk in lookup_local:
+        snk = lookup_local[bubs.dsnk]
+    else:
+        if onlyreal:
+            snk = rf.proc_vac_real(bubs.dsnk)
+        else:
+            snk = rf.proc_vac(bubs.dsnk)
+        lookup_local[bubs.dsnk] = snk
 
     print("combining:", bubs.dsrc, bubs.dsnk)
     print("sub bubs:", bubs.dsrc_sub, bubs.dsnk_sub)
-    arr_plus = cb.comb_dis(src, snk, sepval)
+    #arr_plus = cb.comb_dis(src, snk, sepval)
     arr_minus = cb.comb_dis(src-np.mean(arr_minus_src),
                             snk-np.mean(arr_minus_snk), sepval)
     #get the  <><> subtraction array (<> indicates avg over trajectories)
-    return arr_plus, arr_minus
+    #return arr_plus, arr_minus
+    return arr_minus, lookup_local
 
 if __name__ == "__main__":
     main()
