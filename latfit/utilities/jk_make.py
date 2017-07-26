@@ -25,11 +25,7 @@ def write_blocks(trajl, basename, outfiles):
         print("Writing block:", time, "for diagram:", basename)
         #trajectory to exclude this line (loop over lines in the block)
         outarr = np.zeros((len(trajl)), dtype=object)
-        data = np.array([
-            complex(lc.getline("traj_"+str(
-                traj)+basename2, time+1).split()[1])
-                for traj in trajl])
-        
+        data = rf.get_linejk(traj, basename2, time, trajl)
         for i, _ in enumerate(trajl):
             #avg = 0
             avg=np.mean(np.delete(data,i))
@@ -38,14 +34,6 @@ def write_blocks(trajl, basename, outfiles):
             avg = str(avg.real)+" "+str(avg.imag)+'\n'
             outarr[i] = avg
         rf.write_block(outarr, outfile, already_checked=True)
-
-def base_name(filen):
-    """get basename of file
-    """
-    mat = re.search('traj_[B0-9]+_(.*)', filen)
-    if not mat:
-        return None
-    return mat.group(1)
 
 def main():
     """Make jackknife blocks (main)"""
@@ -68,7 +56,7 @@ def main():
     lookup_t = {}
     for filen in onlyfiles:
         #get the basename of the file (non-trajectory information)
-        base = base_name(filen)
+        base = rf.basename(filen)
         if not base:
             continue
         traj = rf.traj(filen)
@@ -78,7 +66,7 @@ def main():
         #output directory for the jackknife blocks for this basename
         lookup.setdefault(base, []).append(filen)
     for base in lookup:
-        numlines = sum(1 for line in open(lookup[base][0]))
+        numlines = rf.numlines(lookup[base][0])
         break
     base_blks = ['/a2a.jkblk.t'+str(i) for i in range(numlines)]
     lenb = len(lookup)

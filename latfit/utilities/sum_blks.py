@@ -23,21 +23,21 @@ def get_outblock(coeffs_arr, flag, outfile, time, sent):
             print("Skipping:", outfile)
             print("File exists.")
             continue
-        try:
-            filen = open(name+'/'+time, 'r')
-        except IOError:
-            print("Error: bad block name in:", name)
-            print("block name:", time, "Continuing.")
+        filen = rf.tryblk(name, time)
+        if not filen:
             continue
         for i, line in enumerate(filen):
-            line = line.split()
-            if len(line) == 1:
-                val = coeff*float(line[0])
-            elif len(line) == 2:
-                val = coeff*complex(float(line[0]), float(line[1]))
-            else:
-                print("Error: bad block:", filen)
-                break
+            try:
+                line = line.split()
+                if len(line) == 1:
+                    val = coeff*float(line[0])
+                elif len(line) == 2:
+                    val = coeff*complex(float(line[0]), float(line[1]))
+                else:
+                    print("Error: bad block:", filen)
+                    break
+            except AttributeError:
+                val = coeff*line
             try:
                 outblk[i] += val
             except IndexError:
@@ -55,7 +55,8 @@ def sum_blks(outdir, coeffs_arr):
         except OSError:
             print("can't create directory:", outdir, "Permission denied.")
             sys.exit(1)
-    print("Start of blocks:", outdir, "--------------------------------------------")
+    print("Start of blocks:",
+          outdir, "--------------------------------------------")
     onlyfiles = [f for f in
                  listdir('./'+coeffs_arr[0][0])
                  if isfile(join('./'+coeffs_arr[0][0], f))]
@@ -70,18 +71,11 @@ def sum_blks(outdir, coeffs_arr):
         outfile = outdir+'/'+time
         outblk = get_outblock(coeffs_arr, flag, outfile, time, sent)
         flag = 0
-        if os.path.isfile(outfile):
+        if len(outblk) == 0 or os.path.isfile(outfile):
             continue
-        with open(outfile, 'a') as filen:
-            for line in outblk:
-                outline = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
-                if outline.imag == 0:
-                    outline = str(outline.real)+"\n"
-                else:
-                    outline = str(outline.real)+" "+str(outline.imag)+"\n"
-                filen.write(outline)
-            print("Done writing:", outfile)
-    print("End of blocks:", outdir, "--------------------------------------------")
+        rf.write_blk(outblk, outfile, already_checked=True)
+    print("End of blocks:", outdir,
+          "--------------------------------------------")
 
 def norm_fix(filen):
     """Fix norms due to incorrect coefficients given in production."""

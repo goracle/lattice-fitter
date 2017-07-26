@@ -8,7 +8,11 @@ from math import sqrt
 import re
 import warnings
 import numpy as np
+import h5py
 
+FORMAT = 'ASCII'
+
+######regex on filename stuff
 def pol(filename):
     """Get polarization info from filename"""
     mat = re.search(r'pol_snk_(\d)', filename)
@@ -20,59 +24,6 @@ def pol(filename):
     else:
         polret = None
     return polret
-
-def discon_test():
-    filen = open(filename, 'r')
-    for line in filen:
-        if len(line.split()) < 4:
-            print("Disconnected.  Skipping.")
-            return False
-    return True
-
-def getaux_filestrs(filename):
-    """gets the array from the file, but keeps the values as strings
-    """
-    len_t = rf.find_dim(filename)
-    tsep = rf.pion_sep(filename)
-    nmom = rf.nmom(filename)
-    out = np.zeros((len_t, len_t), dtype=np.object)
-    filen = open(filename, 'r')
-    for line in filen:
-        lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
-        tsrc = int(lsp[0])
-        tdis = int(lsp[1])
-        if nmom == 3:
-            tsrc2 = (tsrc+tdis+tsep)%len_t
-            tdis2 = (3*len_t-2*tsep-tdis)%len_t
-        elif nmom == 2:
-            tsrc2 = (tdis+tsrc)%len_t
-            tdis2 = (2*len_t-tsep-tdis)%len_t
-        elif nmom == 1:
-            tsrc2 = (tdis+tsrc)%len_t
-            tdis2 = (len_t-tdis)%len_t
-        else:
-            print("Error: bad filename, error in getaux_filestrs")
-            sys.exit(1)
-        out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
-    return out
-
-def get_block_data(filen, onlydirs):
-    """Get array of jackknife block data (from single time slice file, e.g.)
-    """
-    retarr = np.array([], dtype=complex)
-    filen = open(filen, 'r')
-    for line in filen:
-        lsp = line.split()
-        if len(lsp) == 2:
-            retarr = np.append(retarr, complex(float(lsp[0]), float(lsp[1])))
-        elif len(lsp) == 1:
-            retarr = np.append(retarr, complex(lsp[0]))
-        else:
-            print("Not a jackknife block.  exiting.")
-            print("cause:", filen)
-            print(onlydirs)
-            sys.exit(1)
-    return retarr
 
 def traj(filename):
     """Get trajectory info from filename"""
@@ -132,6 +83,14 @@ def figure(filename):
         warnings.warn("Warning: bad filename, no figure name: "+filename)
         fign = None
     return fign
+
+def basename(filen):
+    """get basename of file
+    """
+    mat = re.search('traj_[B0-9]+_(.*)', filen)
+    if not mat:
+        return None
+    return mat.group(1)
 
 #how many momenta returned?
 def nmom_arr(pret):
@@ -199,7 +158,8 @@ def mom(filename):
     elif nmat:
         pret = procmom(nmat.group(1))
     else:
-        print("Error: bad filename= '"+str(filename)+"' no momenta found.  Attempting to continue.")
+        print("Error: bad filename= '"+str(
+            filename)+"' no momenta found.  Attempting to continue.")
         pret = None
     return pret
         #sys.exit(1)
@@ -240,109 +200,6 @@ def sep(filename):
     """Get t separation, two particles, alias"""
     return pion_sep(filename)
 
-def sum_rows(inmat, avg=False):
-    """np.fsum over t_src
-    """
-    ncol = int(sqrt(inmat.size))
-    if avg:
-        col = [np.sum(inmat.item(i, j) for i in range(ncol))/(ncol) for j in range(ncol)]
-    else:
-        col = [np.sum(inmat.item(i, j) for i in range(ncol)) for j in range(ncol)]
-    return col
-
-def find_dim(filename):
-    """get dimensions of the matrix from the sqrt(num_rows) of the file
-    """
-    ndim = sum(1 for line in open(filename))
-    if sqrt(ndim) == int(sqrt(ndim)):
-        len_t = int(sqrt(ndim))
-    else:
-        print("Error: Non-square matrix, ndim = ", ndim)
-        len_t = None
-    return len_t
-
-def write_vec_str(data, outfile):
-    """write vector of strings
-    """
-    if os.path.isfile(outfile):
-        print("Skipping:", outfile)
-        print("File exists.")
-        return
-    filen = open(outfile, 'w')
-    len_t = len(data)
-    for tdis in range(len_t):
-        cnum = data[tdis]
-        if not isinstance(cnum, str):
-            cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
-        line = str(tdis)+" "+str(cnum)+"\n"
-        filen.write(line)
-    print("Done writing file:", outfile)
-    filen.close()
-
-def write_mat_str(data, outfile):
-    """write matrix of strings
-    """
-    if os.path.isfile(outfile):
-        print("Skipping:", outfile)
-        print("File exists.")
-        return
-    filen = open(outfile, 'w')
-    len_t = len(data[0])
-    if len_t != len(data):
-        print("Error: non-square matrix.")
-        sys.exit(1)
-    for tsrc in range(len_t):
-        for tdis in range(len_t):
-            cnum = data[tsrc][tdis]
-            if not isinstance(cnum, str):
-                cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
-            line = str(tsrc)+" "+str(tdis)+" "+str(cnum)+"\n"
-            filen.write(line)
-    print("Done writing file:", outfile)
-    filen.close()
-
-def write_arr(data, outfile):
-    """write built array to file (for use in building disconnected diagrams)
-    """
-    if os.path.isfile(outfile):
-        print("Skipping:", outfile)
-        print("File exists.")
-        return
-    filen = open(outfile, 'w')
-    len_t = len(data[0])
-    if len_t != len(data):
-        print("Error: non-square matrix. outfile = ", outfile)
-        sys.exit(1)
-    for tsrc in range(len_t):
-        for tdis in range(len_t):
-            cnum = data[tsrc][tdis]
-            if not isinstance(cnum, str):
-                cnum = complex('{0:.{1}f}'.format(cnum, sys.float_info.dig))
-            line = str(tsrc)+" "+str(tdis)+" "+str(cnum.real)+" "+str(
-                cnum.imag)+"\n"
-            filen.write(line)
-    print("Done writing file:", outfile)
-    filen.close()
-
-def write_block(block, outfile, already_checked=False):
-    """write two columns of floats.  (real and imag parts of jackknife block)
-    """
-    if not already_checked:
-        if os.path.isfile(outfile):
-            print("Skipping:", outfile)
-            print("File exists.")
-            return
-    with open(outfile, "a") as myfile:
-        for line in block:
-            if not isinstance(line, str):
-                line = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
-                line = str(line.real)+" "+str(line.imag)+'\n'
-            myfile.write(line)
-
-def ptostr(ploc):
-    """makes momentum array into a string
-    """
-    return (str(ploc[0])+str(ploc[1])+str(ploc[2])).replace("-", "_")
 
 def pchange(filename, pnew):
     """replace momenta in filename
@@ -374,44 +231,371 @@ def remp(mom1, mom2, mom3=(0, 0, 0)):
     """
     return np.array(mom1)+np.array(mom2)-np.array(mom3)
 
-def proc_vac_real(filen):
-    """Get the bubble from the file
-    """
-    len_t = sum(1 for line in open(filen))
-    retarr = np.zeros(shape=(len_t), dtype=complex)
-    filen = open(filen, 'r')
-    for line in filen:
-        lsp = line.split()
-        tsrc = int(lsp[0])
-        if len(lsp) == 3:
-            retarr.itemset(tsrc, float(lsp[1]))
-        elif len(lsp) == 2:
-            retarr.itemset(tsrc, complex(lsp[1]).real)
-        else:
-            print("Not a disconnected or summed diagram.  exiting.")
-            print("cause:", filen)
-            sys.exit(1)
-    return retarr
 
-def proc_vac(filen):
-    """Get the bubble from the file
-    """
-    len_t = sum(1 for line in open(filen))
-    retarr = np.zeros(shape=(len_t), dtype=complex)
-    filen = open(filen, 'r')
-    for line in filen:
-        lsp = line.split()
-        tsrc = int(lsp[0])
-        if len(lsp) == 3:
-            retarr.itemset(tsrc, complex(float(lsp[1]), float(lsp[2])))
-        elif len(lsp) == 2:
-            retarr.itemset(tsrc, complex(lsp[1]))
-        else:
-            print("Not a disconnected or summed diagram.  exiting.")
-            print("cause:", filen)
-            sys.exit(1)
-    return retarr
+#################file io stuff
 
+if FORMAT == 'ASCII':
+    #####test functions
+    def discon_test(filename):
+        filen = open(filename, 'r')
+        for line in filen:
+            if len(line.split()) < 4:
+                print("Disconnected.  Skipping.")
+                return False
+        return True
+
+    def tryblk(name, time):
+        try:
+            filen = open(name+'/'+time, 'r')
+        except IOError:
+            print("Error: bad block name in:", name)
+            print("block name:", time, "Continuing.")
+            return False
+        return filen
+
+    ####read file
+    def getaux_filestrs(filename):
+        """gets the array from the file, but keeps the values as strings
+        """
+        len_t = find_dim(filename)
+        tsep = pion_sep(filename)
+        nmom = nmom(filename)
+        out = np.zeros((len_t, len_t), dtype=np.object)
+        filen = open(filename, 'r')
+        for line in filen:
+            lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
+            tsrc = int(lsp[0])
+            tdis = int(lsp[1])
+            if nmom == 3:
+                tsrc2 = (tsrc+tdis+tsep)%len_t
+                tdis2 = (3*len_t-2*tsep-tdis)%len_t
+            elif nmom == 2:
+                tsrc2 = (tdis+tsrc)%len_t
+                tdis2 = (2*len_t-tsep-tdis)%len_t
+            elif nmom == 1:
+                tsrc2 = (tdis+tsrc)%len_t
+                tdis2 = (len_t-tdis)%len_t
+            else:
+                print("Error: bad filename, error in getaux_filestrs")
+                sys.exit(1)
+            out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
+        return out
+
+    def get_block_data(filen, onlydirs):
+        """Get array of jackknife block data (from single time slice file, e.g.)
+        """
+        retarr = np.array([], dtype=complex)
+        filen = open(filen, 'r')
+        for line in filen:
+            lsp = line.split()
+            if len(lsp) == 2:
+                retarr = np.append(retarr, complex(float(lsp[0]), float(lsp[1])))
+            elif len(lsp) == 1:
+                retarr = np.append(retarr, complex(lsp[0]))
+            else:
+                print("Not a jackknife block.  exiting.")
+                print("cause:", filen)
+                print(onlydirs)
+                sys.exit(1)
+        return retarr
+
+    def get_linejk(traj, basename2, time, trajl):
+        """Return line from file for jackknife blocking"""
+        return np.array([complex(lc.getline("traj_"+str(
+            traj)+basename2, time+1).split()[1])
+                        for traj in trajl])
+
+
+    def proc_file(filename, sum_tsrc=True):
+        """gets the array from the file, optionally sum tsrc
+        """
+        len_t = find_dim(filename)
+        if not len_t:
+            return None
+        front = np.zeros(shape=(len_t, len_t), dtype=complex)
+        #back = front
+        filen = open(filename, 'r')
+        for line in filen:
+            lsp = line.split()
+            if len(lsp) != 4:
+                return None
+            #lsp[0] = tsrc, lsp[1] = tdis
+            tsrc = int(lsp[0])
+            #tsnk = (int(lsp[0])+int(lsp[1]))%len_t
+            tdis = int(lsp[1])
+            #tdis2 = len_t-int(lsp[1])-1
+            front.itemset(tsrc, tdis, complex(float(lsp[2]), float(lsp[3])))
+            #back.itemset(tsnk, tdis2, complex(float(lsp[2]), float(lsp[3])))
+        if sum_tsrc:
+            #return sum_rows(front), sum_rows(back)
+            retarr = sum_rows(front, True)
+        else:
+            retarr = front
+        return retarr
+            #return front, back
+
+    def proc_vac_real(filen):
+        """Get the bubble from the file
+        """
+        len_t = sum(1 for line in open(filen))
+        retarr = np.zeros(shape=(len_t), dtype=complex)
+        filen = open(filen, 'r')
+        for line in filen:
+            lsp = line.split()
+            tsrc = int(lsp[0])
+            if len(lsp) == 3:
+                retarr.itemset(tsrc, float(lsp[1]))
+            elif len(lsp) == 2:
+                retarr.itemset(tsrc, complex(lsp[1]).real)
+            else:
+                print("Not a disconnected or summed diagram.  exiting.")
+                print("cause:", filen)
+                sys.exit(1)
+        return retarr
+
+    def proc_vac(filen):
+        """Get the bubble from the file
+        """
+        len_t = sum(1 for line in open(filen))
+        retarr = np.zeros(shape=(len_t), dtype=complex)
+        filen = open(filen, 'r')
+        for line in filen:
+            lsp = line.split()
+            tsrc = int(lsp[0])
+            if len(lsp) == 3:
+                retarr.itemset(tsrc, complex(float(lsp[1]), float(lsp[2])))
+            elif len(lsp) == 2:
+                retarr.itemset(tsrc, complex(lsp[1]))
+            else:
+                print("Not a disconnected or summed diagram.  exiting.")
+                print("cause:", filen)
+                sys.exit(1)
+        return retarr
+
+    ##test functions which read
+
+    def find_dim(filename):
+        """get dimensions of the matrix from the sqrt(num_rows) of the file
+        """
+        ndim = sum(1 for line in open(filename))
+        if sqrt(ndim) == int(sqrt(ndim)):
+            len_t = int(sqrt(ndim))
+        else:
+            print("Error: Non-square matrix, ndim = ", ndim)
+            len_t = None
+        return len_t
+
+    def numlines(fn):
+        """Find number of lines in a file"""
+        return sum(1 for line in open(fn))
+
+    #####write file
+
+    def write_blk(outblk, outfile, already_checked=False):
+        """Write numerical array of jackknife block to file"""
+        if not already_checked:
+            if os.path.isfile(outfile):
+                print("Skipping:", outfile)
+                print("File exists.")
+                return
+        with open(outfile, 'a') as filen:
+            for line in outblk:
+                if not isinstance(line, str):
+                    line = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
+                    line = str(line.real)+" "+str(line.imag)+"\n"
+                filen.write(line)
+            print("Done writing:", outfile)
+
+    write_block = write_blk
+
+    def write_vec_str(data, outfile):
+        """write vector of strings
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data)
+        for tdis in range(len_t):
+            cnum = data[tdis]
+            if not isinstance(cnum, str):
+                cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
+            line = str(tdis)+" "+str(cnum)+"\n"
+            filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+    def write_mat_str(data, outfile):
+        """write matrix of strings
+        real part seperated from imag by plus sign; 
+        also imaginary piece has a 'j'
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data[0])
+        if len_t != len(data):
+            print("Error: non-square matrix.")
+            sys.exit(1)
+        for tsrc in range(len_t):
+            for tdis in range(len_t):
+                cnum = data[tsrc][tdis]
+                if not isinstance(cnum, str):
+                    cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
+                line = str(tsrc)+" "+str(tdis)+" "+str(cnum)+"\n"
+                filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+    def write_arr(data, outfile):
+        """write built array to file (for use in building disconnected diagrams)
+        real part seperated from imag by space
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data[0])
+        if len_t != len(data):
+            print("Error: non-square matrix. outfile = ", outfile)
+            sys.exit(1)
+        for tsrc in range(len_t):
+            for tdis in range(len_t):
+                cnum = data[tsrc][tdis]
+                if not isinstance(cnum, str):
+                    cnum = complex('{0:.{1}f}'.format(cnum, sys.float_info.dig))
+                line = str(tsrc)+" "+str(tdis)+" "+str(cnum.real)+" "+str(
+                    cnum.imag)+"\n"
+                filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+elif FORMAT == 'HDF5':
+    #####test functions
+    def discon_test(filename):
+        filenp = h5py.File(filename, 'r')
+        filen = h5py[filename]
+        dimf = len(filen)
+        if filen.shape != (dimf, dimf):
+            print("Disconnected.  Skipping.")
+            return False
+        return True
+    #TODO
+    def tryblk(name, time):
+        try:
+            filen = open(name+'/'+time, 'r')
+        except IOError:
+            print("Error: bad block name in:", name)
+            print("block name:", time, "Continuing.")
+            return False
+        return filen
+    #####write file
+
+    def write_blk(outblk, outfile, already_checked=False):
+        """Write numerical array of jackknife block to file"""
+        if not already_checked:
+            if os.path.isfile(outfile):
+                print("Skipping:", outfile)
+                print("File exists.")
+                return
+        outf = h5py.File(outfile, 'w')
+        outf[outfile]=outblk
+        outf.close()
+        print("Done writing:", outfile)
+
+    write_block = write_blk
+
+    def write_vec_str(data, outfile):
+        """write vector of strings
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data)
+        for tdis in range(len_t):
+            cnum = data[tdis]
+            if not isinstance(cnum, str):
+                cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
+            line = str(tdis)+" "+str(cnum)+"\n"
+            filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+    def write_mat_str(data, outfile):
+        """write matrix of strings
+        real part seperated from imag by plus sign; 
+        also imaginary piece has a 'j'
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data[0])
+        if len_t != len(data):
+            print("Error: non-square matrix.")
+            sys.exit(1)
+        for tsrc in range(len_t):
+            for tdis in range(len_t):
+                cnum = data[tsrc][tdis]
+                if not isinstance(cnum, str):
+                    cnum = '{0:.{1}f}'.format(cnum, sys.float_info.dig)
+                line = str(tsrc)+" "+str(tdis)+" "+str(cnum)+"\n"
+                filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+    def write_arr(data, outfile):
+        """write built array to file (for use in building disconnected diagrams)
+        real part seperated from imag by space
+        """
+        if os.path.isfile(outfile):
+            print("Skipping:", outfile)
+            print("File exists.")
+            return
+        filen = open(outfile, 'w')
+        len_t = len(data[0])
+        if len_t != len(data):
+            print("Error: non-square matrix. outfile = ", outfile)
+            sys.exit(1)
+        for tsrc in range(len_t):
+            for tdis in range(len_t):
+                cnum = data[tsrc][tdis]
+                if not isinstance(cnum, str):
+                    cnum = complex('{0:.{1}f}'.format(cnum, sys.float_info.dig))
+                line = str(tsrc)+" "+str(tdis)+" "+str(cnum.real)+" "+str(
+                    cnum.imag)+"\n"
+                filen.write(line)
+        print("Done writing file:", outfile)
+        filen.close()
+
+else:
+    print("Error: bad file format specified.")
+    print("edit read_file config")
+    sys.exit(1)
+
+
+#####util functions, no file interaction
+def sum_rows(inmat, avg=False):
+    """np.fsum over t_src
+    """
+    ncol = int(sqrt(inmat.size))
+    if avg:
+        col = [np.sum(inmat.item(i, j) for i in range(ncol))/(ncol) for j in range(ncol)]
+    else:
+        col = [np.sum(inmat.item(i, j) for i in range(ncol)) for j in range(ncol)]
+    return col
+
+def ptostr(ploc):
+    """makes momentum array into a string
+    """
+    return (str(ploc[0])+str(ploc[1])+str(ploc[2])).replace("-", "_")
 
 
 if __name__ == '__main__':

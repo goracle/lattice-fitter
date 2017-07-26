@@ -9,35 +9,6 @@ import avgvac as avac
 import jk_make as jk
 import read_file as rf
 
-def proc_file(filename, sum_tsrc=True):
-    """gets the array from the file
-    also gets the GEVP transpose array
-    """
-    len_t = rf.find_dim(filename)
-    if not len_t:
-        return None
-    front = np.zeros(shape=(len_t, len_t), dtype=complex)
-    #back = front
-    filen = open(filename, 'r')
-    for line in filen:
-        lsp = line.split()
-        if len(lsp) != 4:
-            return None
-        #lsp[0] = tsrc, lsp[1] = tdis
-        tsrc = int(lsp[0])
-        #tsnk = (int(lsp[0])+int(lsp[1]))%len_t
-        tdis = int(lsp[1])
-        #tdis2 = len_t-int(lsp[1])-1
-        front.itemset(tsrc, tdis, complex(float(lsp[2]), float(lsp[3])))
-        #back.itemset(tsnk, tdis2, complex(float(lsp[2]), float(lsp[3])))
-    if sum_tsrc:
-        #return sum_rows(front), sum_rows(back)
-        retarr = rf.sum_rows(front, True)
-    else:
-        retarr = front
-    return retarr
-        #return front, back
-
 def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
     """get the output file name, data
     """
@@ -58,7 +29,7 @@ def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
         data = None
     else:
         if not already_summed:
-            data = proc_file(filen, True)
+            data = rf.proc_file(filen, True)
         else:
             data = avac.proc_vac(filen)
         if data is None:
@@ -83,7 +54,7 @@ def get_baselist(onlyfiles):
     """Get list of base names from diagram file names."""
     baselist = {}
     for filen in onlyfiles:
-        base = jk.base_name(filen)
+        base = rf.basename(filen)
         try:
             traj = int(rf.traj(filen))
         except TypeError:

@@ -12,7 +12,7 @@ def traj_list(onlyfiles=None, base=None):
     if not onlyfiles:
         onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     for fn2 in onlyfiles:
-        if base is None or jk.base_name(fn2) == base: 
+        if base is None or rf.basename(fn2) == base: 
             trajl.add(rf.traj(fn2))
     trajl -= set([None])
     trajl = sorted([int(a) for a in trajl])    
