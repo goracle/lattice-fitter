@@ -141,7 +141,7 @@ def iso1(vecp, name):
     if (name == 'Hbub' and vecp) or name == 'pioncorr':
         norm = 1.0
     elif name == 'T' and vecp:
-        norm = 1.0
+        norm = 2.0
     elif name == 'R' and vecp:
         norm = 4.0
     elif name == 'D' and vecp:
