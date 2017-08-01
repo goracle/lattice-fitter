@@ -32,6 +32,7 @@ def aux_filen(filename):
         plist[0] = psnk2
         plist[1] = psnk1
         plist[2] = psrc2
+        plist = -np.array(plist) #complex conjugate
         outfile = rf.pchange(outfile, plist)
         if outfile == filename:
             print("symmetric Momenta; skipping")
