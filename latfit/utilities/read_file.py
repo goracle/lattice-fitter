@@ -259,20 +259,20 @@ if FORMAT == 'ASCII':
         """
         len_t = find_dim(filename)
         tsep = pion_sep(filename)
-        nmom = nmom(filename)
+        nmomaux = nmom(filename)
         out = np.zeros((len_t, len_t), dtype=np.object)
         filen = open(filename, 'r')
         for line in filen:
             lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
             tsrc = int(lsp[0])
             tdis = int(lsp[1])
-            if nmom == 3:
+            if nmomaux == 3:
                 tsrc2 = (tsrc+tdis+tsep)%len_t
                 tdis2 = (3*len_t-2*tsep-tdis)%len_t
-            elif nmom == 2:
+            elif nmomaux == 2:
                 tsrc2 = (tdis+tsrc)%len_t
                 tdis2 = (2*len_t-tsep-tdis)%len_t
-            elif nmom == 1:
+            elif nmomaux == 1:
                 tsrc2 = (tdis+tsrc)%len_t
                 tdis2 = (len_t-tdis)%len_t
             else:

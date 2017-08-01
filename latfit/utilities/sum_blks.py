@@ -286,10 +286,12 @@ def get_coeffs_arr(loop, fixn, dlist):
         coeffs_arr.append((dur, norm))
     return coeffs_arr
 
-def main(fixn, dirnum):
+def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
     """Isospin projection of jackknife blocks (main)"""
     dur = '.'
-    dlist = [os.path.join(dur, o) for o in os.listdir(dur) if os.path.isdir(os.path.join(dur, o))]
+    if dlist is None:
+        dlist = [os.path.join(dur, o) for o in os.listdir(dur) if os.path.isdir(os.path.join(dur, o))]
+    projlist = {}
     seplist, momlist = get_sep_mom(dlist)
     loop = namedtuple('loop', ('opa', 'iso', 'sep', 'mom'))
     for loop.opa in FILTERLIST:
@@ -304,8 +306,12 @@ def main(fixn, dirnum):
                     if coeffs_arr == []:
                         continue
                     outdir = get_outdir(loop, dirnum)
-                    sum_blks(outdir, coeffs_arr)
+                    if stype == 'ascii':
+                        sum_blks(outdir, coeffs_arr)
+                    else:
+                        projlist[outdir] = coeffs_arr
     print("Done writing jackknife sums.")
+    return projlist
 
 if __name__ == '__main__':
     FIXN = input("Need fix norms before summing? True/False?")
@@ -315,5 +321,5 @@ if __name__ == '__main__':
         FIXN = False
     else:
         sys.exit(1)
-    main(FIXN, 0)
-    main(FIXN, 1)
+    isoproj(FIXN, 0)
+    iosproj(FIXN, 1)
