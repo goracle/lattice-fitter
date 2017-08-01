@@ -214,11 +214,11 @@ def get_sep_mom(dlist):
         momstr = rf.getmomstr(dur)
         sep = rf.sep(dur)
         if not momstr in momlist:
-            momlist[momstr] = set()
+            momlist[momstr] = set([dur])
         else:
             momlist[momstr].add(dur)
         if sep not in seplist:
-            seplist[sep] = set()
+            seplist[sep] = set([dur])
         else:
             seplist[sep].add(dur)
         #mom1 = rf.mom(d)
@@ -296,8 +296,6 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
     loop = namedtuple('loop', ('opa', 'iso', 'sep', 'mom'))
     for loop.opa in FILTERLIST:
         for loop.iso in FILTERLIST[loop.opa][1]:
-            if loop.iso == 1:
-                continue
             for loop.sep in seplist:
                 for loop.mom in momlist:
                     #loop.mom = list(loop.mom)
@@ -310,7 +308,8 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
                         sum_blks(outdir, coeffs_arr)
                     else:
                         projlist[outdir] = coeffs_arr
-    print("Done writing jackknife sums.")
+    if stype == 'ascii':
+        print("Done writing jackknife sums.")
     return projlist
 
 if __name__ == '__main__':

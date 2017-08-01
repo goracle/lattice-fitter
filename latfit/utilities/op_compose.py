@@ -47,7 +47,7 @@ A_1PLUS = [
     (1/sqrt(6), 'pipi', [[0, -1, 0], [0, 1, 0]]),
     (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
     (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]]),
-    #(1, 'sigma', [0, 0, 0]),
+    (1, 'sigma', [0, 0, 0]),
     (1/sqrt(12), 'UUpipi', [[0, 1, 1], [0, -1, -1]]),
     (1/sqrt(12), 'UUpipi', [[1, 0, 1], [-1, 0, -1]]),
     (1/sqrt(12), 'UUpipi', [[1, 1, 0], [-1, -1, 0]]),
@@ -104,10 +104,10 @@ for srcout in PART_LIST:
 
 def sepmod(dur):
     if not os.path.isdir(dur):
-    if not os.path.isdir('sep4/'+dur):
-        print("For op:", opa)
-        print("dir", dur, "is missing")
-        sys.exit(1)
+        if not os.path.isdir('sep4/'+dur):
+            print("For op:", opa)
+            print("dir", dur, "is missing")
+            sys.exit(1)
     else:
         dur = 'sep4/'+dur
     return dur
@@ -131,19 +131,22 @@ def op_list(stype='ascii'):
                     dur = sepmod(dur)
                 coeffs_tuple.append((dur, coeff, part_str))
         coeffs_arr = []
-        print("trying", opa)
+        if stype == 'ascii':
+            print("trying", opa)
         for parts in PART_COMBS:
             outdir = parts+"_"+opa
             coeffs_arr = [(tup[0], tup[1])
                           for tup in coeffs_tuple if tup[2] == parts]
             if not coeffs_arr:
                 continue
-            print("Doing", opa, "for particles", parts)
+            if stype == 'ascii':
+                print("Doing", opa, "for particles", parts)
             if stype == 'ascii':
                 sum_blks(outdir, coeffs_arr)
             else:
                 projlist[outdir] = coeffs_arr
-    print("End of operator list.")
+    if stype == 'ascii':
+        print("End of operator list.")
     return projlist
 
 def main():
