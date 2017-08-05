@@ -6,7 +6,6 @@ import re
 import glob
 import numpy as np
 import h5py
-import line_profiler
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
@@ -150,6 +149,7 @@ def get_mostblks(basl, trajl, numt):
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
+        print("Processing base:", base)
         base2 = '_'+base
         blk = np.zeros((numt, LT), dtype=np.complex)
         skip = []
@@ -236,8 +236,8 @@ def main(FIXN=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
-    mostblks = get_mostblks(basl, trajl, numt)
     bubblks = bubbles_jack(bubl, trajl, numt)
+    mostblks = get_mostblks(basl, trajl, numt)
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
     allblks = {**mostblks, **bubblks}
