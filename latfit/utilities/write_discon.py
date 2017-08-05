@@ -27,7 +27,7 @@ def comb_fig(dsrc, dsnk):
 
 def single_p(ptest):
     """is the momentum array only a single momentum?"""
-    return bool((len(ptest) == 3 and isinstance(ptest[0], int)))
+    return bool((len(ptest) == 3 and isinstance(ptest[0], (int, np.integer))))
 
 def momtotal(mom):
     """Find total center of mass momenta from momenta array"""

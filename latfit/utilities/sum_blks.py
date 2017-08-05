@@ -168,7 +168,7 @@ def iso0(vecp, name):
 
 def momtotal(plist, fig=None):
     """Get total center of mass momentum given a list of momenta"""
-    if len(plist) == 3 and isinstance(plist[0], int):
+    if len(plist) == 3 and isinstance(plist[0], (np.integer, int)):
         momret = plist
     elif len(plist) == 2:
         mat = re.search('scalarR', fig)
@@ -177,7 +177,7 @@ def momtotal(plist, fig=None):
             momret = plist[0]
         else:
             momret = plist[1]
-    elif len(plist) == 3 and not isinstance(plist[0], int):
+    elif len(plist) == 3 and not isinstance(plist[0], (np.integer, int)):
         mom1 = np.array(plist[0])
         mom2 = np.array(plist[1])
         ptotal = list(mom1+mom2)

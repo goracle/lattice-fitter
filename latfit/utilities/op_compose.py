@@ -4,6 +4,7 @@ from math import sqrt
 import os
 import sys
 import re
+import numpy as np
 from sum_blks import sum_blks
 import read_file as rf
 
@@ -13,14 +14,16 @@ def momstr(psrc, psnk):
     pipi = ''
     if len(psrc) == 2 and len(psnk) == 2:
         vertices = 4
-    elif len(psrc) == 3 and isinstance(psrc[0], int) and len(psnk) == 2:
+    elif len(psrc) == 3 and isinstance(
+            psrc[0], (np.integer, int)) and len(psnk) == 2:
         vertices = 3
         pipi = 'snk'
-    elif len(psnk) == 3 and isinstance(psnk[0], int) and len(psrc) == 2:
+    elif len(psnk) == 3 and isinstance(
+            psnk[0], (np.integer, int)) and len(psrc) == 2:
         vertices = 3
         pipi = 'src'
     elif len(psnk) == len(psrc) and len(psrc) == 3 and isinstance(
-            psrc[0], int):
+            psrc[0], (np.integer, int)):
         vertices = 2
     else:
         pstr = None

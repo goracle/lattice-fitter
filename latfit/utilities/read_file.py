@@ -96,9 +96,9 @@ def basename(filen):
 def nmom_arr(pret):
     """Get number of momenta from momentum p array"""
     nmom1 = len(pret)
-    if isinstance(pret[0], int) and nmom1 == 3:
+    if isinstance(pret[0], (np.integer, int)) and nmom1 == 3:
         return 1
-    elif not isinstance(pret[0], int):
+    elif not isinstance(pret[0], (np.integer, int)):
         return nmom1
     else:
         print("Error: bad momentum container.")

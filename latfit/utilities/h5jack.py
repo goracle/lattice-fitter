@@ -6,6 +6,7 @@ import re
 import glob
 import numpy as np
 import h5py
+import line_profiler
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
@@ -18,6 +19,10 @@ STYPE='hdf5'
 ROWS = np.tile(np.arange(LT), (LT,1))
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
+try:
+    profile  # throws an exception when profile isn't defined
+except NameError:
+    profile = lambda x: x   # if it's not defined simply ignore the decorator.
 @profile
 def trajlist():
     """Get trajectory list from files of form 
@@ -145,12 +150,13 @@ def get_mostblks(basl, trajl, numt):
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
+        base2 = '_'+base
         blk = np.zeros((numt, LT), dtype=np.complex)
         skip = []
         for i, traj in enumerate(trajl):
             fn = h5py.File(str(traj)+'.dat', 'r')
             try:
-                blk[i] = np.mean(fn['traj_'+str(traj)+'_'+base], axis=0)
+                blk[i] = np.mean(fn['traj_'+str(traj)+base2], axis=0)
             except KeyError:
                 skip.append(i)
         blk = np.delete(blk, skip, axis=0)
@@ -172,7 +178,8 @@ def getbubbles(bubl, trajl, numt):
                 savekey = dsrc+"@"+rf.ptostr(wd.momtotal(fn[keysrc].attrs['mom']))
             except KeyError:
                 continue
-            bubbles.setdefault(savekey, []).append(fn[keysrc])
+            toapp = np.array(fn[keysrc])
+            bubbles.setdefault(savekey, []).append(toapp)
     for key in bubbles:
         print("stored key:", key)
         bubbles[key] = np.asarray(bubbles[key])
@@ -229,8 +236,11 @@ def main(FIXN=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
-    z = bubbles_jack(bubl, trajl, numt)
-    allblks = {**get_mostblks(basl, trajl, numt), **z}
+    mostblks = get_mostblks(basl, trajl, numt)
+    bubblks = bubbles_jack(bubl, trajl, numt)
+    #do things in this order to
+    #overwrite already composed disconnected diagrams (next line)
+    allblks = {**mostblks, **bubblks}
     ocs = overall_coeffs(isoproj(FIXN, 0, dlist=basl, stype=STYPE), opc.op_list(stype=STYPE))
     h5sum_blks(allblks, ocs, (numt, LT))
 1
