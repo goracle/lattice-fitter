@@ -18,6 +18,19 @@ STYPE='hdf5'
 ROWS = np.tile(np.arange(LT), (LT,1))
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
+##options concerning how bubble subtraction is done
+TAKEREAL = False #take real of bubble if momtotal=0
+STILLSUB = False #don't do subtraction on bubbles with net momentum
+TIMEAVGD = False #do a time translation average (bubble is scalar now)
+
+#diagram to look at for bubble subtraction test
+#TESTKEY = 'FigureV_sep4_mom1src00_1_mom2src000_mom1snk00_1'
+#TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
+#TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
+TESTKEY = ''
+
+
+
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
@@ -119,6 +132,32 @@ def jackknife_err(blk):
     err = np.sqrt(prefactor*np.sum((blk-avg)**2, axis=0))
     return avg, err
 
+def formnum(num):
+    """Format complex number in scientific notation"""
+    real = '%.8e' % num.real
+    if num.imag == 0:
+        return real
+    else:
+        if num.imag < 0:
+            plm = ''
+        else:
+            plm = '+'
+        imag = '%.8e' % num.imag
+        return real+plm+imag+'j'
+
+
+@profile
+def buberr(bubblks):
+    """Show the result of different options for bubble subtraction"""
+    for key in bubblks:
+        if key == TESTKEY:
+            avg, err = jackknife_err(bubblks[key])
+            print(key, ":")
+            for i, ntup in enumerate(zip(avg, err)):
+                avgval, errval = ntup
+                print('t='+str(i)+' avg:', formnum(avgval),
+                      'err:', formnum(errval))
+
 @profile
 def h5sum_blks(allblks, ocs, outblk_shape):
     """Do projection sums on isospin blocks"""
@@ -168,20 +207,22 @@ def get_mostblks(basl, trajl, numt):
 def getbubbles(bubl, trajl, numt):
     """Get all of the bubbles."""
     bubbles = {}
-    print("length of bubble list:", len(bubl))
     for dsrc in bubl:
         skip = []
         for traj in trajl:
             fn = h5py.File(str(traj)+'.dat', 'r')
             keysrc = 'traj_'+str(traj)+'_'+dsrc
             try:
-                savekey = dsrc+"@"+rf.ptostr(wd.momtotal(fn[keysrc].attrs['mom']))
+                ptot = rf.ptostr(wd.momtotal(fn[keysrc].attrs['mom']))
+                savekey = dsrc+"@"+ptot
             except KeyError:
                 continue
-            toapp = np.array(fn[keysrc])
+            if TAKEREAL and ptot == '000':
+                toapp = np.array(fn[keysrc]).real
+            else:
+                toapp = np.array(fn[keysrc])
             bubbles.setdefault(savekey, []).append(toapp)
     for key in bubbles:
-        print("stored key:", key)
         bubbles[key] = np.asarray(bubbles[key])
     print("Done getting bubbles.")
     return bubbles 
@@ -191,8 +232,13 @@ def bubsub(bubbles):
     """Do the bubble subtraction"""
     sub = {}
     for i, bubkey in enumerate(bubbles):
-        print("Getting jackknife of bubble:",i)
+        if STILLSUB:
+            if bubkey.split('@')[1] != '000':
+                sub[bubkey] = np.zeros((len(bubbles[bubkey])))
+                continue
         sub[bubkey] = dojackknife(bubbles[bubkey])
+        if TIMEAVGD:
+            out=sub[bubkey] = np.mean(sub[bubkey], axis=1)
     print("Done getting averaged bubbles.")
     return sub
 
@@ -218,6 +264,8 @@ def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
                 continue
             cols = np.roll(COLS, -sepval, axis=1)
             outkey = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
+            if TESTKEY and outkey != TESTKEY:
+                continue
             out[outkey] = np.zeros((numt, LT), dtype=np.complex)
             for excl in range(numt):
                 src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
@@ -226,7 +274,6 @@ def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
                 #out[outkey][excl] = np.mean(np.array([
                 #    np.mean(cb.comb_dis(src[trajnum], snk[trajnum], sepval), axis=0)
                 #    for trajnum in range(numt-1)]), axis=0)
-            print("Done with sink:", dsnk)
     print("Done getting the disconnected diagram jackknife blocks.")
     return out
 
@@ -237,6 +284,8 @@ def main(FIXN=True):
     basl = baselist()
     numt = len(trajl)
     bubblks = bubbles_jack(bubl, trajl, numt)
+    #buberr(bubblks)
+    #sys.exit(0)
     mostblks = get_mostblks(basl, trajl, numt)
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
