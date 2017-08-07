@@ -67,7 +67,8 @@ def aux_filen(filename, stype='ascii'):
         plist = -np.array(plist) #complex conjugate
         outfile = rf.pchange(outfile, plist)
         if outfile == filename:
-            print("symmetric Momenta; skipping")
+            if stype == 'ascii':
+                print("symmetric Momenta; skipping")
             return
     elif nmom == 2:
         psrc1 = pret[0]
