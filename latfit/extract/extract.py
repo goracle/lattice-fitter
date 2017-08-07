@@ -96,7 +96,7 @@ if GEVP:
                         dimops*(NUM_PENCILS+1)), dtype=np.complex)
         #coords are the coordinates to be plotted.
         #the ith point with the jth value
-        coords = np.zeros((dimcov, 2, dimops))
+        coords = np.zeros((dimcov, 2), dtype=object)
         return coords, cov
 
 else:

@@ -81,7 +81,7 @@ def get_dimops(cov, result_min, coords):
         dimops = 1
     coords = np.array(coords)
     if FIT:
-        dimops_chk = len(fit_func(coords[:, 0], result_min.x))
+        dimops_chk = len(fit_func(coords[0][0], result_min.x))
         if dimops != dimops_chk:
             print("***ERROR***")
             print("Fit function length does not match cov. mat.")
@@ -150,7 +150,6 @@ def get_coord(coords, cov):
     xcoord = [coords[i][0] for i in range(len(coords))]
     ycoord = [coords[i][1] for i in range(len(coords))]
     if GEVP:
-        xcoord = list(np.array(xcoord)[:,0])
         error2 = np.array([np.sqrt(np.diag(cov[i][i]))
                            for i in range(len(coords))])
     else:
