@@ -7,6 +7,11 @@ from os.path import isfile, join
 import numpy as np
 import read_file as rf
 
+try:
+    profile  # throws an exception when profile isn't defined
+except NameError:
+    profile = lambda x: x   # if it's not defined simply ignore the decorator.
+
 def transtime(tsrc, tdis, tsep, nmomaux, len_t):
     """Transform tsrc and tdis to aux diagram versions"""
     if nmomaux == 3:
@@ -39,9 +44,11 @@ def getaux_filestrs(filename):
         out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
     return out
 
+@profile
 def aux_filen(filename, stype='ascii'):
     """Write aux diagram corresponding to filename"""
-    print("Processing:", filename)
+    if stype == 'ascii':
+        print("Processing:", filename)
     if stype == 'ascii':
         if not rf.discon_test(filename):
             return
@@ -74,7 +81,8 @@ def aux_filen(filename, stype='ascii'):
         outfile = outfile.replace("pol_SINK", "pol_snk")
         outfile = outfile.replace("scalar_", "scalarR_")
         if outfile == filename:
-            print("T aux diagram already exists. Skipping.")
+            if stype == 'ascii':
+                print("T aux diagram already exists. Skipping.")
             #outfile = filename.replace("pol_src", "pol_snk")
             #or outfile = filename.replace("scalarR_", "scalar_")
             #print "i.e.", outfile
@@ -92,7 +100,8 @@ def aux_filen(filename, stype='ascii'):
             outfile = outfile.replace("temp1", str(pol2))
             outfile = outfile.replace("temp2", str(pol1))
         if outfile == filename:
-            print("Two point not a vector diagram.  Skipping.")
+            if stype == 'ascii':
+                print("Two point not a vector diagram.  Skipping.")
             return
     else:
         print("Error: nmom does not equal 1, 2, or 3.")

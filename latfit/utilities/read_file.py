@@ -25,15 +25,17 @@ def pol(filename):
         polret = None
     return polret
 
-def traj(filename):
+def traj(filename, nowarn=False):
     """Get trajectory info from filename"""
     filename = str(filename)
     mat = re.search('traj_([B0-9]+)_[A-Za-z]{1}', filename)
     if mat:
         rettraj = mat.group(1)
     else:
-        warnings.warn(
-            "Warning: filename:'"+filename+"', has no configuration info")
+        if not nowarn:
+            warnings.warn(
+                "Warning: filename:",
+                filename, " , has no configuration info")
         rettraj = None
     return rettraj
 
@@ -207,8 +209,11 @@ def pchange(filename, pnew):
     pold = mom(filename)
     nold = nmom_arr(pold)
     nnew = nmom_arr(pnew)
-    traj1 = traj(filename)
-    filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename)
+    traj1 = traj(filename, nowarn=True)
+    if not traj1 is None:
+        filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename)
+    else:
+        filen = filename
     if nnew != nold:
         print("Error: filename momentum mismatch")
         sys.exit(1)
@@ -223,7 +228,8 @@ def pchange(filename, pnew):
     else:
         print("Error: bad filename for momentum replacement specified.")
         sys.exit(1)
-    filen = re.sub("TEMPsafe", str(traj1), filen)
+    if not traj1 is None:
+        filen = re.sub("TEMPsafe", str(traj1), filen)
     return filen
 
 def remp(mom1, mom2, mom3=(0, 0, 0)):

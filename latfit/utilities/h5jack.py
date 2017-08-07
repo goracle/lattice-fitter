@@ -23,15 +23,13 @@ COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 TAKEREAL = False #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
+NOSUB = False #don't do any subtraction if true
 
 #diagram to look at for bubble subtraction test
 #TESTKEY = 'FigureV_sep4_mom1src00_1_mom2src000_mom1snk00_1'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
 TESTKEY = ''
-
-RAUX = COLS
-CAUX = -COLS
 
 try:
     profile  # throws an exception when profile isn't defined
@@ -42,17 +40,16 @@ except NameError:
 def getindices(tsep, nmomaux):
     """Get aux indices"""
     if nmomaux == 1:
-        retrows = RAUX
-        retcols = CAUX
+        retrows = COLS
+        retcols = (-ROWS)%LT
     elif nmomaux == 2:
-        retrows = RAUX
-        retcols = CAUX-tsep
+        retrows = COLS
+        retcols = (-ROWS-tsep)%LT
     elif nmomaux == 3:
-        retrows = np.roll(RAUX, -tsep, axis=1)
-        retcols = CAUX - 2*tsep
+        retrows = np.roll(COLS, -tsep, axis=1)
+        retcols = (-ROWS - 2*tsep)%LT
     return retrows, retcols
 
-@profile
 def trajlist():
     """Get trajectory list from files of form 
     <traj>.dat"""
@@ -63,7 +60,6 @@ def trajlist():
     print("Done getting trajectory list")
     return trajl
 
-@profile
 def baselist(fn=None):
     """Get base names of diagrams 
     (exclude trajectory info)"""
@@ -82,7 +78,6 @@ def baselist(fn=None):
     print("Done getting baselist")
     return basl
 
-@profile
 def bublist(fn=None):
     """Get list of disconnected bubbles."""
     if not fn:
@@ -95,14 +90,12 @@ def bublist(fn=None):
     print("Done getting bubble list")
     return bubl
 
-@profile
 def dojackknife(blk):
     """Apply jackknife to block with shape=(L_traj, L_time)"""
     for i, _ in enumerate(blk):
         blk[i] = np.mean(np.delete(blk, i, axis=0), axis=0)
     return blk
 
-@profile
 def h5write_blk(blk, outfile, extension='.jkdat'):
     """h5write block.
     """
@@ -117,7 +110,6 @@ def h5write_blk(blk, outfile, extension='.jkdat'):
     print("done writing jackknife blocks: ", outfile)
 
 
-@profile
 def overall_coeffs(iso, irr):
     """Get overall projection coefficients from iso (isopsin coefficients)
     irr (irrep projection)
@@ -140,7 +132,6 @@ def overall_coeffs(iso, irr):
     print("Done getting projection coefficients")
     return ocs 
 
-@profile
 def jackknife_err(blk):
     """Get jackknife error from block with shape=(L_traj, L_time)"""
     len_t = len(blk)
@@ -173,7 +164,6 @@ def buberr(bubblks):
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
 
-@profile
 def h5sum_blks(allblks, ocs, outblk_shape):
     """Do projection sums on isospin blocks"""
     for opa in ocs:
@@ -213,19 +203,17 @@ def getgenconblk(base, trajl, numt):
             skip.append(i)
     return np.delete(blk, skip, axis=0)
            
-@profile
 def getmostblks(basl, trajl, numt):
     """Get most of the jackknife blocks,
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
-        print("Processing base:", base)
+        print("Processing base (h5):", base)
         blk = getgenconblk(base, trajl, numt)
         mostblks[base] = dojackknife(blk)
     print("Done getting most of the jackknife blocks.")
     return mostblks
 
-@profile
 def getbubbles(bubl, trajl, numt):
     """Get all of the bubbles."""
     bubbles = {}
@@ -249,23 +237,24 @@ def getbubbles(bubl, trajl, numt):
     print("Done getting bubbles.")
     return bubbles 
 
-@profile
 def bubsub(bubbles):
     """Do the bubble subtraction"""
     sub = {}
     for i, bubkey in enumerate(bubbles):
+        if NOSUB:
+            sub[bubkey] = np.zeros((len(bubbles[bubkey])))
+            continue
         if STILLSUB:
             if bubkey.split('@')[1] != '000':
                 sub[bubkey] = np.zeros((len(bubbles[bubkey])))
                 continue
         sub[bubkey] = dojackknife(bubbles[bubkey])
         if TIMEAVGD:
-            out=sub[bubkey] = np.mean(sub[bubkey], axis=1)
+            sub[bubkey] = np.mean(sub[bubkey], axis=1)
     print("Done getting averaged bubbles.")
     return sub
 
 
-@profile
 def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
     if bubbles is None:
         bubbles = getbubbles(bubl, trajl, numt)
@@ -306,11 +295,12 @@ def aux_jack(basl, trajl, numt):
     for base in basl:
         #get aux diagram name
         outfn = aux.aux_filen(base, stype='hdf5')
+        if not outfn:
+            continue
         tsep = rf.sep(base)
         nmomaux = rf.nmom(base)
         #get modified tsrc and tdis
         rows, cols = getindices(tsep, nmomaux)
-        print("Processing aux diagram:", outfn)
         #get block from which to construct the auxdiagram
         blk = getgenconblk(base, trajl, numt)[rows, cols]
         auxblks[outfn] = dojackknife(blk)
