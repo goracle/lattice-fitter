@@ -16,9 +16,23 @@ from latfit.config import START_PARAMS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS
 from latfit.config import BINNUM
+from latfit.config import STYPE
 
 #todo, check for neg/imag eigenvals
 
+if STYPE == 'hdf5':
+    def getline(filetup, num):
+        """The file tup is actually already a numpy array.
+        This function pretends to get the line from an ascii file
+        """
+        try:
+            float(filetup[num-1])
+        except TypeError:
+            print("***ERROR***")
+            print("Expecting an array; in getblock")
+            print(filetup[num-1], "should be array of floats")
+            sys.exit(1)
+        return filetup[num-1]
 
 def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
     """get the nth generalized eigenvalue from matrices of files
@@ -82,16 +96,18 @@ if EFF_MASS:
         get block of effective masses, store in reuse[ij_str]
         """
         retblk = deque()
-        for line, line2, line3 in zip(
-                open(file_tup[0], 'r'),
-                open(file_tup[1], 'r'),
-                open(file_tup[2], 'r')):
+        if STYPE == 'ascii':
+            zipfs = zip(open(file_tup[0], 'r'), open(file_tup[1], 'r'),
+                        open(file_tup[2], 'r'))
+        elif STYPE == 'hdf5':
+            zipfs = zip(file_tup[0], file_tup[1], file_tup[2])
+        for line, line2, line3 in zipfs:
             if not line+line2+line3 in reuse:
-                reuse[str(line)+" "+str(line2)+" "+str(line3)] = proc_meff(
+                reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
                     line, line2, line3, file_tup)
-            if reuse[line+line2+line3] == 0:
-                reuse[line+line2+line3] = START_PARAMS[1]
-            retblk.append(reuse[line+line2+line3])
+            if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
+                reuse[str(line)+'@'+str(line2)+'@'+str(line3)] = START_PARAMS[1]
+            retblk.append(reuse[str(line)+'@'+str(line2)+'@'+str(line3)])
         return retblk
 
 else:
@@ -102,10 +118,13 @@ else:
         if reuse:
             pass
         retblk = deque()
-        for line in open(ijfile):
+        if STYPE == 'ascii':
+            fn = open(ijfile)
+        elif STYPE == 'hdf5':
+            fn = ijfile
+        for line in fn:
             retblk.append(proc_line(line, ijfile))
         return retblk
-
 
 ###system stuff, do the subtraction of bad configs as well
 

@@ -261,14 +261,18 @@ else:
                 return np.array([fit_func_exp(ctime, trial_params)])
 
 ##RARELY EDIT BELOW
-##bounds for fit parameters
-#optional, scale parameter to set binds
 
+#File format.  are the jackkknife blocks in ascii or hdf5?
+STYPE = 'ascii'
+#STYPE = 'hdf5'
+
+
+#optional, scale parameter to set binds
 #scale = 1e11
 SCALE = 1e11
 
+##bounds for fit parameters
 ##for use with L-BFGS-B
-
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
 #BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
