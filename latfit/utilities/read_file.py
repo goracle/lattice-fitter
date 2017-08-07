@@ -33,9 +33,7 @@ def traj(filename, nowarn=False):
         rettraj = mat.group(1)
     else:
         if not nowarn:
-            warnings.warn(
-                "Warning: filename:",
-                filename, " , has no configuration info")
+            warnings.warn("Warning: filename:"+filename+" , has no configuration info")
         rettraj = None
     return rettraj
 

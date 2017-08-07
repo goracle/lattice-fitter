@@ -44,7 +44,6 @@ def getaux_filestrs(filename):
         out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
     return out
 
-@profile
 def aux_filen(filename, stype='ascii'):
     """Write aux diagram corresponding to filename"""
     if stype == 'ascii':

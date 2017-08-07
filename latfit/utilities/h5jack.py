@@ -29,14 +29,13 @@ NOSUB = False #don't do any subtraction if true
 #TESTKEY = 'FigureV_sep4_mom1src00_1_mom2src000_mom1snk00_1'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
-TESTKEY = ''
+TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
 
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
     profile = lambda x: x   # if it's not defined simply ignore the decorator.
 
-@profile
 def getindices(tsep, nmomaux):
     """Get aux indices"""
     if nmomaux == 1:
@@ -90,12 +89,16 @@ def bublist(fn=None):
     print("Done getting bubble list")
     return bubl
 
+from math import fsum
+@profile
 def dojackknife(blk):
     """Apply jackknife to block with shape=(L_traj, L_time)"""
+    out = np.zeros(blk.shape, dtype=np.complex)
     for i, _ in enumerate(blk):
-        blk[i] = np.mean(np.delete(blk, i, axis=0), axis=0)
-    return blk
+        np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
+    return out
 
+@profile
 def h5write_blk(blk, outfile, extension='.jkdat'):
     """h5write block.
     """
@@ -137,7 +140,7 @@ def jackknife_err(blk):
     len_t = len(blk)
     avg = np.mean(blk, axis=0)
     prefactor = (len_t-1)/len_t
-    err = np.sqrt(prefactor*np.sum((blk-avg)**2, axis=0))
+    err = np.sqrt(prefactor*np.sum((blk-avg).real**2, axis=0))
     return avg, err
 
 def formnum(num):
@@ -164,6 +167,7 @@ def buberr(bubblks):
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
 
+@profile
 def h5sum_blks(allblks, ocs, outblk_shape):
     """Do projection sums on isospin blocks"""
     for opa in ocs:
@@ -172,14 +176,39 @@ def h5sum_blks(allblks, ocs, outblk_shape):
             outdir = mat.group(0)
             if not os.path.isdir(outdir):
                 os.makedirs(outdir)
-        outblk = np.zeros(outblk_shape, dtype=np.complex)
         flag = 0
+        ntchk = None
         for base, coeff in ocs[opa]:
+            if ntchk is None:
+                ntchk = allblks[base].shape[0]
+                outblk = np.zeros((ntchk, outblk_shape[1]), dtype=np.complex)
+                if ntchk != outblk.shape[0]:
+                    print("Warning:", opa, "has different number of trajectories")
+                    print("new traj=", ntchk)
+                    print("old traj=", outblk_shape[0])
+                    print("Be careful in using these blocks in the GEVP!")
+                basechk = base
+            else:
+                if allblks[base].shape[0] != ntchk:
+                    #we have a different number of trajectories.  not intra-operator consistent
+                    print("Statistics mismatch.  Not enough trajectories.")
+                    print("Problematic operator:", opa)
+                    print("base:", base, "base check:", basechk)
+                    print("number of trajectories in base", allblks[base].shape[0])
+                    print("does not match:", ntchk)
+                    flag = 1
+                    break
             try:
                 outblk += coeff*allblks[base]
             except ValueError:
+                #mismatch between shapes of outblk and base.  This is a programming error!
                 print("Error: trajectory number mismatch")
                 print("Problematic operator:", opa)
+                print("Problematic base:", base)
+                print("allblks[base].shape=", allblks[base].shape)
+                print("outblk.shape=", outblk.shape)
+                print("coefficient =", coeff)
+                print("This is a programming error!  Please fix!")
                 flag = 1
                 break
         if flag == 0:
@@ -188,32 +217,50 @@ def h5sum_blks(allblks, ocs, outblk_shape):
     return
 
 @profile
-def getgenconblk(base, trajl, numt):
+def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
     """Get generic connected diagram of base=base
     and indices tsrc, tdis
     """
+    rows = None
+    cols = None
+    if rowcols is not None:
+        rows = rowcols[0]
+        cols = rowcols[1]
     base2 = '_'+base
-    blk = np.zeros((numt, LT), dtype=np.complex)
+    if avgtsrc:
+        blk = np.zeros((numt, LT), dtype=np.complex)
+    else:
+        blk = np.zeros((numt, LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
         fn = h5py.File(str(traj)+'.dat', 'r')
         try:
-            blk[i] = np.mean(fn['traj_'+str(traj)+base2], axis=0)
+            outarr = np.array(fn['traj_'+str(traj)+base2])
         except KeyError:
             skip.append(i)
+            continue
+        if not rows is None and not cols is None:
+            outarr = outarr[rows, cols]
+        if avgtsrc:
+            blk[i] = np.mean(outarr, axis=0)
+        else:
+            blk[i] = outarr
     return np.delete(blk, skip, axis=0)
            
+@profile
 def getmostblks(basl, trajl, numt):
     """Get most of the jackknife blocks,
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
-        print("Processing base (h5):", base)
-        blk = getgenconblk(base, trajl, numt)
+        if TESTKEY and TESTKEY != base:
+            continue
+        blk = getgenconblk(base, trajl, numt, avgtsrc=True)
         mostblks[base] = dojackknife(blk)
     print("Done getting most of the jackknife blocks.")
     return mostblks
 
+@profile
 def getbubbles(bubl, trajl, numt):
     """Get all of the bubbles."""
     bubbles = {}
@@ -237,6 +284,7 @@ def getbubbles(bubl, trajl, numt):
     print("Done getting bubbles.")
     return bubbles 
 
+@profile
 def bubsub(bubbles):
     """Do the bubble subtraction"""
     sub = {}
@@ -255,6 +303,7 @@ def bubsub(bubbles):
     return sub
 
 
+@profile
 def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
     if bubbles is None:
         bubbles = getbubbles(bubl, trajl, numt)
@@ -281,6 +330,7 @@ def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
             for excl in range(numt):
                 src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
                 snk = np.delete(bubbles[snkkey], excl, axis=0)-sub[snkkey][excl]
+                #np.mean is avg over tsrc
                 np.mean(np.tensordot(src, np.conjugate(snk, out=snk), axes=(0, 0))[ROWS, cols], axis=0, out=out[outkey][excl])
                 #out[outkey][excl] = np.mean(np.array([
                 #    np.mean(cb.comb_dis(src[trajnum], snk[trajnum], sepval), axis=0)
@@ -297,12 +347,15 @@ def aux_jack(basl, trajl, numt):
         outfn = aux.aux_filen(base, stype='hdf5')
         if not outfn:
             continue
+        if TESTKEY and TESTKEY != outfn:
+            continue
         tsep = rf.sep(base)
         nmomaux = rf.nmom(base)
         #get modified tsrc and tdis
         rows, cols = getindices(tsep, nmomaux)
         #get block from which to construct the auxdiagram
-        blk = getgenconblk(base, trajl, numt)[rows, cols]
+        #mean is avg over tsrc
+        blk = np.mean(getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=[rows,cols]), axis=1)
         auxblks[outfn] = dojackknife(blk)
     print("Done getting the auxiliary jackknife blocks.")
     return auxblks
@@ -313,17 +366,17 @@ def main(FIXN=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
+    mostblks = getmostblks(basl, trajl, numt)
     auxblks = aux_jack(basl, trajl, numt)
     bubblks = bubbles_jack(bubl, trajl, numt)
-    #buberr(bubblks)
-    #sys.exit(0)
-    mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
     allblks = {**mostblks, **auxblks, **bubblks}
+    if TESTKEY:
+        buberr(allblks)
+        sys.exit(0)
     ocs = overall_coeffs(isoproj(FIXN, 0, dlist=basl, stype=STYPE), opc.op_list(stype=STYPE))
     h5sum_blks(allblks, ocs, (numt, LT))
-
 
 if __name__ == '__main__':
     #FIXN = input("Need fix norms before summing? True/False?")
