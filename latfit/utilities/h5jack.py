@@ -11,6 +11,7 @@ from sum_blks import isoproj
 import op_compose as opc
 import combine as cb
 import write_discon as wd
+import aux_write as aux
 
 FNDEF = '9995.dat'
 LT = 32
@@ -29,12 +30,28 @@ TIMEAVGD = False #do a time translation average (bubble is scalar now)
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
 TESTKEY = ''
 
-
+RAUX = COLS
+CAUX = -COLS
 
 try:
     profile  # throws an exception when profile isn't defined
 except NameError:
     profile = lambda x: x   # if it's not defined simply ignore the decorator.
+
+@profile
+def getindices(tsep, nmomaux):
+    """Get aux indices"""
+    if nmomaux == 1:
+        retrows = RAUX
+        retcols = CAUX
+    elif nmomaux == 2:
+        retrows = RAUX
+        retcols = CAUX-tsep
+    elif nmomaux == 3:
+        retrows = np.roll(RAUX, -tsep, axis=1)
+        retcols = CAUX - 2*tsep
+    return retrows, retcols
+
 @profile
 def trajlist():
     """Get trajectory list from files of form 
@@ -145,8 +162,6 @@ def formnum(num):
         imag = '%.8e' % num.imag
         return real+plm+imag+'j'
 
-
-@profile
 def buberr(bubblks):
     """Show the result of different options for bubble subtraction"""
     for key in bubblks:
@@ -181,24 +196,31 @@ def h5sum_blks(allblks, ocs, outblk_shape):
             h5write_blk(outblk, opa)
     print("Done writing summed blocks.")
     return
-            
+
 @profile
-def get_mostblks(basl, trajl, numt):
+def getgenconblk(base, trajl, numt):
+    """Get generic connected diagram of base=base
+    and indices tsrc, tdis
+    """
+    base2 = '_'+base
+    blk = np.zeros((numt, LT), dtype=np.complex)
+    skip = []
+    for i, traj in enumerate(trajl):
+        fn = h5py.File(str(traj)+'.dat', 'r')
+        try:
+            blk[i] = np.mean(fn['traj_'+str(traj)+base2], axis=0)
+        except KeyError:
+            skip.append(i)
+    return np.delete(blk, skip, axis=0)
+           
+@profile
+def getmostblks(basl, trajl, numt):
     """Get most of the jackknife blocks,
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
         print("Processing base:", base)
-        base2 = '_'+base
-        blk = np.zeros((numt, LT), dtype=np.complex)
-        skip = []
-        for i, traj in enumerate(trajl):
-            fn = h5py.File(str(traj)+'.dat', 'r')
-            try:
-                blk[i] = np.mean(fn['traj_'+str(traj)+base2], axis=0)
-            except KeyError:
-                skip.append(i)
-        blk = np.delete(blk, skip, axis=0)
+        blk = getgenconblk(base, trajl, numt)
         mostblks[base] = dojackknife(blk)
     print("Done getting most of the jackknife blocks.")
     return mostblks
@@ -278,21 +300,40 @@ def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
     return out
 
 @profile
+def aux_jack(basl, trajl, numt):
+    """Get the aux diagram blocks"""
+    auxblks = {}
+    for base in basl:
+        #get aux diagram name
+        outfn = aux.aux_filen(base, stype='hdf5')
+        tsep = rf.sep(base)
+        nmomaux = rf.nmom(base)
+        #get modified tsrc and tdis
+        rows, cols = getindices(tsep, nmomaux)
+        print("Processing aux diagram:", outfn)
+        #get block from which to construct the auxdiagram
+        blk = getgenconblk(base, trajl, numt)[rows, cols]
+        auxblks[outfn] = dojackknife(blk)
+    print("Done getting the auxiliary jackknife blocks.")
+    return auxblks
+
+@profile
 def main(FIXN=True):
     bubl = bublist()
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
+    auxblks = aux_jack(basl, trajl, numt)
     bubblks = bubbles_jack(bubl, trajl, numt)
     #buberr(bubblks)
     #sys.exit(0)
-    mostblks = get_mostblks(basl, trajl, numt)
+    mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
-    allblks = {**mostblks, **bubblks}
+    allblks = {**mostblks, **auxblks, **bubblks}
     ocs = overall_coeffs(isoproj(FIXN, 0, dlist=basl, stype=STYPE), opc.op_list(stype=STYPE))
     h5sum_blks(allblks, ocs, (numt, LT))
-1
+
 
 if __name__ == '__main__':
     #FIXN = input("Need fix norms before summing? True/False?")

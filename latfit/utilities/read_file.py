@@ -254,32 +254,6 @@ if FORMAT == 'ASCII':
         return filen
 
     ####read file
-    def getaux_filestrs(filename):
-        """gets the array from the file, but keeps the values as strings
-        """
-        len_t = find_dim(filename)
-        tsep = pion_sep(filename)
-        nmomaux = nmom(filename)
-        out = np.zeros((len_t, len_t), dtype=np.object)
-        filen = open(filename, 'r')
-        for line in filen:
-            lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
-            tsrc = int(lsp[0])
-            tdis = int(lsp[1])
-            if nmomaux == 3:
-                tsrc2 = (tsrc+tdis+tsep)%len_t
-                tdis2 = (3*len_t-2*tsep-tdis)%len_t
-            elif nmomaux == 2:
-                tsrc2 = (tdis+tsrc)%len_t
-                tdis2 = (2*len_t-tsep-tdis)%len_t
-            elif nmomaux == 1:
-                tsrc2 = (tdis+tsrc)%len_t
-                tdis2 = (len_t-tdis)%len_t
-            else:
-                print("Error: bad filename, error in getaux_filestrs")
-                sys.exit(1)
-            out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
-        return out
 
     def get_block_data(filen, onlydirs):
         """Get array of jackknife block data (from single time slice file, e.g.)
