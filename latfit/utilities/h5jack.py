@@ -25,22 +25,22 @@ ROWS = np.tile(np.arange(LT), (LT,1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
 ##options concerning how bubble subtraction is done
-TAKEREAL = False #take real of bubble if momtotal=0
+TAKEREAL = True #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
-TIMEAVGD = False #do a time translation average (bubble is scalar now)
+TIMEAVGD = True #do a time translation average (bubble is scalar now)
 NOSUB = False #don't do any subtraction if true
-JACKBUB = True #keep true for correctness; false for checking incorrect results
+JACKBUB = False #keep true for correctness; false for checking incorrect results
 
 #diagram to look at for bubble subtraction test
-TESTKEY = ''
+#TESTKEY = ''
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
-#TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
+TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
 #TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
 
 #only save this bubble (speeds up checks involving single bubbles)
-BUBKEY = ''
-#BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
+#BUBKEY = ''
+BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
 
 try:
     profile  # throws an exception when profile isn't defined
@@ -350,7 +350,7 @@ def bubjack(bubl, trajl, numt, bubbles=None, sub=None):
                 for excl in range(numt):
                     src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
                     snk = np.delete(bubbles[snkkey], excl, axis=0)-sub[snkkey][excl]
-                    np.mean(np.tensordot(src, np.conjugate(snk, out=snk), axes=(0, 0))[ROWS, cols], axis=0, out=out[outkey][excl])
+                    np.mean(np.tensordot(src, np.conjugate(snk), axes=(0, 0))[ROWS, cols]/(len(src)*1.0), axis=0, out=out[outkey][excl])
             else:
                 src = bubbles[srckey]-sub[srckey]
                 snk = np.conjugate(bubbles[snkkey]-sub[snkkey])
