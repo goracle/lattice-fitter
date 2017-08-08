@@ -13,10 +13,15 @@ import combine as cb
 import write_discon as wd
 import aux_write as aux
 
-FNDEF = '9995.dat'
+#representative hdf5 file, to get info about lattice
+FNDEF = '6300.dat'
+#size of lattice in time, lattice units
 LT = 32
+#format for files; don't change
 STYPE='hdf5'
-ROWS = np.tile(np.arange(LT), (LT,1))
+#precomputed indexing matrices; don't change
+ROWST = np.tile(np.arange(LT), (LT,1))
+ROWS = np.tile(np.arange(LT), (LT,1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
 ##options concerning how bubble subtraction is done
@@ -24,12 +29,18 @@ TAKEREAL = False #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
 NOSUB = False #don't do any subtraction if true
+JACKBUB = True #keep true for correctness; false for checking incorrect results
 
 #diagram to look at for bubble subtraction test
-#TESTKEY = 'FigureV_sep4_mom1src00_1_mom2src000_mom1snk00_1'
+TESTKEY = ''
+#TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
-TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
+#TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
+
+#only save this bubble (speeds up checks involving single bubbles)
+BUBKEY = ''
+#BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
 
 try:
     profile  # throws an exception when profile isn't defined
@@ -40,13 +51,13 @@ def getindices(tsep, nmomaux):
     """Get aux indices"""
     if nmomaux == 1:
         retrows = COLS
-        retcols = (-ROWS)%LT
+        retcols = (-ROWST)%LT
     elif nmomaux == 2:
         retrows = COLS
-        retcols = (-ROWS-tsep)%LT
+        retcols = (-ROWST-tsep)%LT
     elif nmomaux == 3:
         retrows = np.roll(COLS, -tsep, axis=1)
-        retcols = (-ROWS - 2*tsep)%LT
+        retcols = (-ROWST - 2*tsep)%LT
     return retrows, retcols
 
 def trajlist():
@@ -265,6 +276,8 @@ def getbubbles(bubl, trajl, numt):
     """Get all of the bubbles."""
     bubbles = {}
     for dsrc in bubl:
+        if BUBKEY and dsrc != BUBKEY:
+            continue
         skip = []
         for traj in trajl:
             fn = h5py.File(str(traj)+'.dat', 'r')
@@ -296,15 +309,21 @@ def bubsub(bubbles):
             if bubkey.split('@')[1] != '000':
                 sub[bubkey] = np.zeros((len(bubbles[bubkey])))
                 continue
-        sub[bubkey] = dojackknife(bubbles[bubkey])
-        if TIMEAVGD:
-            sub[bubkey] = np.mean(sub[bubkey], axis=1)
+        if JACKBUB:
+            sub[bubkey] = dojackknife(bubbles[bubkey])
+            if TIMEAVGD:
+                sub[bubkey] = np.mean(sub[bubkey], axis=1)
+        else:
+            if TIMEAVGD:
+                sub[bubkey] = np.mean(bubbles[bubkey])
+            else:
+                sub[bubkey] = np.mean(bubbles[bubkey], axis=0)
     print("Done getting averaged bubbles.")
     return sub
 
 
 @profile
-def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
+def bubjack(bubl, trajl, numt, bubbles=None, sub=None):
     if bubbles is None:
         bubbles = getbubbles(bubl, trajl, numt)
     if sub is None:
@@ -327,11 +346,18 @@ def bubbles_jack(bubl, trajl, numt, bubbles=None, sub=None):
             if TESTKEY and outkey != TESTKEY:
                 continue
             out[outkey] = np.zeros((numt, LT), dtype=np.complex)
-            for excl in range(numt):
-                src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
-                snk = np.delete(bubbles[snkkey], excl, axis=0)-sub[snkkey][excl]
+            if JACKBUB:
+                for excl in range(numt):
+                    src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
+                    snk = np.delete(bubbles[snkkey], excl, axis=0)-sub[snkkey][excl]
+                    np.mean(np.tensordot(src, np.conjugate(snk, out=snk), axes=(0, 0))[ROWS, cols], axis=0, out=out[outkey][excl])
+            else:
+                src = bubbles[srckey]-sub[srckey]
+                snk = np.conjugate(bubbles[snkkey]-sub[snkkey])
+                for excl in range(numt):
+                    out[outkey][excl] = np.mean(np.outer(src[excl],snk[excl])[ROWS, cols], axis=0)
+                out[outkey] = dojackknife(out[outkey])
                 #np.mean is avg over tsrc
-                np.mean(np.tensordot(src, np.conjugate(snk, out=snk), axes=(0, 0))[ROWS, cols], axis=0, out=out[outkey][excl])
                 #out[outkey][excl] = np.mean(np.array([
                 #    np.mean(cb.comb_dis(src[trajnum], snk[trajnum], sepval), axis=0)
                 #    for trajnum in range(numt-1)]), axis=0)
@@ -366,9 +392,9 @@ def main(FIXN=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
+    bubblks = bubjack(bubl, trajl, numt)
     mostblks = getmostblks(basl, trajl, numt)
     auxblks = aux_jack(basl, trajl, numt)
-    bubblks = bubbles_jack(bubl, trajl, numt)
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
     allblks = {**mostblks, **auxblks, **bubblks}
