@@ -66,7 +66,10 @@ if EFF_MASS:
         """
         retblk = deque()
         dimops = len(file_tup[0])
-        num_configs = sum(1 for _ in open(file_tup[0][0][0]))
+        if STYPE == 'ascii':
+            num_configs = sum(1 for _ in open(file_tup[0][0][0]))
+        elif STYPE == 'hdf5':
+            num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
             eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
@@ -84,7 +87,10 @@ else:
         C(t)v = Eigval*C(t_0)v
         """
         retblk = deque()
-        num_configs = sum(1 for _ in open(file_tup[0][0][0]))
+        if STYPE == 'ascii':
+            num_configs = sum(1 for _ in open(file_tup[0][0][0]))
+        elif STYPE == 'hdf5':
+            num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
             eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             retblk.append(eigvals)

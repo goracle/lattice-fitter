@@ -1,5 +1,6 @@
 """test if file exists"""
 import sys
+import numpy as np
 
 from latfit.config import STYPE
 
@@ -19,9 +20,11 @@ if STYPE == 'ascii':
 
 elif STYPE == 'hdf5':
     def pre_proc_file(ifile, input_f):
-        if not ifile in input_f:
+        """ifile is now an array. Do a meaningless check.
+        (could be meaningful later)"""
+        if not isinstance(ifile, np.ndarray) or not isinstance(ifile[0], np.complex):
             print("***ERROR***")
-            print("The samples did not come from this hdf5 file")
+            print("The samples are not in the right format")
             print("File/sample mismatch:")
             print("File:", input_f)
             print("sample:", ifile)

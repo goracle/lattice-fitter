@@ -2,6 +2,7 @@
 import re
 import os
 import sys
+import numpy as np
 import h5py
 
 from latfit.config import GEVP
@@ -11,8 +12,15 @@ if STYPE == 'hdf5':
     def proc_folder(hdf5_file, ctime, other_regex=""):
         if other_regex:
             pass
-        fn = h5py.File(hdf5_file, 'r')
-        return np.array(fn[hdf5_file][:,ctime])
+        try:
+            fn = h5py.File(hdf5_file, 'r')
+        except OSError:
+            fn = h5py.File(hdf5_file.split('/')[-1], 'r')
+        try:
+            out = np.array(fn[hdf5_file][:,ctime])
+        except KeyError:
+            out = np.array(fn[hdf5_file.split('.')[0]][:,ctime])
+        return out
 
 elif STYPE == 'ascii':
     def proc_folder(folder, ctime, other_regex=""):

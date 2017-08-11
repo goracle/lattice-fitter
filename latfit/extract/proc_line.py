@@ -5,10 +5,13 @@ import numpy as np
 
 def proc_line(line, pifile="BLANK"):
     """take the real and test for error"""
-    linesp = line.split()
+    try:
+        linesp = line.split()
+    except AttributeError:
+        linesp = [line.real, line.imag]
     if len(linesp) == 2:
         warn("Taking the real (first column).")
-        return float(linesp[0])
+        return np.float(linesp[0])
     elif len(linesp) == 1:
         return np.float(line)
     else:

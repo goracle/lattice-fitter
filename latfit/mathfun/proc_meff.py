@@ -133,9 +133,12 @@ elif EFF_MASS_METHOD == 3 and FIT:
         else:
             pass
         return sol
-else:
+elif FIT:
     print("Bad method for finding the effective mass specified:",
           EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
+else:
+    def proc_meff():
+        pass
 proc_meff.sent = object()
 

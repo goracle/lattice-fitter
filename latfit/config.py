@@ -7,6 +7,7 @@ from numpy import exp
 from sympy import exp as exps
 
 from latfit.analysis.test_arg import test_arg
+SENT = object()
 
 ###TYPE OF FIT
 
@@ -17,8 +18,8 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-#FIT = False
-FIT = True
+FIT = False
+#FIT = True
 
 ##Jackknife fit?
 
@@ -33,8 +34,8 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-#EFF_MASS = False
-EFF_MASS = True
+EFF_MASS = False
+#EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -48,7 +49,7 @@ PRINT_CORR = False
 
 ###METHODS/PARAMS
 
-#time extent
+#time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 LT = 24
 
@@ -71,8 +72,8 @@ EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
-#LOG=True
-LOG=False
+LOG=True
+#LOG=False
 
 ##eliminate problematic configs.
 #Simply set this to a list of ints indexing the configs,
@@ -85,12 +86,16 @@ ELIM_JKCONF_LIST = range(48)
 BINNUM = 1
 
 #####2x2 I=0
-GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-'sep4/pipisigma_momsrc000_momsnk000'],
-['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
+#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
+#'sep4/pipisigma_momsrc000_momsnk000'],
+#['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
 
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
+
+GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+'I0/S_pipisigma_A_1PLUS.jkdat'],
+['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']]
 
 #####3x3, I0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -118,7 +123,7 @@ if GEVP:
         #TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
         TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
 else:
-    TITLE_PREFIX = 'TEST2 '
+    TITLE_PREFIX = 'TEST3 '
 
 #title
 
@@ -226,7 +231,7 @@ if EFF_MASS:
 else:
     if GEVP:
         ###check len of start params
-        if ORIGL != 2:
+        if ORIGL != 2 and FIT:
             print("***ERROR***")
             print("flag 1 length of start_params invalid")
             sys.exit(1)
@@ -237,7 +242,7 @@ else:
                 fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
                 for j in range(MULT)])
     else:
-        if ADD_CONST:
+        if ADD_CONST and FIT:
             ###check len of start params
             if ORIGL != 3:
                 print("***ERROR***")
@@ -248,7 +253,7 @@ else:
                 """fit func non gevp, additive const
                 """
                 return np.array([fit_func_exp_add(ctime, trial_params)])
-        else:
+        elif FIT:
             ###check len of start params
             if ORIGL != 2:
                 print("***ERROR***")
@@ -263,8 +268,8 @@ else:
 ##RARELY EDIT BELOW
 
 #File format.  are the jackkknife blocks in ascii or hdf5?
-STYPE = 'ascii'
-#STYPE = 'hdf5'
+#STYPE = 'ascii'
+STYPE = 'hdf5'
 
 
 #optional, scale parameter to set binds
@@ -373,7 +378,7 @@ def fit_func_1p(ctime, trial_params):
         sys.exit(1)
     sol = (corr2-corr1)/(corr3-corr2)
     if LOG:
-        if not test_arg(sol, config.sent):
+        if not test_arg(sol, SENT):
             print("problematic time slices:", ctime, ctime+1, ctime+2)
             print("corr1 = ", corr1)
             print("corr2 = ", corr2)
@@ -382,4 +387,3 @@ def fit_func_1p(ctime, trial_params):
     else:
         pass
     return sol
-#config.sent = object()
