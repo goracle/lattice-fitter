@@ -52,7 +52,15 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
     eigvals, _ = eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
-    return eigvals
+    eigfin = np.zeros((len(eigvals)), dtype=np.float)
+    for i,j in enumerate(eigvals):
+        if j.imag == 0:
+            eigfin[i]=eigvals[i].real
+        else:
+            print("***ERROR***")
+            print("imaginary eigenvalue found")
+            sys.exit(1)
+    return eigfin
 
 
 if EFF_MASS:
@@ -71,9 +79,13 @@ if EFF_MASS:
         elif STYPE == 'hdf5':
             num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
-            eigvals = get_eigvals(num, file_tup[0], file_tup[1])
-            eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
-            eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
+            try:
+                eigvals = get_eigvals(num, file_tup[0], file_tup[1])
+                eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
+                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
+            except:
+                print(num, file_tup)
+                sys.exit(1)
             retblk.append(np.array([proc_meff(
                 eigvals[op], eigvals2[op], eigvals3[op])
                                     for op in range(dimops)]))
@@ -92,7 +104,11 @@ else:
         elif STYPE == 'hdf5':
             num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
-            eigvals = get_eigvals(num, file_tup[0], file_tup[1])
+            try:
+                eigvals = get_eigvals(num, file_tup[0], file_tup[1])
+            except:
+                print(file_tup)
+                sys.exit(1)
             retblk.append(eigvals)
         return retblk
 

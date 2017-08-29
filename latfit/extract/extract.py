@@ -93,7 +93,7 @@ if GEVP:
         dimops = len(GEVP_DIRS)
         #cov is the covariance matrix
         cov = np.zeros((dimcov, dimcov, dimops*(NUM_PENCILS+1),
-                        dimops*(NUM_PENCILS+1)), dtype=np.complex)
+                        dimops*(NUM_PENCILS+1)), dtype=np.float)
         #coords are the coordinates to be plotted.
         #the ith point with the jth value
         coords = np.zeros((dimcov, 2), dtype=object)

@@ -18,8 +18,8 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-FIT = False
-#FIT = True
+#FIT = False
+FIT = True
 
 ##Jackknife fit?
 
@@ -34,8 +34,8 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-EFF_MASS = False
-#EFF_MASS = True
+#EFF_MASS = False
+EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -72,8 +72,8 @@ EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
+LOG=False
 LOG=True
-#LOG=False
 
 ##eliminate problematic configs.
 #Simply set this to a list of ints indexing the configs,
@@ -83,7 +83,7 @@ ELIM_JKCONF_LIST = range(48)
 #ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
+BINNUM = 4
 
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -136,9 +136,9 @@ XLABEL = r'$t/a$'
 if EFF_MASS:
     if EFF_MASS_METHOD == 3:
         if LOG:
-            YLABEL = r'one param fit'
+            YLABEL = r'log(one param global fit)'
         else:
-            YLABEL = r'log(one param fit)'
+            YLABEL = r'one param global fit'
     else:
         YLABEL = r'$am_{eff}(t)$'
 else:
@@ -268,7 +268,7 @@ else:
 ##RARELY EDIT BELOW
 
 #File format.  are the jackkknife blocks in ascii or hdf5?
-#STYPE = 'ascii'
+STYPE = 'ascii'
 STYPE = 'hdf5'
 
 
@@ -384,6 +384,7 @@ def fit_func_1p(ctime, trial_params):
             print("corr2 = ", corr2)
             print("corr3 = ", corr3)
             sys.exit(1)
+        sol = log(sol)
     else:
         pass
     return sol
