@@ -11,7 +11,7 @@ import h5py
 import read_file as rf
 from traj_list import traj_list
 
-LT = 32
+LT = 64
 
 try:
         profile  # throws an exception when profile isn't defined
@@ -37,8 +37,12 @@ def main():
             if sq:
                 for line in open(filen, 'r'):
                         lsp = line.split()
-                        data[int(lsp[0]),int(lsp[1])]=np.complex(float(
-                                lsp[2]),float(lsp[3]))
+                        try:
+                                data[int(lsp[0]),int(lsp[1])]=np.complex(
+                                        float(lsp[2]),float(lsp[3]))
+                        except IndexError:
+                                print("Error: bad file format:", filen)
+                                sys.exit(1)
             else:
                 for line in open(filen, 'r'):
                         lsp = line.split()

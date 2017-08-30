@@ -14,19 +14,19 @@ import write_discon as wd
 import aux_write as aux
 
 #representative hdf5 file, to get info about lattice
-FNDEF = '9995.dat'
+FNDEF = '1000.dat'
 #size of lattice in time, lattice units
-LT = 32
+LT = 64
 TSEP = 4
 #format for files; don't change
 STYPE='hdf5'
-#precomputed indexing matrices; don't change
+#precomputed indexing matrices; DON'T CHANGE
 ROWST = np.tile(np.arange(LT), (LT,1))
 ROWS = np.tile(np.arange(LT), (LT,1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
 ##options concerning how bubble subtraction is done
-TAKEREAL = True #take real of bubble if momtotal=0
+TAKEREAL = False #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
 NOSUB = False #don't do any subtraction if true; set false if doing GEVP
@@ -36,11 +36,11 @@ JACKBUB = True #keep true for correctness; false for checking incorrect results
 FOLD = True #average about the mirror point in time
 
 #diagram to look at for bubble subtraction test
-#TESTKEY = ''
+TESTKEY = ''
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
-TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
-TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
+#TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
+#TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 #TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
 
 #only save this bubble (speeds up checks involving single bubbles)
@@ -421,7 +421,7 @@ def main(FIXN=True):
 
 if __name__ == '__main__':
     #FIXN = input("Need fix norms before summing? True/False?")
-    FIXN='True'
+    FIXN='False'
     if FIXN == 'True':
         FIXN = True
     elif FIXN == 'False':

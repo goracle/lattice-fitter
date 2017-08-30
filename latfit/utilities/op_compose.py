@@ -42,6 +42,17 @@ def momstr(psrc, psnk):
             pstr = 'mom'+rf.ptostr(psrc)
     return pstr
 
+A0 = [
+    (1/8, 'pipi', [[1, 1, 1], [-1, -1, -1]]),
+    (1/8, 'pipi', [[-1, 1, 1], [1, -1, -1]]),
+    (1/8, 'pipi', [[1, -1, 1], [-1, 1, -1]]),
+    (1/8, 'pipi', [[1, 1, -1], [-1, -1, 1]]),
+    (1/8, 'pipi', [[1, -1, -1], [-1, 1, 1]]),
+    (1/8, 'pipi', [[-1, 1, -1], [1, -1, 1]]),
+    (1/8, 'pipi', [[-1, -1, 1], [1, 1, -1]]),
+    (1/8, 'pipi', [[-1, -1, -1], [1, 1, 1]]),
+]
+
 A_1PLUS = [
     (1/sqrt(6), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
     (1/sqrt(6), 'pipi', [[0, 1, 0], [0, -1, 0]]),
@@ -83,10 +94,8 @@ T_1_2MINUS = [
     (1/sqrt(2), 'pipi', [[0, 0, 1], [0, 0, -1]]),
     (-1/sqrt(2), 'pipi', [[0, 0, -1], [0, 0, 1]])]
 
-OPLIST = {'A_1PLUS':A_1PLUS,
-          'T_1_1MINUS':T_1_1MINUS,
-          'T_1_3MINUS':T_1_3MINUS,
-          'T_1_2MINUS':T_1_2MINUS}
+#OPLIST = {'A_1PLUS':A_1PLUS, 'T_1_1MINUS':T_1_1MINUS, 'T_1_3MINUS':T_1_3MINUS, 'T_1_2MINUS':T_1_2MINUS}
+OPLIST = {'A0':A0}
 PART_LIST = set([])
 for opa_out in OPLIST:
     for item in OPLIST[opa_out]:
