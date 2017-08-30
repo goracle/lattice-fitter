@@ -32,10 +32,11 @@ NOSUB = False #don't do any subtraction if true; set false if doing GEVP
 JACKBUB = True #keep true for correctness; false for checking incorrect results
 
 #diagram to look at for bubble subtraction test
-TESTKEY = ''
+#TESTKEY = ''
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
-#TESTKEY = 'FigureV_sep4_mom1src001_mom2src00_1_mom1snk001'
+TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
+TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 #TESTKEY = 'FigureR_sep4_mom1src000_mom2src000_mom1snk000'
 
 #only save this bubble (speeds up checks involving single bubbles)
