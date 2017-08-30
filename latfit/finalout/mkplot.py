@@ -329,10 +329,15 @@ else:
             xycoords='axes fraction')
 
 if JACKKNIFE_FIT:
-    if JACKKNIFE_FIT == 'FROZEN' or JACKKNIFE_FIT == 'SINGLE':
+    if JACKKNIFE_FIT == 'FROZEN':
         def annotate_jack():
             """Annotate jackknife type (frozen)"""
             plt.annotate('Frozen (single) jackknife fit.', xy=(
+                0.05, 0.15), xycoords='axes fraction')
+    elif JACKKNIFE_FIT == 'SINGLE':
+        def annotate_jack():
+            """Annotate jackknife type (frozen)"""
+            plt.annotate('Single jackknife fit.', xy=(
                 0.05, 0.15), xycoords='axes fraction')
     elif JACKKNIFE_FIT == 'DOUBLE':
         def annotate_jack():

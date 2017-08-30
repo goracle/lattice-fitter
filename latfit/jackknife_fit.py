@@ -49,7 +49,7 @@ if JACKKNIFE_FIT == 'FROZEN':
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
 
-elif JACKKNIFE_FIT == 'DOUBLE':
+elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
     def jackknife_fit(params, reuse, coords, time_range, covinv=None):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
@@ -108,12 +108,9 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
                 print("Continuation failed.")
                 sys.exit(1)
             coords_jack = coords_jack[1::2]
-            cov_factor = np.delete(
-                np.delete(reuse_inv, config_num,
-                          0)-reuse[config_num], np.s_[::2], 1)
+            cov_factor = np.delete(getcovfactor(params, reuse, config_num, reuse_inv), np.s_[::2], axis=1)
         else:
-            cov_factor = np.delete(
-                reuse_inv, config_num, 0)- reuse[config_num]
+            cov_factor = getcovfactor(params, reuse, config_num, reuse_inv)
         try:
             if params.dimops == 1:
                 covinv_jack = inv(np.einsum(
@@ -123,7 +120,10 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
                     tensorinv(np.einsum('aim,ajn->imjn', cov_factor,
                                         cov_factor)), 1, 2)
             #do the proper normalization of the covinv
-            covinv_jack *= ((params.num_configs)*(params.num_configs-1))
+            if JACKKNIFE_FIT == 'SINGLE':
+                covinv_jack *= ((params.num_configs-1)*(params.num_configs-2))
+            elif JACKKNIFE_FIT == 'DOUBLE':
+                covinv_jack *= ((params.num_configs-1)/(params.num_configs-2))
             flag = 0
         except np.linalg.linalg.LinAlgError as err:
             if str(err) == 'Singular matrix':
@@ -137,3 +137,26 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
             else:
                 raise
     return coords_jack, covinv_jack
+
+if JACKKNIFE_FIT == 'SINGLE':
+    def getcovfactor(params, reuse, config_num, reuse_inv):
+        """Get the factor which will be squared 
+        when computing jackknife covariance matrix 
+        (for this config number == config)
+        inverse block == reuse_inv
+        block == reuse
+        SINGLE elimination jackknife
+        """
+        return np.delete(reuse_inv, config_num, axis=0)-reuse[config_num]
+
+elif JACKKNIFE_FIT == 'DOUBLE':
+    def getcovfactor(params, reuse, config_num, reuse_inv):
+        """Get the factor which will be squared 
+        when computing jackknife covariance matrix 
+        (for this config number == config)
+        inverse block == reuse_inv
+        block == reuse
+        DOUBLE elimination jackknife
+        """
+        return np.mean([np.delete(np.delete(reuse_inv, config_num, axis=0), i, axis=0)
+                    for i in range(params.num_configs-1)], axis=0)- reuse[config_num]
