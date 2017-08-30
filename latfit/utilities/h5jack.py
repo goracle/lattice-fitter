@@ -31,9 +31,13 @@ STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
 NOSUB = False #don't do any subtraction if true; set false if doing GEVP
 
+##other config options
+THERMNUM = 300 #eliminate configs below this number to thermalize 
+TSTEP = 8 #we only measure every TSTEP time slices to save on time
+
 ###DO NOT CHANGE IF NOT DEBUGGING
 JACKBUB = True #keep true for correctness; false for checking incorrect results
-FOLD = True #average about the mirror point in time
+FOLD = True #average about the mirror point in time (True)
 
 #diagram to look at for bubble subtraction test
 TESTKEY = ''
@@ -71,7 +75,7 @@ def trajlist():
     trajl = set()
     for fn in glob.glob('*.dat'):
         toadd = int(re.sub('.dat','',fn))
-        if toadd >= 1000: #filter out unthermalized
+        if toadd >= THERMNUM: #filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
     print("Done getting trajectory list")
@@ -238,7 +242,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
 def fold_time(outblk):
     if FOLD:
         retblk = [1/2 *(outblk[:,t]+outblk[:,LT-t-2*TSEP]) for t in range(LT)]
-        return np.array(retblk)
+        return np.array(retblk).T
     else:
         return outblk
 @profile
@@ -267,7 +271,7 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
         if not rows is None and not cols is None:
             outarr = outarr[rows, cols]
         if avgtsrc:
-            blk[i] = np.mean(outarr, axis=0)
+            blk[i] = TSTEP*np.mean(outarr, axis=0)
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
@@ -396,7 +400,7 @@ def aux_jack(basl, trajl, numt):
         rows, cols = getindices(tsep, nmomaux)
         #get block from which to construct the auxdiagram
         #mean is avg over tsrc
-        blk = np.mean(getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=[rows,cols]), axis=1)
+        blk = TSTEP*np.mean(getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=[rows,cols]), axis=1)
         auxblks[outfn] = dojackknife(blk)
     print("Done getting the auxiliary jackknife blocks.")
     return auxblks
