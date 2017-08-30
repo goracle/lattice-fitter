@@ -17,6 +17,7 @@ import aux_write as aux
 FNDEF = '9995.dat'
 #size of lattice in time, lattice units
 LT = 32
+TSEP = 4
 #format for files; don't change
 STYPE='hdf5'
 #precomputed indexing matrices; don't change
@@ -29,7 +30,10 @@ TAKEREAL = True #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
 NOSUB = False #don't do any subtraction if true; set false if doing GEVP
+
+###DO NOT CHANGE IF NOT DEBUGGING
 JACKBUB = True #keep true for correctness; false for checking incorrect results
+FOLD = True #average about the mirror point in time
 
 #diagram to look at for bubble subtraction test
 #TESTKEY = ''
@@ -226,10 +230,17 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 flag = 1
                 break
         if flag == 0:
-            h5write_blk(outblk, opa)
+            h5write_blk(fold_time(outblk), opa)
     print("Done writing summed blocks.")
     return
 
+@profile
+def fold_time(outblk):
+    if FOLD:
+        retblk = [1/2 *(outblk[:,t]+outblk[:,LT-t-2*TSEP]) for t in range(LT)]
+        return np.array(retblk)
+    else:
+        return outblk
 @profile
 def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
     """Get generic connected diagram of base=base
@@ -379,6 +390,7 @@ def aux_jack(basl, trajl, numt):
         if TESTKEY and TESTKEY != outfn:
             continue
         tsep = rf.sep(base)
+        assert tsep == TSEP
         nmomaux = rf.nmom(base)
         #get modified tsrc and tdis
         rows, cols = getindices(tsep, nmomaux)
