@@ -65,7 +65,9 @@ def trajlist():
     <traj>.dat"""
     trajl = set()
     for fn in glob.glob('*.dat'):
-        trajl.add(int(re.sub('.dat','',fn)))
+        toadd = int(re.sub('.dat','',fn))
+        if toadd >= 1000: #filter out unthermalized
+            trajl.add(toadd)
     trajl = sorted(list(trajl))
     print("Done getting trajectory list")
     return trajl
@@ -398,10 +400,10 @@ def main(FIXN=True):
     #do things in this order to
     #overwrite already composed disconnected diagrams (next line)
     allblks = {**mostblks, **auxblks, **bubblks}
+    ocs = overall_coeffs(isoproj(FIXN, 0, dlist=list(allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
     if TESTKEY:
         buberr(allblks)
         sys.exit(0)
-    ocs = overall_coeffs(isoproj(FIXN, 0, dlist=basl, stype=STYPE), opc.op_list(stype=STYPE))
     h5sum_blks(allblks, ocs, (numt, LT))
 
 if __name__ == '__main__':
