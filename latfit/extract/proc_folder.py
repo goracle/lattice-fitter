@@ -7,6 +7,7 @@ import h5py
 
 from latfit.config import GEVP
 from latfit.config import STYPE
+from latfit.config import HDF5_PREFIX
 
 if STYPE == 'hdf5':
     def proc_folder(hdf5_file, ctime, other_regex=""):
@@ -19,7 +20,11 @@ if STYPE == 'hdf5':
         try:
             out = np.array(fn[hdf5_file][:,ctime])
         except KeyError:
-            out = np.array(fn[hdf5_file.split('.')[0]][:,ctime])
+            try:
+                out = np.array(fn[hdf5_file.split('.')[0]][:,ctime])
+            except KeyError:
+                out = np.array(fn[HDF5_PREFIX+'/'+hdf5_file.split('.')[
+                    0]][:,ctime])
         return out
 
 elif STYPE == 'ascii':

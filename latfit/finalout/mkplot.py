@@ -47,8 +47,9 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
 
     if FIT:
         if result_min.status == 0:
-            param_chisq = get_param_chisq(coords, dimops, result_min)
-            print_messages(result_min, param_err, param_chisq)
+            print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
+        param_chisq = get_param_chisq(coords, dimops, result_min)
+        print_messages(result_min, param_err, param_chisq)
 
     ###STOP IF NO PLOT
     if NO_PLOT:
@@ -242,8 +243,8 @@ def plot_fit(xcoord, result_min):
             fit_func(xfit[i], result_min.x)[curve_num]
             for i in range(len(xfit))])
         #only plot fit function if minimizer result makes sense
-        if result_min.status == 0:
-            plt.plot(xfit, yfit)
+        #if result_min.status == 0:
+        plt.plot(xfit, yfit)
 if GEVP:
     def plot_box(xcoord, result_min, param_err, dimops):
         """plot tolerance box around straight line fit for effective mass
@@ -336,7 +337,7 @@ if JACKKNIFE_FIT:
                 0.05, 0.15), xycoords='axes fraction')
     elif JACKKNIFE_FIT == 'SINGLE':
         def annotate_jack():
-            """Annotate jackknife type (frozen)"""
+            """Annotate jackknife type (single elim)"""
             plt.annotate('Single jackknife fit.', xy=(
                 0.05, 0.15), xycoords='axes fraction')
     elif JACKKNIFE_FIT == 'DOUBLE':
@@ -385,7 +386,8 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
     param_chisq=[redchisq, redchisq_round_str, dof]
     """
     annotate_energy(result_min, param_err)
-    if result_min.status == 0 and param_chisq.redchisq < 2:
+    #if result_min.status == 0 and param_chisq.redchisq < 2:
+    if param_chisq.redchisq < 2:
         annotate_chisq(param_chisq.redchisq_round_str,
                        param_chisq.dof, result_min)
     annotate_jack()

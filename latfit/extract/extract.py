@@ -11,6 +11,7 @@ from latfit.config import GEVP_DIRS
 from latfit.config import GEVP
 from latfit.config import EIGCUT
 from latfit.config import NUM_PENCILS
+from latfit.config import STYPE
 
 def extract(input_f, xmin, xmax, xstep):
     """Get covariance matrix, coordinates, jackknife blocks.
@@ -21,13 +22,13 @@ def extract(input_f, xmin, xmax, xstep):
     resret = namedtuple('ret', ['coord', 'covar', 'numblocks', 'returnblk'])
 
     #if simple file, do that extraction
-    if os.path.isfile(input_f):
+    if os.path.isfile(input_f) and STYPE == 'ascii':
         resret = simple_proc_file(input_f, xmin, xmax, EIGCUT)
         cov = resret.covar
         coords = resret.coord
 
     #test if directory
-    elif os.path.isdir(input_f):
+    elif os.path.isdir(input_f) or STYPE == 'hdf5':
 
         #reuse results
         reuse = {xmin:0}

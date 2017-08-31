@@ -23,8 +23,8 @@ FIT = True
 
 ##Jackknife fit?
 
-JACKKNIFE_FIT = 'DOUBLE'
-#JACKKNIFE_FIT = ''
+#JACKKNIFE_FIT = 'DOUBLE'
+JACKKNIFE_FIT = 'SINGLE'
 #JACKKNIFE_FIT = 'FROZEN'
 
 ##Uncorrelated fit? True or False
@@ -34,13 +34,13 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-#EFF_MASS = False
-EFF_MASS = True
+EFF_MASS = False
+#EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
-#GEVP = False
+#GEVP = True
+GEVP = False
 
 #print correlation function, and sqrt(diag(cov)) and exit
 
@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-LT = 24
+LT = 56
 
 #rhs time separation (t0) of GEVP matrix
 #(used for non eff mass fits)
@@ -72,18 +72,18 @@ EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
-LOG=False
 LOG=True
+LOG=False
 
 ##eliminate problematic configs.
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = range(48)
-#ELIM_JKCONF_LIST = []
+#ELIM_JKCONF_LIST = range(48)
+ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 4
+BINNUM = 1
 
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -163,7 +163,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [6.02356707e+11, 4.47338103e-01, 1.5270e+11]*MULT
+        START_PARAMS = [2.14580294e+12, 3.59658103e-01, -8.7120e+08]*MULT
     else:
         START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
 
@@ -270,11 +270,12 @@ else:
 #File format.  are the jackkknife blocks in ascii or hdf5?
 STYPE = 'ascii'
 STYPE = 'hdf5'
+HDF5_PREFIX = 'I0'
 
 
 #optional, scale parameter to set binds
 #scale = 1e11
-SCALE = 1e11
+SCALE = 1e13
 
 ##bounds for fit parameters
 ##for use with L-BFGS-B
