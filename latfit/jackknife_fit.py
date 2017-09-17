@@ -158,6 +158,6 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         block == reuse
         DOUBLE elimination jackknife
         """
-        return np.mean([np.delete(np.delete(
-            reuse_inv, config_num, axis=0), i, axis=0) for i in range(
-                params.num_configs-1)], axis=0)- reuse[config_num]
+        return np.array([np.mean(np.delete(np.delete(
+            reuse_inv, config_num, axis=0), i, axis=0), axis=0)
+                         for i in range(params.num_configs-1)])- reuse[config_num]
