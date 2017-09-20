@@ -124,15 +124,15 @@ def dojackknife(blk):
 def h5write_blk(blk, outfile, extension='.jkdat'):
     """h5write block.
     """
-    outfile = outfile+extension
-    if os.path.isfile(outfile):
-        print("File", outfile, "exists. Skipping.")
+    outh5 = outfile+extension
+    if os.path.isfile(outh5):
+        print("File", outh5, "exists. Skipping.")
         return
-    print("Writing", outfile, "with", len(blk), "trajectories.")
-    filen = h5py.File(outfile, 'w')
+    print("Writing", outh5, "with", len(blk), "trajectories.")
+    filen = h5py.File(outh5, 'w')
     filen[outfile]=blk
     filen.close()
-    print("done writing jackknife blocks: ", outfile)
+    print("done writing jackknife blocks: ", outh5)
 
 
 def overall_coeffs(iso, irr):
@@ -241,7 +241,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
 @profile
 def fold_time(outblk):
     if FOLD:
-        retblk = [1/2 *(outblk[:,t]+outblk[:,LT-t-2*TSEP]) for t in range(LT)]
+        retblk = [1/2 *(outblk[:,t]+outblk[:,LT-t-2*TSEP-1]) for t in range(LT)]
         return np.array(retblk).T
     else:
         return outblk
@@ -271,7 +271,7 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
         if not rows is None and not cols is None:
             outarr = outarr[rows, cols]
         if avgtsrc:
-            blk[i] = TSTEP*np.mean(outarr, axis=0)
+            blk[i] = (LT/TSTEP)*np.mean(outarr, axis=0)
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
@@ -400,7 +400,7 @@ def aux_jack(basl, trajl, numt):
         rows, cols = getindices(tsep, nmomaux)
         #get block from which to construct the auxdiagram
         #mean is avg over tsrc
-        blk = TSTEP*np.mean(getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=[rows,cols]), axis=1)
+        blk = (LT/TSTEP)*np.mean(getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=[rows,cols]), axis=1)
         auxblks[outfn] = dojackknife(blk)
     print("Done getting the auxiliary jackknife blocks.")
     return auxblks
