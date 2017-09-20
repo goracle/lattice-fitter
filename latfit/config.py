@@ -144,6 +144,10 @@ if EFF_MASS:
 else:
     YLABEL = 'C(t)'
 
+#precision to display, number of decimal places
+
+PREC_DISP = 4
+
 ###setup is for cosh fit, but one can easily modify it.
 
 ###starting values for fit parameters

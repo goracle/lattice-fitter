@@ -4,6 +4,7 @@ import os
 import re
 import sys
 #from warnings import warn
+from decimal import Decimal
 from collections import namedtuple
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -30,6 +31,7 @@ from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
+from latfit.config import PREC_DISP
 rcParams.update({'figure.autolayout': True})
 
 def mkplot(coords, cov, input_f, result_min=None, param_err=None):
@@ -46,7 +48,7 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
     file_str = get_file_string(title, dimops)
 
     if FIT:
-        if result_min.status == 0:
+        if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
         param_chisq = get_param_chisq(coords, dimops, result_min)
         print_messages(result_min, param_err, param_chisq)
@@ -196,15 +198,34 @@ def get_param_chisq(coords, dimops, result_min):
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
                 result_min.err_in_chisq/param_chisq.dof > 10
                 or result_min.err_in_chisq/param_chisq.dof < .1):
-            param_chisq.redchisq_round_str = '{:0.7e}'.format(param_chisq.redchisq)+'+/-'
-            param_chisq.redchisq_round_str += '{:0.7e}'.format(
-                result_min.err_in_chisq/param_chisq.dof)
+            param_chisq.redchisq_round_str = formatChiSqStr(param_chisq.redchisq, result_min.err_in_chisq/param_chisq.dof, plus=False)
         else:
-            param_chisq.redchisq_round_str = '{:0.8}'.format(param_chisq.redchisq)
-            param_chisq.redchisq_round_str += '+/-'+'{:0.8}'.format(
-                result_min.err_in_chisq/param_chisq.dof)
+            param_chisq.redchisq_round_str = formatChisqStr(param_chisq.redchisq, result_min.err_in_chisq/param_chisq.dof, plus=True)
     return param_chisq
 
+def formatChisqStr(chisq, err, plus=False):
+    """Format the reduced chi^2 string for plot annotation, jackknife fit"""
+    formstr = '{:0.'+str(int(PREC_DISP))+'e}'
+    formstrPlus = '{:0.'+str(int(PREC_DISP)+1)+'e}'
+    if chisq >= 1 and chisq < 10:
+        retstr = str(round(chisq, PREC_DISP))
+    else:
+        if plus:
+            retstr = formstr.format(chisq)
+        else:
+            retstr = formstrPlus.format(chisq)
+    retstr = retstr+ '+/-'
+    if chisq >= 1 and chisq < 10:
+        if plus:
+            retstr = retstr + str(round(err, PREC_DISP+2))
+        else:
+            retstr = retstr + str(round(err, PREC_DISP+1))
+    else:
+        if plus:
+            retstr = retstr + formstrPlus.format(err)
+        else:
+            retstr = retstr + formstr.format(err)
+    return retstr
 
 def plot_errorbar(dimops, xcoord, ycoord, error2):
     """plot data error bars
@@ -284,7 +305,7 @@ if GEVP:
         #annotate plot with fitted energy
         plt.legend(loc='upper right')
         for i, min_e in enumerate(result_min.x):
-            estring = str(min_e)+"+/-"+str(param_err[i])
+            estring = truncPrec(min_e)+"+/-"+truncPrec(param_err[i],2)
             plt.annotate(
                 "Energy["+str(i)+"] = "+estring,
                 xy=(0.05, 0.95-i*.05), xycoords='axes fraction')
@@ -293,12 +314,17 @@ else:
         """Annotate plot with fitted energy (non GEVP)
         """
         if len(result_min.x) > 1:
-            estring = str(result_min.x[1])+"+/-"+str(param_err[1])
+            estring = truncPrec(result_min.x[1])+"+/-"+truncPrec(param_err[1], 2)
         else:
             #for an effective mass plot
-            estring = str(result_min.x[0])+"+/-"+str(param_err[0])
+            estring = truncPrec(result_min.x[0])+"+/-"+truncPrec(param_err[0], 2)
         plt.annotate("Energy="+estring, xy=(0.05, 0.95), xycoords='axes fraction')
 
+def truncPrec(num, extra_trunc=0):
+    """Truncate the amount of displayed digits of precision to PREC_DISP"""
+    formstr = '%.'+str(int(PREC_DISP-extra_trunc))+'e'
+    return str(float(formstr % Decimal(str(num))))
+        
 if EFF_MASS and EFF_MASS_METHOD == 3:
     if GEVP:
         def annotate_chisq(redchisq_round_str, dof, result_min):

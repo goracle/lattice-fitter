@@ -41,7 +41,7 @@ def mkmin(covinv, coords):
         start_params = START_PARAMS
     if not METHOD in set(['L-BFGS-B']):
         res_min = minimize(chi_sq, start_params, (covinv, coords),
-                           method=METHOD, options={'disp': True, 'maxiter':600, 'maxfev':600})
+                           method=METHOD, options={'disp': True, 'maxiter':10000, 'maxfev':10000, 'xatol':0.00000001, 'fatol':0.00000001})
         #method = 'BFGS'
         #method = 'L-BFGS-B'
         #bounds = BINDS
