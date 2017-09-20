@@ -241,7 +241,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
 @profile
 def fold_time(outblk):
     if FOLD:
-        retblk = [1/2 *(outblk[:,t]+outblk[:,LT-t-2*TSEP-1]) for t in range(LT)]
+        retblk = [1/2 *(outblk[:,t]+outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
         return np.array(retblk).T
     else:
         return outblk
