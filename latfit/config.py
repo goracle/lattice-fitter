@@ -163,7 +163,8 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [2.14580294e+12, 3.59658103e-01, -8.7120e+08]*MULT
+        #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
+        START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
         START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
 
@@ -252,7 +253,7 @@ else:
             def prefit_func(ctime, trial_params):
                 """fit func non gevp, additive const
                 """
-                return np.array([fit_func_exp_add(ctime, trial_params)])
+                return 1e13*np.array([fit_func_exp_add(ctime, trial_params)])
         elif FIT:
             ###check len of start params
             if ORIGL != 2:
@@ -280,6 +281,7 @@ SCALE = 1e13
 ##bounds for fit parameters
 ##for use with L-BFGS-B
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
+BINDS_LSQ = ([-np.inf,-np.inf,-9e08], [np.inf,np.inf,-6e08])
 #BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
 ##fineness of scale to plot (higher is more fine)
