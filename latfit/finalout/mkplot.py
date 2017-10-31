@@ -198,7 +198,7 @@ def get_param_chisq(coords, dimops, result_min):
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
                 result_min.err_in_chisq/param_chisq.dof > 10
                 or result_min.err_in_chisq/param_chisq.dof < .1):
-            param_chisq.redchisq_round_str = formatChiSqStr(param_chisq.redchisq, result_min.err_in_chisq/param_chisq.dof, plus=False)
+            param_chisq.redchisq_round_str = formatChisqStr(param_chisq.redchisq, result_min.err_in_chisq/param_chisq.dof, plus=False)
         else:
             param_chisq.redchisq_round_str = formatChisqStr(param_chisq.redchisq, result_min.err_in_chisq/param_chisq.dof, plus=True)
     return param_chisq

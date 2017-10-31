@@ -19,8 +19,6 @@ if JACKKNIFE_FIT == 'FROZEN':
         and whether the minimizer succeeded on all fits
         ('status' == 0 if all were successful)
         """
-        params = namedtuple('fit_params', [
-            'dimops', 'num_configs', 'prefactor'])
         result_min = namedtuple(
             'min', ['x', 'fun', 'status', 'err_in_chisq'])
         result_min.status = 0

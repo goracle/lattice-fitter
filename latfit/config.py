@@ -23,8 +23,8 @@ FIT = True
 
 ##Jackknife fit?
 
-#JACKKNIFE_FIT = 'DOUBLE'
-JACKKNIFE_FIT = 'SINGLE'
+JACKKNIFE_FIT = 'DOUBLE'
+#JACKKNIFE_FIT = 'SINGLE'
 #JACKKNIFE_FIT = 'FROZEN'
 
 ##Uncorrelated fit? True or False
@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-LT = 56
+LT = 24
 
 #rhs time separation (t0) of GEVP matrix
 #(used for non eff mass fits)
@@ -168,7 +168,8 @@ if EFF_MASS:
 else:
     if ADD_CONST:
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
-        START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
+        #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
+        START_PARAMS = [1e+11, .464, 1e8]*MULT
     else:
         START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
 
@@ -257,7 +258,7 @@ else:
             def prefit_func(ctime, trial_params):
                 """fit func non gevp, additive const
                 """
-                return 1e13*np.array([fit_func_exp_add(ctime, trial_params)])
+                return np.array([fit_func_exp_add(ctime, trial_params)])
         elif FIT:
             ###check len of start params
             if ORIGL != 2:
@@ -273,8 +274,8 @@ else:
 ##RARELY EDIT BELOW
 
 #File format.  are the jackkknife blocks in ascii or hdf5?
-STYPE = 'ascii'
 STYPE = 'hdf5'
+STYPE = 'ascii'
 HDF5_PREFIX = 'I0'
 
 
