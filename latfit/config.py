@@ -23,8 +23,8 @@ FIT = True
 
 ##Jackknife fit?
 
-JACKKNIFE_FIT = 'DOUBLE'
-#JACKKNIFE_FIT = 'SINGLE'
+#JACKKNIFE_FIT = 'DOUBLE'
+JACKKNIFE_FIT = 'SINGLE'
 #JACKKNIFE_FIT = 'FROZEN'
 
 ##Uncorrelated fit? True or False
