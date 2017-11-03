@@ -79,8 +79,8 @@ LOG=False
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-#ELIM_JKCONF_LIST = range(48)
-ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = range(48)
+#ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
@@ -167,9 +167,9 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
+        START_PARAMS = [2.14580294e+11, 4.59658103e-01,  8.7120e+10]*MULT
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
-        START_PARAMS = [1e+11, .464, 1e8]*MULT
     else:
         START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
 
