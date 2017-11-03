@@ -321,7 +321,10 @@ def bubsub(bubbles):
     sub = {}
     for i, bubkey in enumerate(bubbles):
         if NOSUB:
-            sub[bubkey] = np.zeros((len(bubbles[bubkey])))
+            if JACKBUB:
+                sub[bubkey] = np.zeros((len(bubbles[bubkey])))
+            else:
+                sub[bubkey] = np.zeros((len(bubbles[bubkey][0])))
             continue
         if STILLSUB:
             if bubkey.split('@')[1] != '000':
