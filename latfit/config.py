@@ -79,8 +79,8 @@ LOG=False
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = range(48)
-#ELIM_JKCONF_LIST = []
+#ELIM_JKCONF_LIST = range(48)
+ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
@@ -274,8 +274,8 @@ else:
 ##RARELY EDIT BELOW
 
 #File format.  are the jackkknife blocks in ascii or hdf5?
-STYPE = 'hdf5'
 STYPE = 'ascii'
+STYPE = 'hdf5'
 HDF5_PREFIX = 'I0'
 
 

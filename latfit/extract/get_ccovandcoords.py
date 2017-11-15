@@ -2,6 +2,8 @@
 from collections import defaultdict
 import sys
 
+from latfit.config import STYPE
+
 def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
@@ -13,6 +15,15 @@ def get_ccovandcoords(kfile, cxmin, cxmax):
     cdict = tree()
     proccoords = []
     opensimp = open(kfile, 'r')
+    try:
+        for line in opensimp:
+            pass
+    except UnicodeDecodeError:
+        print("***ERROR***")
+        print("decoding error.")
+        print("decoding format set to:", STYPE, "(in config)")
+        print("Check input file to make sure it matches")
+        sys.exit(1)
     for line in opensimp:
         try:
             cols = [float(p) for p in line.split()]
