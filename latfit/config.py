@@ -75,6 +75,9 @@ EFF_MASS_METHOD = 3
 LOG=True
 LOG=False
 
+#do inverse via a correlation matrix (for higher numerical stability)
+CORRMATRIX=True
+
 ##eliminate problematic configs.
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs

@@ -10,6 +10,7 @@ from latfit.makemin.mkmin import mkmin
 
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
+from latfit.config import CORRMATRIX
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, time_range, covinv):
@@ -92,6 +93,49 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+if CORRMATRIX:
+    def invertCov(cov_factor, params):
+        """Invert the covariance matrix via correlation matrix"""
+        if params.dimops == 1: #i.e. if not using the GEVP
+            covjack = np.einsum('ai,aj->ij', cov_factor, cov_factor)
+            corrjack = np.zeros(covjack.shape)
+            weightings = np.sqrt(np.diag(covjack))
+            reweight = np.diagflat(1./weightings)
+            np.dot(reweight, np.dot(covjack, reweight), out=corrjack)
+            covinv_jack = np.dot(np.dot(reweight,inv(corrjack)),reweight)
+        else:
+            covjack = np.einsum('aim,ajn->imjn', cov_factor, cov_factor)
+            lent = len(covjack) #time extent
+            reweight = np.zeros((lent,params.dimops,lent,params.dimops))
+            for i in range(lent):
+                for j in range(params.dimops):
+                    reweight[i][j][i][j] = 1.0/sqrt(covjack[i][j][i][j])
+            corrjack = np.tensordot(np.tensordot(reweight,covjack),reweight)
+            covinv_jack = swap(np.tensordot(reweight,np.tensordot(
+                tensorinv(corrjack),reweight)), 1, 2)
+        return covinv_jack
+
+else:
+    def invertCov(cov_factor, params):
+        """Invert the covariance matrix"""
+        if params.dimops == 1: #i.e. if not using the GEVP
+            covinv_jack = inv(np.einsum(
+                'ai,aj->ij', cov_factor, cov_factor))
+        else:
+            covinv_jack = swap(
+                tensorinv(np.einsum('aim,ajn->imjn', cov_factor,
+                                    cov_factor)), 1, 2)
+
+if JACKKNIFE_FIT == 'SINGLE':
+    def normalizeCovinv(covinv_jack, params):
+        """do the proper normalization of the covinv (single jk)"""
+        return covinv_jack * ((params.num_configs-1)*(params.num_configs-2))
+elif JACKKNIFE_FIT == 'DOUBLE':
+    def normalizeCovinv(covinv_jack, params):
+        """do the proper normalization of the covinv (double jk)"""
+        return covinv_jack * ((params.num_configs-1)/(params.num_configs-2))
+
+
 def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
     """Primarily, get the inverse covariance matrix for the particular
     double jackknife fit we are on (=config_num)
@@ -110,18 +154,8 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
         else:
             cov_factor = getcovfactor(params, reuse, config_num, reuse_inv)
         try:
-            if params.dimops == 1:
-                covinv_jack = inv(np.einsum(
-                    'ai,aj->ij', cov_factor, cov_factor))
-            else:
-                covinv_jack = swap(
-                    tensorinv(np.einsum('aim,ajn->imjn', cov_factor,
-                                        cov_factor)), 1, 2)
-            #do the proper normalization of the covinv
-            if JACKKNIFE_FIT == 'SINGLE':
-                covinv_jack *= ((params.num_configs-1)*(params.num_configs-2))
-            elif JACKKNIFE_FIT == 'DOUBLE':
-                covinv_jack *= ((params.num_configs-1)/(params.num_configs-2))
+            covinv_jack = invertCov(cov_factor, params)
+            covinv_jack = normalizeCovinv(covinv_jack, params)
             flag = 0
         except np.linalg.linalg.LinAlgError as err:
             if str(err) == 'Singular matrix':
