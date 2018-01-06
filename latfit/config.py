@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-LT = 24
+LT = 56
 
 #rhs time separation (t0) of GEVP matrix
 #(used for non eff mass fits)
@@ -87,6 +87,10 @@ ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
+
+#rescale the fit function by factor RESCALE
+#RESCALE = 1.0
+RESCALE = 1e13
 
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -170,7 +174,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [2.14580294e+11, 4.59658103e-01,  8.7120e+10]*MULT
+        START_PARAMS = [1.54580294e-01, 3.6e-01,  8.7120e-5]*MULT
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
@@ -356,7 +360,7 @@ FIT_FUNC_COPY = copy(prefit_func)
 def fit_func(ctime, trial_params):
     """Fit function."""
     return np.hstack(
-        [FIT_FUNC_COPY(ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
+        [RESCALE*FIT_FUNC_COPY(ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
             START_PARAMS)]) for i in range(2**NUM_PENCILS)])
 
 START_PARAMS = list(START_PARAMS)*2**NUM_PENCILS
