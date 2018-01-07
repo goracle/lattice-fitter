@@ -14,10 +14,12 @@ import write_discon as wd
 import aux_write as aux
 
 #representative hdf5 file, to get info about lattice
-FNDEF = '1000.dat'
+PREFIX='traj_'
+EXTENSION='hdf5'
+FNDEF = PREFIX+'1000.'+EXTENSION
 #size of lattice in time, lattice units
-LT = 32
-TSEP = 4
+LT = 64
+TSEP = 3
 #format for files; don't change
 STYPE='hdf5'
 #precomputed indexing matrices; DON'T CHANGE
@@ -29,29 +31,29 @@ COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 TAKEREAL = False #take real of bubble if momtotal=0
 STILLSUB = False #don't do subtraction on bubbles with net momentum
 TIMEAVGD = False #do a time translation average (bubble is scalar now)
-NOSUB = True #don't do any subtraction if true; set false if doing GEVP
+NOSUB = False #don't do any subtraction if true; set false if doing GEVP
 
 ##other config options
 THERMNUM = 0 #eliminate configs below this number to thermalize 
-TSTEP = 1 #we only measure every TSTEP time slices to save on time
+TSTEP = 8 #we only measure every TSTEP time slices to save on time
 
 ###DO NOT CHANGE IF NOT DEBUGGING
 OUTERSUB = False #do subtraction in the old way (True): <AB>-<A><B>.  New way (False): <A-<A>><B-<B>>
 JACKBUB = True #keep true for correctness; false for checking incorrect results
 assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB=True, OUTERSUB=False, debug:JACKBUB=False, OUTERSUB=False"
 #FOLD = True #average about the mirror point in time (True)
-FOLD = False
+FOLD = True
 #Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
-CONJBUB = False
+CONJBUB = True
 
 #diagram to look at for bubble subtraction test
-TESTKEY = ''
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 #TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
+TESTKEY = ''
 
 #Print out the jackknife block at t=TSLICE (0..N or ALL for all time slices) for a diagram TESTKEY2
 TESTKEY2 = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
@@ -85,10 +87,10 @@ def getindices(tsep, nmomaux):
 
 def trajlist():
     """Get trajectory list from files of form 
-    <traj>.dat"""
+    <traj>.EXTENSION"""
     trajl = set()
-    for fn in glob.glob('*.dat'):
-        toadd = int(re.sub('.dat','',fn))
+    for fn in glob.glob(PREFIX+'*.'+EXTENSION):
+        toadd = int(re.sub('.'+EXTENSION,'',re.sub(PREFIX,'',fn)))
         if toadd >= THERMNUM: #filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
@@ -107,8 +109,12 @@ def baselist(fn=None):
             sys.exit(1)
     basl = set()
     for dat in fn:
-        if len(fn[dat].shape) == 2 and fn[dat].attrs['basename']:
-            basl.add(fn[dat].attrs['basename'])
+        try:
+            basen = fn[dat].attrs['basename']
+        except KeyError:
+            basen = rf.basename(dat)
+        if len(fn[dat].shape) == 2 and basen:
+            basl.add(basen)
     fn.close()
     print("Done getting baselist")
     return basl
@@ -119,8 +125,12 @@ def bublist(fn=None):
         fn = h5py.File(FNDEF, 'r')
     bubl = set()
     for dat in fn:
-        if len(fn[dat].shape) == 1 and fn[dat].attrs['basename']:
-            bubl.add(fn[dat].attrs['basename'])
+        try:
+            basen = fn[dat].attrs['basename']
+        except KeyError:
+            basen = rf.basename(dat)
+        if len(fn[dat].shape) == 1 and basen:
+            bubl.add(basen)
     fn.close()
     print("Done getting bubble list")
     return bubl
@@ -288,7 +298,7 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
         blk = np.zeros((numt, LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
-        fn = h5py.File(str(traj)+'.dat', 'r')
+        fn = h5py.File(PREFIX+str(traj)+'.'+EXTENSION, 'r')
         try:
             outarr = np.array(fn['traj_'+str(traj)+base2])
         except KeyError:
@@ -331,13 +341,15 @@ def getbubbles(bubl, trajl, numt):
             continue
         skip = []
         for traj in trajl:
-            fn = h5py.File(str(traj)+'.dat', 'r')
+            fn = h5py.File(PREFIX+str(traj)+'.'+EXTENSION, 'r')
             keysrc = 'traj_'+str(traj)+'_'+dsrc
+            assert(keysrc in fn), "key="+keysrc+" not found in fn:"+PREFIX+str(traj)+'.'+EXTENSION
             try:
-                ptot = rf.ptostr(wd.momtotal(fn[keysrc].attrs['mom']))
-                savekey = dsrc+"@"+ptot
+                mom  = fn[keysrc].attrs['mom']
             except KeyError:
-                continue
+                pdiag = rf.mom(keysrc)
+            ptot = rf.ptostr(wd.momtotal(pdiag))
+            savekey = dsrc+"@"+ptot
             if TAKEREAL and ptot == '000':
                 toapp = np.array(fn[keysrc]).real
             else:
@@ -485,7 +497,8 @@ def aux_jack(basl, trajl, numt):
         if TESTKEY2 and TESTKEY2 != outfn:
             continue
         tsep = rf.sep(base)
-        assert tsep == TSEP
+        if tsep is not None:
+            assert tsep == TSEP, "tsep of base="+str(tsep)+" base="+base
         nmomaux = rf.nmom(base)
         #get modified tsrc and tdis
         rows, cols = getindices(tsep, nmomaux)
@@ -502,9 +515,9 @@ def main(FIXN=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
+    auxblks = aux_jack(basl, trajl, numt)
     bubblks = bubjack(bubl, trajl, numt)
     mostblks = getmostblks(basl, trajl, numt)
-    auxblks = aux_jack(basl, trajl, numt)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**mostblks, **auxblks, **bubblks} #for non-gparity
     #allblks = {**mostblks, **bubblks} #for gparity
