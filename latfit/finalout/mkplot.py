@@ -418,4 +418,3 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
                        param_chisq.dof, result_min)
     annotate_jack()
     annotate_uncorr(coords, dimops)
-    annotate_uncorr(dimops)
