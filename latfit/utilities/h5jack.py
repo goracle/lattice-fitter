@@ -20,6 +20,8 @@ FNDEF = PREFIX+'1000.'+EXTENSION
 #size of lattice in time, lattice units
 LT = 64
 TSEP = 3
+#ANTIPERIODIC in time (true, periodic is false)
+ANTIPERIODIC = True
 #format for files; don't change
 STYPE='hdf5'
 #precomputed indexing matrices; DON'T CHANGE
@@ -277,7 +279,10 @@ def h5sum_blks(allblks, ocs, outblk_shape):
 @profile
 def fold_time(outblk):
     if FOLD:
-        retblk = [1/2 *(outblk[:,t]+outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
+        if ANTIPERIODIC:
+            retblk = [1/2 *(outblk[:,t]-outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
+        else:
+            retblk = [1/2 *(outblk[:,t]+outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
         return np.array(retblk).T
     else:
         return outblk
