@@ -18,7 +18,7 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-#FIT = False
+FIT = False
 FIT = True
 
 ##Jackknife fit?
@@ -29,7 +29,7 @@ JACKKNIFE_FIT = 'DOUBLE'
 
 ##Uncorrelated fit? True or False
 
-#UNCORR = True
+UNCORR = True
 UNCORR = False
 
 ##Plot Effective Mass? True or False
@@ -51,7 +51,8 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-LT = 56
+TSEP = 3
+LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
 #(used for non eff mass fits)
@@ -90,7 +91,7 @@ BINNUM = 1
 
 #rescale the fit function by factor RESCALE
 #RESCALE = 1.0
-RESCALE = 1e13
+RESCALE = 1e12
 
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -155,6 +156,10 @@ else:
 
 PREC_DISP = 4
 
+#stringent tolerance for minimizer?  true=stringent
+MINTOL = True
+MINTOL = False
+
 ###setup is for cosh fit, but one can easily modify it.
 
 ###starting values for fit parameters
@@ -174,7 +179,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [1.54580294e-01, 3.6e-01,  8.7120e-5]*MULT
+        START_PARAMS = [-1.74580294, 2.8e-01,  3.0120e-02]*MULT
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
@@ -283,7 +288,7 @@ else:
 #File format.  are the jackkknife blocks in ascii or hdf5?
 STYPE = 'ascii'
 STYPE = 'hdf5'
-HDF5_PREFIX = 'I0'
+HDF5_PREFIX = 'I2'
 
 
 #optional, scale parameter to set binds
@@ -355,7 +360,8 @@ CUTOFF = 10**(7)
 
 #for general pencil of function
 
-FIT_FUNC_COPY = copy(prefit_func)
+if FIT:
+    FIT_FUNC_COPY = copy(prefit_func)
 
 def fit_func(ctime, trial_params):
     """Fit function."""

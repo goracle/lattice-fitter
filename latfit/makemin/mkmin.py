@@ -11,6 +11,7 @@ from latfit.config import AUTO_FIT
 from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
+from latfit.config import MINTOL
 
 def mkmin(covinv, coords):
     """Minimization of chi^2 section of fitter.
@@ -40,9 +41,18 @@ def mkmin(covinv, coords):
     else:
         start_params = START_PARAMS
     if not METHOD in set(['L-BFGS-B']):
-        res_min = minimize(chi_sq, start_params, (covinv, coords),
-                           method=METHOD, options={'disp': True, 'maxiter':10000, 'maxfev':10000,
-                                                   'xatol':0.00000001, 'fatol':0.00000001})
+        if MINTOL:
+            res_min = minimize(chi_sq, start_params, (covinv, coords),
+                               method=METHOD, options={'disp': True,
+                                                       'maxiter':10000,
+                                                       'maxfev':10000,
+                                                       'xatol':0.00000001,
+                                                       'fatol':0.00000001})
+        else:
+            res_min = minimize(chi_sq, start_params, (covinv, coords),
+                               method=METHOD, options={'disp': True,
+                                                       'maxiter':10000,
+                                                       'maxfev':10000})
         #method = 'BFGS'
         #method = 'L-BFGS-B'
         #bounds = BINDS
