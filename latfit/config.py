@@ -62,6 +62,7 @@ TRHS = 3
 #additive constant
 
 ADD_CONST = False
+ADD_CONST = True
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -388,18 +389,21 @@ def fit_func_1p(ctime, trial_params):
         -trial_params[0]*(LT-ctime))
     corr2 = exp(-trial_params[0]*(ctime+1))+exp(
         -trial_params[0]*(LT-(ctime+1)))
-    corr3 = exp(-trial_params[0]*(ctime+2))+exp(
-        -trial_params[0]*(LT-(ctime+2)))
-    if np.array_equal(corr3, corr2):
-        print("imaginary effective mass.")
-        print("problematic time slices:", ctime, ctime+1, ctime+2)
-        print("trial_param =", trial_params[0])
-        print("START_PARAMS =", START_PARAMS)
-        print("corr1 = ", corr1)
-        print("corr2 = ", corr2)
-        print("corr3 = ", corr3)
-        sys.exit(1)
-    sol = (corr2-corr1)/(corr3-corr2)
+    if ADD_CONST:
+        corr3 = exp(-trial_params[0]*(ctime+2))+exp(
+            -trial_params[0]*(LT-(ctime+2)))
+        if np.array_equal(corr3, corr2):
+            print("imaginary effective mass.")
+            print("problematic time slices:", ctime, ctime+1, ctime+2)
+            print("trial_param =", trial_params[0])
+            print("START_PARAMS =", START_PARAMS)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
+            print("corr3 = ", corr3)
+            sys.exit(1)
+        sol = (corr2-corr1)/(corr3-corr2)
+    else:
+        sol = (corr1)/(corr2)
     if LOG:
         if not test_arg(sol, SENT):
             print("problematic time slices:", ctime, ctime+1, ctime+2)
