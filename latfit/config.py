@@ -13,8 +13,8 @@ SENT = object()
 
 ##plot anything at all?
 
+NO_PLOT = True
 NO_PLOT = False
-#NO_PLOT = True
 
 ##Do a fit at all?
 
@@ -23,9 +23,9 @@ FIT = True
 
 ##Jackknife fit?
 
+JACKKNIFE_FIT = 'FROZEN'
+JACKKNIFE_FIT = 'SINGLE'
 JACKKNIFE_FIT = 'DOUBLE'
-#JACKKNIFE_FIT = 'SINGLE'
-#JACKKNIFE_FIT = 'FROZEN'
 
 ##Uncorrelated fit? True or False
 
@@ -35,7 +35,7 @@ UNCORR = False
 ##Plot Effective Mass? True or False
 
 EFF_MASS = False
-#EFF_MASS = True
+EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
+TSEP = 0
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -61,7 +61,7 @@ TRHS = 3
 
 #additive constant
 
-ADD_CONST = True
+ADD_CONST = False
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -73,8 +73,8 @@ EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
-LOG=True
 LOG=False
+LOG=True
 
 #do inverse via a correlation matrix (for higher numerical stability)
 CORRMATRIX=True
@@ -90,8 +90,8 @@ ELIM_JKCONF_LIST = []
 BINNUM = 1
 
 #rescale the fit function by factor RESCALE
-#RESCALE = 1.0
-RESCALE = 1e12
+RESCALE = 1e5
+RESCALE = 1.0
 
 #####2x2 I=0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -131,7 +131,7 @@ if GEVP:
         #TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
         TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
 else:
-    TITLE_PREFIX = 'TEST3 '
+    TITLE_PREFIX = '24c '
 
 #title
 
@@ -157,8 +157,8 @@ else:
 PREC_DISP = 4
 
 #stringent tolerance for minimizer?  true=stringent
-MINTOL = True
 MINTOL = False
+MINTOL = True
 
 ###setup is for cosh fit, but one can easily modify it.
 
@@ -183,7 +183,7 @@ else:
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
-        START_PARAMS = [1.68203895e+02, 6.46978036e-01]*MULT
+        START_PARAMS = [-1.18203895e+01, 4.46978036e-01]*MULT
 
 
 ##library of functions to fit.  define them in the usual way
@@ -393,6 +393,8 @@ def fit_func_1p(ctime, trial_params):
     if np.array_equal(corr3, corr2):
         print("imaginary effective mass.")
         print("problematic time slices:", ctime, ctime+1, ctime+2)
+        print("trial_param =", trial_params[0])
+        print("START_PARAMS =", START_PARAMS)
         print("corr1 = ", corr1)
         print("corr2 = ", corr2)
         print("corr3 = ", corr3)
