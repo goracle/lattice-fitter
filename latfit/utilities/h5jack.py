@@ -20,8 +20,6 @@ FNDEF = PREFIX+'1000.'+EXTENSION
 #size of lattice in time, lattice units
 LT = 64
 TSEP = 3
-#ANTIPERIODIC in time (true, periodic is false)
-ANTIPERIODIC = False
 #format for files; don't change
 STYPE='hdf5'
 #precomputed indexing matrices; DON'T CHANGE
@@ -48,6 +46,8 @@ FOLD = True
 #Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
 CONJBUB = True
+#ANTIPERIODIC in time (false for mesons, the true option only happens for tanh shapes of the correlator); this is a bad feature, keep it false!
+ANTIPERIODIC = False
 
 #diagram to look at for bubble subtraction test
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
@@ -281,12 +281,21 @@ def h5sum_blks(allblks, ocs, outblk_shape):
     return
 
 @profile
-def fold_time(outblk):
+def fold_time(outblk, base=''):
+    """average data about the midpoint in time for better statistics.
+    1/2(f(t)+f(Lt-t))
+    """
+    if base:
+        tsep = rf.sep(base)
+        if not tsep:
+            tsep = 0
+    else:
+        tsep = TSEP
     if FOLD:
         if ANTIPERIODIC:
-            retblk = [1/2 *(outblk[:,t]-outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
+            retblk = [1/2 *(outblk[:,t]-outblk[:,(LT-t-2*tsep)%LT]) for t in range(LT)]
         else:
-            retblk = [1/2 *(outblk[:,t]+outblk[:,(LT-t-2*TSEP)%LT]) for t in range(LT)]
+            retblk = [1/2 *(outblk[:,t]+outblk[:,(LT-t-2*tsep)%LT]) for t in range(LT)]
         return np.array(retblk).T
     else:
         return outblk
@@ -530,6 +539,7 @@ def main(FIXN=True):
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
     if WRITEBLOCK:
+        allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
         h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
     #allblks = {**mostblks, **bubblks} #for gparity
     ocs = overall_coeffs(isoproj(FIXN, 0, dlist=list(allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
