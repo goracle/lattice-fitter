@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 0
+TSEP = 3
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -158,8 +158,8 @@ else:
 PREC_DISP = 4
 
 #stringent tolerance for minimizer?  true=stringent
-MINTOL = False
 MINTOL = True
+MINTOL = False
 
 ###setup is for cosh fit, but one can easily modify it.
 
