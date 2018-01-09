@@ -21,7 +21,7 @@ FNDEF = PREFIX+'1000.'+EXTENSION
 LT = 64
 TSEP = 3
 #ANTIPERIODIC in time (true, periodic is false)
-ANTIPERIODIC = True
+ANTIPERIODIC = False
 #format for files; don't change
 STYPE='hdf5'
 #precomputed indexing matrices; DON'T CHANGE
@@ -61,6 +61,10 @@ TESTKEY = ''
 TESTKEY2 = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 TESTKEY2 = ''
 TSLICE = 0
+
+#Individual diagram's jackknife block to write
+WRITEBLOCK = ''
+WRITEBLOCK = 'pioncorr_mom000'
 
 #debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -524,7 +528,9 @@ def main(FIXN=True):
     bubblks = bubjack(bubl, trajl, numt)
     mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
-    allblks = {**mostblks, **auxblks, **bubblks} #for non-gparity
+    allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
+    if WRITEBLOCK:
+        h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
     #allblks = {**mostblks, **bubblks} #for gparity
     ocs = overall_coeffs(isoproj(FIXN, 0, dlist=list(allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
     if TESTKEY:

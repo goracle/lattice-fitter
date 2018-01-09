@@ -87,9 +87,10 @@ def aux_filen(filename, stype='ascii'):
             #or outfile = filename.replace("scalarR_", "scalar_")
             #print "i.e.", outfile
             return
-        outfile = rf.pchange(outfile, plist)
+        outfile = rf.pchange(outfile, -np.array(plist)) #complex conjugate
     elif nmom == 1:
         #outfile = outfile.replace("scalar_", "scalarR_")
+        outfile = rf.pchange(outfile, -pret) #complex conjugate
         if rf.vecp(outfile):
             #swap the polarizations
             pol1, pol2 = rf.pol(outfile)
