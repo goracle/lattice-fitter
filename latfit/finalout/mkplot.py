@@ -24,6 +24,7 @@ from latfit.config import BINDS
 from latfit.config import START_PARAMS
 from latfit.config import AUTO_FIT
 from latfit.config import EFF_MASS
+from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
 from latfit.config import NO_PLOT
@@ -66,7 +67,7 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
             plot_fit(xcoord, result_min)
 
             #tolerance box plot
-            if EFF_MASS:
+            if EFF_MASS and BOX_PLOT:
                 plot_box(xcoord, result_min, param_err, dimops)
 
             annotate(dimops, result_min, param_err, param_chisq, coords)

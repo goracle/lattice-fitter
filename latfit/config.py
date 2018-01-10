@@ -18,8 +18,8 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 ##Jackknife fit?
 
@@ -39,8 +39,8 @@ EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
-#GEVP = True
 GEVP = False
+GEVP = True
 
 #print correlation function, and sqrt(diag(cov)) and exit
 
@@ -57,7 +57,7 @@ LT = 64-2*TSEP
 #rhs time separation (t0) of GEVP matrix
 #(used for non eff mass fits)
 
-TRHS = 3
+TRHS = 6
 
 #additive constant
 
@@ -102,17 +102,19 @@ RESCALE = 1.0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
+#sigma
 GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat',
 'I0/S_pipisigma_A_1PLUS.jkdat'],
 ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']]
+#pipi with one unit of momentum
+GEVP_DIRS = [['I2/S_pipiS_pipi_A_1PLUS.jkdat',
+'I2/S_pipipipi_A_1PLUS.jkdat'],
+['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']]
 
 #####3x3, I0
-#GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-#              'sep4/pipisigma_momsrc000_momsnk000',
-#              'S_pipipipi_A_1PLUS'],
-#             ['sep4/sigmapipi_momsrc000_momsnk000',
-#              'sigmasigma_mom000', 'sigmaS_pipi_A_1PLUS'],
-#             ['pipiS_pipi_A_1PLUS', 'pipisigma_A_1PLUS', 'pipi_A_1PLUS']]
+GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
+             ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat', 'I0/sigmapipi_A_1PLUS.jkdat'],
+             ['I0/pipiS_pipi_A_1PLUS.jkdat','I0/pipisigma_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']]
 
 #####3x3, I2, pipi, 000, 100, 110
 #GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',
@@ -127,6 +129,7 @@ GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat',
 #title prefix
 if GEVP:
     if len(GEVP_DIRS) == 2:
+        TITLE_PREFIX = r'$\pi\pi, momtotal000 '
         TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
     elif len(GEVP_DIRS) == 3:
         #TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
@@ -152,6 +155,10 @@ if EFF_MASS:
         YLABEL = r'$am_{eff}(t)$'
 else:
     YLABEL = 'C(t)'
+
+#box plot (for effective mass tolerance display)?
+BOX_PLOT = True
+BOX_PLOT = False
 
 #precision to display, number of decimal places
 
@@ -289,8 +296,9 @@ else:
 #File format.  are the jackkknife blocks in ascii or hdf5?
 STYPE = 'ascii'
 STYPE = 'hdf5'
-HDF5_PREFIX = 'I2'
-
+HDF5_PREFIX = 'I0'
+if HDF5_PREFIX:
+    TITLE_PREFIX = HDF5_PREFIX + ' ' + TITLE_PREFIX
 
 #optional, scale parameter to set binds
 #scale = 1e11

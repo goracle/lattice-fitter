@@ -109,7 +109,7 @@ if CORRMATRIX:
             reweight = np.zeros((lent,params.dimops,lent,params.dimops))
             for i in range(lent):
                 for j in range(params.dimops):
-                    reweight[i][j][i][j] = 1.0/sqrt(covjack[i][j][i][j])
+                    reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])
             corrjack = np.tensordot(np.tensordot(reweight,covjack),reweight)
             covinv_jack = swap(np.tensordot(reweight,np.tensordot(
                 tensorinv(corrjack),reweight)), 1, 2)
