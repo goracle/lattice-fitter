@@ -1,3 +1,4 @@
+"""Test argument to log"""
 from warnings import warn
 
 def test_arg(arg, sent=None):
@@ -8,6 +9,6 @@ def test_arg(arg, sent=None):
         warn("argument to log in eff. mass"+" calc is than 0: "+str(
             arg))
         print("argument to log in effective mass",
-                "calc is less than 0:", arg)
+              "calc is less than 0:", arg)
         return False
     return True

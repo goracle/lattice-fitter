@@ -34,13 +34,13 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
 
 #solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 #print correlation function, and sqrt(diag(cov)) and exit
 
@@ -74,11 +74,11 @@ EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
-LOG=False
-LOG=True
+LOG = False
+LOG = True
 
 #do inverse via a correlation matrix (for higher numerical stability)
-CORRMATRIX=True
+CORRMATRIX = True
 
 ##eliminate problematic configs.
 #Simply set this to a list of ints indexing the configs,
@@ -94,7 +94,7 @@ BINNUM = 1
 RESCALE = 1e5
 RESCALE = 1.0
 
-#####2x2 I=0
+#####2x2 I = 0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'sep4/pipisigma_momsrc000_momsnk000'],
 #['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
@@ -103,18 +103,28 @@ RESCALE = 1.0
 #'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
 #sigma
-GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-'I0/S_pipisigma_A_1PLUS.jkdat'],
-['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']]
+GEVP_DIRS = [
+    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
+    ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
+]
 #pipi with one unit of momentum
-GEVP_DIRS = [['I2/S_pipiS_pipi_A_1PLUS.jkdat',
-'I2/S_pipipipi_A_1PLUS.jkdat'],
-['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']]
+GEVP_DIRS = [
+    ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
+    ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
+]
 
 #####3x3, I0
-GEVP_DIRS = [['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
-             ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat', 'I0/sigmapipi_A_1PLUS.jkdat'],
-             ['I0/pipiS_pipi_A_1PLUS.jkdat','I0/pipisigma_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']]
+GEVP_DIRS = [
+    ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+     'I0/S_pipisigma_A_1PLUS.jkdat',
+     'I0/S_pipipipi_A_1PLUS.jkdat'],
+    ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+     'I0/sigmasigma_A_1PLUS.jkdat',
+     'I0/sigmapipi_A_1PLUS.jkdat'],
+    ['I0/pipiS_pipi_A_1PLUS.jkdat',
+     'I0/pipisigma_A_1PLUS.jkdat',
+     'I0/pipi_A_1PLUS.jkdat']
+]
 
 #####3x3, I2, pipi, 000, 100, 110
 #GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',
@@ -164,7 +174,7 @@ BOX_PLOT = False
 
 PREC_DISP = 4
 
-#stringent tolerance for minimizer?  true=stringent
+#stringent tolerance for minimizer?  true = stringent
 MINTOL = True
 MINTOL = False
 
@@ -187,7 +197,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [-1.74580294, 2.8e-01,  3.0120e-02]*MULT
+        START_PARAMS = [-1.74580294, 2.8e-01, 3.0120e-02]*MULT
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
@@ -307,7 +317,7 @@ SCALE = 1e13
 ##bounds for fit parameters
 ##for use with L-BFGS-B
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
-BINDS_LSQ = ([-np.inf,-np.inf,-9e08], [np.inf,np.inf,-6e08])
+BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
 #BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
 ##fineness of scale to plot (higher is more fine)
