@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 """Get avgerage of disconnected bubbles."""
-import sys
 from collections import deque
 import os
 from os import listdir

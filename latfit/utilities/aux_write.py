@@ -65,16 +65,14 @@ def aux_filen(filename, stype='ascii'):
         psrc1 = pret[0]
         psrc2 = pret[1]
         psnk1 = pret[2]
-        psnk2 = psrc1+psrc2-psnk1
-        plist[0] = psnk2
+        plist[0] = psrc1+psrc2-psnk1
         plist[1] = psnk1
         plist[2] = psrc2
-        plist = -np.array(plist) #complex conjugate
-        outfile = rf.pchange(outfile, plist)
+        outfile = rf.pchange(outfile, -1*np.array(plist))#complex conjugate
         if outfile == filename:
             if stype == 'ascii':
                 print("symmetric Momenta; skipping")
-            return
+            outfile = None
     elif nmom == 2:
         psrc1 = pret[0]
         psnk = pret[1]
@@ -92,11 +90,11 @@ def aux_filen(filename, stype='ascii'):
             #outfile = filename.replace("pol_src", "pol_snk")
             #or outfile = filename.replace("scalarR_", "scalar_")
             #print "i.e.", outfile
-            return
-        outfile = rf.pchange(outfile, -np.array(plist)) #complex conjugate
+            outfile = None
+        outfile = rf.pchange(outfile, -1*np.array(plist)) #complex conjugate
     elif nmom == 1:
         #outfile = outfile.replace("scalar_", "scalarR_")
-        outfile = rf.pchange(outfile, -pret) #complex conjugate
+        outfile = rf.pchange(outfile, -1*pret) #complex conjugate
         if rf.vecp(outfile):
             #swap the polarizations
             pol1, pol2 = rf.pol(outfile)
@@ -109,7 +107,7 @@ def aux_filen(filename, stype='ascii'):
         if outfile == filename:
             if stype == 'ascii':
                 print("Two point not a vector diagram.  Skipping.")
-            return
+            outfile = None
     else:
         print("Error: nmom does not equal 1, 2, or 3.")
         sys.exit(1)
@@ -122,7 +120,7 @@ def main():
         os.makedirs(dur)
     onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     for filen in onlyfiles:
-        retfn = aux_filen(fn)
+        retfn = aux_filen(filen)
         if not retfn:
             continue
         outfile = "aux_diagrams/"+retfn
@@ -131,7 +129,7 @@ def main():
             continue
         else:
             outarr = getaux_filestrs(filen)
-            rf.write_mat_str(outarr, out)
+            rf.write_mat_str(outarr, outfile)
 
     print("Done writing auxiliary periodic bc files")
     sys.exit(0)

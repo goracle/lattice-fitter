@@ -1,9 +1,7 @@
+"""Convert ascii files to hdf5"""
 #!/usr/bin/python3
 import sys
-import os.path
-from os import listdir
-from os.path import isfile, join
-from math import sqrt
+from os.path import isfile
 import re
 import glob
 import numpy as np
@@ -12,14 +10,15 @@ import read_file as rf
 from traj_list import traj_list
 
 LT = 64
-
+# throws an exception when profile isn't defined
 try:
-        profile  # throws an exception when profile isn't defined
+    PROFILE
 except NameError:
-        profile = lambda x: x   # if it's not defined simply ignore the decorator.
+    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
 
-@profile
+@PROFILE
 def main():
+    """should be run independently to do the conversion"""
     trajl = traj_list()
     for traj in trajl:
         outname = str(traj)+'.dat'
@@ -28,34 +27,36 @@ def main():
             continue
         outh = h5py.File(outname, 'w')
         for i, filen in enumerate(glob.glob('traj_'+str(traj)+'_*')):
+            if i:
+                pass
             if re.search(r'Figure_', filen):
                 data = np.zeros((LT), dtype=np.complex)
-                sq = False
+                squ = False
             else:
                 data = np.zeros((LT, LT), dtype=np.complex)
-                sq = True
-            if sq:
+                squ = True
+            if squ:
                 for line in open(filen, 'r'):
-                        lsp = line.split()
-                        try:
-                                data[int(lsp[0]),int(lsp[1])]=np.complex(
-                                        float(lsp[2]),float(lsp[3]))
-                        except IndexError:
-                                print("Error: bad file format:", filen)
-                                sys.exit(1)
+                    lsp = line.split()
+                    try:
+                        data[int(lsp[0]), int(lsp[1])] = np.complex(
+                            float(lsp[2]), float(lsp[3]))
+                    except IndexError:
+                        print("Error: bad file format:", filen)
+                        sys.exit(1)
             else:
                 for line in open(filen, 'r'):
-                        lsp = line.split()
-                        data[int(lsp[0])]=np.complex(
-                                float(lsp[1]),float(lsp[2]))
-            outh[filen]=data
+                    lsp = line.split()
+                    data[int(lsp[0])] = np.complex(
+                        float(lsp[1]), float(lsp[2]))
+            outh[filen] = data
             setatr(outh[filen], filen)
         outh.close()
         print("Done converting trajectory:", traj)
-                
-            
-@profile
+
+@PROFILE
 def setatr(dataset, filen):
+    """Add metadata onto hdf5 datasets"""
     #pol = rf.pol(filen)
     #if pol is not None:
     #    pass
