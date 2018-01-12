@@ -48,7 +48,7 @@ def dismom(psrc, psnk):
         mom1src = psrc[0]
         mom2src = psrc[1]
         #reverse meaning of inner and outer, so take [1] for inner
-        mom1snk = psnk[1]
+        mom1snk = -1*np.array(psnk[1]) #complex conj at sink
         momstr = "mom1src"+rf.ptostr(
             mom1src)+"_mom2src"+rf.ptostr(
                 mom2src)+"_mom1snk"+rf.ptostr(mom1snk)
@@ -57,9 +57,9 @@ def dismom(psrc, psnk):
         if single_p(psrc):
             momsrc = psrc
             #reverse meaning of inner and outer, so take [1] for inner
-            momsnk = psnk[1]
+            momsnk = -1*np.array(psnk[1]) #complex conjugate at sink
         elif single_p(psnk):
-            momsnk = psnk
+            momsnk = -1*np.array(psnk) #complex conjugate at sink
             momsrc = psrc[0]
         momstr = "momsrc"+rf.ptostr(momsrc)+"_momsnk"+rf.ptostr(momsnk)
     elif lenp == 6:
