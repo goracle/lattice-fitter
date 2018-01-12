@@ -59,9 +59,9 @@ def procargs(argv):
                   "__main__.py")
             print("")
             print("latfit by Dan Hoying,", "Copyright 2015")
-            print("License: Gnu Public License Version 3")
-            print("You should've obtained a copy of this license in the")
-            print("distribution of these files.")
+            print("License: Gnu Public License Version 3" + \
+                  "\nYou should've obtained a copy of this license " + \
+                  "in the\ndistribution of these files.")
             sys.exit()
         if opt in "--xmin":
             cxmin = arg
@@ -74,5 +74,7 @@ def procargs(argv):
     #exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
-            return arg, options(xmin=cxmin, xmax=cxmax,
-                                xstep=cxstep, trials=ctrials)
+            retval = arg, options(xmin=cxmin, xmax=cxmax,
+                                  xstep=cxstep, trials=ctrials)
+            break
+    return retval

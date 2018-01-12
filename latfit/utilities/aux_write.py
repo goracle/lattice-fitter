@@ -8,9 +8,9 @@ import numpy as np
 import read_file as rf
 
 try:
-    profile  # throws an exception when profile isn't defined
+    PROFILE  # throws an exception when profile isn't defined
 except NameError:
-    profile = lambda x: x   # if it's not defined simply ignore the decorator.
+    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
 
 def transtime(tsrc, tdis, tsep, nmomaux, len_t):
     """Transform tsrc and tdis to aux diagram versions"""
@@ -40,17 +40,23 @@ def getaux_filestrs(filename):
         lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
         tsrc = int(lsp[0])
         tdis = int(lsp[1])
-        tsrc, tdis2 = transtime(tsrc, tdis, tsep, nmomaux, len_t)
+        tsrc2, tdis2 = transtime(tsrc, tdis, tsep, nmomaux, len_t)
         out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
     return out
 
-def aux_filen(filename, stype='ascii'):
-    """Write aux diagram corresponding to filename"""
+def ascii_test(filename, stype):
+    """Test if a file has a disconnected diagram
+    if we are using ascii file format
+    """
     if stype == 'ascii':
         print("Processing:", filename)
-    if stype == 'ascii':
         if not rf.discon_test(filename):
-            return
+            filename = None
+    return filename
+
+def aux_filen(filename, stype='ascii'):
+    """Write aux diagram corresponding to filename"""
+    filename = ascii_test(filename, stype)
     pret = np.array(rf.mom(filename))
     nmom = rf.nmom(filename)
     plist = nmom*[0]
