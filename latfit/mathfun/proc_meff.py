@@ -2,10 +2,10 @@
 #from math import log, acosh
 import sys
 import re
-from warnings import warn
 from math import acosh, log
 from sympy import nsolve
 from sympy.abc import x, y, z
+import numpy as np
 
 from latfit.extract.proc_line import proc_line
 

@@ -11,20 +11,21 @@ from latfit.config import HDF5_PREFIX
 
 if STYPE == 'hdf5':
     def proc_folder(hdf5_file, ctime, other_regex=""):
+        """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:
             pass
         try:
-            fn = h5py.File(hdf5_file, 'r')
+            fn1 = h5py.File(hdf5_file, 'r')
         except OSError:
-            fn = h5py.File(hdf5_file.split('/')[-1], 'r')
+            fn1 = h5py.File(hdf5_file.split('/')[-1], 'r')
         try:
-            out = np.array(fn[hdf5_file][:,ctime])
+            out = np.array(fn1[hdf5_file][:, ctime])
         except KeyError:
             try:
-                out = np.array(fn[hdf5_file.split('.')[0]][:,ctime])
+                out = np.array(fn1[hdf5_file.split('.')[0]][:, ctime])
             except KeyError:
-                out = np.array(fn[HDF5_PREFIX+'/'+hdf5_file.split('.')[
-                    0]][:,ctime])
+                out = np.array(fn1[HDF5_PREFIX+'/'+hdf5_file.split('.')[
+                    0]][:, ctime])
         return out
 
 elif STYPE == 'ascii':
@@ -62,20 +63,21 @@ elif STYPE == 'ascii':
                 print("Amend your file names.")
                 print("Offending files:", retname)
                 sys.exit(1)
-            return retname
-        if not GEVP:
-            print(debug[0])
-            print(debug[1])
-        print(folder)
-        print("***ERROR***")
-        print("Can't find file corresponding to x-value = ", ctime)
-        print("regex = ", my_regex)
-        sys.exit(1)
+        else:
+            if not GEVP:
+                print(debug[0])
+                print(debug[1])
+            print(folder)
+            print("***ERROR***")
+            print("Can't find file corresponding to x-value = ", ctime)
+            print("regex = ", my_regex)
+            sys.exit(1)
+        return retname
 
     def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
         """loop on dir, look for file we want"""
         flag2 = 0
-        debug =[None, None]
+        debug = [None, None]
         for root, dirs, files in os.walk(folder):
             for name in files:
                 #logic: if the search matches either int or float ctime

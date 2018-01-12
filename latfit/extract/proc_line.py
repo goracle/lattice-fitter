@@ -11,11 +11,12 @@ def proc_line(line, pifile="BLANK"):
         linesp = [line.real, line.imag]
     if len(linesp) == 2:
         warn("Taking the real (first column).")
-        return np.float(linesp[0])
+        retval = np.float(linesp[0])
     elif len(linesp) == 1:
-        return np.float(line)
+        retval = np.float(line)
     else:
         print("***ERROR***")
         print("Unknown block format.")
         print("File=", pifile)
         sys.exit(1)
+    return retval

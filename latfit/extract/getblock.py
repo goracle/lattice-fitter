@@ -21,7 +21,7 @@ from latfit.config import STYPE
 #todo, check for neg/imag eigenvals
 
 if STYPE == 'hdf5':
-    def getline(filetup, num):
+    def getline_loc(filetup, num):
         """The file tup is actually already a numpy array.
         This function pretends to get the line from an ascii file
         """
@@ -33,6 +33,12 @@ if STYPE == 'hdf5':
             print(filetup[num-1], "should be array of floats")
             sys.exit(1)
         return filetup[num-1]
+else:
+    def getline_loc(filetup, num):
+        """This function does get the line from the ascii file
+        it is a simple wrapper for linecache.getline
+        """
+        return getline(filetup, num)
 
 def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
     """get the nth generalized eigenvalue from matrices of files
@@ -45,22 +51,25 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
     for opa in range(dimops):
         for opb in range(dimops):
             c_lhs[opa][opb] = proc_line(
-                getline(file_tup_lhs[opa][opb], num+1),
+                getline_loc(file_tup_lhs[opa][opb], num+1),
                 file_tup_lhs[opa][opb])*NORMS[opa][opb]
             c_rhs[opa][opb] = proc_line(
-                getline(file_tup_rhs[opa][opb], num+1),
+                getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
     eigvals, _ = eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
-    for i,j in enumerate(eigvals):
+    for i, j in enumerate(eigvals):
         if j.imag == 0:
-            eigfin[i]=eigvals[i].real
+            eigfin[i] = eigvals[i].real
         else:
-            print("***ERROR***")
-            print("imaginary eigenvalue found")
-            sys.exit(1)
+            raise ImaginaryEigenvalue
     return eigfin
+
+class ImaginaryEigenvalue(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    print("***ERROR***")
+    print("imaginary eigenvalue found")
 
 
 if EFF_MASS:
@@ -83,7 +92,7 @@ if EFF_MASS:
                 eigvals = get_eigvals(num, file_tup[0], file_tup[1])
                 eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
                 eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
-            except:
+            except ImaginaryEigenvalue:
                 print(num, file_tup)
                 sys.exit(1)
             retblk.append(np.array([proc_meff(
@@ -106,7 +115,7 @@ else:
         for num in range(num_configs):
             try:
                 eigvals = get_eigvals(num, file_tup[0], file_tup[1])
-            except:
+            except ImaginaryEigenvalue:
                 print(file_tup)
                 sys.exit(1)
             retblk.append(eigvals)
@@ -141,10 +150,10 @@ else:
             pass
         retblk = deque()
         if STYPE == 'ascii':
-            fn = open(ijfile)
+            fn1 = open(ijfile)
         elif STYPE == 'hdf5':
-            fn = ijfile
-        for line in fn:
+            fn1 = ijfile
+        for line in fn1:
             retblk.append(proc_line(line, ijfile))
         return retblk
 
