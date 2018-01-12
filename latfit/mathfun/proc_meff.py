@@ -15,6 +15,7 @@ from latfit.config import FIT
 from latfit.config import fit_func_3pt_sym
 from latfit.config import START_PARAMS
 from latfit.config import LOG
+from latfit.config import ADD_CONST
 from latfit.analysis.test_arg import test_arg
 
 #almost solve a cosh, analytic
@@ -24,6 +25,9 @@ if EFF_MASS_METHOD == 1:
         Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
+        if not ADD_CONST:
+            print("***ERROR***", "eff_mass method 1 No longer actively supported")
+            sys.exit(1)
         if time_arr:
             pass
         if not files:
@@ -50,6 +54,9 @@ elif EFF_MASS_METHOD == 2:
         """numerically solve a system of three transcendental equations
         return the eff. mass
         """
+        if not ADD_CONST:
+            print("***ERROR***", "eff_mass method 2 No longer actively supported")
+            sys.exit(1)
         if time_arr:
             pass
         if not files:
@@ -93,7 +100,46 @@ elif EFF_MASS_METHOD == 2:
         print("Found solution:", sol[1])
         return sol[1]
 
-elif EFF_MASS_METHOD == 3 and FIT:
+elif EFF_MASS_METHOD == 3 and FIT and not ADD_CONST:
+    def proc_meff(line1, line2, line3=None, files=None, time_arr=None):
+        """fit to a function with one free parameter
+        [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
+        """
+        if line3:
+            pass
+        if not files:
+            corr1 = line1
+            corr2 = line2
+        else:
+            corr1 = proc_line(line1, files[0])
+            corr2 = proc_line(line2, files[1])
+        if np.array_equal(corr2, np.zeros(corr2.shape)):
+            print("***ERROR***")
+            print("denominator of one param eff mass function is 0")
+            print(corr1, corr2)
+            if files:
+                print(files[0])
+                print(files[1])
+            if not time_arr is None:
+                print(time_arr)
+            sys.exit(1)
+        sol = corr1/corr2
+        if LOG:
+            if not test_arg(sol, proc_meff.sent):
+                print(corr1, corr2)
+                if files:
+                    print(files[0])
+                    print(files[1])
+                if not time_arr is None:
+                    print(time_arr)
+                proc_meff.sent = 0
+                sys.exit(1)
+            sol = log(sol)
+        else:
+            pass
+        return sol
+
+elif EFF_MASS_METHOD == 3 and FIT and ADD_CONST:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
@@ -106,7 +152,7 @@ elif EFF_MASS_METHOD == 3 and FIT:
             corr1 = proc_line(line1, files[0])
             corr2 = proc_line(line2, files[1])
             corr3 = proc_line(line3, files[2])
-        if corr3 == corr2:
+        if np.array_equal(corr3, corr2):
             print("***ERROR***")
             print("denominator of one param eff mass function is 0")
             print(corr1, corr2, corr3)
@@ -133,12 +179,13 @@ elif EFF_MASS_METHOD == 3 and FIT:
         else:
             pass
         return sol
+
 elif FIT:
     print("Bad method for finding the effective mass specified:",
           EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
 else:
     def proc_meff():
+        """Do nothing"""
         pass
 proc_meff.sent = object()
-
