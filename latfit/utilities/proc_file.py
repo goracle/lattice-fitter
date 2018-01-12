@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 """Sum tsrc and bin"""
+import sys
 import re
 import os.path
 from os import listdir
 from os.path import isfile, join
 import numpy as np
 import avgvac as avac
-import jk_make as jk
 import read_file as rf
 
 def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):

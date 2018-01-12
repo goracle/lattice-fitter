@@ -1,19 +1,20 @@
 #!/usr/bin/python3
 """Write jackknife blocks from summed tsrc diagram files"""
-import linecache as lc
 from os import listdir
 import os.path
 from os.path import isfile, join
 import sys
-import re
 import numpy as np
 import read_file as rf
 #from traj_list import traj_list
 import traj_list as tl
 
+#this may be broken.
 def write_blocks(trajl, basename, outfiles):
     """write jackknife blocks for this basename
     """
+    print("this is not supported (jk_make.py)")
+    sys.exit(1)
     basename2 = '_'+basename
     #loop over lines in the base, each gives a separate jk block of trajs
     for time, outfile in enumerate(outfiles):
@@ -25,10 +26,10 @@ def write_blocks(trajl, basename, outfiles):
         print("Writing block:", time, "for diagram:", basename)
         #trajectory to exclude this line (loop over lines in the block)
         outarr = np.zeros((len(trajl)), dtype=object)
-        data = rf.get_linejk(traj, basename2, time, trajl)
-        for i, _ in enumerate(trajl):
+        data = rf.get_linejk(basename2, time, trajl)
+        for i, traj in enumerate(trajl):
             #avg = 0
-            avg=np.mean(np.delete(data,i))
+            avg = np.mean(np.delete(data, i))
             #line to write in the block file
             avg = complex('{0:.{1}f}'.format(avg, sys.float_info.dig))
             avg = str(avg.real)+" "+str(avg.imag)+'\n'
@@ -37,7 +38,6 @@ def write_blocks(trajl, basename, outfiles):
 
 def main():
     """Make jackknife blocks (main)"""
-    baselist = set()
     #setup the directory
     dur = 'jackknifed_diagrams/'
     if not os.path.isdir(dur):
@@ -62,7 +62,7 @@ def main():
         traj = rf.traj(filen)
         if not traj:
             continue
-        lookup_t.setdefault(base,set()).add(int(traj))
+        lookup_t.setdefault(base, set()).add(int(traj))
         #output directory for the jackknife blocks for this basename
         lookup.setdefault(base, []).append(filen)
     for base in lookup:

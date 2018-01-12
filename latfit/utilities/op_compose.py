@@ -94,7 +94,11 @@ T_1_2MINUS = [
     (1/sqrt(2), 'pipi', [[0, 0, 1], [0, 0, -1]]),
     (-1/sqrt(2), 'pipi', [[0, 0, -1], [0, 0, 1]])]
 
-OPLIST = {'A_1PLUS':A_1PLUS, 'T_1_1MINUS':T_1_1MINUS, 'T_1_3MINUS':T_1_3MINUS, 'T_1_2MINUS':T_1_2MINUS, 'A0':A0}
+OPLIST = {'A_1PLUS':A_1PLUS,
+          'T_1_1MINUS':T_1_1MINUS,
+          'T_1_3MINUS':T_1_3MINUS,
+          'T_1_2MINUS':T_1_2MINUS,
+          'A0':A0}
 #OPLIST = {'A0':A0}
 PART_LIST = set([])
 for opa_out in OPLIST:
@@ -114,7 +118,10 @@ for srcout in PART_LIST:
     for snkout in PART_LIST:
         PART_COMBS.add(partstr(srcout, snkout))
 
-def sepmod(dur):
+def sepmod(dur, opa):
+    """make different directory name for different time separations
+    (probably what this does.)
+    """
     if not os.path.isdir(dur):
         if not os.path.isdir('sep4/'+dur):
             print("For op:", opa)
@@ -140,7 +147,7 @@ def op_list(stype='ascii'):
                 dur = re.sub('UU', '', dur)
                 dur = re.sub('pipipipi', 'pipi', dur)
                 if stype == 'ascii':
-                    dur = sepmod(dur)
+                    dur = sepmod(dur, opa)
                 coeffs_tuple.append((dur, coeff, part_str))
         coeffs_arr = []
         if stype == 'ascii':

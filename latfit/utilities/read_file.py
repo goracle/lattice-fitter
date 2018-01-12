@@ -7,6 +7,7 @@ import os.path
 from math import sqrt
 import re
 import warnings
+import linecache as lc
 import numpy as np
 import h5py
 
@@ -97,12 +98,13 @@ def nmom_arr(pret):
     """Get number of momenta from momentum p array"""
     nmom1 = len(pret)
     if isinstance(pret[0], (np.integer, int)) and nmom1 == 3:
-        return 1
+        retval = 1
     elif not isinstance(pret[0], (np.integer, int)):
-        return nmom1
+        retval = nmom1
     else:
         print("Error: bad momentum container.")
         sys.exit(1)
+    return retval
 
 def nmom(filename):
     """Get number of momenta from filename"""
@@ -241,6 +243,7 @@ def remp(mom1, mom2, mom3=(0, 0, 0)):
 if FORMAT == 'ASCII':
     #####test functions
     def discon_test(filename):
+        """Test if diagram is disconnected"""
         filen = open(filename, 'r')
         for line in filen:
             if len(line.split()) < 4:
@@ -249,6 +252,7 @@ if FORMAT == 'ASCII':
         return True
 
     def tryblk(name, time):
+        """Try to open a file for some purpose"""
         try:
             filen = open(name+'/'+time, 'r')
         except IOError:
@@ -277,11 +281,11 @@ if FORMAT == 'ASCII':
                 sys.exit(1)
         return retarr
 
-    def get_linejk(traj, basename2, time, trajl):
+    def get_linejk(basename2, time, trajl):
         """Return line from file for jackknife blocking"""
         return np.array([complex(lc.getline("traj_"+str(
             traj)+basename2, time+1).split()[1])
-                        for traj in trajl])
+                         for traj in trajl])
 
 
     def proc_file(filename, sum_tsrc=True):
@@ -363,9 +367,9 @@ if FORMAT == 'ASCII':
             len_t = None
         return len_t
 
-    def numlines(fn):
+    def numlines(fn1):
         """Find number of lines in a file"""
-        return sum(1 for line in open(fn))
+        return sum(1 for line in open(fn1))
 
     #####write file
 
@@ -384,7 +388,7 @@ if FORMAT == 'ASCII':
                 filen.write(line)
             print("Done writing:", outfile)
 
-    write_block = write_blk
+    WRITE_BLOCK = write_blk
 
     def write_vec_str(data, outfile):
         """write vector of strings
@@ -406,7 +410,7 @@ if FORMAT == 'ASCII':
 
     def write_mat_str(data, outfile):
         """write matrix of strings
-        real part seperated from imag by plus sign; 
+        real part seperated from imag by plus sign;
         also imaginary piece has a 'j'
         """
         if os.path.isfile(outfile):
@@ -455,15 +459,17 @@ if FORMAT == 'ASCII':
 elif FORMAT == 'HDF5':
     #####test functions
     def discon_test(filename):
+        """Test if disconnected diagram (hdf5)"""
         filenp = h5py.File(filename, 'r')
-        filen = h5py[filename]
+        filen = filenp[filename]
         dimf = len(filen)
         if filen.shape != (dimf, dimf):
             print("Disconnected.  Skipping.")
             return False
         return True
-    #TODO
+    #to do, maybe
     def tryblk(name, time):
+        """Try to open file for some purpose (hdf5)"""
         try:
             filen = open(name+'/'+time, 'r')
         except IOError:
@@ -481,11 +487,11 @@ elif FORMAT == 'HDF5':
                 print("File exists.")
                 return
         outf = h5py.File(outfile, 'w')
-        outf[outfile]=outblk
+        outf[outfile] = outblk
         outf.close()
         print("Done writing:", outfile)
 
-    write_block = write_blk
+    WRITE_BLOCK = write_blk
 
     def write_vec_str(data, outfile):
         """write vector of strings
@@ -507,7 +513,7 @@ elif FORMAT == 'HDF5':
 
     def write_mat_str(data, outfile):
         """write matrix of strings
-        real part seperated from imag by plus sign; 
+        real part seperated from imag by plus sign;
         also imaginary piece has a 'j'
         """
         if os.path.isfile(outfile):

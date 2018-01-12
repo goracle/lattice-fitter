@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 """Unsubtract vacuum bubbles from jackknife blocks
 """
-import sys
 import os
 import os.path
 import numpy as np
-import re
 import read_file as rf
 
 def unsub():
@@ -46,7 +44,7 @@ def write_blocks_todirs(datadir, outdirs, subarrs, coeffs, onlydirs):
                 print("File exists.")
             else:
                 print("Writing block:", i, "for diagram:", odir)
-                rf.write_block(mainarr+cfm*avgi, wfn, already_checked=True)
+                rf.WRITE_BLOCK(mainarr+cfm*avgi, wfn, already_checked=True)
 
 def main():
     """unsub main"""

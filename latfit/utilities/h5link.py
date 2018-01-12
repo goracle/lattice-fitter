@@ -1,44 +1,54 @@
+"""Link a single config's hdf5 files into
+one hdf5 file for the whole config"""
 #!/usr/bin/python3
 import sys
 import os
 import re
 import glob
-import numpy as np
 import h5py
 
-
-def main():
+def get_trajl():
+    """Get trajectory list"""
     trajl = []
     for i, filen in enumerate(glob.glob('*hdf5')):
-        m = re.search('traj_(\d+)_', filen)
-        if not m:
+        if i:
+            pass
+        mat = re.search(r'traj_(\d+)_', filen)
+        if not mat:
             continue
         else:
-            traj = int(m.group(1))
+            traj = int(mat.group(1))
         trajl.append(traj)
     trajl = sorted(list(set(trajl)))
+    return trajl
+
+def main():
+    """Link hdf5 files"""
+    trajl = get_trajl()
     for traj in trajl:
         file1 = 'traj_'+str(traj)+'.hdf5'
         if os.path.isfile(file1):
-            fn = h5py.File(file1,'r+')
+            fn1 = h5py.File(file1, 'r+')
         else:
-            fn = h5py.File(file1,'w')
+            fn1 = h5py.File(file1, 'w')
         for j, file2 in enumerate(glob.glob('traj_'+str(traj)+'_*hdf5')):
-            gn = h5py.File(file2, 'r')
+            if j:
+                pass
+            gn1 = h5py.File(file2, 'r')
             datal = []
-            for data in gn:
+            for data in gn1:
                 datal.append(str(data))
-            gn.close()
+            gn1.close()
             for data in datal:
-                if not data in fn:
+                if not data in fn1:
                     try:
-                        fn[data]=h5py.ExternalLink(file2,data)
+                        fn1[data] = h5py.ExternalLink(file2, data)
                     except ValueError:
                         print("Error.  link file, orig file, dataset name:")
-                        print(file1,file2,data)
+                        print(file1, file2, data)
                         sys.exit(1)
-            print("Done linking",file2,file1)
-        fn.close()
+            print("Done linking", file2, file1)
+        fn1.close()
 
 
 

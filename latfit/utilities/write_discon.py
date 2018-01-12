@@ -17,13 +17,14 @@ def comb_fig(dsrc, dsnk):
     figsrc = rf.figure(dsrc)
     figsnk = rf.figure(dsnk)
     if figsrc == 'scalar-bubble' and figsnk == 'scalar-bubble':
-        return 'Bub2'
+        retval = 'Bub2'
     elif figsrc == 'scalar-bubble' and figsnk == 'Vdis':
-        return 'Cv3'
+        retval = 'Cv3'
     elif figsrc == 'Vdis' and figsnk == 'scalar-bubble':
-        return 'Cv3R'
+        retval = 'Cv3R'
     elif figsrc == 'Vdis' and figsnk == 'Vdis':
-        return 'V'
+        retval = 'V'
+    return retval
 
 def single_p(ptest):
     """is the momentum array only a single momentum?"""
@@ -82,7 +83,7 @@ def get_disfiles(onlyfiles):
             rf.ptostr(momtotal(mom)), []).append((filen, mom))
     return file_lookup
 
-ZERO='000'
+ZERO = '000'
 def main():
     """Write disconnected diagrams, main"""
     dur = 'summed_tsrc_diagrams/'
@@ -92,10 +93,7 @@ def main():
     for traj in file_lookup:
         #count = 0
         for mt1 in file_lookup[traj]:
-            if mt1 == ZERO:
-                oreal = True
-            else:
-                oreal = False
+            oreal = bool(mt1 == ZERO)
             lookup_local = {}
             for dsrc, momsrc in file_lookup[traj][mt1]:
                 for dsnk, momsnk in file_lookup[traj][mt1]:
@@ -150,7 +148,7 @@ def get_sep(dsrc, dsnk, outfig):
 
 def get_fourfn(dsrc, dsnk, dur):
     """Get average bubble names"""
-    bubs = namedtuple('bubs',['dsrc','dsnk','dsrc_sub','dsnk_sub'])
+    bubs = namedtuple('bubs', ['dsrc', 'dsnk', 'dsrc_sub', 'dsnk_sub'])
     bubs.dsrc = dsrc
     bubs.dsnk = dsnk
     src_fig = rf.figure(dsrc)

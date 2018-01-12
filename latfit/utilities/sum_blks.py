@@ -71,7 +71,7 @@ def sum_blks(outdir, coeffs_arr):
         outfile = outdir+'/'+time
         outblk = get_outblock(coeffs_arr, flag, outfile, time, sent)
         flag = 0
-        if len(outblk) == 0 or os.path.isfile(outfile):
+        if not outblk or os.path.isfile(outfile):
             continue
         rf.write_blk(outblk, outfile, already_checked=True)
     print("End of blocks:", outdir,
@@ -290,7 +290,9 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
     """Isospin projection of jackknife blocks (main)"""
     dur = '.'
     if dlist is None:
-        dlist = [os.path.join(dur, o) for o in os.listdir(dur) if os.path.isdir(os.path.join(dur, o))]
+        dlist = [os.path.join(dur, o)
+                 for o in os.listdir(dur)
+                 if os.path.isdir(os.path.join(dur, o))]
     projlist = {}
     seplist, momlist = get_sep_mom(dlist)
     loop = namedtuple('loop', ('opa', 'iso', 'sep', 'mom'))
@@ -321,4 +323,4 @@ if __name__ == '__main__':
     else:
         sys.exit(1)
     isoproj(FIXN, 0)
-    iosproj(FIXN, 1)
+    isoproj(FIXN, 1)
