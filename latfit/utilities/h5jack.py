@@ -418,37 +418,69 @@ else:
         """Complex conjugate bubble depending on global variable (do not conjugate)"""
         return bub
 
-@profile
-def bubjack(bubl, trajl, numt, bubbles=None, sub=None):
+def debug_rows(cols):
+    """debug function"""
+    if DEBUG_ROWS_COLS:
+        print(ROWS)
+        print("Now cols")
+        print(cols)
+        print("Now COLS")
+        print(COLS)
+        sys.exit(0)
+
+def getdiscon_name(dsrc_split, dsnk_split):
+    """Get output disconnected diagram figure name
+    (mimics dataset names of fully connected diagrams)
+    """
+    ptot = np.array(dsrc_split[1])
+    ptot2 = np.array(dsnk_split[1])
+    dsrc = dsrc_split[0]
+    dsnk = dsnk_split[0]
+    if not np.array_equal(ptot, -1*ptot2): #complex conjugate at sink, conserve momentum
+        #dummy values to tell the function to stop processing this diagram
+        sepval = -1
+        discname = ''
+    outfig = wd.comb_fig(dsrc, dsnk)
+    if sepval:
+        try:
+            sepstr, sepval = wd.get_sep(dsrc, dsnk, outfig)
+        except TypeError:
+            sepval = -1
+            sepstr = ''
+        discname = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
+    return discname, sepval
+
+def check_key(key):
+    """Only look at the key in question, tell parent to skip the rest"""
+    if (TESTKEY and key != TESTKEY) or (TESTKEY2 and key != TESTKEY2):
+        retval = False
+    else:
+        retval = True
+    return retval
+
+@PROFILE
+def bubjack(bubl, trajl, bubbles=None, sub=None):
+    """Do jackknife of disconnected (bubble) diagrams"""
     if bubbles is None:
         bubbles = getbubbles(bubl, trajl)
     if sub is None:
         sub = bubsub(bubbles)
+    return dobubjack(bubbles, sub)
+
+@PROFILE
+def dobubjack(bubbles, sub):
+    """Now that we have the bubbles,
+    compose the diagrams, jackknife
+    """
     out = {}
     for srckey in bubbles:
         numt = len(bubbles[srckey])
-        dsrc, ptot = srckey.split("@")
+        dsrc_split = srckey.split("@")
         for snkkey in bubbles:
-            dsnk, ptot2 = snkkey.split("@")
-            if ptot2 != ptot:
-                continue
-            outfig = wd.comb_fig(dsrc, dsnk)
-            try:
-                sepstr, sepval = wd.get_sep(dsrc, dsnk, outfig)
-            except TypeError:
-                continue
+            outkey, sepval = getdiscon_name(dsrc_split, snkkey.split("@"))
             cols = np.roll(COLS, -sepval, axis=1)
-            if DEBUG_ROWS_COLS:
-                print(ROWS)
-                print("Now cols")
-                print(cols)
-                print("Now COLS")
-                print(COLS)
-                sys.exit(0)
-            outkey = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
-            if TESTKEY and outkey != TESTKEY:
-                continue
-            if TESTKEY2 and outkey != TESTKEY2:
+            debug_rows(cols)
+            if sepval < 0 or not check_key(outkey):
                 continue
             out[outkey] = np.zeros((numt, LT), dtype=np.complex)
             if JACKBUB:
@@ -472,18 +504,20 @@ def bubjack(bubl, trajl, numt, bubbles=None, sub=None):
                 if OUTERSUB:
                     src = bubbles[srckey]
                     snk = conjbub(bubbles[snkkey])
-                    subavg = np.outer(sub[srckey],sub[snkkey])[ROWS,cols]
+                    outcome = -1*np.outer(sub[srckey], sub[snkkey])[ROWS, cols]
+                    for excl in range(numt):
+                        outcome = outcome+np.outer(src[excl], snk[excl])[ROWS, cols]
+                        testkey2(outkey, outcome, 0, excl)
+                        #np.mean is avg over tsrc
+                        np.mean(outcome, axis=0, out=out[outkey][excl])
                 else:
                     src = bubbles[srckey]-sub[srckey]
                     snk = conjbub(bubbles[snkkey]-sub[snkkey])
-                for excl in range(numt):
-                    if OUTERSUB:
-                        outcome = np.outer(src[excl],snk[excl])[ROWS, cols]- subavg
-                    else:
-                        outcome = np.outer(src[excl],snk[excl])[ROWS, cols]
-                    testkey2(outkey, outcome, 0, excl)
-                    #np.mean is avg over tsrc
-                    np.mean(outcome, axis=0, out=out[outkey][excl])
+                    for excl in range(numt):
+                        outcome = np.outer(src[excl], snk[excl])[ROWS, cols]
+                        testkey2(outkey, outcome, 0, excl)
+                        #np.mean is avg over tsrc
+                        np.mean(outcome, axis=0, out=out[outkey][excl])
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])
                 testkey2(outkey, out[outkey], 2)
