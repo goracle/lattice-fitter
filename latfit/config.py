@@ -421,13 +421,26 @@ def fit_func_1p(ctime, trial_params):
             sys.exit(1)
         sol = (corr2-corr1)/(corr3-corr2)
     else:
+        if np.array_equal(corr2, np.zeros(corr2.shape)):
+            print("imaginary effective mass.")
+            print("problematic time slices:", ctime, ctime+1)
+            print("trial_param =", trial_params[0])
+            print("START_PARAMS =", START_PARAMS)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
+            sys.exit(1)
         sol = (corr1)/(corr2)
     if LOG:
         if not test_arg(sol, SENT):
-            print("problematic time slices:", ctime, ctime+1, ctime+2)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            print("corr3 = ", corr3)
+            if ADD_CONST:
+                print("problematic time slices:", ctime, ctime+1, ctime+2)
+                print("corr1 = ", corr1)
+                print("corr2 = ", corr2)
+                print("corr3 = ", corr3)
+            else:
+                print("problematic time slices:", ctime, ctime+1)
+                print("corr1 = ", corr1)
+                print("corr2 = ", corr2)
             sys.exit(1)
         sol = log(sol)
     else:
