@@ -100,7 +100,7 @@ elif EFF_MASS_METHOD == 2:
         print("Found solution:", sol[1])
         return sol[1]
 
-elif EFF_MASS_METHOD == 3 and FIT and not ADD_CONST:
+elif EFF_MASS_METHOD == 3 and not ADD_CONST:
     def proc_meff(line1, line2, line3=None, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
@@ -139,7 +139,7 @@ elif EFF_MASS_METHOD == 3 and FIT and not ADD_CONST:
             pass
         return sol
 
-elif EFF_MASS_METHOD == 3 and FIT and ADD_CONST:
+elif EFF_MASS_METHOD == 3 and ADD_CONST:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
@@ -185,7 +185,7 @@ elif FIT:
           EFF_MASS_METHOD, "with fit set to", FIT)
     sys.exit(1)
 else:
-    def proc_meff():
+    def proc_meff(*args):
         """Do nothing"""
         pass
 proc_meff.sent = object()
