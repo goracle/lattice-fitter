@@ -225,10 +225,13 @@ def fit_func_exp_gevp(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
     (See procargs(argv)) GEVP, cosh+const
     """
-    return ((exp(-trial_params[0]*ctime)+exp(
-        -trial_params[1]*(LT-ctime)))+trial_params[1])/(
-            (exp(-trial_params[0]*(TRHS))+exp(
-                -trial_params[1]*(LT-(TRHS))))+trial_params[1])
+    return (
+        (exp(-trial_params[0]*ctime)
+         +exp(-trial_params[1]*(LT-ctime)))
+        +trial_params[1])/(
+            (exp(-trial_params[0]*(TRHS))+exp(-trial_params[1]*(LT-(TRHS))))
+            +trial_params[1]
+        )
 
 
 ##select which of the above functions to use

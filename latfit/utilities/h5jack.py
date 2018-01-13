@@ -46,7 +46,7 @@ assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True," + \
 FOLD = True
 #Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
-CONJBUB = True
+CONJBUB = False
 #ANTIPERIODIC in time (false for mesons,
 #the true option only happens for tanh shapes of the correlator);
 #this is a bad feature, keep it false!
@@ -67,7 +67,7 @@ TSLICE = 0
 
 #Individual diagram's jackknife block to write
 WRITEBLOCK = ''
-WRITEBLOCK = 'pioncorr_mom000'
+WRITEBLOCK = 'pioncorrChk_mom000'
 
 #debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -432,16 +432,16 @@ def getdiscon_name(dsrc_split, dsnk_split):
     """Get output disconnected diagram figure name
     (mimics dataset names of fully connected diagrams)
     """
-    ptot = np.array(dsrc_split[1])
-    ptot2 = np.array(dsnk_split[1])
+    ptot = np.array(rf.procmom(dsrc_split[1]))
+    ptot2 = np.array(rf.procmom(dsnk_split[1]))
     dsrc = dsrc_split[0]
     dsnk = dsnk_split[0]
     if not np.array_equal(ptot, -1*ptot2): #complex conjugate at sink, conserve momentum
         #dummy values to tell the function to stop processing this diagram
         sepval = -1
         discname = ''
-    outfig = wd.comb_fig(dsrc, dsnk)
-    if sepval:
+    else:
+        outfig = wd.comb_fig(dsrc, dsnk)
         try:
             sepstr, sepval = wd.get_sep(dsrc, dsnk, outfig)
         except TypeError:
@@ -577,8 +577,8 @@ def main(fixn=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
-    auxblks = aux_jack(basl, trajl, numt)
     bubblks = bubjack(bubl, trajl)
+    auxblks = aux_jack(basl, trajl, numt)
     mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
