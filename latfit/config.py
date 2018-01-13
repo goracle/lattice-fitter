@@ -18,8 +18,8 @@ NO_PLOT = False
 
 ##Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 ##Jackknife fit?
 
@@ -34,8 +34,8 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-EFF_MASS = True
 EFF_MASS = False
+EFF_MASS = True
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -85,7 +85,7 @@ CORRMATRIX = True
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 #ELIM_JKCONF_LIST = range(48)
-ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = [0]
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
@@ -256,7 +256,6 @@ if EFF_MASS:
             return np.array(trial_params)
 
     elif EFF_MASS_METHOD == 3:
-        FIT = True #meaningless (without log) otherwise
         def prefit_func(ctime, trial_params):
             """eff mass 3, fit func
             """
@@ -309,9 +308,7 @@ else:
 #File format.  are the jackkknife blocks in ascii or hdf5?
 STYPE = 'ascii'
 STYPE = 'hdf5'
-HDF5_PREFIX = 'I0'
-if HDF5_PREFIX:
-    TITLE_PREFIX = HDF5_PREFIX + ' ' + TITLE_PREFIX
+HDF5_PREFIX = 'I2'
 
 #optional, scale parameter to set binds
 #scale = 1e11

@@ -63,13 +63,17 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
+            print("Eigenvalue=", j)
             raise ImaginaryEigenvalue
     return eigfin
 
 class ImaginaryEigenvalue(Exception):
     """Exception for imaginary GEVP eigenvalue"""
-    print("***ERROR***")
-    print("imaginary eigenvalue found")
+    def __init__(self, expression='', message=''):
+        print("***ERROR***")
+        print('imaginary eigenvalue found')
+        self.expression = expression
+        self.message = message
 
 
 if EFF_MASS:
