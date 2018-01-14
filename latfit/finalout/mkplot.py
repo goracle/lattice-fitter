@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from latfit.config import fit_func
 from latfit.config import FINE
 from latfit.config import TITLE
-from latfit.config import TITLE_PREFIX
 from latfit.config import XLABEL
 from latfit.config import YLABEL
 from latfit.config import UNCORR
@@ -34,6 +33,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
 from latfit.config import PREC_DISP
 from latfit.config import STYPE
+import latfit.config
 rcParams.update({'figure.autolayout': True})
 
 def mkplot(coords, cov, input_f, result_min=None, param_err=None):
@@ -109,7 +109,7 @@ def get_title(input_f):
             title = input_f
     else:
         title = TITLE
-    title = TITLE_PREFIX+title
+    title = latfit.config.TITLE_PREFIX+title
     title = re.sub('_', ' ', title)
     if STYPE == 'hdf5':
         title = re.sub('.jkdat', '', title)

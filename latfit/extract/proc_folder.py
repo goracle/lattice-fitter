@@ -8,6 +8,7 @@ import h5py
 from latfit.config import GEVP
 from latfit.config import STYPE
 from latfit.config import HDF5_PREFIX
+import latfit.config
 
 if STYPE == 'hdf5':
     def proc_folder(hdf5_file, ctime, other_regex=""):
@@ -24,9 +25,21 @@ if STYPE == 'hdf5':
             try:
                 out = np.array(fn1[hdf5_file.split('.')[0]][:, ctime])
             except KeyError:
-                out = np.array(fn1[HDF5_PREFIX+'/'+hdf5_file.split('.')[
-                    0]][:, ctime])
+                try:
+                    out = np.array(fn1[HDF5_PREFIX+'/'+hdf5_file.split('.')[
+                        0]][:, ctime])
+                except KeyError:
+                    print("***ERROR***")
+                    print("Check the hdf5 prefix.  dataset cannot be found.")
+                    print("dataset name:",
+                          HDF5_PREFIX+'/'+hdf5_file.split('.')[0])
+                    sys.exit(1)
+                if proc_folder.sent != 0:
+                    latfit.config.TITLE_PREFIX = HDF5_PREFIX + \
+                        ' ' + latfit.config.TITLE_PREFIX
+                    proc_folder.sent = 0
         return out
+    proc_folder.sent = object()
 
 elif STYPE == 'ascii':
     def proc_folder(folder, ctime, other_regex=""):
