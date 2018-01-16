@@ -33,6 +33,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
 from latfit.config import PREC_DISP
 from latfit.config import STYPE
+from latfit.config import ADD_CONST
 import latfit.config
 rcParams.update({'figure.autolayout': True})
 
@@ -315,8 +316,13 @@ else:
                 #transform=fig.transFigure
             )))
 
+if ADD_CONST:
+    YSTART = 0.95
+else:
+    YSTART = 0.35
+
 if GEVP:
-    def annotate_energy(result_min, param_err):
+    def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (GEVP)
         """
         #annotate plot with fitted energy
@@ -325,17 +331,20 @@ if GEVP:
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             plt.annotate(
                 "Energy["+str(i)+"] = "+estring,
-                xy=(0.05, 0.95-i*.05), xycoords='axes fraction')
+                xy=(0.05, ystart-i*.05), xycoords='axes fraction')
 else:
-    def annotate_energy(result_min, param_err):
+    def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (non GEVP)
         """
         if len(result_min.x) > 1:
-            estring = trunc_prec(result_min.x[1])+"+/-"+trunc_prec(param_err[1], 2)
+            estring = trunc_prec(result_min.x[1])+"+/-"+trunc_prec(
+                param_err[1], 2)
         else:
             #for an effective mass plot
-            estring = trunc_prec(result_min.x[0])+"+/-"+trunc_prec(param_err[0], 2)
-        plt.annotate("Energy="+estring, xy=(0.05, 0.95), xycoords='axes fraction')
+            estring = trunc_prec(result_min.x[0])+"+/-"+trunc_prec(
+                param_err[0], 2)
+        plt.annotate("Energy="+estring, xy=(0.05, ystart),
+                     xycoords='axes fraction')
 
 def trunc_prec(num, extra_trunc=0):
     """Truncate the amount of displayed digits of precision to PREC_DISP"""
@@ -343,23 +352,29 @@ def trunc_prec(num, extra_trunc=0):
     return str(float(formstr % Decimal(str(num))))
 
 if EFF_MASS and EFF_MASS_METHOD == 3:
+    if ADD_CONST:
+        YSTART2 = 0.85
+    else:
+        YSTART2 = 0.55
     if GEVP:
-        def annotate_chisq(redchisq_round_str, dof, result_min):
+        def annotate_chisq(redchisq_round_str, dof,
+                           result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
             rcp = "Reduced "+r"$\chi^2 = $"
             rcp += redchisq_round_str+", dof = "+str(dof)
-            plt.annotate(rcp, xy=(0.05, 0.85-.05*(len(result_min.x)-2)),
+            plt.annotate(rcp, xy=(0.05, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
     else:
-        def annotate_chisq(redchisq_round_str, dof, result_min):
+        def annotate_chisq(redchisq_round_str, dof,
+                           result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
             if result_min:
                 pass
             rcp = "Reduced "+r"$\chi^2 = $"
             rcp += redchisq_round_str+", dof = "+str(dof)
-            plt.annotate(rcp, xy=(0.05, 0.85),
+            plt.annotate(rcp, xy=(0.05, ystart),
                          xycoords='axes fraction')
 else:
     def annotate_chisq(redchisq_round_str, dof, result_min=None):

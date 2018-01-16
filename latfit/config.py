@@ -84,8 +84,6 @@ CORRMATRIX = True
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-#ELIM_JKCONF_LIST = range(48)
-
 ELIM_JKCONF_LIST = [18, 24, 26, 28, 33, 35, 40, 41, 43, 50]
 ELIM_JKCONF_LIST = []
 
