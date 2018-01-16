@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
+TSEP = 0
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -85,7 +85,7 @@ CORRMATRIX = True
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 #ELIM_JKCONF_LIST = range(48)
-ELIM_JKCONF_LIST = [0]
+ELIM_JKCONF_LIST = [18, 24, 26, 28, 33, 35, 40, 41, 43, 50]
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
@@ -93,6 +93,9 @@ BINNUM = 1
 #rescale the fit function by factor RESCALE
 RESCALE = 1e5
 RESCALE = 1.0
+
+#prefix for hdf5 dataset location
+HDF5_PREFIX = 'I2'
 
 #####2x2 I = 0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -167,8 +170,8 @@ else:
     YLABEL = 'C(t)'
 
 #box plot (for effective mass tolerance display)?
-BOX_PLOT = True
 BOX_PLOT = False
+BOX_PLOT = True
 
 #precision to display, number of decimal places
 
@@ -308,7 +311,6 @@ else:
 #File format.  are the jackkknife blocks in ascii or hdf5?
 STYPE = 'ascii'
 STYPE = 'hdf5'
-HDF5_PREFIX = 'I2'
 
 #optional, scale parameter to set binds
 #scale = 1e11

@@ -40,7 +40,11 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
     """Plot the fitted graph."""
 
     ###GET COORDS
-    xcoord, ycoord, error2 = get_coord(coords, cov)
+    try:
+        error2 = result_min.error_bars
+        xcoord, ycoord, _ = get_coord(coords, cov)
+    except AttributeError:
+        xcoord, ycoord, error2 = get_coord(coords, cov)
 
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(cov, result_min, coords)

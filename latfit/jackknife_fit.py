@@ -42,11 +42,13 @@ if JACKKNIFE_FIT == 'FROZEN':
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
         result_min.x = np.mean(min_arr, axis=0)
-        param_err = np.sqrt(params.prefactor*np.sum((min_arr-result_min.x)**2, 0))
+        param_err = np.sqrt(params.prefactor*np.sum(
+            (min_arr-result_min.x)**2, 0))
         result_min.fun = np.mean(chisq_min_arr)
         result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
+
 
 elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
     def jackknife_fit(params, reuse, coords, time_range, covinv=None):
@@ -59,13 +61,15 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         if covinv is None:
             pass
         result_min = namedtuple('min',
-                                ['x', 'fun', 'status', 'err_in_chisq'])
+                                ['x', 'fun', 'status',
+                                 'err_in_chisq', 'error_bars'])
         result_min.status = 0
         #one fit for every jackknife block (N fits for N configs)
         coords_jack = np.copy(coords)
         min_arr = np.zeros((params.num_configs, len(START_PARAMS)))
         chisq_min_arr = np.zeros(params.num_configs)
         reuse_inv = inverse_jk(reuse, time_range, params.num_configs)
+        result_min.error_bars = alloc_errbar_arr(params, len(coords))
         for config_num in range(params.num_configs):
             #if config_num>160: break #for debugging only
             if params.dimops > 1:
@@ -73,8 +77,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     coords_jack[time, 1] = reuse[config_num][time]
             else:
                 coords_jack[:, 1] = reuse[config_num]
-            coords_jack, covinv_jack = get_doublejk_data(
-                params, coords_jack, reuse, config_num, reuse_inv)
+            coords_jack, covinv_jack, result_min.error_bars[
+                config_num] = get_doublejk_data(params, coords_jack,
+                                                reuse, config_num,
+                                                reuse_inv)
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
@@ -82,8 +88,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                   "chisq=", result_min_jack.fun)
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
+        result_min.error_bars = np.mean(result_min.error_bars, axis=0)
         result_min.x = np.mean(min_arr, axis=0)
-        param_err = np.sqrt(params.prefactor*np.sum((min_arr-result_min.x)**2, 0))
+        param_err = np.sqrt(params.prefactor*np.sum(
+            (min_arr-result_min.x)**2, 0))
         result_min.fun = np.mean(chisq_min_arr)
         result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
@@ -93,18 +101,45 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def alloc_errbar_arr(params, time_length):
+    """Allocate an array. Each config gives us a jackknife fit,
+    and a set of error bars.
+    We store the error bars in this array, indexed
+    by config.
+    """
+    if params.dimops > 1:
+        errbar_arr = np.zeros((params.num_configs, time_length,
+                               params.dimops),
+                              dtype=np.float)
+    else:
+        errbar_arr = np.zeros((params.num_configs, time_length),
+                              dtype=np.float)
+    return errbar_arr
+
+
+def get_covjack(cov_factor, params):
+    """Get jackknife estimate of covariance matrix for this fit,
+    note: no normalization is done here (it will need to be normalized
+    depending on the jackknifing scheme)
+    Also, the GEVP covjack has indexing that goes
+    time, gevp index, time, gevp index
+    """
+    if params.dimops == 1: #i.e. if not using the GEVP
+        covjack = np.einsum('ai, aj->ij', cov_factor, cov_factor)
+    else:
+        covjack = np.einsum('aim, ajn->imjn', cov_factor, cov_factor)
+    return covjack
+
 if CORRMATRIX:
-    def invert_cov(cov_factor, params):
+    def invert_cov(covjack, params):
         """Invert the covariance matrix via correlation matrix"""
         if params.dimops == 1: #i.e. if not using the GEVP
-            covjack = np.einsum('ai, aj->ij', cov_factor, cov_factor)
             corrjack = np.zeros(covjack.shape)
             weightings = np.sqrt(np.diag(covjack))
             reweight = np.diagflat(1./weightings)
             np.dot(reweight, np.dot(covjack, reweight), out=corrjack)
             covinv_jack = np.dot(np.dot(reweight, inv(corrjack)), reweight)
         else:
-            covjack = np.einsum('aim, ajn->imjn', cov_factor, cov_factor)
             lent = len(covjack) #time extent
             reweight = np.zeros((lent, params.dimops, lent, params.dimops))
             for i in range(lent):
@@ -116,26 +151,31 @@ if CORRMATRIX:
         return covinv_jack
 
 else:
-    def invert_cov(cov_factor, params):
+    def invert_cov(covjack, params):
         """Invert the covariance matrix"""
         if params.dimops == 1: #i.e. if not using the GEVP
-            covinv_jack = inv(np.einsum(
-                'ai, aj->ij', cov_factor, cov_factor))
+            covinv_jack = inv(covjack)
         else:
-            covinv_jack = swap(
-                tensorinv(np.einsum('aim, ajn->imjn', cov_factor,
-                                    cov_factor)), 1, 2)
+            covinv_jack = swap(tensorinv(covjack), 1, 2)
         return covinv_jack
 
 if JACKKNIFE_FIT == 'SINGLE':
     def normalize_covinv(covinv_jack, params):
         """do the proper normalization of the covinv (single jk)"""
         return covinv_jack * ((params.num_configs-1)*(params.num_configs-2))
+    def normalize_cov(covjack, params):
+        """do the proper normalization of the
+        covariance matrix (single jk)"""
+        return covjack / ((params.num_configs-1)*(params.num_configs-2))
+
 elif JACKKNIFE_FIT == 'DOUBLE':
     def normalize_covinv(covinv_jack, params):
         """do the proper normalization of the covinv (double jk)"""
         return covinv_jack * ((params.num_configs-1)/(params.num_configs-2))
-
+    def normalize_cov(covjack, params):
+        """do the proper normalization of the
+        covariance matrix (double jk)"""
+        return covjack / ((params.num_configs-1)/(params.num_configs-2))
 
 def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
     """Primarily, get the inverse covariance matrix for the particular
@@ -156,8 +196,9 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
                 np.s_[::2], axis=1)
         else:
             cov_factor = getcovfactor(params, reuse, config_num, reuse_inv)
+        covjack = get_covjack(cov_factor, params)
         try:
-            covinv_jack = invert_cov(cov_factor, params)
+            covinv_jack = invert_cov(covjack, params)
             covinv_jack = normalize_covinv(covinv_jack, params)
             flag = 0
         except np.linalg.linalg.LinAlgError as err:
@@ -168,10 +209,33 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
                 print("Attempting to continue",
                       "fit with every other time slice",
                       "eliminated.")
+                print("Plotted error bars should be " + \
+                      "considered suspect.")
                 flag = 1
             else:
                 raise
-    return coords_jack, covinv_jack
+    return coords_jack, covinv_jack, jack_errorbars(covjack, params)
+
+def jack_errorbars(covjack, params):
+    """Get error bars for this fit,
+    given the covariance matrix
+    """
+    covjack = normalize_cov(covjack, params)
+    lent = len(covjack)
+    if len(covjack.shape) == 4:
+        error_bars = np.array((covjack[0][0]).shape, dtype=np.float)
+        for i in range(lent):
+            error_bars[i] = np.sqrt(covjack[i, :, i, :])
+    elif len(covjack.shape) == 2:
+        error_bars = np.array((lent), dtype=np.float)
+        error_bars = np.sqrt(np.diag(covjack))
+    else:
+        print("***ERROR***")
+        print("badly formed covariance matrix " + \
+              "provided to jackknife errorbar finder")
+        print("shape =", covjack.shape)
+        sys.exit(1)
+    return error_bars
 
 if JACKKNIFE_FIT == 'SINGLE':
     def getcovfactor(params, reuse, config_num, reuse_inv):
@@ -195,6 +259,8 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         block == reuse
         DOUBLE elimination jackknife
         """
-        return np.array([np.mean(np.delete(np.delete(
-            reuse_inv, config_num, axis=0), i, axis=0), axis=0)
-                         for i in range(params.num_configs-1)])- reuse[config_num]
+        return np.array([
+            np.mean(np.delete(np.delete(
+                reuse_inv, config_num,
+                axis=0), i, axis=0), axis=0)
+            for i in range(params.num_configs-1)])- reuse[config_num]
