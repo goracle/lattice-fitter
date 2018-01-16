@@ -42,9 +42,10 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
     ###GET COORDS
     try:
         error2 = result_min.error_bars
-        xcoord, ycoord, _ = get_coord(coords, cov)
     except AttributeError:
-        xcoord, ycoord, error2 = get_coord(coords, cov)
+        error2 = None
+        print("Using average covariance matrix to find error bars.")
+    xcoord, ycoord, error2 = get_coord(coords, cov, error2)
 
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(cov, result_min, coords)
@@ -153,18 +154,20 @@ def get_file_string(title, dimops):
     file_str = re.sub(' ', '_', file_str) + '.pdf'
     return file_str
 
-def get_coord(coords, cov):
+def get_coord(coords, cov, error2=None):
     """Plotted coordinates setup
     """
     print("list of plotted points [x, y]:")
     print(coords)
     xcoord = [coords[i][0] for i in range(len(coords))]
     ycoord = [coords[i][1] for i in range(len(coords))]
-    if GEVP:
-        error2 = np.array([np.sqrt(np.diag(cov[i][i]))
-                           for i in range(len(coords))])
-    else:
-        error2 = np.array([np.sqrt(cov[i][i]) for i in range(len(coords))])
+    if error2 is None:
+        if GEVP:
+            error2 = np.array([np.sqrt(np.diag(cov[i][i]))
+                               for i in range(len(coords))])
+        else:
+            error2 = np.array([
+                np.sqrt(cov[i][i]) for i in range(len(coords))])
     print("list of point errors (x, yerr):")
     print(list(zip(xcoord, error2)))
     return xcoord, ycoord, error2
