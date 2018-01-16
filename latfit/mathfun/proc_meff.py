@@ -113,7 +113,7 @@ elif EFF_MASS_METHOD == 3 and not ADD_CONST:
         else:
             corr1 = proc_line(line1, files[0])
             corr2 = proc_line(line2, files[1])
-        if np.array_equal(corr2, np.zeros(corr2.shape)):
+        if np.array_equal(np.array(corr2), np.zeros(np.array(corr2).shape)):
             print("***ERROR***")
             print("denominator of one param eff mass function is 0")
             print(corr1, corr2)

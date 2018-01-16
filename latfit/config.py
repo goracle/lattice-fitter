@@ -44,8 +44,8 @@ GEVP = False
 
 #print correlation function, and sqrt(diag(cov)) and exit
 
+PRINT_CORR = True
 PRINT_CORR = False
-#PRINT_CORR = True
 
 ###METHODS/PARAMS
 
@@ -61,8 +61,8 @@ TRHS = 6
 
 #additive constant
 
-ADD_CONST = False
 ADD_CONST = True
+ADD_CONST = False
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -85,7 +85,9 @@ CORRMATRIX = True
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 #ELIM_JKCONF_LIST = range(48)
+
 ELIM_JKCONF_LIST = [18, 24, 26, 28, 33, 35, 40, 41, 43, 50]
+ELIM_JKCONF_LIST = []
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
@@ -160,8 +162,10 @@ XLABEL = r'$t/a$'
 
 if EFF_MASS:
     if EFF_MASS_METHOD == 3:
-        if LOG:
+        if LOG and ADD_CONST:
             YLABEL = r'log(one param global fit)'
+        elif LOG and not ADD_CONST:
+            YLABEL = r'Effective Mass (lattice units)'
         else:
             YLABEL = r'one param global fit'
     else:
@@ -178,8 +182,8 @@ BOX_PLOT = True
 PREC_DISP = 4
 
 #stringent tolerance for minimizer?  true = stringent
-MINTOL = True
 MINTOL = False
+MINTOL = True
 
 ###setup is for cosh fit, but one can easily modify it.
 

@@ -21,8 +21,9 @@ if JACKKNIFE_FIT == 'FROZEN':
         ('status' == 0 if all were successful)
         """
         result_min = namedtuple(
-            'min', ['x', 'fun', 'status', 'err_in_chisq'])
+            'min', ['x', 'fun', 'status', 'err_in_chisq', 'dof'])
         result_min.status = 0
+        result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
         #one fit for every jackknife block (N fits for N configs)
         coords_jack = np.copy(coords)
         min_arr = np.zeros((params.num_configs, len(START_PARAMS)))
@@ -38,7 +39,8 @@ if JACKKNIFE_FIT == 'FROZEN':
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
             print("config", config_num, ":",
-                  result_min_jack.x, "chisq=", result_min_jack.fun)
+                  result_min_jack.x, "chisq/dof=",
+                  result_min_jack.fun/result_min.dof)
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
         result_min.x = np.mean(min_arr, axis=0)
@@ -62,8 +64,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             pass
         result_min = namedtuple('min',
                                 ['x', 'fun', 'status',
-                                 'err_in_chisq', 'error_bars'])
+                                 'err_in_chisq', 'error_bars', 'dof'])
         result_min.status = 0
+        result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
         #one fit for every jackknife block (N fits for N configs)
         coords_jack = np.copy(coords)
         min_arr = np.zeros((params.num_configs, len(START_PARAMS)))
@@ -85,7 +88,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
             print("config", config_num, ":", result_min_jack.x,
-                  "chisq=", result_min_jack.fun)
+                  "chisq/dof=", result_min_jack.fun/result_min.dof)
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
