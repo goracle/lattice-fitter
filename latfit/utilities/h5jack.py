@@ -58,6 +58,8 @@ TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 #TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
+#TESTKEY = 'FigureBub2_mom000'
+#TESTKEY = 'FigureHbub_scalar_mom000'
 TESTKEY = ''
 
 #Print out the jackknife block at t=TSLICE (0..N or ALL for all time slices) for a diagram TESTKEY2
@@ -582,7 +584,7 @@ def main(fixn=True):
     mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
-    if WRITEBLOCK:
+    if WRITEBLOCK and not (TESTKEY or TESTKEY2):
         allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
         h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
     #allblks = {**mostblks, **bubblks} #for gparity
