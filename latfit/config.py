@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 0
+TSEP = 3
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -61,8 +61,8 @@ TRHS = 6
 
 #additive constant
 
-ADD_CONST = True
 ADD_CONST = False
+ADD_CONST = True
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -94,8 +94,9 @@ BINNUM = 1
 RESCALE = 1e5
 RESCALE = 1.0
 
-#prefix for hdf5 dataset location
-HDF5_PREFIX = 'I2'
+#prefix for hdf5 dataset location;
+#ALTS will be tried if HDF5_PREFIX doesn't work
+GROUP_LIST = ['I1', 'I0', 'I2']
 
 #####2x2 I = 0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -105,11 +106,6 @@ HDF5_PREFIX = 'I2'
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
-#sigma
-GEVP_DIRS = [
-    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
-    ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
-]
 #pipi with one unit of momentum
 GEVP_DIRS = [
     ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
@@ -128,6 +124,19 @@ GEVP_DIRS = [
      'I0/pipisigma_A_1PLUS.jkdat',
      'I0/pipi_A_1PLUS.jkdat']
 ]
+
+#sigma
+GEVP_DIRS = [
+    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
+    ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
+]
+
+#no sigma
+GEVP_DIRS = [
+    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
+    ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
+]
+
 
 #####3x3, I2, pipi, 000, 100, 110
 #GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',

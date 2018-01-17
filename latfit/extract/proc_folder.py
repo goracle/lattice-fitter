@@ -7,10 +7,17 @@ import h5py
 
 from latfit.config import GEVP
 from latfit.config import STYPE
-from latfit.config import HDF5_PREFIX
+from latfit.config import GROUP_LIST
 import latfit.config
 
 if STYPE == 'hdf5':
+    def open_dataset(prefix, hdf5_file, ctime, fn1):
+        """ open dataset given a group prefix
+        return a numpy array
+        """
+        return np.array(fn1[prefix+'/'+hdf5_file.split('.')[
+                        0]][:, ctime])
+
     def proc_folder(hdf5_file, ctime, other_regex=""):
         """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:
@@ -25,21 +32,44 @@ if STYPE == 'hdf5':
             try:
                 out = np.array(fn1[hdf5_file.split('.')[0]][:, ctime])
             except KeyError:
+                if proc_folder.sent:
+                    proc_folder.sent2 = 0
+                    proc_folder.prefix = test_prefix(hdf5_file, ctime, fn1)
+                    latfit.config.TITLE_PREFIX = proc_folder.prefix + \
+                        ' ' + latfit.config.TITLE_PREFIX
+                    proc_folder.sent = 0
                 try:
-                    out = np.array(fn1[HDF5_PREFIX+'/'+hdf5_file.split('.')[
-                        0]][:, ctime])
+                    out = open_dataset(proc_folder.prefix, hdf5_file, ctime, fn1)
                 except KeyError:
                     print("***ERROR***")
                     print("Check the hdf5 prefix.  dataset cannot be found.")
                     print("dataset name:",
-                          HDF5_PREFIX+'/'+hdf5_file.split('.')[0])
+                          proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
-                if proc_folder.sent != 0:
-                    latfit.config.TITLE_PREFIX = HDF5_PREFIX + \
-                        ' ' + latfit.config.TITLE_PREFIX
-                    proc_folder.sent = 0
         return out
     proc_folder.sent = object()
+    proc_folder.prefix = GROUP_LIST[0]
+
+    def test_prefix(hdf5_file, ctime, fn1, alts=GROUP_LIST):
+        """Test hdf5 group name,
+        try alternative names given in GROUP_LIST
+        if initial guess doesn't work
+        """
+        retprefix = GROUP_LIST[0]
+        if alts == []:
+            print("***ERROR***")
+            print("Empty hdf5 group prefix list in config.")
+            print("Need at least one group prefix to try")
+            sys.exit(1)
+        for prefix in alts:
+            try:
+                open_dataset(prefix, hdf5_file, ctime, fn1)
+                retprefix = prefix
+            except KeyError:
+                continue
+        return retprefix
+        
+
 
 elif STYPE == 'ascii':
     def proc_folder(folder, ctime, other_regex=""):
