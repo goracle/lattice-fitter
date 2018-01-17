@@ -58,8 +58,8 @@ TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
 #TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 #TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
-#TESTKEY = 'FigureBub2_mom000'
 #TESTKEY = 'FigureHbub_scalar_mom000'
+#TESTKEY = 'FigureBub2_mom000'
 TESTKEY = ''
 
 #Print out the jackknife block at t=TSLICE (0..N or ALL for all time slices) for a diagram TESTKEY2
@@ -420,8 +420,10 @@ else:
         """Complex conjugate bubble depending on global variable (do not conjugate)"""
         return bub
 
-def debug_rows(cols):
+def debug_rows(cols, outkey):
     """debug function"""
+    if TESTKEY and outkey != TESTKEY:
+        return
     if DEBUG_ROWS_COLS:
         print(ROWS)
         print("Now cols")
@@ -450,6 +452,8 @@ def getdiscon_name(dsrc_split, dsnk_split):
             sepval = -1
             sepstr = ''
         discname = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
+    if discname == TESTKEY:
+        print(dsrc, dsnk, sepval)
     return discname, sepval
 
 def check_key(key):
@@ -481,7 +485,7 @@ def dobubjack(bubbles, sub):
         for snkkey in bubbles:
             outkey, sepval = getdiscon_name(dsrc_split, snkkey.split("@"))
             cols = np.roll(COLS, -sepval, axis=1)
-            debug_rows(cols)
+            debug_rows(cols, outkey)
             if sepval < 0 or not check_key(outkey):
                 continue
             out[outkey] = np.zeros((numt, LT), dtype=np.complex)
@@ -489,17 +493,22 @@ def dobubjack(bubbles, sub):
                 for excl in range(numt):
                     if OUTERSUB:
                         src = np.delete(bubbles[srckey], excl, axis=0)
-                        snk = conjbub(np.delete(bubbles[snkkey], excl, axis=0))
+                        snk = conjbub(np.delete(bubbles[snkkey],
+                                                excl, axis=0))
                         outcome = np.tensordot(
                             src, snk, axes=(0, 0))[ROWS, cols]/(
                                 len(src)*1.0)-np.outer(
                                     sub[srckey][excl], sub[snkkey][excl])
                     else:
-                        src = np.delete(bubbles[srckey], excl, axis=0)-sub[srckey][excl]
-                        snk = conjbub(np.delete(bubbles[snkkey], excl, axis=0)-sub[snkkey][excl])
-                        outcome = np.tensordot(src, snk, axes=(0, 0))[ROWS, cols]/(len(src)*1.0)
+                        src = np.delete(bubbles[srckey],
+                                        excl, axis=0)-sub[srckey][excl]
+                        snk = conjbub(np.delete(
+                            bubbles[snkkey], excl, axis=0)-sub[snkkey][excl])
+                        outcome = np.tensordot(src, snk, axes=(0, 0))[
+                            ROWS, cols]/(len(src)*1.0)
                         #mean is over tsrc
-                        #len(src) division is average over configs (except for excluded one)
+                        #len(src) division is average over configs
+                        #(except for excluded one)
                     np.mean(outcome, axis=0, out=out[outkey][excl])
                     testkey2(outkey, outcome, 0, excl)
             else:
@@ -584,7 +593,8 @@ def main(fixn=True):
     mostblks = getmostblks(basl, trajl, numt)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
-    if WRITEBLOCK and not (TESTKEY or TESTKEY2):
+    if WRITEBLOCK and not (
+            TESTKEY or TESTKEY2) and not WRITEBLOCK in bubblks:
         allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
         h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
     #allblks = {**mostblks, **bubblks} #for gparity
