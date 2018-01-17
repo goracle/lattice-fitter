@@ -226,11 +226,10 @@ def jack_errorbars(covjack, params):
     covjack = normalize_cov(covjack, params)
     lent = len(covjack)
     if len(covjack.shape) == 4:
-        error_bars = np.array((covjack[0][0]).shape, dtype=np.float)
+        error_bars = np.zeros((covjack[0][0].shape), dtype=np.float)
         for i in range(lent):
-            error_bars[i] = np.sqrt(covjack[i, :, i, :])
+            error_bars[i] = np.sqrt(np.diag(covjack[i, :, i, :]))
     elif len(covjack.shape) == 2:
-        error_bars = np.array((lent), dtype=np.float)
         error_bars = np.sqrt(np.diag(covjack))
     else:
         print("***ERROR***")
