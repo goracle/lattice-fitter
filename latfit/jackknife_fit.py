@@ -4,6 +4,7 @@ from collections import namedtuple
 import numpy as np
 from numpy import swapaxes as swap
 from numpy.linalg import inv, tensorinv
+from scipy import stats
 
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
@@ -62,47 +63,124 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         """
         if covinv is None:
             pass
+
+        #storage for results
         result_min = namedtuple('min',
-                                ['x', 'fun', 'status',
+                                ['x', 'fun', 'status', 'pvalue', 'pvalue_err'
                                  'err_in_chisq', 'error_bars', 'dof'])
+
+        #no errors gives us 0 status
         result_min.status = 0
+
+        #compute degrees of freedom
         result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
+
+        ##alloc storage
         #one fit for every jackknife block (N fits for N configs)
+
+        #fit by fit p-values
+        result_min.pvalue = np.zeros(params.num_configs)
+
+        #allocate storage for jackknifed x,y coordinates
         coords_jack = np.copy(coords)
+
+        #storage for fit by fit optimized fit params
         min_arr = np.zeros((params.num_configs, len(START_PARAMS)))
+
+        #storage for fit by fit chi^2
         chisq_min_arr = np.zeros(params.num_configs)
+
+        #original data, obtained by reversing single jackknife procedure
         reuse_inv = inverse_jk(reuse, time_range, params.num_configs)
+
+        #fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
+
+        #loop over configs, doing a fit for each one
         for config_num in range(params.num_configs):
+
+
             #if config_num>160: break #for debugging only
-            if params.dimops > 1:
-                for time in range(len(time_range)):
-                    coords_jack[time, 1] = reuse[config_num][time]
-            else:
-                coords_jack[:, 1] = reuse[config_num]
+
+            #copy the jackknife block into coords_jack
+            copy_block(params, reuse[config_num], time_range, coords_jack)
+
+            #get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.error_bars[
                 config_num] = get_doublejk_data(params, coords_jack,
                                                 reuse, config_num,
                                                 reuse_inv)
+
+            ##minimize chi^2 given the inverse covariance matrix and data
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
-            print("config", config_num, ":", result_min_jack.x,
-                  "chisq/dof=", result_min_jack.fun/result_min.dof)
+
+            ##store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
+
+            #compute p value for this fit
+            result_min.pvalue[config_num] = 1 - stats.chi2.cdf(
+                result_min_jack.fun, result_min.dof)
+
+            ##print results for this config
+            print("config", config_num, ":", result_min_jack.x,
+                  "chisq/dof=", result_min_jack.fun/result_min.dof,
+                  "p-value=", result_min.pvalue[config_num])
+
+        ##average results, compute jackknife uncertainties
+
+        #compute p-value jackknife uncertainty
+        result_min.pvalue_err = np.sqrt(params.prefactor*np.sum((
+            result_min.pvalue-np.mean(result_min.pvalue))**2))
+        #average the p-value
+        result_min.pvalue = np.mean(result_min.pvalue)
+
+        #average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
+
+        #compute the average fit params
         result_min.x = np.mean(min_arr, axis=0)
+
+        #compute the error on the params
         param_err = np.sqrt(params.prefactor*np.sum(
             (min_arr-result_min.x)**2, 0))
+
+        #compute average chi^2
         result_min.fun = np.mean(chisq_min_arr)
+
+        #compute jackknife uncertainty on chi^2
         result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
+
         return result_min, param_err
 else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def copy_block(params, blk, time_range):
+    """Copy a jackknife block (for a particular config)
+    for later possible modification"""
+    if params.dimops > 1:
+        retblk = np.array([
+            reuse[config_num][time] for time in range(len(time_range))
+        ])
+    else:
+        retblk = reuse[config_num]
+    return retblk
+
+def copy_block(params, blk, time_range, out):
+    """Copy a jackknife block (for a particular config)
+    for later possible modification"""
+    if params.dimops > 1:
+      out[:, 1] = np.array([
+            blk[time] for time in range(len(time_range))
+        ])
+    else:
+        out[:, 1] = blk
+
 
 def alloc_errbar_arr(params, time_length):
     """Allocate an array. Each config gives us a jackknife fit,

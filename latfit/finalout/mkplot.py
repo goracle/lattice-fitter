@@ -193,6 +193,8 @@ def print_messages(result_min, param_err, param_chisq):
         chisq_str += '+/-'+str(result_min.err_in_chisq)
     print("chi^2 minimized = ", chisq_str)
     print("degrees of freedom = ", param_chisq.dof)
+    if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and JACKKNIFE == 'YES':
+        print("p-value = ", result_min.pvalue, "+/-", result_min.pvalue_err)
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
 
