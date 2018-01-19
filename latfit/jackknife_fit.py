@@ -164,6 +164,8 @@ def copy_block(params, blk, time_range):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
     if params.dimops > 1:
+        print("copy_block not supported in this form")
+        sys.exit(1)
         retblk = np.array([
             reuse[config_num][time] for time in range(len(time_range))
         ])
@@ -175,9 +177,8 @@ def copy_block(params, blk, time_range, out):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
     if params.dimops > 1:
-      out[:, 1] = np.array([
-            blk[time] for time in range(len(time_range))
-        ])
+        for time in range(len(time_range)):
+            out[time, 1] = blk[time]
     else:
         out[:, 1] = blk
 

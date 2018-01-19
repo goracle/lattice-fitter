@@ -5,6 +5,7 @@ import re
 import sys
 #from warnings import warn
 from decimal import Decimal
+import itertools
 from collections import namedtuple
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -250,12 +251,15 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
     """
     if dimops != 1:
         lcoord = len(xcoord)
+        #for color-blind people,
+        #make plot lines have (hopefully) unique markers
+        marker = itertools.cycle(('o', 'X', 'd', 'p', 's' )) 
         for curve_num in range(dimops):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
             plt.errorbar(xcoord, ycurve, yerr=yerr,
-                         linestyle='None', ms=3.75, marker='o',
+                         linestyle='None', ms=3.75, marker=next(marker),
                          label='Energy('+str(curve_num)+')')
     else:
         plt.errorbar(xcoord, ycoord, yerr=error2,
@@ -324,17 +328,25 @@ else:
     YSTART = 0.35
 
 if GEVP:
+    if ADD_CONST:
+        YSTART = 0.45
+    else:
+        YSTART = 0.35
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (GEVP)
         """
         #annotate plot with fitted energy
-        plt.legend(loc='upper right')
+        plt.legend(loc='center right')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             plt.annotate(
                 "Energy["+str(i)+"] = "+estring,
                 xy=(0.05, ystart-i*.05), xycoords='axes fraction')
 else:
+    if ADD_CONST:
+        YSTART = 0.95
+    else:
+        YSTART = 0.35
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (non GEVP)
         """
@@ -354,11 +366,11 @@ def trunc_prec(num, extra_trunc=0):
     return str(float(formstr % Decimal(str(num))))
 
 if EFF_MASS and EFF_MASS_METHOD == 3:
-    if ADD_CONST:
-        YSTART2 = 0.85
-    else:
-        YSTART2 = 0.55
     if GEVP:
+        if ADD_CONST:
+            YSTART2 = 0.55
+        else:
+            YSTART2 = 0.55
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
@@ -368,6 +380,10 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             plt.annotate(rcp, xy=(0.05, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
     else:
+        if ADD_CONST:
+            YSTART2 = 0.85
+        else:
+            YSTART2 = 0.55
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
