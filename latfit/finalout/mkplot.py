@@ -47,6 +47,9 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
     except AttributeError:
         error2 = None
         print("Using average covariance matrix to find error bars.")
+    if not error2 is None:
+        print("usual error bar method:")
+        xcoord, ycoord, _ = get_coord(coords, cov, None)
     xcoord, ycoord, error2 = get_coord(coords, cov, error2)
 
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
