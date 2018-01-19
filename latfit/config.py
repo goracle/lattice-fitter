@@ -106,12 +106,6 @@ GROUP_LIST = ['I1', 'I0', 'I2']
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 #'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
-#pipi with one unit of momentum
-GEVP_DIRS = [
-    ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
-    ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
-]
-
 #####3x3, I0
 GEVP_DIRS = [
     ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
@@ -135,6 +129,12 @@ GEVP_DIRS = [
 GEVP_DIRS = [
     ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
     ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
+]
+
+#pipi with one unit of momentum
+GEVP_DIRS = [
+    ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
+    ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
 ]
 
 

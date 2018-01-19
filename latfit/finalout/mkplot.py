@@ -43,7 +43,7 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
 
     ###GET COORDS
     try:
-        error2 = result_min.error_bars
+        error2 = np.array(result_min.error_bars)
     except AttributeError:
         error2 = None
         print("Using average covariance matrix to find error bars.")
