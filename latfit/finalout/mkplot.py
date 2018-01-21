@@ -308,8 +308,8 @@ if GEVP:
         for i in range(dimops):
             axvar.add_patch((
                 plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
-                    (xcoord[0]-1, result_min.x[i]-param_err[i]),  # (x, y)
-                    xcoord[len(xcoord)-1]-xcoord[0]+2, # width
+                    (xcoord[0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                    xcoord[len(xcoord)-1]-xcoord[0]+1, # width
                     2*param_err[i],          # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                     #transform=fig.transFigure
@@ -325,8 +325,8 @@ else:
         fig = plt.gcf()
         axvar.add_patch((
             plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
-                (xcoord[0]-1, result_min.x[0]-param_err[0]),   # (x, y)
-                xcoord[len(xcoord)-1]-xcoord[0]+2, # width
+                (xcoord[0]-.5, result_min.x[0]-param_err[0]),   # (x, y)
+                xcoord[len(xcoord)-1]-xcoord[0]+1, # width
                 2*param_err[0],          # height
                 fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                 #transform=fig.transFigure
