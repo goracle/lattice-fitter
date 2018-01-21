@@ -217,6 +217,10 @@ else:
     else:
         START_PARAMS = [-1.18203895e+01, 4.46978036e-01]*MULT
 
+#don't do any by hand subtraction if no additive constant
+if not ADD_CONST:
+    C = 0
+
 
 ##library of functions to fit.  define them in the usual way
 #setup is for simple exponential fit, but one can easily modify it.
@@ -261,7 +265,7 @@ if EFF_MASS:
         sys.exit(1)
 
     ###select fit function
-    if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2:
+    if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
         def prefit_func(ctime, trial_params):
             """eff mass method 1, fit func, single const fit
             """

@@ -5,6 +5,7 @@ import re
 from math import acosh, log
 from sympy import nsolve
 from sympy.abc import x, y, z
+from sympy import log as logs
 import numpy as np
 
 from latfit.extract.proc_line import proc_line
@@ -25,9 +26,6 @@ if EFF_MASS_METHOD == 1:
         Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
-        if not ADD_CONST:
-            print("***ERROR***", "eff_mass method 1 No longer actively supported")
-            sys.exit(1)
         if time_arr:
             pass
         if not files:
@@ -38,6 +36,9 @@ if EFF_MASS_METHOD == 1:
             corr1 = proc_line(line1, files[0])
             corr2 = proc_line(line2, files[1])
             corr3 = proc_line(line3, files[2])
+        if corr2 - C == 0:
+            print("***ERROR***")
+            print("corr2-C==0, proc_meff, arg to acosh is inf.", corr2, C)
         arg = (corr1+corr3-2*C)/2/(corr2-C)
         if arg < 1:
             print("***ERROR***")
@@ -179,6 +180,76 @@ elif EFF_MASS_METHOD == 3 and ADD_CONST:
         else:
             pass
         return sol
+
+elif EFF_MASS_METHOD == 4 and not ADD_CONST:
+    def proc_meff(line1, line2, line3, files=None, time_arr=None):
+        """numerically solve a function with one free parameter
+        [ C(t) ]/[ C(t+1) ]
+        This is the conventional effective mass formula.
+        """
+        time1 = time_arr
+        if line3:
+            pass
+        if not files:
+            corr1 = line1
+            corr2 = line2
+        else:
+            corr1 = proc_line(line1, files[0])
+            corr2 = proc_line(line2, files[1])
+        if np.array_equal(np.array(corr2), np.zeros(np.array(corr2).shape)):
+            print("***ERROR***")
+            print("denominator of one param eff mass function is 0")
+            print(corr1, corr2)
+            if files:
+                print(files[0])
+                print(files[1])
+            if not time_arr is None:
+                print(time_arr)
+            sys.exit(1)
+        sol = corr1/corr2
+        if LOG:
+            if not test_arg(sol, proc_meff.sent):
+                print(corr1, corr2)
+                if files:
+                    print(files[0])
+                    print(files[1])
+                if not time_arr is None:
+                    print(time_arr)
+                proc_meff.sent = 0
+                sys.exit(1)
+            sol = log(sol)
+        else:
+            pass
+
+        try:
+            if LOG:
+                sol = nsolve((logs(fit_func_3pt_sym(
+                    time1, [1, y, 0])/fit_func_3pt_sym(
+                        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
+            else:
+                sol = nsolve((logs(fit_func_3pt_sym(
+                    time1, [1, y, 0])/fit_func_3pt_sym(
+                        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
+            sol = float(sol)
+        except ValueError:
+            print("***ERROR***")
+            print("Solution not within tolerance.")
+            if files:
+                print(corr1, files[0])
+                print(corr2, files[1])
+            else:
+                print(corr1, corr2)
+            sys.exit(1)
+        if sol < 0:
+            print("***ERROR***")
+            print("negative energy found:", sol[1])
+            if files:
+                print(files[0])
+                print(files[1])
+                print(files[2])
+            sys.exit(1)
+        return sol
+
 
 elif FIT:
     print("Bad method for finding the effective mass specified:",
