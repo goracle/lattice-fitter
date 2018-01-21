@@ -51,7 +51,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
+TSEP = 0
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -61,8 +61,8 @@ TRHS = 6
 
 #additive constant
 
-ADD_CONST = False
 ADD_CONST = True
+ADD_CONST = False
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -70,7 +70,7 @@ ADD_CONST = True
 #(bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit
 
-EFF_MASS_METHOD = 3
+EFF_MASS_METHOD = 4
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 

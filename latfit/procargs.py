@@ -38,8 +38,7 @@ def procargs(argv):
                   "or, alternatively")
             print("-f <folder of files with precomputed covariance",
                   "matrices")
-            print("whose resulting fit parameters are averaged>")
-            print("")
+            print("whose resulting fit parameters are averaged>\n")
             print("If inputing a folder of files, each with a",
                   "pre-computed covariance matrix,")
             print(" required argument is --trials=<number of files",

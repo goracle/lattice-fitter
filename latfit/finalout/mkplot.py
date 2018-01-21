@@ -49,11 +49,12 @@ def mkplot(plotdata, input_f, result_min=None, param_err=None):
         error2 = np.array(result_min.error_bars)
     except AttributeError:
         error2 = None
+    if not error2 is None or not error2[0] is None:
         print("Using average covariance matrix to find error bars.")
-    if not error2 is None:
-        print("usual error bar method:")
-        xcoord, ycoord, _ = get_coord(coords, cov, None)
-    xcoord, ycoord, error2 = get_coord(coords, cov, error2)
+        xcoord, ycoord, error2 = get_coord(coords, cov, None)
+    else:
+        print("Using average error bars from jackknife fit.")
+        xcoord, ycoord, error2 = get_coord(coords, cov, error2)
 
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(cov, result_min, coords)
