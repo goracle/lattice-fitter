@@ -38,9 +38,11 @@ from latfit.config import ADD_CONST
 import latfit.config
 rcParams.update({'figure.autolayout': True})
 
-def mkplot(coords, cov, input_f, result_min=None, param_err=None):
+def mkplot(plotdata, input_f, result_min=None, param_err=None):
     """Plot the fitted graph."""
 
+    coords, cov, fitcoord = (
+        plotdata.coords, plotdata.cov, plotdata.fitcoord)
     ###GET COORDS
     try:
         error2 = np.array(result_min.error_bars)
@@ -74,11 +76,11 @@ def mkplot(coords, cov, input_f, result_min=None, param_err=None):
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             #plot fit function
-            plot_fit(xcoord, result_min)
+            plot_fit(fitcoord, result_min)
 
             #tolerance box plot
             if EFF_MASS and BOX_PLOT:
-                plot_box(xcoord, result_min, param_err, dimops)
+                plot_box(fitcoord, result_min, param_err, dimops)
 
             annotate(dimops, result_min, param_err, param_chisq, coords)
 

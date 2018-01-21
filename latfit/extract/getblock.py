@@ -77,7 +77,7 @@ class ImaginaryEigenvalue(Exception):
 
 
 if EFF_MASS:
-    def getblock_gevp(file_tup):
+    def getblock_gevp(file_tup, timeij=None):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -95,23 +95,26 @@ if EFF_MASS:
             try:
                 eigvals = get_eigvals(num, file_tup[0], file_tup[1])
                 eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
-                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1], overb=True)
+                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1],
+                                       overb=True)
             except ImaginaryEigenvalue:
                 print(num, file_tup)
                 sys.exit(1)
             retblk.append(np.array([proc_meff(
-                eigvals[op], eigvals2[op], eigvals3[op])
+                eigvals[op], eigvals2[op], eigvals3[op], time_arr=timeij)
                                     for op in range(dimops)]))
         return retblk
 
 else:
-    def getblock_gevp(file_tup):
+    def getblock_gevp(file_tup, timeij=None):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
         C(t)v = Eigval*C(t_0)v
         """
         retblk = deque()
+        if timeij:
+            pass
         if STYPE == 'ascii':
             num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         elif STYPE == 'hdf5':
@@ -126,7 +129,7 @@ else:
         return retblk
 
 if EFF_MASS:
-    def getblock_simple(file_tup, reuse):
+    def getblock_simple(file_tup, reuse, timeij=None):
         """Given file,
         get block of effective masses, store in reuse[ij_str]
         """
@@ -139,18 +142,18 @@ if EFF_MASS:
         for line, line2, line3 in zipfs:
             if not line+line2+line3 in reuse:
                 reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
-                    line, line2, line3, file_tup)
+                    line, line2, line3, file_tup, time_arr=timeij)
             if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
                 reuse[str(line)+'@'+str(line2)+'@'+str(line3)] = START_PARAMS[1]
             retblk.append(reuse[str(line)+'@'+str(line2)+'@'+str(line3)])
         return retblk
 
 else:
-    def getblock_simple(ijfile, reuse):
+    def getblock_simple(ijfile, reuse, timeij=None):
         """Given file,
         get block, store in reuse[ij_str]
         """
-        if reuse:
+        if reuse or timeij:
             pass
         retblk = deque()
         if STYPE == 'ascii':
@@ -172,21 +175,21 @@ if GEVP:
                     print("***ERROR***")
                     print("GEVP has negative eigenvalues.")
                     sys.exit(1)
-    def getblock_plus(file_tup, reuse):
+    def getblock_plus(file_tup, reuse, timeij=None):
         """get the block"""
         if reuse:
             pass
-        retblk = getblock_gevp(file_tup)
+        retblk = getblock_gevp(file_tup, timeij)
         test_imagblk(retblk)
         return retblk
 else:
-    def getblock_plus(file_tup, reuse):
+    def getblock_plus(file_tup, reuse, timeij=None):
         """get the block"""
-        return getblock_simple(file_tup, reuse)
+        return getblock_simple(file_tup, reuse, timeij)
 
-def getblock(file_tup, reuse):
+def getblock(file_tup, reuse, timeij=None):
     """get the block and subtract any bad configs"""
-    retblk = np.array(getblock_plus(file_tup, reuse))
+    retblk = np.array(getblock_plus(file_tup, reuse, timeij))
     if ELIM_JKCONF_LIST:
         retblk = elim_jkconfigs(retblk)
     if BINNUM != 1:

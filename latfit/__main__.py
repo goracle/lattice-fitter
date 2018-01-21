@@ -26,6 +26,7 @@ from latfit.config import JACKKNIFE
 from latfit.config import FIT
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
+from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.proc_folder import proc_folder
@@ -78,35 +79,47 @@ def main():
     """Main for latfit"""
     setup_logger()
     ####set up 1ab
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 
+                                 'trials', 'fitmin', 'fitmax'])
+    plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
     ###error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
     xmin, xmax = xlim_err(options.xmin, options.xmax)
+    fitrange = fitrange_err(options, xmin, xmax)
     xstep = xstep_err(options.xstep, input_f)
+    fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
 
     if trials == -1:
         if FIT:
-            result_min, param_err, coords, cov = singlefit(input_f,
+            result_min, param_err, coords, cov = singlefit(input_f, fitrange,
                                                            xmin, xmax, xstep)
             printerr(result_min.x, param_err)
-            mkplot(coords, cov, input_f, result_min, param_err)
+            plotdata.coords, plotdata.cov, plotdata.fitcoord = (
+                coords, cov, fitcoord)
+            mkplot(plotdata, input_f, result_min, param_err)
         else:
-            coords, cov = singlefit(input_f, xmin, xmax, xstep)
-            mkplot(coords, cov, input_f)
+            coords, cov = singlefit(input_f, fitrange, xmin, xmax, xstep)
+            plot_data = (coords, cov, fitcoord)
+            mkplot(plot_data, input_f)
     else:
         list_fit_params = []
         for ctime in range(trials):
             ifile = proc_folder(input_f, ctime, "blk")
             ninput = os.path.join(input_f, ifile)
             result_min, param_err, coords, cov = singlefit(
-                ninput, xmin, xmax, xstep)
+                ninput, fitrange, xmin, xmax, xstep)
             list_fit_params.append(result_min.x)
         printerr(*get_fitparams_loc(list_fit_params, trials))
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
+def fit_coord(fitrange, xstep):
+    """Get xcoord to plot fit function."""
+    return np.arange(fitrange[0], fitrange[1], xstep)
+
 
 def get_fitparams_loc(list_fit_params, trials):
     """Not sure what this does, probably wrong"""

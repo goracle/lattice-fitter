@@ -21,7 +21,7 @@ from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
 from latfit.config import GEVP
 
-def singlefit(input_f, xmin, xmax, xstep):
+def singlefit(input_f, fitrange, xmin, xmax, xstep):
     """Get data to fit
     and minimized params for the fit function (if we're fitting)
     """
@@ -29,7 +29,7 @@ def singlefit(input_f, xmin, xmax, xstep):
     inputexists(input_f)
 
     ####process the file(s)
-    coords, cov, reuse = extract(input_f, xmin, xmax, xstep)
+    coords, cov, reuse = extract(input_f, fitrange[0], fitrange[1], xstep)
     #do this so reuse goes from reuse[time][config] to more convenient reuse[config][time]
 
     if PRINT_CORR:
@@ -42,9 +42,9 @@ def singlefit(input_f, xmin, xmax, xstep):
 
     ##Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs', 'prefactor'])
-    params = get_fit_params(cov, reuse, xmin)
+    params = get_fit_params(cov, reuse, fitrange[0])
 
-    time_range = np.arange(xmin, xmax+1, xstep)
+    time_range = np.arange(fitrange[0], fitrange[1]+1, xstep)
     #reuse = swap(reuse, 0, 1)
     reuse = np.array([[reuse[time][config]
                        for time in time_range]
@@ -77,6 +77,12 @@ def singlefit(input_f, xmin, xmax, xstep):
             result_min = mkmin(covinv, coords)
             ####compute errors 8ab, print results (not needed for plot part)
             param_err = geterr(result_min, covinv, coords)
+
+        #extend the plot range as necessary
+        if xmin != fitrange[0] or xmax != fitrange[1]:
+            print("reprocessing files to extend the plot range")
+            coords, cov , _ = extract(input_f, xmin, xmax, xstep)
+            result_min.error_bars = None
         return result_min, param_err, coords, cov
     else:
         return coords, cov

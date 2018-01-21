@@ -37,11 +37,16 @@ def extract(input_f, xmin, xmax, xstep):
 
         coords, cov = allocate(xmin, xmax, xstep)
 
+        tij = [None, None]
+
         for i, timei in enumerate(np.arange(xmin, xmax+1, xstep)):
 
             #setup the reuse block for 'i' so proc_ijfile can remain
             #time agnostic
             reuse['i'] = reuse_ij(reuse, timei)
+
+            #tell the processor function which time slices we are on
+            tij[0] = timei
 
             #get the ifile(s)
             ifile_tup = getfiles(timei, xstep, xmin, input_f)
@@ -51,9 +56,10 @@ def extract(input_f, xmin, xmax, xstep):
                 #same for j
                 reuse['j'] = reuse_ij(reuse, timej)
                 jfile_tup = getfiles(timej, xstep, xmin, input_f)
+                tij[1] = timej
 
                 #get the cov entry and the block
-                resret = proc_ijfile(ifile_tup, jfile_tup, reuse=reuse)
+                resret = proc_ijfile(ifile_tup, jfile_tup, reuse=reuse, timeij=tij)
 
                 #fill in the covariance matrix
                 cov[i][j] = resret.covar

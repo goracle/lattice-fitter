@@ -10,7 +10,7 @@ def procargs(argv):
     try:
         opts = getopt.getopt(argv, "f:hi:t:",
                              ["ifolder=", "help", "ifile=", "trials=",
-                              "xmin=", "xmax=", 'xstep='])[0]
+                              "xmin=", "xmax=", 'xstep=', 'fitmin=', 'fitmax='])[0]
         if opts == []:
             raise NameError("NoArgs")
     except (getopt.GetoptError, NameError):
@@ -19,9 +19,12 @@ def procargs(argv):
     cxmin = object()
     cxmax = object()
     cxstep = object()
+    cfitmin = object()
+    cfitmax = object()
     #cnextra = object()
     ctrials = object()
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 'trials'])
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
+                                 'trials', 'fitmin', 'fitmax'])
     #Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
@@ -48,6 +51,8 @@ def procargs(argv):
             print("--xmin=<domain lower",
                   "bound>\n--xmax=<domain upper bound>")
             print("--xstep=<domain step size> (UNTESTED)")
+            print("--fitmin=<x value to start fitting>")
+            print("--fitmax=<x value to stop fitting>")
             print("These are optional in the sense that you",
                   "don't have to enter them",
                   "immediately,\nfor xmin and xmax, and not")
@@ -71,10 +76,15 @@ def procargs(argv):
             cxmax = arg
         if opt in "--trials":
             ctrials = arg
+        if opt == "--fitmin":
+            cfitmin = arg
+        if opt == "--fitmax":
+            cfitmax = arg
     #exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
             retval = arg, options(xmin=cxmin, xmax=cxmax,
-                                  xstep=cxstep, trials=ctrials)
+                                  xstep=cxstep, trials=ctrials,
+                                  fitmin=cfitmin, fitmax=cfitmax)
             break
     return retval
