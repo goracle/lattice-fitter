@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
+from scipy import stats
 
 from latfit.config import fit_func
 from latfit.config import FINE
@@ -199,8 +200,12 @@ def print_messages(result_min, param_err, param_chisq):
         chisq_str += '+/-'+str(result_min.err_in_chisq)
     print("chi^2 minimized = ", chisq_str)
     print("degrees of freedom = ", param_chisq.dof)
-    if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and JACKKNIFE == 'YES':
-        print("p-value = ", result_min.pvalue, "+/-", result_min.pvalue_err)
+    if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
+       JACKKNIFE == 'YES':
+        print("avg p-value = ", result_min.pvalue, "+/-",
+              result_min.pvalue_err)
+        print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
+                                                            result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
 
