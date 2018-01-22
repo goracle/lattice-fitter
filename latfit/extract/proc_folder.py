@@ -16,7 +16,7 @@ if STYPE == 'hdf5':
         return a numpy array
         """
         return np.array(fn1[prefix+'/'+hdf5_file.split('.')[
-                        0]][:, ctime])
+            0]][:, ctime])
 
     def proc_folder(hdf5_file, ctime, other_regex=""):
         """Get data from hdf5 file (even though it's called proc_folder)"""
@@ -34,7 +34,8 @@ if STYPE == 'hdf5':
             except KeyError:
                 if proc_folder.sent:
                     proc_folder.sent2 = 0
-                    proc_folder.prefix = test_prefix(hdf5_file, ctime, fn1)
+                    proc_folder.prefix = test_prefix(
+                        hdf5_file, ctime, fn1, GROUP_LIST)
                     latfit.config.TITLE_PREFIX = proc_folder.prefix + \
                         ' ' + latfit.config.TITLE_PREFIX
                     proc_folder.sent = 0
@@ -50,13 +51,13 @@ if STYPE == 'hdf5':
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
 
-    def test_prefix(hdf5_file, ctime, fn1, alts=GROUP_LIST):
+    def test_prefix(hdf5_file, ctime, fn1, alts=None):
         """Test hdf5 group name,
         try alternative names given in GROUP_LIST
         if initial guess doesn't work
         """
         retprefix = GROUP_LIST[0]
-        if alts == []:
+        if alts is None:
             print("***ERROR***")
             print("Empty hdf5 group prefix list in config.")
             print("Need at least one group prefix to try")
@@ -68,7 +69,6 @@ if STYPE == 'hdf5':
             except KeyError:
                 continue
         return retprefix
-        
 
 
 elif STYPE == 'ascii':
