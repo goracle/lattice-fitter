@@ -269,7 +269,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
         lcoord = len(xcoord)
         #for color-blind people,
         #make plot lines have (hopefully) unique markers
-        marker = itertools.cycle(('o', 'X', 'd', 'p', 's' )) 
+        marker = itertools.cycle(('o', 'X', 'd', 'p', 's'))
         for curve_num in range(dimops):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])

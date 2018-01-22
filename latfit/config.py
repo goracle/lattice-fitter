@@ -14,7 +14,6 @@ try:
 except NameError:
     PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
 
-
 ###TYPE OF FIT
 
 ##plot anything at all?
@@ -307,12 +306,12 @@ else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
                 return [RESCALE*fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
-                    for j in range(MULT)]
+                        for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
                 return [fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
-                    for j in range(MULT)]
+                        for j in range(MULT)]
     else:
         if ADD_CONST and FIT:
             ###check len of start params
@@ -415,7 +414,7 @@ if NUM_PENCILS > 0:
         return np.hstack(
             [RESCALE*FIT_FUNC_COPY(
                 ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
-                START_PARAMS)]) for i in range(2**NUM_PENCILS)])
+                    START_PARAMS)]) for i in range(2**NUM_PENCILS)])
 else:
     if RESCALE != 1.0 and not (EFF_MASS_METHOD == 3 or GEVP):
         def fit_func(ctime, trial_params):
@@ -425,7 +424,7 @@ else:
         fit_func = copy(prefit_func)
 
 
-START_PARAMS = np.array(list(START_PARAMS)*2**NUM_PENCILS)
+START_PARAMS = list(START_PARAMS)*2**NUM_PENCILS
 
 def fit_func_3pt_sym(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
