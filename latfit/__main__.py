@@ -79,7 +79,7 @@ def main():
     """Main for latfit"""
     setup_logger()
     ####set up 1ab
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep', 
+    options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
                                  'trials', 'fitmin', 'fitmax'])
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
@@ -88,27 +88,25 @@ def main():
     xmin, xmax = xlim_err(options.xmin, options.xmax)
     fitrange = fitrange_err(options, xmin, xmax)
     xstep = xstep_err(options.xstep, input_f)
-    fitcoord = fit_coord(fitrange, xstep)
+    plotdata.fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
 
     if trials == -1:
         if FIT:
-            result_min, param_err, coords, cov = singlefit(input_f, fitrange,
-                                                           xmin, xmax, xstep)
+            result_min, param_err, plotdata.coords, plotdata.cov = \
+            singlefit(input_f, fitrange, xmin, xmax, xstep)
             printerr(result_min.x, param_err)
-            plotdata.coords, plotdata.cov, plotdata.fitcoord = (
-                coords, cov, fitcoord)
-            mkplot(plotdata, input_f, result_min, param_err)
+            mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
-            coords, cov = singlefit(input_f, fitrange, xmin, xmax, xstep)
-            plot_data = (coords, cov, fitcoord)
-            mkplot(plot_data, input_f)
+            plotdata.coords, plotdata.cov = singlefit(input_f, fitrange,
+                                                      xmin, xmax, xstep)
+            mkplot(plotdata, input_f)
     else:
         list_fit_params = []
         for ctime in range(trials):
             ifile = proc_folder(input_f, ctime, "blk")
             ninput = os.path.join(input_f, ifile)
-            result_min, param_err, coords, cov = singlefit(
+            result_min, param_err, plotdata.coords, plotdata.cov = singlefit(
                 ninput, fitrange, xmin, xmax, xstep)
             list_fit_params.append(result_min.x)
         printerr(*get_fitparams_loc(list_fit_params, trials))

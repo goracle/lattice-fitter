@@ -39,7 +39,8 @@ from latfit.config import ADD_CONST
 import latfit.config
 rcParams.update({'figure.autolayout': True})
 
-def mkplot(plotdata, input_f, result_min=None, param_err=None):
+def mkplot(plotdata, input_f,
+           result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
 
     coords, cov, fitcoord = (
@@ -66,7 +67,7 @@ def mkplot(plotdata, input_f, result_min=None, param_err=None):
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(coords, dimops, result_min)
+        param_chisq = get_param_chisq(coords, dimops, result_min, fitrange)
         print_messages(result_min, param_err, param_chisq)
 
     ###STOP IF NO PLOT
@@ -210,10 +211,14 @@ def print_messages(result_min, param_err, param_chisq):
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
 
-def get_param_chisq(coords, dimops, result_min):
+def get_param_chisq(coords, dimops, result_min, fitrange=None):
     """Get chi^2 parameters."""
     param_chisq = namedtuple('param_chisq', ('redchisq', 'redchisq_round_str', 'dof'))
-    param_chisq.dof = len(coords)*dimops-len(result_min.x)
+    if fitrange is None:
+        param_chisq.dof = len(coords)*dimops-len(result_min.x)
+    else:
+        param_chisq.dof = (fitrange[1]-fitrange[0]+1)*dimops-len(result_min.x
+        )
     #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
