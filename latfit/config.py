@@ -9,6 +9,12 @@ from sympy import exp as exps
 from latfit.analysis.test_arg import test_arg
 SENT = object()
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+
+
 ###TYPE OF FIT
 
 ##plot anything at all?
@@ -266,19 +272,24 @@ if EFF_MASS:
 
     ###select fit function
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
-        def prefit_func(ctime, trial_params):
+        def prefit_func(_, trial_params):
             """eff mass method 1, fit func, single const fit
             """
-            if ctime:
-                pass
-            return np.array(trial_params)
+            return trial_params
 
     elif EFF_MASS_METHOD == 3:
-        def prefit_func(ctime, trial_params):
-            """eff mass 3, fit func
-            """
-            return np.array([fit_func_1p(
-                ctime, trial_params[j:j+1]) for j in range(MULT)])
+        if RESCALE != 1.0:
+            def prefit_func(ctime, trial_params):
+                """eff mass 3, fit func, rescaled
+                """
+                return [RESCALE * fit_func_1p(
+                    ctime, trial_params[j:j+1]) for j in range(MULT)]
+        else:
+            def prefit_func(ctime, trial_params):
+                """eff mass 3, fit func, rescaled
+                """
+                return [fit_func_1p(
+                    ctime, trial_params[j:j+1]) for j in range(MULT)]
     else:
         print("***ERROR***")
         print("check config file fit func selection.")
@@ -292,11 +303,16 @@ else:
             print("flag 1 length of start_params invalid")
             sys.exit(1)
         ###select fit function
-        def prefit_func(ctime, trial_params):
-            """gevp fit func, non eff mass"""
-            return np.array([
-                fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
-                for j in range(MULT)])
+        if RESCALE != 1.0:
+            def prefit_func(ctime, trial_params):
+                """gevp fit func, non eff mass"""
+                return [RESCALE*fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
+                    for j in range(MULT)]
+        else:
+            def prefit_func(ctime, trial_params):
+                """gevp fit func, non eff mass"""
+                return [fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
+                    for j in range(MULT)]
     else:
         if ADD_CONST and FIT:
             ###check len of start params
@@ -305,10 +321,7 @@ else:
                 print("flag 2 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
-            def prefit_func(ctime, trial_params):
-                """fit func non gevp, additive const
-                """
-                return np.array([fit_func_exp_add(ctime, trial_params)])
+            prefit_func = copy(fit_func_exp_add)
         elif FIT:
             ###check len of start params
             if ORIGL != 2:
@@ -316,10 +329,7 @@ else:
                 print("flag 3 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
-            def prefit_func(ctime, trial_params):
-                """fit func non gevp, no additive const
-                """
-                return np.array([fit_func_exp(ctime, trial_params)])
+            prefit_func = copy(fit_func_exp)
 
 ##RARELY EDIT BELOW
 
@@ -399,13 +409,23 @@ CUTOFF = 10**(7)
 if FIT:
     FIT_FUNC_COPY = copy(prefit_func)
 
-def fit_func(ctime, trial_params):
-    """Fit function."""
-    return np.hstack(
-        [RESCALE*FIT_FUNC_COPY(ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
-            START_PARAMS)]) for i in range(2**NUM_PENCILS)])
+if NUM_PENCILS > 0:
+    def fit_func(ctime, trial_params):
+        """Fit function (num_pencils > 0)."""
+        return np.hstack(
+            [RESCALE*FIT_FUNC_COPY(
+                ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
+                START_PARAMS)]) for i in range(2**NUM_PENCILS)])
+else:
+    if RESCALE != 1.0 and not (EFF_MASS_METHOD == 3 or GEVP):
+        def fit_func(ctime, trial_params):
+            """Fit function."""
+            return RESCALE*prefit_func(ctime, trial_params)
+    else:
+        fit_func = copy(prefit_func)
 
-START_PARAMS = list(START_PARAMS)*2**NUM_PENCILS
+
+START_PARAMS = np.array(list(START_PARAMS)*2**NUM_PENCILS)
 
 def fit_func_3pt_sym(ctime, trial_params):
     """Give result of function computed to fit the data given in <inputfile>
