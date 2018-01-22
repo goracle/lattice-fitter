@@ -43,7 +43,7 @@ JACKBUB = True #keep true for correctness; false for checking incorrect results
 assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True," + \
 "OUTERSUB = False, " + " debug:JACKBUB = False, OUTERSUB = False"
 #FOLD = True #average about the mirror point in time (True)
-FOLD = True
+FOLD = False
 #Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
 CONJBUB = False
