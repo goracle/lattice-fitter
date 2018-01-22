@@ -14,7 +14,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 
 if JACKKNIFE_FIT == 'FROZEN':
-    def jackknife_fit(params, reuse, coords, time_range, covinv):
+    def jackknife_fit(params, reuse, coords, covinv):
         """Fit under a frozen (single) jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -32,7 +32,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         covinv_jack = covinv
         for config_num in range(params.num_configs):
             if params.dimops > 1:
-                for time in range(len(time_range)):
+                for time in range(len(params.time_range)):
                     coords_jack[time, 1] = reuse[config_num][time]
             else:
                 coords_jack[:, 1] = reuse[config_num]
@@ -54,7 +54,7 @@ if JACKKNIFE_FIT == 'FROZEN':
 
 
 elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
-    def jackknife_fit(params, reuse, coords, time_range, covinv=None):
+    def jackknife_fit(params, reuse, coords, covinv=None):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -91,7 +91,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         chisq_min_arr = np.zeros(params.num_configs)
 
         #original data, obtained by reversing single jackknife procedure
-        reuse_inv = inverse_jk(reuse, time_range, params.num_configs)
+        reuse_inv = inverse_jk(reuse, params.time_range, params.num_configs)
 
         #fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
@@ -103,7 +103,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             #if config_num>160: break #for debugging only
 
             #copy the jackknife block into coords_jack
-            copy_block(params, reuse[config_num], time_range, coords_jack)
+            copy_block(params, reuse[config_num], coords_jack)
 
             #get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.error_bars[
@@ -160,24 +160,24 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
-def copy_block(params, blk, time_range):
+def copy_block_no_sidefx(params, blk):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
     if params.dimops > 1:
         print("copy_block not supported in this form")
         sys.exit(1)
         retblk = np.array([
-            reuse[config_num][time] for time in range(len(time_range))
+            blk[time] for time in range(len(params.time_range))
         ])
     else:
-        retblk = reuse[config_num]
+        retblk = blk
     return retblk
 
-def copy_block(params, blk, time_range, out):
+def copy_block(params, blk, out):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
     if params.dimops > 1:
-        for time in range(len(time_range)):
+        for time in range(len(params.time_range)):
             out[time, 1] = blk[time]
     else:
         out[:, 1] = blk

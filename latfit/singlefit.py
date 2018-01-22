@@ -34,8 +34,9 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     #do this so reuse goes from reuse[time][config] to more convenient reuse[config][time]
 
     ##Now that we have the data to fit, do pre-proccess it
-    params = namedtuple('fit_params', ['dimops', 'num_configs', 'prefactor'])
-    params = get_fit_params(cov_full, reuse, xmin)
+    params = namedtuple('fit_params', ['dimops', 'num_configs',
+                                       'prefactor', 'time_range'])
+    params = get_fit_params(cov_full, reuse, xmin, fitrange, xstep)
 
     #correct covariance matrix for jackknife factor
     cov_full *= params.prefactor
