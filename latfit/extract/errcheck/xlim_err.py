@@ -6,41 +6,43 @@ from latfit.config import FIT
 
 if not FIT:
     def fitrange_err(options, xmin, xmax):
+        """Set fit range to be maximum."""
         if options:
             pass
         return xmin, xmax
 
-def fitrange_err(options, xmin, xmax):
-    """Return fit range after checking for errors."""
-    sent1 = object()
-    sent2 = object()
-    fitmin1 = sent1
-    fitmax1 = sent2
-    if isinstance(options.fitmax, str) and float(options.fitmax) <= xmax:
-        try:
-            fitmax1 = float(options.fitmax)
-        except ValueError:
-            print("***ERROR***")
-            print("Invalid max for fit range.")
-            procargs(["h"])
-    if isinstance(options.fitmin, str) and float(options.fitmin) >= xmin:
-        try:
-            fitmin1 = float(options.fitmin)
-        except ValueError:
-            print("***ERROR***")
-            print("Invalid min for fit range.")
-            procargs(["h"])
-    if fitmin1 == sent1 and fitmax1 == sent2:
-        print("Assuming full fit range: ("+str(xmin)+', '+str(xmax)+')')
-        fitmin1 = xmin
-        fitmax1 = xmax
-    elif fitmin1 == sent1:
-        fitmin1 = xmin
-    elif fitmax1 == sent2:
-        fitmax1 = xmax
-    if fitmax1 < fitmin1:
-        fitmin1, fitmax1 = swap_minmax(fitmin1, fitmax1)
-    return fitmin1, fitmax1
+else:
+    def fitrange_err(options, xmin, xmax):
+        """Return fit range after checking for errors."""
+        sent1 = object()
+        sent2 = object()
+        fitmin1 = sent1
+        fitmax1 = sent2
+        if isinstance(options.fitmax, str) and float(options.fitmax) <= xmax:
+            try:
+                fitmax1 = float(options.fitmax)
+            except ValueError:
+                print("***ERROR***")
+                print("Invalid max for fit range.")
+                procargs(["h"])
+        if isinstance(options.fitmin, str) and float(options.fitmin) >= xmin:
+            try:
+                fitmin1 = float(options.fitmin)
+            except ValueError:
+                print("***ERROR***")
+                print("Invalid min for fit range.")
+                procargs(["h"])
+        if fitmin1 == sent1 and fitmax1 == sent2:
+            print("Assuming full fit range: ("+str(xmin)+', '+str(xmax)+')')
+            fitmin1 = xmin
+            fitmax1 = xmax
+        elif fitmin1 == sent1:
+            fitmin1 = xmin
+        elif fitmax1 == sent2:
+            fitmax1 = xmax
+        if fitmax1 < fitmin1:
+            fitmin1, fitmax1 = swap_minmax(fitmin1, fitmax1)
+        return fitmin1, fitmax1
 
 def xlim_err(xmin, xmax):
     """Check for errors in the input of xmin and xmax.
