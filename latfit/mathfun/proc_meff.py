@@ -102,12 +102,10 @@ elif EFF_MASS_METHOD == 2:
         return sol[1]
 
 elif EFF_MASS_METHOD == 3 and not ADD_CONST:
-    def proc_meff(line1, line2, line3=None, files=None, time_arr=None):
+    def proc_meff(line1, line2, _, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
-        if line3:
-            pass
         if not files:
             corr1 = line1
             corr2 = line2
@@ -182,14 +180,12 @@ elif EFF_MASS_METHOD == 3 and ADD_CONST:
         return sol
 
 elif EFF_MASS_METHOD == 4 and not ADD_CONST:
-    def proc_meff(line1, line2, line3, files=None, time_arr=None):
+    def proc_meff(line1, line2, _, files=None, time_arr=None):
         """numerically solve a function with one free parameter
         [ C(t) ]/[ C(t+1) ]
         This is the conventional effective mass formula.
         """
         time1 = time_arr
-        if line3:
-            pass
         if not files:
             corr1 = line1
             corr2 = line2
@@ -197,30 +193,21 @@ elif EFF_MASS_METHOD == 4 and not ADD_CONST:
             corr1 = proc_line(line1, files[0])
             corr2 = proc_line(line2, files[1])
         if np.array_equal(np.array(corr2), np.zeros(np.array(corr2).shape)):
-            print("***ERROR***")
-            print("denominator of one param eff mass function is 0")
-            print(corr1, corr2)
-            if files:
-                print(files[0])
-                print(files[1])
-            if not time_arr is None:
-                print(time_arr)
+            print("***ERROR***\ndenominator of one param eff" + \
+                  " mass function is 0\n", corr1, corr2)
+            print(files[0], "\n", files[1])
+            print(time_arr)
             sys.exit(1)
         sol = corr1/corr2
         if LOG:
             if not test_arg(sol, proc_meff.sent):
                 print(corr1, corr2)
-                if files:
-                    print(files[0])
-                    print(files[1])
-                if not time_arr is None:
-                    print(time_arr)
+                print(files[0])
+                print(files[1])
+                print(time_arr)
                 proc_meff.sent = 0
                 sys.exit(1)
             sol = log(sol)
-        else:
-            pass
-
         try:
             if LOG:
                 sol = nsolve((logs(fit_func_3pt_sym(
@@ -232,8 +219,7 @@ elif EFF_MASS_METHOD == 4 and not ADD_CONST:
                         time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
             sol = float(sol)
         except ValueError:
-            print("***ERROR***")
-            print("Solution not within tolerance.")
+            print("***ERROR***\nSolution not within tolerance.")
             if files:
                 print(corr1, files[0])
                 print(corr2, files[1])
@@ -241,12 +227,10 @@ elif EFF_MASS_METHOD == 4 and not ADD_CONST:
                 print(corr1, corr2)
             sys.exit(1)
         if sol < 0:
-            print("***ERROR***")
-            print("negative energy found:", sol[1])
-            if files:
-                print(files[0])
-                print(files[1])
-                print(files[2])
+            print("***ERROR***\nnegative energy found:", sol[1])
+            print(files[0])
+            print(files[1])
+            print(files[2])
             sys.exit(1)
         return sol
 
@@ -258,5 +242,6 @@ elif FIT:
 else:
     def proc_meff(*args):
         """Do nothing"""
-        pass
+        if args:
+            pass
 proc_meff.sent = object()
