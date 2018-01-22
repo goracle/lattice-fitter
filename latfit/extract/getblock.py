@@ -72,6 +72,7 @@ class ImaginaryEigenvalue(Exception):
     def __init__(self, expression='', message=''):
         print("***ERROR***")
         print('imaginary eigenvalue found')
+        super(ImaginaryEigenvalue, self).__init__(message)
         self.expression = expression
         self.message = message
 
