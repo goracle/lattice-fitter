@@ -6,14 +6,18 @@ from math import acosh, log
 from sympy import nsolve
 from sympy.abc import x, y, z
 from sympy import log as logs
+from math import log
 import numpy as np
+from scipy.optimize import minimize_scalar, brentq
 
 from latfit.extract.proc_line import proc_line
 
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
+from latfit.config import PROFILE
 from latfit.config import FIT
 from latfit.config import fit_func_3pt_sym
+from latfit.config import fit_func_exp
 from latfit.config import START_PARAMS
 from latfit.config import LOG
 from latfit.config import ADD_CONST
@@ -180,6 +184,12 @@ elif EFF_MASS_METHOD == 3 and ADD_CONST:
         return sol
 
 elif EFF_MASS_METHOD == 4 and not ADD_CONST:
+
+    def eff_mass_tomin(energy, ctime, sol):
+        return (log(fit_func_exp(ctime,[1.0, energy])/fit_func_exp(ctime+1,[1.0, energy]))-sol)**2
+    def eff_mass_root(energy, ctime, sol):
+        return (log(fit_func_exp(ctime,[1.0, energy])/fit_func_exp(ctime+1,[1.0, energy]))-sol)
+
     def proc_meff(line1, line2, _, files=None, time_arr=None):
         """numerically solve a function with one free parameter
         [ C(t) ]/[ C(t+1) ]
@@ -210,9 +220,12 @@ elif EFF_MASS_METHOD == 4 and not ADD_CONST:
             sol = log(sol)
         try:
             if LOG:
-                sol = nsolve((logs(fit_func_3pt_sym(
-                    time1, [1, y, 0])/fit_func_3pt_sym(
-                        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
+                sol = minimize_scalar(eff_mass_tomin, args=(time1,sol)).x
+                #other solution methods:
+                #sol = brentq(eff_mass_root, .1, 50, args=(time1, sol)) #too unstable
+                #sol = nsolve((logs(fit_func_3pt_sym( #too slow
+                #    time1, [1, y, 0])/fit_func_3pt_sym(
+                #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS) 
             else:
                 sol = nsolve((logs(fit_func_3pt_sym(
                     time1, [1, y, 0])/fit_func_3pt_sym(
