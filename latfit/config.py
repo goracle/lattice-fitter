@@ -329,6 +329,9 @@ else:
                 sys.exit(1)
             ###select fit function
             prefit_func = copy(fit_func_exp)
+        else:
+            def prefit_func(__, _):
+                pass
 
 ##RARELY EDIT BELOW
 
