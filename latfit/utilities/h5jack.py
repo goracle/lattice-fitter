@@ -5,12 +5,17 @@ import os
 import re
 import glob
 import numpy as np
-import h5py
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
 import write_discon as wd
 import aux_write as aux
+import h5py
+
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
 
 #representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
@@ -96,6 +101,7 @@ def getindices(tsep, nmomaux):
         retcols = (-ROWST - 2*tsep)%LT
     return retrows, retcols
 
+@PROFILE
 def trajlist():
     """Get trajectory list from files of form
     <traj>.EXTENSION"""
@@ -108,6 +114,7 @@ def trajlist():
     print("Done getting trajectory list")
     return trajl
 
+@PROFILE
 def baselist(fn1=None):
     """Get base names of diagrams
     (exclude trajectory info)"""
@@ -130,6 +137,7 @@ def baselist(fn1=None):
     print("Done getting baselist")
     return basl
 
+@PROFILE
 def bublist(fn1=None):
     """Get list of disconnected bubbles."""
     if not fn1:
@@ -304,7 +312,7 @@ def fold_time(outblk, base=''):
     else:
         return outblk
 @PROFILE
-def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
+def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None, openlist=None):
     """Get generic connected diagram of base = base
     and indices tsrc, tdis
     """
@@ -320,7 +328,11 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
         blk = np.zeros((numt, LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
-        fn1 = h5py.File(PREFIX+str(traj)+'.'+EXTENSION, 'r')
+        filekey = PREFIX+str(traj)+'.'+EXTENSION
+        if openlist is None:
+            fn1 = h5py.File(filekey, 'r')
+        else:
+            fn1 = openlist[filekey]
         try:
             outarr = np.array(fn1['traj_'+str(traj)+base2])
         except KeyError:
@@ -329,20 +341,20 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None):
         if not rows is None and not cols is None:
             outarr = outarr[rows, cols]
         if avgtsrc:
-            blk[i] = TSTEP*np.mean(outarr, axis=0)
+            np.mean(TSTEP*outarr, axis=0, out=blk[i])
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
 
 @PROFILE
-def getmostblks(basl, trajl, numt):
+def getmostblks(basl, trajl, numt, openlist):
     """Get most of the jackknife blocks,
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
         if not check_key(base):
             continue
-        blk = getgenconblk(base, trajl, numt, avgtsrc=True)
+        blk = getgenconblk(base, trajl, numt, avgtsrc=True, openlist=openlist)
         if TESTKEY2:
             print("Printing non-averaged-over-tsrc data")
             printblk(TESTKEY2, blk)
@@ -353,14 +365,18 @@ def getmostblks(basl, trajl, numt):
     return mostblks
 
 @PROFILE
-def getbubbles(bubl, trajl):
+def getbubbles(bubl, trajl, openlist=None):
     """Get all of the bubbles."""
     bubbles = {}
     for dsrc in bubl:
         if BUBKEY and dsrc != BUBKEY:
             continue
         for traj in trajl:
-            fn1 = h5py.File(PREFIX+str(traj)+'.'+EXTENSION, 'r')
+            filekey = PREFIX+str(traj)+'.'+EXTENSION
+            if openlist is None:
+                fn1 = h5py.File(filekey, 'r')
+            else:
+                fn1 = openlist[filekey]
             keysrc = 'traj_'+str(traj)+'_'+dsrc
             assert(keysrc in fn1), "key = "+keysrc+ \
             " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
@@ -432,18 +448,19 @@ def debug_rows(cols, outkey):
         print(COLS)
         sys.exit(0)
 
+@PROFILE
 def getdiscon_name(dsrc_split, dsnk_split):
     """Get output disconnected diagram figure name
     (mimics dataset names of fully connected diagrams)
     """
-    ptot = np.array(rf.procmom(dsrc_split[1]))
-    ptot2 = np.array(rf.procmom(dsnk_split[1]))
+    ptot = rf.procmom(dsrc_split[1])
+    ptot2 = rf.procmom(dsnk_split[1])
     dsrc = dsrc_split[0]
     dsnk = dsnk_split[0]
-    if not np.array_equal(ptot, -1*ptot2): #complex conjugate at sink, conserve momentum
+    if not (ptot[0] == -1*ptot2[0] and ptot[1] == -1*ptot2[1] and ptot[2] == -1*ptot2[2]): #complex conjugate at sink, conserve momentum
         #dummy values to tell the function to stop processing this diagram
         sepval = -1
-        discname = ''
+        discname = None
     else:
         outfig = wd.comb_fig(dsrc, dsnk)
         try:
@@ -465,10 +482,10 @@ def check_key(key):
     return retval
 
 @PROFILE
-def bubjack(bubl, trajl, bubbles=None, sub=None):
+def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
     """Do jackknife of disconnected (bubble) diagrams"""
     if bubbles is None:
-        bubbles = getbubbles(bubl, trajl)
+        bubbles = getbubbles(bubl, trajl, openlist=openlist)
     if sub is None:
         sub = bubsub(bubbles)
     return dobubjack(bubbles, sub)
@@ -484,10 +501,10 @@ def dobubjack(bubbles, sub):
         dsrc_split = srckey.split("@")
         for snkkey in bubbles:
             outkey, sepval = getdiscon_name(dsrc_split, snkkey.split("@"))
+            if sepval < 0 or not check_key(outkey) or outkey is None:
+                continue
             cols = np.roll(COLS, -sepval, axis=1)
             debug_rows(cols, outkey)
-            if sepval < 0 or not check_key(outkey):
-                continue
             out[outkey] = np.zeros((numt, LT), dtype=np.complex)
             if JACKBUB:
                 for excl in range(numt):
@@ -554,7 +571,7 @@ def testkey2(outkey, outcome, flag, excl=-1):
         sys.exit(0)
 
 @PROFILE
-def aux_jack(basl, trajl, numt):
+def aux_jack(basl, trajl, numt, openlist):
     """Get the aux diagram blocks"""
     auxblks = {}
     for base in basl:
@@ -574,9 +591,11 @@ def aux_jack(basl, trajl, numt):
         rows, cols = getindices(tsep, nmomaux)
         #get block from which to construct the auxdiagram
         #mean is avg over tsrc
-        blk = TSTEP*np.mean(
-            getgenconblk(base, trajl, numt,
-                         avgtsrc=False, rowcols=[rows, cols]), axis=1)
+        blk = np.zeros((numt, LT), dtype=np.complex)
+        np.mean(TSTEP*getgenconblk(base, trajl,
+                                   numt, openlist=openlist,
+                                   avgtsrc=False, rowcols=[rows, cols]),
+                axis=1, out=blk)
         auxblks[outfn] = dojackknife(blk)
     print("Done getting the auxiliary jackknife blocks.")
     return auxblks
@@ -588,11 +607,19 @@ def main(fixn=True):
     trajl = trajlist()
     basl = baselist()
     numt = len(trajl)
-    bubblks = bubjack(bubl, trajl)
-    auxblks = aux_jack(basl, trajl, numt)
-    mostblks = getmostblks(basl, trajl, numt)
+    openlist = {}
+    for traj in trajl:
+        print("processing traj =", traj, "into memory.")
+        filekey = PREFIX+str(traj)+'.'+EXTENSION
+        openlist[filekey] = h5py.File(filekey, 'r', driver='core')
+    print("done processinge files into memory.")
+    auxblks = aux_jack(basl, trajl, numt, openlist)
+    bubblks = bubjack(bubl, trajl, openlist)
+    mostblks = getmostblks(basl, trajl, numt, openlist)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
+    for filekey in openlist:
+        openlist[filekey].close()
     if WRITEBLOCK and not (
             TESTKEY or TESTKEY2) and not WRITEBLOCK in bubblks:
         allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
