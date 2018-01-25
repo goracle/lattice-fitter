@@ -50,7 +50,7 @@ def mkplot(plotdata, input_f,
         error2 = np.array(result_min.error_bars)
     except AttributeError:
         error2 = None
-    if not error2 is None or not error2[0] is None:
+    if error2 is None:
         print("Using average covariance matrix to find error bars.")
         xcoord, ycoord, error2 = get_coord(coords, cov, None)
     else:
