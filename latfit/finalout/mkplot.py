@@ -5,6 +5,7 @@ import re
 import sys
 #from warnings import warn
 from decimal import Decimal
+from numbers import Number
 import itertools
 from collections import namedtuple
 import numpy as np
@@ -101,7 +102,9 @@ def get_dimops(cov, result_min, coords):
         dimops = 1
     coords = np.array(coords)
     if FIT:
-        dimops_chk = len(fit_func(coords[0][0], result_min.x))
+        dimops_chk = len(fit_func(
+            coords[0][0], result_min.x)) if not isinstance(fit_func(
+                coords[0][0], result_min.x), Number) else 1
         if dimops != dimops_chk:
             print("***ERROR***")
             print("Fit function length does not match cov. mat.")
