@@ -271,10 +271,22 @@ if EFF_MASS:
 
     ###select fit function
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
-        def prefit_func(_, trial_params):
-            """eff mass method 1, fit func, single const fit
-            """
-            return trial_params
+        if RESCALE != 1.0:
+            def prefit_func(_, trial_params):
+                """eff mass method 1, fit func, single const fit
+                """
+                return trial_params
+        else:
+            if len(START_PARAMS) == 1:
+                def prefit_func(_, trial_params):
+                    """eff mass method 1, fit func, single const fit
+                    """
+                    return RESCALE*trial_params
+            else:
+                def prefit_func(_, trial_params):
+                    """eff mass method 1, fit func, single const fit
+                    """
+                    return [RESCALE*trial_param for trial_param in trial_params]
 
     elif EFF_MASS_METHOD == 3:
         if RESCALE != 1.0:
@@ -320,7 +332,11 @@ else:
                 print("flag 2 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
-            prefit_func = copy(fit_func_exp_add)
+            if RESCALE != 1.0:
+                def prefit_func(ctime, trial_params):
+                    return RESCALE*fit_func_exp_add(ctime, trial_params)
+            else:
+                prefit_func = copy(fit_func_exp_add)
         elif FIT:
             ###check len of start params
             if ORIGL != 2:
@@ -328,7 +344,11 @@ else:
                 print("flag 3 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
-            prefit_func = copy(fit_func_exp)
+            if RESCALE != 1.0:
+                def prefit_func(ctime, trial_params):
+                    return RESCALE*fit_func_exp(ctime, trial_params)
+            else:
+                prefit_func = copy(fit_func_exp)
         else:
             def prefit_func(__, _):
                 pass
@@ -419,12 +439,7 @@ if NUM_PENCILS > 0:
                 ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
                     START_PARAMS)]) for i in range(2**NUM_PENCILS)])
 else:
-    if RESCALE != 1.0 and not (EFF_MASS_METHOD == 3 or GEVP):
-        def fit_func(ctime, trial_params):
-            """Fit function."""
-            return RESCALE*prefit_func(ctime, trial_params)
-    else:
-        fit_func = copy(prefit_func)
+    fit_func = copy(prefit_func)
 
 
 START_PARAMS = list(START_PARAMS)*2**NUM_PENCILS
