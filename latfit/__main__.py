@@ -116,7 +116,7 @@ def main():
 
 def fit_coord(fitrange, xstep):
     """Get xcoord to plot fit function."""
-    return np.arange(fitrange[0], fitrange[1], xstep)
+    return np.arange(fitrange[0], fitrange[1]+xstep, xstep)
 
 
 def get_fitparams_loc(list_fit_params, trials):

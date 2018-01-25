@@ -80,7 +80,7 @@ def mkplot(plotdata, input_f,
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             #plot fit function
-            plot_fit(fitcoord, result_min)
+            plot_fit(fitcoord, result_min, dimops)
 
             #tolerance box plot
             if EFF_MASS and BOX_PLOT:
@@ -284,7 +284,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
         plt.errorbar(xcoord, ycoord, yerr=error2,
                      linestyle='None', ms=3.75, marker='o')
 
-def plot_fit(xcoord, result_min):
+def plot_fit(xcoord, result_min, dimops):
     """Plot fit function
     the fit function is plotted on a scale FINE times more fine
     than the original data points (to show smoothness)
@@ -299,14 +299,16 @@ def plot_fit(xcoord, result_min):
         len(xcoord)-1)
     xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
                      step_size)
-    for curve_num in range(len(fit_func(xfit[0], result_min.x))):
+    for curve_num in range(dimops):
         #result_min.x is is the array of minimized fit params
         yfit = np.array([
-            fit_func(xfit[i], result_min.x)[curve_num]
+            fit_func(xfit[i], result_min.x)[curve_num] if dimops > 1 else
+            fit_func(xfit[i], result_min.x)
             for i in range(len(xfit))])
         #only plot fit function if minimizer result makes sense
         #if result_min.status == 0:
         plt.plot(xfit, yfit)
+
 if GEVP:
     def plot_box(xcoord, result_min, param_err, dimops):
         """plot tolerance box around straight line fit for effective mass

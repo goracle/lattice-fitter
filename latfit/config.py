@@ -39,8 +39,8 @@ UNCORR = False
 
 ##Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
 
 #solve the generalized eigenvalue problem (GEVP)
 
@@ -56,7 +56,7 @@ PRINT_CORR = False
 
 #time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 0
+TSEP = 3
 LT = 64-2*TSEP
 
 #rhs time separation (t0) of GEVP matrix
@@ -66,8 +66,8 @@ TRHS = 6
 
 #additive constant
 
-ADD_CONST = True
 ADD_CONST = False
+ADD_CONST = True
 
 #EFF_MASS_METHOD 1: analytic for arg to acosh
 #(good for when additive const = 0)
@@ -75,7 +75,7 @@ ADD_CONST = False
 #(bad for all cases; DO NOT USE.  It doesn't converge very often.)
 #EFF_MASS_METHOD 3: one param fit
 
-EFF_MASS_METHOD = 4
+EFF_MASS_METHOD = 3
 
 #Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
@@ -89,15 +89,15 @@ CORRMATRIX = True
 #Simply set this to a list of ints indexing the configs,
 #e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = [18, 24, 26, 28, 33, 35, 40, 41, 43, 50]
 ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12, 45, 26, 28, 33, 35, 40, 41, 43, 50]
 
 ##dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
 #rescale the fit function by factor RESCALE
-RESCALE = 1e5
 RESCALE = 1.0
+RESCALE = -1e13
 
 #prefix for hdf5 dataset location;
 #ALTS will be tried if HDF5_PREFIX doesn't work
@@ -216,7 +216,7 @@ if EFF_MASS:
         #C = SCALE*0.01563
 else:
     if ADD_CONST:
-        START_PARAMS = [-1.74580294, 2.8e-01, 3.0120e-02]*MULT
+        START_PARAMS = [1.14580294, 2.8e-01, -3.0120e-02]*MULT
         #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
         #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
     else:
