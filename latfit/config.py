@@ -453,20 +453,37 @@ def fit_func_3pt_sym(ctime, trial_params):
         -trial_params[1]*ctime)+exps(
             -trial_params[1]*(LT-ctime)))+trial_params[2]
 
-def fit_func_1p(ctime, trial_params):
-    """one parameter eff. mass fit function
-    for EFF_MASS_METHOD = 3
-    """
-    corr1 = exp(-trial_params[0]*ctime)+exp(
-        -trial_params[0]*(LT-ctime))
-    corr2 = exp(-trial_params[0]*(ctime+1))+exp(
-        -trial_params[0]*(LT-(ctime+1)))
-    if ADD_CONST:
+if ADD_CONST:
+    def fit_func_1p(ctime, trial_params):
+        """one parameter eff. mass fit function
+        for EFF_MASS_METHOD = 3
+        """
+        corr1 = exp(-trial_params[0]*ctime)+exp(
+            -trial_params[0]*(LT-ctime))
+        corr2 = exp(-trial_params[0]*(ctime+1))+exp(
+            -trial_params[0]*(LT-(ctime+1)))
         corr3 = exp(-trial_params[0]*(ctime+2))+exp(
             -trial_params[0]*(LT-(ctime+2)))
+        return ratio(corr1, corr2, corr3, ctime)
+
+else:
+    def fit_func_1p(ctime, trial_params):
+        """one parameter eff. mass fit function
+        for EFF_MASS_METHOD = 3
+        """
+        corr1 = exp(-trial_params[0]*ctime)+exp(
+            -trial_params[0]*(LT-ctime))
+        corr2 = exp(-trial_params[0]*(ctime+1))+exp(
+            -trial_params[0]*(LT-(ctime+1)))
+        return ratio(corr1, corr2, None, ctime)
+
+
+if ADD_CONST and LOG:
+    def ratio(corr1, corr2, corr3, ctime=None):
         if np.array_equal(corr3, corr2):
             print("imaginary effective mass.")
-            print("problematic time slices:", ctime, ctime+1, ctime+2)
+            if not ctime is None:
+                print("problematic time slices:", ctime, ctime+1, ctime+2)
             print("trial_param =", trial_params[0])
             print("START_PARAMS =", START_PARAMS)
             print("corr1 = ", corr1)
@@ -474,29 +491,69 @@ def fit_func_1p(ctime, trial_params):
             print("corr3 = ", corr3)
             sys.exit(1)
         sol = (corr2-corr1)/(corr3-corr2)
-    else:
+        if not test_arg(sol, SENT):
+            if ADD_CONST:
+                if not ctime is None:
+                    print("problematic time slices:",
+                            ctime, ctime+1, ctime+2)
+                print("corr1 = ", corr1)
+                print("corr2 = ", corr2)
+                print("corr3 = ", corr3)
+            else:
+                if not ctime is None:
+                    print("problematic time slices:", ctime, ctime+1)
+                print("corr1 = ", corr1)
+                print("corr2 = ", corr2)
+            sys.exit(1)
+        sol = log(sol)
+        return sol
+
+elif ADD_CONST and not LOG:
+    def ratio(corr1, corr2, corr3, ctime=None):
+        if np.array_equal(corr3, corr2):
+            print("imaginary effective mass.")
+            if not ctime is None:
+                print("problematic time slices:", ctime, ctime+1, ctime+2)
+            print("trial_param =", trial_params[0])
+            print("START_PARAMS =", START_PARAMS)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
+            print("corr3 = ", corr3)
+            sys.exit(1)
+        sol = (corr2-corr1)/(corr3-corr2)
+        return sol
+
+elif not ADD_CONST and LOG:
+    def ratio(corr1, corr2, _, ctime=None):
         if np.array_equal(corr2, np.zeros(corr2.shape)):
             print("imaginary effective mass.")
-            print("problematic time slices:", ctime, ctime+1)
+            if not ctime is None:
+                print("problematic time slices:", ctime, ctime+1)
             print("trial_param =", trial_params[0])
             print("START_PARAMS =", START_PARAMS)
             print("corr1 = ", corr1)
             print("corr2 = ", corr2)
             sys.exit(1)
         sol = (corr1)/(corr2)
-    if LOG:
         if not test_arg(sol, SENT):
-            if ADD_CONST:
-                print("problematic time slices:", ctime, ctime+1, ctime+2)
-                print("corr1 = ", corr1)
-                print("corr2 = ", corr2)
-                print("corr3 = ", corr3)
-            else:
+            if not ctime is None:
                 print("problematic time slices:", ctime, ctime+1)
-                print("corr1 = ", corr1)
-                print("corr2 = ", corr2)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
             sys.exit(1)
         sol = log(sol)
-    else:
-        pass
-    return sol
+        return sol
+
+else:
+    def ratio(corr1, corr2, _, ctime=None):
+        if np.array_equal(corr2, np.zeros(corr2.shape)):
+            print("imaginary effective mass.")
+            if not ctime is None:
+                print("problematic time slices:", ctime, ctime+1)
+            print("trial_param =", trial_params[0])
+            print("START_PARAMS =", START_PARAMS)
+            print("corr1 = ", corr1)
+            print("corr2 = ", corr2)
+            sys.exit(1)
+        sol = (corr1)/(corr2)
+        return sol

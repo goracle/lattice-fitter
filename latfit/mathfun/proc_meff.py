@@ -21,6 +21,8 @@ from latfit.config import fit_func_exp
 from latfit.config import START_PARAMS
 from latfit.config import LOG
 from latfit.config import ADD_CONST
+from latfit.config import fit_func_1p
+from latfit.config import ratio
 from latfit.analysis.test_arg import test_arg
 
 #almost solve a cosh, analytic
@@ -30,16 +32,7 @@ if EFF_MASS_METHOD == 1:
         Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
-        if time_arr:
-            pass
-        if not files:
-            corr1 = line1
-            corr2 = line2
-            corr3 = line3
-        else:
-            corr1 = proc_line(line1, files[0])
-            corr2 = proc_line(line2, files[1])
-            corr3 = proc_line(line3, files[2])
+        corr1, corr2, corr3 = pre_proc_meff(line1, line2, line3, files, time_arr)
         if corr2 - C == 0:
             print("***ERROR***")
             print("corr2-C==0, proc_meff, arg to acosh is inf.", corr2, C)
@@ -54,6 +47,7 @@ if EFF_MASS_METHOD == 1:
             sys.exit(1)
         return acosh(arg)
 
+#sliding window method
 elif EFF_MASS_METHOD == 2:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """numerically solve a system of three transcendental equations
@@ -105,148 +99,38 @@ elif EFF_MASS_METHOD == 2:
         print("Found solution:", sol[1])
         return sol[1]
 
+#one parameter fit, additive constant
 elif EFF_MASS_METHOD == 3 and not ADD_CONST:
     def proc_meff(line1, line2, _, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
-        if not files:
-            corr1 = line1
-            corr2 = line2
-        else:
-            corr1 = proc_line(line1, files[0])
-            corr2 = proc_line(line2, files[1])
-        if np.array_equal(np.array(corr2), np.zeros(np.array(corr2).shape)):
-            print("***ERROR***")
-            print("denominator of one param eff mass function is 0")
-            print(corr1, corr2)
-            if files:
-                print(files[0])
-                print(files[1])
-            if not time_arr is None:
-                print(time_arr)
-            sys.exit(1)
-        sol = corr1/corr2
-        if LOG:
-            if not test_arg(sol, proc_meff.sent):
-                print(corr1, corr2)
-                if files:
-                    print(files[0])
-                    print(files[1])
-                if not time_arr is None:
-                    print(time_arr)
-                proc_meff.sent = 0
-                sys.exit(1)
-            sol = log(sol)
-        else:
-            pass
+        corr1, corr2, _ = pre_proc_meff(line1, line2, line3, files, time_arr)
+        sol = ratio(corr1, corr2, None, time_arr)
         return sol
 
+#one param fit, no add const.
 elif EFF_MASS_METHOD == 3 and ADD_CONST:
     def proc_meff(line1, line2, line3, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
-        if not files:
-            corr1 = line1
-            corr2 = line2
-            corr3 = line3
-        else:
-            corr1 = proc_line(line1, files[0])
-            corr2 = proc_line(line2, files[1])
-            corr3 = proc_line(line3, files[2])
-        if np.array_equal(corr3, corr2):
-            print("***ERROR***")
-            print("denominator of one param eff mass function is 0")
-            print(corr1, corr2, corr3)
-            if files:
-                print(files[0])
-                print(files[1])
-                print(files[2])
-            if not time_arr is None:
-                print(time_arr)
-            sys.exit(1)
-        sol = (corr2-corr1)/(corr3-corr2)
-        if LOG:
-            if not test_arg(sol, proc_meff.sent):
-                print(corr1, corr2, corr3)
-                if files:
-                    print(files[0])
-                    print(files[1])
-                    print(files[2])
-                if not time_arr is None:
-                    print(time_arr)
-                proc_meff.sent = 0
-                sys.exit(1)
-            sol = log(sol)
-        else:
-            pass
+        corr1, corr2, corr3 = pre_proc_meff(line1, line2, line3, files, time_arr)
+        sol = ratio(corr1, corr2, corr3, time_arr)
         return sol
 
+
+#sliding window, no additive constant.
 elif EFF_MASS_METHOD == 4 and not ADD_CONST:
-
-    def eff_mass_tomin(energy, ctime, sol):
-        return (log(fit_func_exp(ctime,[1.0, energy])/fit_func_exp(ctime+1,[1.0, energy]))-sol)**2
-    def eff_mass_root(energy, ctime, sol):
-        return (log(fit_func_exp(ctime,[1.0, energy])/fit_func_exp(ctime+1,[1.0, energy]))-sol)
-
     def proc_meff(line1, line2, _, files=None, time_arr=None):
-        """numerically solve a function with one free parameter
-        [ C(t) ]/[ C(t+1) ]
-        This is the conventional effective mass formula.
-        """
-        time1 = time_arr
-        if not files:
-            corr1 = line1
-            corr2 = line2
-        else:
-            corr1 = proc_line(line1, files[0])
-            corr2 = proc_line(line2, files[1])
-        if np.array_equal(np.array(corr2), np.zeros(np.array(corr2).shape)):
-            print("***ERROR***\ndenominator of one param eff" + \
-                  " mass function is 0\n", corr1, corr2)
-            print(files[0], "\n", files[1])
-            print(time_arr)
-            sys.exit(1)
-        sol = corr1/corr2
-        if LOG:
-            if not test_arg(sol, proc_meff.sent):
-                print(corr1, corr2)
-                print(files[0])
-                print(files[1])
-                print(time_arr)
-                proc_meff.sent = 0
-                sys.exit(1)
-            sol = log(sol)
-        try:
-            if LOG:
-                sol = minimize_scalar(eff_mass_tomin, args=(time1,sol)).x
-                #other solution methods:
-                #sol = brentq(eff_mass_root, .1, 50, args=(time1, sol)) #too unstable
-                #sol = nsolve((logs(fit_func_3pt_sym( #too slow
-                #    time1, [1, y, 0])/fit_func_3pt_sym(
-                #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS) 
-            else:
-                sol = nsolve((logs(fit_func_3pt_sym(
-                    time1, [1, y, 0])/fit_func_3pt_sym(
-                        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
-            sol = float(sol)
-        except ValueError:
-            print("***ERROR***\nSolution not within tolerance.")
-            if files:
-                print(corr1, files[0])
-                print(corr2, files[1])
-            else:
-                print(corr1, corr2)
-            sys.exit(1)
-        if sol < 0:
-            print("***ERROR***\nnegative energy found:", sol[1])
-            print(files[0])
-            print(files[1])
-            print(files[2])
-            sys.exit(1)
-        return sol
+        corr1, corr2, _ = pre_proc_meff(line1, line2, line3, files, time_arr)
+        return proc_meff4(corr1, corr2, None, files, time_arr)
 
+#sliding window, additive constant.
+elif EFF_MASS_METHOD == 4:
+    def proc_meff(line1, line2, line3, files=None, time_arr=None):
+        corr1, corr2, corr3 = pre_proc_meff(line1, line2, line3, files, time_arr)
+        return proc_meff4(corr1, corr2, corr3, files, time_arr)
 
 elif FIT:
     print("Bad method for finding the effective mass specified:",
@@ -258,3 +142,62 @@ else:
         if args:
             pass
 proc_meff.sent = object()
+
+def eff_mass_tomin(energy, ctime, sol):
+    """Minimize this
+    (quadratic) to solve a sliding window problem."""
+    return (fit_func_1p(ctime, [energy])-sol)**2
+def eff_mass_root(energy, ctime, sol):
+    """Minimize this
+    (find a root) to solve a sliding window problem."""
+    return (fit_func_1p(ctime, [energy])-sol)
+
+def pre_proc_meff(line1, line2, line3, files=None, time_arr=None):
+    """Extract values from files or from fake files for proc_meff"""
+    time1 = time_arr
+    if not files:
+        corr1 = line1
+        corr2 = line2
+        corr3 = line3
+    else:
+        corr1 = proc_line(line1, files[0])
+        corr2 = proc_line(line2, files[1])
+        if line3 is not None:
+            corr3 = proc_line(line3, files[2])
+        else:
+            corr3 = None
+    return corr1, corr2, corr3
+
+def proc_meff4(corr1, corr2, corr3, files=None, time1=None):
+    """numerically solve a function with one free parameter
+    (e.g.) [ C(t) ]/[ C(t+1) ]
+    This is the conventional effective mass formula.
+    """
+    sol = ratio(corr1, corr2, corr3, time1)
+    try:
+        sol = minimize_scalar(eff_mass_tomin, args=(time1, sol), bounds=(0, None))
+        fun = sol.fun
+        sol = sol.x
+        #other solution methods:
+        #sol = brentq(eff_mass_root, 0, 5, args=(time1, sol)) #too unstable
+        #sol = nsolve((logs(fit_func_3pt_sym( #too slow
+        #    time1, [1, y, 0])/fit_func_3pt_sym(
+        #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS) 
+        sol = float(sol)
+    except ValueError:
+        print("***ERROR***\nSolution not within tolerance.")
+        print(sol, time_arr)
+        print(corr1, corr2, corr3)
+        print(minimize_scalar(eff_mass_tomin, args=(time1, sol)))
+        sys.exit(1)
+    if sol < 0:
+        if (eff_mass_tomin(-sol, time1,
+                            ratio(corr1, corr2, corr3, time1)) -fun)/fun < 10:
+            sol = -sol
+            print("positive solution close to negative solution; switching.")
+        else:
+            print("***ERROR***\nnegative energy found:", sol, time_arr)
+            print(eff_mass_tomin(sol, time_arr, ratio(corr1, corr2, corr3, time_arr)))
+            print(eff_mass_tomin(-sol, time1, ratio(corr1, corr2, corr3, time_arr)))
+            sys.exit(1)
+    return sol
