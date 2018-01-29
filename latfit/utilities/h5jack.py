@@ -2,15 +2,15 @@
 """Write jackknife blocks from h5py files"""
 import sys
 import os
-import re
 import glob
+import re
 import numpy as np
+import h5py
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
 import write_discon as wd
 import aux_write as aux
-import h5py
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -312,7 +312,7 @@ def fold_time(outblk, base=''):
     else:
         return outblk
 @PROFILE
-def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None, openlist=None):
+def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     """Get generic connected diagram of base = base
     and indices tsrc, tdis
     """
@@ -323,9 +323,9 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None, openlist=None):
         cols = rowcols[1]
     base2 = '_'+base
     if avgtsrc:
-        blk = np.zeros((numt, LT), dtype=np.complex)
+        blk = np.zeros((len(trajl), LT), dtype=np.complex)
     else:
-        blk = np.zeros((numt, LT, LT), dtype=np.complex)
+        blk = np.zeros((len(trajl), LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
         filekey = PREFIX+str(traj)+'.'+EXTENSION
@@ -347,14 +347,14 @@ def getgenconblk(base, trajl, numt, avgtsrc=False, rowcols=None, openlist=None):
     return np.delete(blk, skip, axis=0)
 
 @PROFILE
-def getmostblks(basl, trajl, numt, openlist):
+def getmostblks(basl, trajl, openlist):
     """Get most of the jackknife blocks,
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
         if not check_key(base):
             continue
-        blk = getgenconblk(base, trajl, numt, avgtsrc=True, openlist=openlist)
+        blk = getgenconblk(base, trajl, avgtsrc=True, openlist=openlist)
         if TESTKEY2:
             print("Printing non-averaged-over-tsrc data")
             printblk(TESTKEY2, blk)
@@ -457,7 +457,9 @@ def getdiscon_name(dsrc_split, dsnk_split):
     ptot2 = rf.procmom(dsnk_split[1])
     dsrc = dsrc_split[0]
     dsnk = dsnk_split[0]
-    if not (ptot[0] == -1*ptot2[0] and ptot[1] == -1*ptot2[1] and ptot[2] == -1*ptot2[2]): #complex conjugate at sink, conserve momentum
+    if not (ptot[0] == -1*ptot2[0] and
+            ptot[1] == -1*ptot2[1] and
+            ptot[2] == -1*ptot2[2]): #cc at sink, conserve momentum
         #dummy values to tell the function to stop processing this diagram
         sepval = -1
         discname = None
@@ -592,8 +594,7 @@ def aux_jack(basl, trajl, numt, openlist):
         #get block from which to construct the auxdiagram
         #mean is avg over tsrc
         blk = np.zeros((numt, LT), dtype=np.complex)
-        np.mean(TSTEP*getgenconblk(base, trajl,
-                                   numt, openlist=openlist,
+        np.mean(TSTEP*getgenconblk(base, trajl, openlist=openlist,
                                    avgtsrc=False, rowcols=[rows, cols]),
                 axis=1, out=blk)
         auxblks[outfn] = dojackknife(blk)
@@ -615,13 +616,13 @@ def main(fixn=True):
     print("done processinge files into memory.")
     auxblks = aux_jack(basl, trajl, numt, openlist)
     bubblks = bubjack(bubl, trajl, openlist)
-    mostblks = getmostblks(basl, trajl, numt, openlist)
+    mostblks = getmostblks(basl, trajl, openlist)
     #do things in this order to overwrite already composed disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
     for filekey in openlist:
         openlist[filekey].close()
     if WRITEBLOCK and not (
-            TESTKEY or TESTKEY2) and not WRITEBLOCK in bubblks:
+            TESTKEY or TESTKEY2) and WRITEBLOCK not in bubblks:
         allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
         h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
     #allblks = {**mostblks, **bubblks} #for gparity
@@ -647,10 +648,9 @@ def printblk(basename, blk):
 if __name__ == '__main__':
     FIXN = input("Need fix norms before summing? True/False?")
     #FIXN = 'False'
-    if FIXN == 'True':
-        FIXN = True
-    elif FIXN == 'False':
-        FIXN = False
-    else:
+    FIXN = FIXN in ['true', '1', 't', 'y',
+                    'yes', 'yeah', 'yup', 'certainly', 'True']
+    if not FIXN and FIXN not in ['false', '0', 'f', 'n',
+                                 'no', 'nope', 'certainly not', 'False']:
         sys.exit(1)
     main(FIXN)

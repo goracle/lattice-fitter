@@ -88,24 +88,26 @@ def main():
     """Write disconnected diagrams, main"""
     dur = 'summed_tsrc_diagrams/'
     lookup = {}
+    sepdata = namedtuple('sep', ['sepstr', 'sepval'])
     file_lookup = get_disfiles([
         f for f in listdir('.') if isfile(join('.', f))])
     for traj in file_lookup:
         #count = 0
         for mt1 in file_lookup[traj]:
-            oreal = bool(mt1 == ZERO)
             lookup_local = {}
             for dsrc, momsrc in file_lookup[traj][mt1]:
                 for dsnk, momsnk in file_lookup[traj][mt1]:
                     outfig = comb_fig(dsrc, dsnk)
                     try:
-                        sepstr, sepval = get_sep(dsrc, dsnk, outfig)
+                        sepdata.sepstr, sepdata.sepval = get_sep(
+                            dsrc, dsnk, outfig)
                     except TypeError:
                         continue
                     #count += 1
                     #print(count)
-                    outfile = "traj_"+str(
-                        traj)+"_Figure"+outfig+sepstr+dismom(momsrc, momsnk)
+                    outfile = "traj_" + str(traj) + "_Figure" + outfig + \
+                        sepdata.sepstr+dismom(
+                            momsrc, momsnk)
                     outavg = outfile+'_avgsub'
                     if os.path.isfile(outavg):
                         print("Skipping:", outavg)
@@ -113,8 +115,9 @@ def main():
                         continue
                     #arr_plus, arr_minus = get_data(
                     arr_minus, lookup_local = get_data(
-                        get_fourfn(dsrc, dsnk, dur), sepval,
-                        lookup, onlyreal=oreal, lookup_local=lookup_local)
+                        get_fourfn(dsrc, dsnk, dur), sepdata.sepval,
+                        lookup, onlyreal=bool(mt1 == ZERO),
+                        lookup_local=lookup_local)
                     #rf.write_arr(arr_plus - arr_minus, outfile)
                     #rf.write_arr(arr_plus, outfile)
                     rf.write_arr(arr_minus, outavg)
@@ -167,18 +170,14 @@ def get_data(bubs, sepval, lookup, onlyreal=False, lookup_local=()):
     if bubs.dsrc_sub in lookup:
         arr_minus_src = lookup[bubs.dsrc_sub]
     else:
-        if onlyreal:
-            arr_minus_src = rf.proc_vac_real(bubs.dsrc_sub)
-        else:
-            arr_minus_src = rf.proc_vac(bubs.dsrc_sub)
+        arr_minus_src = rf.proc_vac_real(
+            bubs.dsrc_sub) if onlyreal else rf.proc_vac(bubs.dsrc_sub)
         lookup[bubs.dsrc_sub] = arr_minus_src
     if bubs.dsnk_sub in lookup:
         arr_minus_snk = lookup[bubs.dsnk_sub]
     else:
-        if onlyreal:
-            arr_minus_snk = rf.proc_vac_real(bubs.dsnk_sub)
-        else:
-            arr_minus_snk = rf.proc_vac(bubs.dsnk_sub)
+        arr_minus_snk = rf.proc_vac_real(
+            bubs.dsnk_sub) if onlyreal else rf.proc_vac(bubs.dsnk_sub)
         lookup[bubs.dsnk_sub] = arr_minus_snk
 
     if bubs.dsrc in lookup_local:

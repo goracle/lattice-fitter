@@ -160,7 +160,6 @@ def op_list(stype='ascii'):
                 continue
             if stype == 'ascii':
                 print("Doing", opa, "for particles", parts)
-            if stype == 'ascii':
                 sum_blks(outdir, coeffs_arr)
             else:
                 projlist[outdir] = coeffs_arr

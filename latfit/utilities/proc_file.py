@@ -6,7 +6,6 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-import avgvac as avac
 import read_file as rf
 
 def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
@@ -31,7 +30,7 @@ def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
         if not already_summed:
             data = rf.proc_file(filen, True)
         else:
-            data = avac.proc_vac(filen)
+            data = rf.proc_vac(filen)
         if data is None:
             print("Skipping file", filen, "should be 4 numbers per line, non-4 value found.")
     return data, outfile

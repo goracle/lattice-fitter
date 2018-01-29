@@ -44,8 +44,6 @@ def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
 
-    coords, cov, fitcoord = (
-        plotdata.coords, plotdata.cov, plotdata.fitcoord)
     ###GET COORDS
     try:
         error2 = np.array(result_min.error_bars)
@@ -53,13 +51,15 @@ def mkplot(plotdata, input_f,
         error2 = None
     if error2 is None:
         print("Using average covariance matrix to find error bars.")
-        xcoord, ycoord, error2 = get_coord(coords, cov, None)
+        xcoord, ycoord, error2 = get_coord(plotdata.coords,
+                                           plotdata.cov, None)
     else:
         print("Using average error bars from jackknife fit.")
-        xcoord, ycoord, error2 = get_coord(coords, cov, error2)
+        xcoord, ycoord, error2 = get_coord(plotdata.coords,
+                                           plotdata.cov, error2)
 
     #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
-    dimops = get_dimops(cov, result_min, coords)
+    dimops = get_dimops(plotdata.cov, result_min, plotdata.coords)
 
     ###GET STRINGS
     title = get_title(input_f)
@@ -68,7 +68,8 @@ def mkplot(plotdata, input_f,
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(coords, dimops, result_min, fitrange)
+        param_chisq = get_param_chisq(plotdata.coords, dimops,
+                                      result_min, fitrange)
         print_messages(result_min, param_err, param_chisq)
 
     ###STOP IF NO PLOT
@@ -80,13 +81,14 @@ def mkplot(plotdata, input_f,
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             #plot fit function
-            plot_fit(fitcoord, result_min, dimops)
+            plot_fit(plotdata.fitcoord, result_min, dimops)
 
             #tolerance box plot
             if EFF_MASS and BOX_PLOT:
-                plot_box(fitcoord, result_min, param_err, dimops)
+                plot_box(plotdata.fitcoord, result_min, param_err, dimops)
 
-            annotate(dimops, result_min, param_err, param_chisq, coords)
+            annotate(dimops, result_min, param_err,
+                     param_chisq, plotdata.coords)
 
         #save, output
         do_plot(title, pdf)

@@ -27,14 +27,14 @@ def write_blocks(trajl, basename, outfiles):
         #trajectory to exclude this line (loop over lines in the block)
         outarr = np.zeros((len(trajl)), dtype=object)
         data = rf.get_linejk(basename2, time, trajl)
-        for i, traj in enumerate(trajl):
+        for i, _ in enumerate(trajl):
             #avg = 0
             avg = np.mean(np.delete(data, i))
             #line to write in the block file
             avg = complex('{0:.{1}f}'.format(avg, sys.float_info.dig))
             avg = str(avg.real)+" "+str(avg.imag)+'\n'
             outarr[i] = avg
-        rf.write_block(outarr, outfile, already_checked=True)
+        rf.write_blk(outarr, outfile, already_checked=True)
 
 def main():
     """Make jackknife blocks (main)"""

@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 """Write auxiliary diagrams from files in current directory."""
 import sys
-import os.path
 from os import listdir
 from os.path import isfile, join
+import os.path
 import numpy as np
 import read_file as rf
 

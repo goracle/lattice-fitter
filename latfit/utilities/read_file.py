@@ -34,7 +34,8 @@ def traj(filename, nowarn=False):
         rettraj = mat.group(1)
     else:
         if not nowarn:
-            warnings.warn("Warning: filename:"+filename+" , has no configuration info")
+            warnings.warn("Warning: filename:" + filename + \
+                          " , has no configuration info")
         rettraj = None
     return rettraj
 
@@ -137,6 +138,20 @@ def mom(filename):
     lmat = re.search(r'momsrc((_?\d+){3})', filename)
     mat = re.search(r'mom1src((_?\d+){3})', filename)
     nmat = re.search(r'mom((_?\d+){3})', filename)
+    if kmat or lmat:
+        pret = two_mat(kmat, lmat, filename)
+    elif mat:
+        pret = three_mat(mat, filename)
+    elif nmat:
+        pret = procmom(nmat.group(1))
+    else:
+        print("Error: bad filename= '"+str(
+            filename)+"' no momenta found.  Attempting to continue.")
+        pret = None
+    return pret
+
+def two_mat(kmat, lmat, filename):
+    """get two 3 momenta from filename; called by mom(filename)"""
     if kmat:
         mom1 = procmom(kmat.group(1))
         kmat = re.search(r'mom2((_?\d+){3})', filename)
@@ -155,16 +170,8 @@ def mom(filename):
         else:
             print("Error: bad filename, psnk not found", filename)
             sys.exit(1)
-    elif mat:
-        pret = three_mat(mat, filename)
-    elif nmat:
-        pret = procmom(nmat.group(1))
-    else:
-        print("Error: bad filename= '"+str(
-            filename)+"' no momenta found.  Attempting to continue.")
-        pret = None
     return pret
-        #sys.exit(1)
+
 
 def three_mat(mat, filename):
     """get three 3 momenta from filename; called by mom(filename)"""
@@ -210,17 +217,13 @@ def pchange(filename, pnew):
     nold = nmom_arr(pold)
     nnew = nmom_arr(pnew)
     traj1 = traj(filename, nowarn=True)
-    if not traj1 is None:
-        filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename)
-    else:
-        filen = filename
+    filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename) if not traj1 is None else filename
     if nnew != nold:
         print("Error: filename momentum mismatch")
         sys.exit(1)
     nmom1 = nold
-    if nmom1 == 1:
-        filen = filen.replace(ptostr(pold), ptostr(pnew))
-    elif nmom1 == 2 or nmom1 == 3:
+    filen = filen.replace(ptostr(pold), ptostr(pnew)) if nmom1 == 1 else filen
+    if nmom1 == 2 or nmom1 == 3:
         for i in range(nmom1):
             filen = filen.replace(ptostr(pold[i]), "temp"+str(i), 1)
         for i in range(nmom1):
@@ -228,8 +231,7 @@ def pchange(filename, pnew):
     else:
         print("Error: bad filename for momentum replacement specified.")
         sys.exit(1)
-    if not traj1 is None:
-        filen = re.sub("TEMPsafe", str(traj1), filen)
+    filen = re.sub("TEMPsafe", str(traj1), filen) if not traj1 is None else filen
     return filen
 
 def remp(mom1, mom2, mom3=(0, 0, 0)):

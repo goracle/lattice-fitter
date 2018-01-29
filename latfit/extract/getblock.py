@@ -12,7 +12,6 @@ from latfit.extract.proc_line import proc_line
 
 from latfit.config import EFF_MASS
 from latfit.config import GEVP
-from latfit.config import START_PARAMS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS
 from latfit.config import BINNUM

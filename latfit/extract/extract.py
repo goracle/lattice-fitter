@@ -59,7 +59,8 @@ def extract(input_f, xmin, xmax, xstep):
                 tij[1] = timej
 
                 #get the cov entry and the block
-                resret = proc_ijfile(ifile_tup, jfile_tup, reuse=reuse, timeij=tij)
+                resret = proc_ijfile(ifile_tup, jfile_tup,
+                                     reuse=reuse, timeij=tij)
 
                 #fill in the covariance matrix
                 cov[i][j] = resret.covar
