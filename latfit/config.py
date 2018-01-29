@@ -76,6 +76,7 @@ LOG = False
 LOG = True
 
 #do inverse via a correlation matrix (for higher numerical stability)
+CORRMATRIX = False
 CORRMATRIX = True
 
 ##eliminate problematic configs.
@@ -92,9 +93,18 @@ BINNUM = 1
 RESCALE = 1.0
 RESCALE = -1e13
 
-#prefix for hdf5 dataset location;
-#ALTS will be tried if HDF5_PREFIX doesn't work
-GROUP_LIST = ['I1', 'I0', 'I2']
+#stringent tolerance for minimizer?  true = stringent
+MINTOL = False
+MINTOL = True
+
+###starting values for fit parameters
+if EFF_MASS:
+    START_PARAMS = [.5]
+else:
+    if ADD_CONST:
+        START_PARAMS = [1.14580294, 2.8e-01, -3.0120e-02]
+    else:
+        START_PARAMS = [-1.18203895e+01, 4.46978036e-01]
 
 #####2x2 I = 0
 #GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
@@ -186,57 +196,89 @@ BOX_PLOT = True
 
 PREC_DISP = 4
 
-#stringent tolerance for minimizer?  true = stringent
-MINTOL = False
-MINTOL = True
+##RARELY EDIT BELOW
 
 #how many time slices to skip at a time
 TSTEP = 1
 
-###starting values for fit parameters
-if GEVP:
-    MULT = len(GEVP_DIRS)
-else:
-    MULT = 1
+#File format.  are the jackkknife blocks in ascii or hdf5?
+STYPE = 'ascii'
+STYPE = 'hdf5'
 
-C = 0
-if EFF_MASS:
-    C = 0
-    START_PARAMS = [.5]*MULT
-    if EFF_MASS_METHOD < 3:
-        #additive constant added to effective mass functions
-        SCALE = 1e11
-        C = 1.935*SCALE*0
-        #C = SCALE*0.01563
-else:
-    if ADD_CONST:
-        START_PARAMS = [1.14580294, 2.8e-01, -3.0120e-02]*MULT
-        #START_PARAMS = [1.54580294e+12, 3.61658103e-01, -8.7120e+08]*MULT
-        #START_PARAMS = [.154580294, 3.61658103e-01, -8.7120e-5]*MULT
-    else:
-        START_PARAMS = [-1.18203895e+01, 4.46978036e-01]*MULT
+#prefix for hdf5 dataset location;
+#ALTS will be tried if HDF5_PREFIX doesn't work
+GROUP_LIST = ['I1', 'I0', 'I2']
 
-#don't do any by hand subtraction if no additive constant
-if not ADD_CONST:
-    C = 0
+#optional, scale parameter to set binds
+SCALE = 1e13
+if EFF_MASS_METHOD < 3:
+    #additive constant added to effective mass functions
+    SCALE = 1e11
 
+##bounds for fit parameters
+##for use with L-BFGS-B
+BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
+BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
+#BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
-##library of functions to fit.  define them in the usual way
-#setup is for simple exponential fit, but one can easily modify it.
-def fit_func_exp(ctime, trial_params):
-    """Give result of function computed to fit the data given in <inputfile>
-    (See procargs(argv))
-    """
-    return trial_params[0]*(exp(
-        -trial_params[1]*ctime)+exp(-trial_params[1]*(LT-ctime)))
+##fineness of scale to plot (higher is more fine)
 
-def fit_func_exp_add(ctime, trial_params):
-    """Give result of function computed to fit the data given in <inputfile>
-    (See procargs(argv))
-    """
-    return trial_params[0]*(exp(
-        -trial_params[1]*ctime)+exp(
-            -trial_params[1]*(LT-ctime)))+trial_params[2]
+FINE = 1000.0
+
+##method used by the scipy.optimize.minimize
+##other internals will need to be edited if you change this
+##it's probably not a good idea
+
+METHOD = 'Nelder-Mead'
+#METHOD = 'L-BFGS-B'
+
+##jackknife correction? "YES" or "NO"
+##correction only happens if multiple files are processed
+
+JACKKNIFE = 'YES'
+
+###-------BEGIN POSSIBLY OBSOLETE------###
+
+#multiply both sides of the gevp matrix by norms
+
+#NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
+NORMS = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+
+##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
+#if non-zero, set to 1 (only do one pencil,
+#more than one is supported, but probably not a good idea - see ref above)
+
+NUM_PENCILS = 0
+PENCIL_SHIFT = 1 #paper set shift to 4
+
+##the boundary for when the fitter warns you if the eigenvalues
+##of your covariance are very small
+
+EIGCUT = 10**(-23)
+
+#if set to true, AUTO_FIT uses curve_fit from scipy.optimize
+#to bootstrap START_PARAMS.  Bounds must still be set manually.
+#Bounds are used to find very rough start parameters: taken as the midpoints
+#Probably, you should set FIT to False to first find some reasonable bounds.
+#If ASSISTED_FIT is also True,
+#use start_params to find the guess for the AUTO fitter
+#(for use with L-BFGS-B)
+
+AUTO_FIT = False
+#AUTO_FIT = False
+
+#ASSISTED_FIT = True
+ASSISTED_FIT = False
+
+##boundary scale for zero'ing out a failing inverse Hessian
+##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
+CUTOFF = 10**(7)
+
+#additive constant subtracted by hand from exact effective mass functions
+#questionable, since this is an extra, badly optimized, fit parameter
+C = 1.935*SCALE*0 if (ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
+
+###-------END POSSIBLY OBSOLETE------###
 
 ##FIT FUNCTION/PROCESSING FUNCTION SELECTION
 
@@ -348,9 +390,9 @@ else:
                       exp(-trial_params[1]*(LT-(TRHS)))))
 
 
-##select which of the above functions to use
+##select which of the above library functions to use
 
-ORIGL = int(len(START_PARAMS)/MULT)
+ORIGL = len(START_PARAMS)
 if EFF_MASS:
 
     ###check len of start params
@@ -384,14 +426,14 @@ if EFF_MASS:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [RESCALE * fit_func_1p(
-                    ctime, trial_params[j:j+1]) for j in range(MULT)]
+                return [RESCALE * fit_func_1p(ctime, trial_params[j:j+1])
+                        for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [fit_func_1p(
-                    ctime, trial_params[j:j+1]) for j in range(MULT)]
+                return [fit_func_1p(ctime, trial_params[j:j+1])
+                        for j in range(MULT)]
     else:
         print("***ERROR***")
         print("check config file fit func selection.")
@@ -416,107 +458,27 @@ else:
                 return [fit_func_exp_gevp(ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
                         for j in range(MULT)]
     else:
-        if ADD_CONST and FIT:
+        if FIT:
             ###check len of start params
-            if ORIGL != 3:
+            if ORIGL != (3 if ADD_CONST else 2):
                 print("***ERROR***")
                 print("flag 2 length of start_params invalid")
                 sys.exit(1)
             ###select fit function
             if RESCALE != 1.0:
                 def prefit_func(ctime, trial_params):
-                    return RESCALE*fit_func_exp_add(ctime, trial_params)
-            else:
-                prefit_func = copy(fit_func_exp_add)
-        elif FIT:
-            ###check len of start params
-            if ORIGL != 2:
-                print("***ERROR***")
-                print("flag 3 length of start_params invalid")
-                sys.exit(1)
-            ###select fit function
-            if RESCALE != 1.0:
-                def prefit_func(ctime, trial_params):
+                    """Rescaled exp fit function."""
                     return RESCALE*fit_func_exp(ctime, trial_params)
             else:
-                prefit_func = copy(fit_func_exp)
+                def prefit_func(ctime, trial_params):
+                    """Prefit function, copy of exponential fit function."""
+                    return fit_func_exp(ctime, trial_params)
         else:
             def prefit_func(__, _):
+                """fit function doesn't do anything because FIT = False"""
                 pass
 
-##RARELY EDIT BELOW
-
-#File format.  are the jackkknife blocks in ascii or hdf5?
-STYPE = 'ascii'
-STYPE = 'hdf5'
-
-#optional, scale parameter to set binds
-#scale = 1e11
-SCALE = 1e13
-
-##bounds for fit parameters
-##for use with L-BFGS-B
-BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
-BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
-#BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
-
-##fineness of scale to plot (higher is more fine)
-
-FINE = 1000.0
-
-##method used by the scipy.optimize.minimize
-##other internals will need to be edited if you change this
-##it's probably not a good idea
-
-METHOD = 'Nelder-Mead'
-#METHOD = 'L-BFGS-B'
-
-##jackknife correction? "YES" or "NO"
-##correction only happens if multiple files are processed
-
-JACKKNIFE = 'YES'
-
-###-------BEGIN POSSIBLY OBSOLETE------###
-
-#multiply both sides of the gevp matrix by norms
-
-#NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
-NORMS = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
-
-##GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
-#if non-zero, set to 1 (only do one pencil,
-#more than one is supported, but probably not a good idea - see ref above)
-
-NUM_PENCILS = 0
-PENCIL_SHIFT = 1 #paper set shift to 4
-
-##the boundary for when the fitter warns you if the eigenvalues
-##of your covariance are very small
-
-EIGCUT = 10**(-23)
-
-#if set to true, AUTO_FIT uses curve_fit from scipy.optimize
-#to bootstrap START_PARAMS.  Bounds must still be set manually.
-#Bounds are used to find very rough start parameters: taken as the midpoints
-#Probably, you should set FIT to False to first find some reasonable bounds.
-#If ASSISTED_FIT is also True,
-#use start_params to find the guess for the AUTO fitter
-#(for use with L-BFGS-B)
-
-AUTO_FIT = False
-#AUTO_FIT = False
-
-#ASSISTED_FIT = True
-ASSISTED_FIT = False
-
-##boundary scale for zero'ing out a failing inverse Hessian
-##(neg diagaonal entrie(s)).  Below 1/(CUTOFF*SCALE), an entry is set to 0
-CUTOFF = 10**(7)
-
-###-------END POSSIBLY OBSOLETE------###
-
-##DO NOT EDIT BELOW
-
+### DO NOT EDIT BELOW THIS LINE
 #for general pencil of function
 
 if FIT:
