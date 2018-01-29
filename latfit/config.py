@@ -5,14 +5,7 @@ from math import log
 import numpy as np
 from numpy import exp
 from sympy import exp as exps
-
-from latfit.analysis.test_arg import test_arg
-SENT = object()
-
-try:
-    PROFILE = profile  # throws an exception when PROFILE isn't defined
-except NameError:
-    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+from latfit.analysis.test_arg import zero_p, testsol
 
 ###TYPE OF FIT
 
@@ -245,17 +238,114 @@ def fit_func_exp_add(ctime, trial_params):
         -trial_params[1]*ctime)+exp(
             -trial_params[1]*(LT-ctime)))+trial_params[2]
 
-def fit_func_exp_gevp(ctime, trial_params):
-    """Give result of function computed to fit the data given in <inputfile>
-    (See procargs(argv)) GEVP, cosh+const
+##FIT FUNCTION/PROCESSING FUNCTION SELECTION
+
+
+def fit_func_1p(ctime, trial_params):
+    """one parameter eff. mass fit function
+    for EFF_MASS_METHOD = 3
     """
-    return (
-        (exp(-trial_params[0]*ctime)
-         +exp(-trial_params[1]*(LT-ctime)))
-        +trial_params[1])/(
-            (exp(-trial_params[0]*(TRHS))+exp(-trial_params[1]*(LT-(TRHS))))
-            +trial_params[1]
-        )
+    corrs = [exp(-trial_params[0]*(ctime+i*TSTEP)) + \
+             exp(-trial_params[0]*(LT-(ctime+i*TSTEP))) for i in range(RANGE1P)]
+    return ratio(corrs, ctime)
+
+
+##library of functions to fit.  define them in the usual way
+if ADD_CONST:
+    def fit_func_exp(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile> (See procargs(argv))
+        """
+        return trial_params[0]*(exp(-trial_params[1]*ctime) + \
+                                exp(-trial_params[1]*(LT-ctime))) + \
+                                trial_params[2]
+
+    def ratio(corrs, times=None):
+        """Process data points into effective mass ratio (and take log)"""
+        times = [-99999, -99999, -99999] if times is None else times
+        zero_p(corrs[1], corrs[2], times[1:])
+        sol = (corrs[1]-corrs[0])/(corrs[2]-corrs[1])
+        testsol(sol, corrs, times)
+        sol = log(sol) if LOG else sol
+        return sol
+
+    def acosh_ratio(corrs, times=None):
+        """Process data into effective mass ratio,
+        for an exact call to acosh."""
+        times = [-99999, -99999, -99999] if times is None else times
+        zero_p(corrs[1]-C, times[1:])
+        sol = (corrs[0]-corrs[1]+corrs[2]-corrs[3])/2.0/(corrs[1]-corrs[2])
+        testsol(sol, corrs, times)
+        return sol
+
+    def fit_func_sym(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile>
+        (See procargs(argv))
+        for EFF_MASS_METHOD = 2
+        """
+        return trial_params[0]*(
+            exps(-trial_params[1]*ctime) + \
+            exps(-trial_params[1]*(LT-ctime)))+trial_params[2]
+
+    def fit_func_exp_gevp(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile>
+        (See procargs(argv)) GEVP, cosh+const
+        """
+        return ((exp(-trial_params[0]*ctime) + \
+                 exp(-trial_params[1]*(LT-ctime))) + trial_params[2]) \
+                 /(
+                     (exp(-trial_params[0]*(TRHS)) + \
+                      exp(-trial_params[1]*(LT-(TRHS)))) + trial_params[2])
+
+else:
+    def fit_func_exp(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile> (See procargs(argv))
+        """
+        return trial_params[0]*(exp(-trial_params[1]*ctime) + \
+                                exp(-trial_params[1]*(LT-ctime)))
+
+    def ratio(corrs, times=None):
+        """Process data points into effective mass ratio
+        (and take log), no additive constant
+        """
+        times = [-99999, -99999] if times is None else times
+        zero_p(corrs[1], times[1])
+        sol = (corrs[0])/(corrs[1])
+        testsol(sol, corrs, times)
+        sol = log(sol) if LOG else sol
+        return sol
+
+    def acosh_ratio(corrs, times=None):
+        """Process data into effective mass ratio,
+        for an exact call to acosh (no additive constant)."""
+        times = [-99999, -99999] if times is None else times
+        zero_p(corrs[1]-C, times[1])
+        sol = (corrs[0]+corrs[2]-2*C)/2/(corrs[1]-C)
+        testsol(sol, corrs, times)
+        return sol
+
+    def fit_func_sym(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile>
+        (See procargs(argv))
+        for EFF_MASS_METHOD = 2
+        """
+        return trial_params[0]*(
+            exps(-trial_params[1]*ctime) + \
+            exps(-trial_params[1]*(LT-ctime)))
+
+    def fit_func_exp_gevp(ctime, trial_params):
+        """Give result of function,
+        computed to fit the data given in <inputfile>
+        (See procargs(argv)) GEVP, cosh+const
+        """
+        return (exp(-trial_params[0]*ctime) + \
+                 exp(-trial_params[1]*(LT-ctime)))/(
+                     (exp(-trial_params[0]*(TRHS)) + \
+                      exp(-trial_params[1]*(LT-(TRHS)))))
 
 
 ##select which of the above functions to use
@@ -440,121 +530,11 @@ if NUM_PENCILS > 0:
                 ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
                     START_PARAMS)]) for i in range(2**NUM_PENCILS)])
 else:
-    fit_func = copy(prefit_func)
+    def fit_func(ctime, trial_params):
+        """Fit function."""
+        return prefit_func(ctime, trial_params)
 
 
-START_PARAMS = list(START_PARAMS)*2**NUM_PENCILS
-
-def fit_func_3pt_sym(ctime, trial_params):
-    """Give result of function computed to fit the data given in <inputfile>
-    (See procargs(argv))
-    for EFF_MASS_METHOD = 2
-    """
-    return trial_params[0]*(exps(
-        -trial_params[1]*ctime)+exps(
-            -trial_params[1]*(LT-ctime)))+trial_params[2]
-
-if ADD_CONST:
-    def fit_func_1p(ctime, trial_params):
-        """one parameter eff. mass fit function
-        for EFF_MASS_METHOD = 3
-        """
-        corr1 = exp(-trial_params[0]*ctime)+exp(
-            -trial_params[0]*(LT-ctime))
-        corr2 = exp(-trial_params[0]*(ctime+1))+exp(
-            -trial_params[0]*(LT-(ctime+1)))
-        corr3 = exp(-trial_params[0]*(ctime+2))+exp(
-            -trial_params[0]*(LT-(ctime+2)))
-        return ratio(corr1, corr2, corr3, ctime)
-
-else:
-    def fit_func_1p(ctime, trial_params):
-        """one parameter eff. mass fit function
-        for EFF_MASS_METHOD = 3
-        """
-        corr1 = exp(-trial_params[0]*ctime)+exp(
-            -trial_params[0]*(LT-ctime))
-        corr2 = exp(-trial_params[0]*(ctime+1))+exp(
-            -trial_params[0]*(LT-(ctime+1)))
-        return ratio(corr1, corr2, None, ctime)
-
-
-if ADD_CONST and LOG:
-    def ratio(corr1, corr2, corr3, ctime=None):
-        if np.array_equal(corr3, corr2):
-            print("imaginary effective mass.")
-            if not ctime is None:
-                print("problematic time slices:", ctime, ctime+1, ctime+2)
-            print("trial_param =", trial_params[0])
-            print("START_PARAMS =", START_PARAMS)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            print("corr3 = ", corr3)
-            sys.exit(1)
-        sol = (corr2-corr1)/(corr3-corr2)
-        if not test_arg(sol, SENT):
-            if ADD_CONST:
-                if not ctime is None:
-                    print("problematic time slices:",
-                            ctime, ctime+1, ctime+2)
-                print("corr1 = ", corr1)
-                print("corr2 = ", corr2)
-                print("corr3 = ", corr3)
-            else:
-                if not ctime is None:
-                    print("problematic time slices:", ctime, ctime+1)
-                print("corr1 = ", corr1)
-                print("corr2 = ", corr2)
-            sys.exit(1)
-        sol = log(sol)
-        return sol
-
-elif ADD_CONST and not LOG:
-    def ratio(corr1, corr2, corr3, ctime=None):
-        if np.array_equal(corr3, corr2):
-            print("imaginary effective mass.")
-            if not ctime is None:
-                print("problematic time slices:", ctime, ctime+1, ctime+2)
-            print("trial_param =", trial_params[0])
-            print("START_PARAMS =", START_PARAMS)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            print("corr3 = ", corr3)
-            sys.exit(1)
-        sol = (corr2-corr1)/(corr3-corr2)
-        return sol
-
-elif not ADD_CONST and LOG:
-    def ratio(corr1, corr2, _, ctime=None):
-        if np.array_equal(corr2, np.zeros(corr2.shape)):
-            print("imaginary effective mass.")
-            if not ctime is None:
-                print("problematic time slices:", ctime, ctime+1)
-            print("trial_param =", trial_params[0])
-            print("START_PARAMS =", START_PARAMS)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            sys.exit(1)
-        sol = (corr1)/(corr2)
-        if not test_arg(sol, SENT):
-            if not ctime is None:
-                print("problematic time slices:", ctime, ctime+1)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            sys.exit(1)
-        sol = log(sol)
-        return sol
-
-else:
-    def ratio(corr1, corr2, _, ctime=None):
-        if np.array_equal(corr2, np.zeros(corr2.shape)):
-            print("imaginary effective mass.")
-            if not ctime is None:
-                print("problematic time slices:", ctime, ctime+1)
-            print("trial_param =", trial_params[0])
-            print("START_PARAMS =", START_PARAMS)
-            print("corr1 = ", corr1)
-            print("corr2 = ", corr2)
-            sys.exit(1)
-        sol = (corr1)/(corr2)
-        return sol
+MULT = len(GEVP_DIRS) if GEVP else 1
+START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
+RANGE1P = 3 if ADD_CONST else 2
