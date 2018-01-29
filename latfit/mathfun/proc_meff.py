@@ -2,7 +2,8 @@
 #from math import log, acosh
 import sys
 import re
-from math import acosh, log
+from math import acosh
+import numbers
 from sympy import nsolve
 from sympy.abc import x, y, z
 from sympy import log as logs
@@ -27,25 +28,24 @@ from latfit.analysis.test_arg import test_arg
 
 #almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
-    def proc_meff(line1, line2, line3, files=None, time_arr=None):
+    def proc_meff(lines, files=None, time_arr=None):
         """Gets the effective mass, given three points
         Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
-        corr1, corr2, corr3 = pre_proc_meff(line1, line2, line3, files, time_arr)
-        if corr2 - C == 0:
+        corrs, times = pre_proc_meff(lines, files, time_arr)
+        sol = acosh_ratio(corrs, times)
+        if sol < 1:
             print("***ERROR***")
-            print("corr2-C==0, proc_meff, arg to acosh is inf.", corr2, C)
-        arg = (corr1+corr3-2*C)/2/(corr2-C)
-        if arg < 1:
-            print("***ERROR***")
-            print("argument to acosh in effective mass calc is less than 1:", arg)
+            print("argument to acosh in effective mass" + \
+                  " calc is less than 1:", sol)
             if files:
-                print(files[0])
-                print(files[1])
-                print(files[2])
+                for fn1 in files:
+                    print(fn1)
+            if time_arr is not None:
+                print("problematic time slice(s):", time_arr)
             sys.exit(1)
-        return acosh(arg)
+        return acosh(sol)
 
 #sliding window method
 elif EFF_MASS_METHOD == 2:

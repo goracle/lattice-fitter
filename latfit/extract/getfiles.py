@@ -20,19 +20,19 @@ if EFF_MASS:
         ijfile = pre_proc_file(ijfile, input_f)
         ij2file = proc_folder(input_f, time+xstep)
         ij3file = proc_folder(input_f, time+2*xstep)
+        ij4file = proc_folder(input_f, time+3*xstep)
         ij2file = pre_proc_file(ij2file, input_f)
         ij3file = pre_proc_file(ij3file, input_f)
-        return (ijfile, ij2file, ij3file)
+        ij4file = pre_proc_file(ij4file, input_f)
+        return (ijfile, ij2file, ij3file, ij4file)
 
 else:
-    def getfiles_simple(time, input_f, *args):
+    def getfiles_simple(time, input_f, _):
         """Get files for a given time slice."""
         #extract file
         ijfile = proc_folder(input_f, time)
         #check for errors
         ijfile = pre_proc_file(ijfile, input_f)
-        if args:
-            pass
         return ijfile
 
 if EFF_MASS:
@@ -44,13 +44,15 @@ if EFF_MASS:
             files2 = gevp_getfiles_onetime(time2)
             files3 = gevp_getfiles_onetime(time+xstep)
             files4 = gevp_getfiles_onetime(time+2*xstep)
+            files5 = gevp_getfiles_onetime(time+3*xstep)
         else:
             files = pencil_shift_lhs(time, xstep)
             files2 = pencil_shift_rhs(time2, xstep)
             files3 = pencil_shift_lhs(time+xstep, xstep)
             files4 = pencil_shift_lhs(time+2*xstep, xstep)
+            files5 = pencil_shift_lhs(time+3*xstep, xstep)
         #eff mass stuff
-        return (files, files2, files3, files4)
+        return (files, files2, files3, files4, files5)
 else:
     def getfiles_gevp(time, time2, xstep):
         """Get files, gevp"""
@@ -65,18 +67,14 @@ else:
         return (files, files2)
 
 if GEVP:
-    def getfiles(time, xstep, xmin, input_f):
+    def getfiles(time, xstep, xmin, _):
         """Get files, gevp (meta)"""
-        if input_f:
-            pass
         time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
             float(time)/2.0) != time else max(
                 floor(float(time)/2.0/xstep)*xstep, xmin)
         #time2 = xmin-2*xstep
         return getfiles_gevp(time, time2, xstep)
 else:
-    def getfiles(time, xstep, xmin, input_f):
+    def getfiles(time, xstep, _, input_f):
         """Get files, (meta)"""
-        if xmin:
-            pass
         return getfiles_simple(time, input_f, xstep)

@@ -95,13 +95,15 @@ if EFF_MASS:
             try:
                 eigvals = get_eigvals(num, file_tup[0], file_tup[1])
                 eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
-                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1],
+                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1])
+                eigvals4 = get_eigvals(num, file_tup[4], file_tup[1],
                                        overb=True)
             except ImaginaryEigenvalue:
                 print(num, file_tup)
                 sys.exit(1)
             retblk.append(np.array([proc_meff(
-                eigvals[op], eigvals2[op], eigvals3[op], time_arr=timeij)
+                (eigvals[op], eigvals2[op], eigvals3[op], eigvals4[op]),
+                time_arr=timeij)
                                     for op in range(dimops)]))
         return retblk
 
@@ -136,15 +138,16 @@ if EFF_MASS:
         retblk = deque()
         if STYPE == 'ascii':
             zipfs = zip(open(file_tup[0], 'r'), open(file_tup[1], 'r'),
-                        open(file_tup[2], 'r'))
+                        open(file_tup[2], 'r'), open(file_tup[3], 'r'))
         elif STYPE == 'hdf5':
-            zipfs = zip(file_tup[0], file_tup[1], file_tup[2])
-        for line, line2, line3 in zipfs:
+            zipfs = zip(file_tup[0], file_tup[1], file_tup[2], file_tup[3])
+        for line, line2, line3, line4 in zipfs:
             if not line+line2+line3 in reuse:
                 reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
-                    line, line2, line3, file_tup, time_arr=timeij)
+                    (line, line2, line3, line4),
+                    file_tup, time_arr=timeij)
             if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
-                reuse[str(line)+'@'+str(line2)+'@'+str(line3)] = START_PARAMS[1]
+                raise Exception("Something has gone wrong.")
             retblk.append(reuse[str(line)+'@'+str(line2)+'@'+str(line3)])
         return retblk
 
