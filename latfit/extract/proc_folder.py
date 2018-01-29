@@ -40,7 +40,8 @@ if STYPE == 'hdf5':
                         ' ' + latfit.config.TITLE_PREFIX
                     proc_folder.sent = 0
                 try:
-                    out = open_dataset(proc_folder.prefix, hdf5_file, ctime, fn1)
+                    out = open_dataset(proc_folder.prefix,
+                                       hdf5_file, ctime, fn1)
                 except KeyError:
                     print("***ERROR***")
                     print("Check the hdf5 prefix.  dataset cannot be found.")
@@ -80,7 +81,7 @@ elif STYPE == 'ascii':
         than once.
         Both the int and float versions of ctime are treated the same.
         """
-        #build regex as a string
+        # build regex as a string
         if other_regex == "":
             my_regex = r"t" + str(ctime)
         else:
@@ -95,10 +96,11 @@ elif STYPE == 'ascii':
                 my_regex2 = r"t" + str(int(ctime))
                 regex_reject2 = my_regex2+r"[0-9]"
         retname, flag2, debug = lookat_dir(
-            folder, [my_regex, my_regex2], [regex_reject1, regex_reject2], temp4, retname)
-        #logic: if we found at least one match
+            folder, [my_regex, my_regex2],
+            [regex_reject1, regex_reject2], temp4, retname)
+        # logic: if we found at least one match
         if retname != temp4:
-            #logic: if we found >1 match
+            # logic: if we found >1 match
             if flag2 == 1:
                 print("***ERROR***")
                 print("File name collision.")
@@ -123,24 +125,25 @@ elif STYPE == 'ascii':
         debug = [None, None]
         for root, dirs, files in os.walk(folder):
             for name in files:
-                #logic: if the search matches either int or float ctime
-                #test for int match first
+                # logic: if the search matches either int or float ctime
+                # test for int match first
                 if regex_reject[1] != "":
                     if re.search(my_regex[1], name) and (
                             not re.search(regex_reject[1], name)):
-                        #logic: if we found another matching file in
-                        #the folder already, then flag it
+                        # logic: if we found another matching file in
+                        # the folder already, then flag it
                         if retname != temp4:
                             flag2 = 1
                         retname = name
-                #then test for a float match
+                # then test for a float match
                 elif re.search(my_regex[0], name) and (
                         not re.search(regex_reject[0], name)):
-                    #logic: if we found another matching file in
-                    #the folder already, then flag it
+                    # logic: if we found another matching file in
+                    # the folder already, then flag it
                     if retname != temp4:
                         flag2 = 1
-                    #logic: else save the file name to return after folder walk
+                    # logic: else save the file name to return
+                    # after folder walk
                     retname = name
                 else:
                     debug = [root, dirs]

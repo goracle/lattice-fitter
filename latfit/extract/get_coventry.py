@@ -15,7 +15,7 @@ if UNCORR:
                         avgi[opa]-reuse['i'][k][opa])
                      for k in range(dimops)], axis=0)
         else:
-            pass #keep it zero, off diagonals are zero
+            pass  # keep it zero, off diagonals are zero
         return coventry
 
 else:

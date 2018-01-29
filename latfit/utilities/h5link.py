@@ -1,11 +1,12 @@
+#!/usr/bin/python3
 """Link a single config's hdf5 files into
 one hdf5 file for the whole config"""
-#!/usr/bin/python3
 import sys
 import os
 import re
 import glob
 import h5py
+
 
 def get_trajl():
     """Get trajectory list"""
@@ -21,6 +22,7 @@ def get_trajl():
         trajl.append(traj)
     trajl = sorted(list(set(trajl)))
     return trajl
+
 
 def main():
     """Link hdf5 files"""
@@ -40,7 +42,7 @@ def main():
                 datal.append(str(data))
             gn1.close()
             for data in datal:
-                if not data in fn1:
+                if data not in fn1:
                     try:
                         fn1[data] = h5py.ExternalLink(file2, data)
                     except ValueError:
@@ -49,11 +51,6 @@ def main():
                         sys.exit(1)
             print("Done linking", file2, file1)
         fn1.close()
-
-
-
-
-
 
 
 if __name__ == '__main__':

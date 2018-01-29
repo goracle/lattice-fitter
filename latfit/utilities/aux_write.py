@@ -10,23 +10,27 @@ import read_file as rf
 try:
     PROFILE  # throws an exception when profile isn't defined
 except NameError:
-    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+    def PROFILE(x):  # if it's not defined simply ignore the decorator.
+        """line profiler default."""
+        return x
+
 
 def transtime(tsrc, tdis, tsep, nmomaux, len_t):
     """Transform tsrc and tdis to aux diagram versions"""
     if nmomaux == 3:
-        tsrc2 = (tsrc+tdis+tsep)%len_t
-        tdis2 = (3*len_t-2*tsep-tdis)%len_t
+        tsrc2 = (tsrc+tdis+tsep) % len_t
+        tdis2 = (3*len_t-2*tsep-tdis) % len_t
     elif nmomaux == 2:
-        tsrc2 = (tdis+tsrc)%len_t
-        tdis2 = (2*len_t-tsep-tdis)%len_t
+        tsrc2 = (tdis+tsrc) % len_t
+        tdis2 = (2*len_t-tsep-tdis) % len_t
     elif nmomaux == 1:
-        tsrc2 = (tdis+tsrc)%len_t
-        tdis2 = (len_t-tdis)%len_t
+        tsrc2 = (tdis+tsrc) % len_t
+        tdis2 = (len_t-tdis) % len_t
     else:
         print("Error: bad filename, error in getaux_filestrs")
         sys.exit(1)
     return tsrc2, tdis2
+
 
 def getaux_filestrs(filename):
     """gets the array from the file, but keeps the values as strings
@@ -37,12 +41,13 @@ def getaux_filestrs(filename):
     out = np.zeros((len_t, len_t), dtype=np.object)
     filen = open(filename, 'r')
     for line in filen:
-        lsp = line.split(' ')#lsp[0] = tsrc, lsp[1] = tdis
+        lsp = line.split(' ')  # lsp[0] = tsrc, lsp[1] = tdis
         tsrc = int(lsp[0])
         tdis = int(lsp[1])
         tsrc2, tdis2 = transtime(tsrc, tdis, tsep, nmomaux, len_t)
         out[tsrc2][tdis2] = str(lsp[2])+" "+str(lsp[3]).rstrip()
     return out
+
 
 def ascii_test(filename, stype):
     """Test if a file has a disconnected diagram
@@ -53,6 +58,7 @@ def ascii_test(filename, stype):
         if not rf.discon_test(filename):
             filename = None
     return filename
+
 
 def aux_filen(filename, stype='ascii'):
     """Write aux diagram corresponding to filename"""
@@ -68,7 +74,7 @@ def aux_filen(filename, stype='ascii'):
         plist[0] = psrc1+psrc2-psnk1
         plist[1] = psnk1
         plist[2] = psrc2
-        outfile = rf.pchange(outfile, -1*np.array(plist))#complex conjugate
+        outfile = rf.pchange(outfile, -1*np.array(plist))  # cc
         if outfile == filename:
             if stype == 'ascii':
                 print("symmetric Momenta; skipping")
@@ -87,16 +93,16 @@ def aux_filen(filename, stype='ascii'):
         if outfile == filename:
             if stype == 'ascii':
                 print("T aux diagram already exists. Skipping.")
-            #outfile = filename.replace("pol_src", "pol_snk")
-            #or outfile = filename.replace("scalarR_", "scalar_")
-            #print "i.e.", outfile
+            # outfile = filename.replace("pol_src", "pol_snk")
+            # or outfile = filename.replace("scalarR_", "scalar_")
+            # print "i.e.", outfile
             outfile = None
-        outfile = rf.pchange(outfile, -1*np.array(plist)) #complex conjugate
+        outfile = rf.pchange(outfile, -1*np.array(plist))  # cc
     elif nmom == 1:
-        #outfile = outfile.replace("scalar_", "scalarR_")
-        outfile = rf.pchange(outfile, -1*pret) #complex conjugate
+        # outfile = outfile.replace("scalar_", "scalarR_")
+        outfile = rf.pchange(outfile, -1*pret)  # cc
         if rf.vecp(outfile):
-            #swap the polarizations
+            # swap the polarizations
             pol1, pol2 = rf.pol(outfile)
             btemp = "pol_src-snk_"
             outfile = outfile.replace(btemp+str(pol1), btemp+"temp1")
@@ -112,6 +118,7 @@ def aux_filen(filename, stype='ascii'):
         print("Error: nmom does not equal 1, 2, or 3.")
         sys.exit(1)
     return outfile
+
 
 def main():
     """Aux write, main"""
@@ -133,6 +140,7 @@ def main():
 
     print("Done writing auxiliary periodic bc files")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

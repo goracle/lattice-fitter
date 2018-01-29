@@ -3,6 +3,7 @@ import os
 
 from latfit.procargs import procargs
 
+
 def inputexists(input_f):
     """Test to see if file/folder exists.
     Print message help message otherwise

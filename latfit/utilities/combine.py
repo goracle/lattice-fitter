@@ -1,9 +1,10 @@
-"""Combine two disconnected bubbles."""
 #!/usr/bin/python3
+"""Combine two disconnected bubbles."""
 
 import sys
 import numpy as np
 import read_file as rf
+
 
 def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False,):
     """Combine disconnected diagrams into an array.
@@ -25,9 +26,11 @@ def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False,):
     for tsrc in range(len_t):
         for tsnk in range(len_t):
             srcnum = src[tsrc].conjugate() if starsrc else src[tsrc]
-            snknum = snk[(tsnk+sep)%len_t] if not starsnk else snk[(tsnk+sep)%len_t].conjugate()
-            out.itemset(tsrc, (tsnk-tsrc+len_t)%len_t, srcnum*snknum)
+            snknum = snk[(tsnk+sep) % len_t] if not starsnk else snk[
+                (tsnk+sep) % len_t].conjugate()
+            out.itemset(tsrc, (tsnk-tsrc+len_t) % len_t, srcnum*snknum)
     return out
+
 
 def main():
     """Main for combine"""
@@ -40,6 +43,7 @@ def main():
     else:
         print("wrong num of args.  need two files to combine")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

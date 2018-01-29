@@ -3,6 +3,7 @@ import getopt
 from collections import namedtuple
 import sys
 
+
 def procargs(argv):
     """Parse the command line.
     Give usage information or set the input file.
@@ -22,11 +23,11 @@ def procargs(argv):
     cxstep = object()
     cfitmin = object()
     cfitmax = object()
-    #cnextra = object()
+    # cnextra = object()
     ctrials = object()
     options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
                                  'trials', 'fitmin', 'fitmax'])
-    #Get environment variables from command line.
+    # Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
             printhelp()
@@ -43,7 +44,7 @@ def procargs(argv):
             cfitmin = arg
         if opt == "--fitmax":
             cfitmax = arg
-    #exiting loop
+    # exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
             retval = arg, options(xmin=cxmin, xmax=cxmax,
@@ -51,6 +52,7 @@ def procargs(argv):
                                   fitmin=cfitmin, fitmax=cfitmax)
             break
     return retval
+
 
 def printhelp():
     """Print help."""
@@ -63,12 +65,12 @@ def printhelp():
     print("file in the folder is one fit point)>",
           "or, alternatively")
     print("-f <folder of files with precomputed covariance matrices")
-    print("whose resulting fit parameters are averaged>\n\n" + \
-            "If inputing a folder of files, each with a " + \
-            "pre-computed covariance matrix, required argument is" + \
-            " --trials=<number of files to process>")
-    print("i.e. you should have a block for every trial," + \
-            " especially if you're doing a jackknife fit.\n")
+    print("whose resulting fit parameters are averaged>\n\n" +
+          "If inputing a folder of files, each with a " +
+          "pre-computed covariance matrix, required argument is" +
+          " --trials=<number of files to process>")
+    print("i.e. you should have a block for every trial," +
+          " especially if you're doing a jackknife fit.\n")
     print("Optional Arguments\n")
     print("--xmin=<domain lower bound>\n--xmax=<domain upper bound>")
     print("--xstep=<domain step size> (UNTESTED)")
@@ -82,6 +84,6 @@ def printhelp():
     print("These values are located in proc_folder.py and in",
           "__main__.py\n")
     print("latfit by Dan Hoying,", "Copyright 2018")
-    print("License: Gnu Public License Version 3" + \
-          "\nYou should've obtained a copy of this license " + \
+    print("License: Gnu Public License Version 3" +
+          "\nYou should've obtained a copy of this license " +
           "in the\ndistribution of these files.")

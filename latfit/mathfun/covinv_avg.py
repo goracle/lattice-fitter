@@ -6,6 +6,7 @@ import numpy as np
 
 from latfit.mathfun.maptomat import maptomat
 
+
 def covinv_avg(cov, dimops=1):
     """Return the inverse of the average covariance matrix.
     In the case of the GEVP, return the tensor inverse of the
@@ -15,7 +16,7 @@ def covinv_avg(cov, dimops=1):
         if dimops == 1:
             covinv = inv(cov)
         else:
-            #swap axes, take inverse, swap back
+            # swap axes, take inverse, swap back
             covinv = swap(tensorinv(swap(cov, 1, 2)), 1, 2)
     except np.linalg.linalg.LinAlgError as err:
         if err == 'Singular matrix':

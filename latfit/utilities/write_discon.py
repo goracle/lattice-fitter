@@ -11,7 +11,9 @@ import numpy as np
 import read_file as rf
 import combine as cb
 
-#gets the array from the file, but keeps the values as strings
+# gets the array from the file, but keeps the values as strings
+
+
 def comb_fig(dsrc, dsnk):
     """Get combined figure name from bubble figure names."""
     figsrc = rf.figure(dsrc)
@@ -26,9 +28,11 @@ def comb_fig(dsrc, dsnk):
         retval = 'V'
     return retval
 
+
 def single_p(ptest):
     """is the momentum array only a single momentum?"""
     return bool((len(ptest) == 3 and isinstance(ptest[0], (int, np.integer))))
+
 
 def momtotal(mom):
     """Find total center of mass momenta from momenta array"""
@@ -40,42 +44,44 @@ def momtotal(mom):
         momret = mom1+mom2
     return momret
 
+
 def dismom(psrc, psnk):
     """Get combined momentum string from disconnected momenta"""
     lenp = len(psrc)+len(psnk)
     if lenp == 4:
-        #V
+        # V
         mom1src = psrc[0]
         mom2src = psrc[1]
-        #reverse meaning of inner and outer, so take [1] for inner
-        mom1snk = -1*np.array(psnk[1]) #complex conj at sink
+        # reverse meaning of inner and outer, so take [1] for inner
+        mom1snk = -1*np.array(psnk[1])  # complex conj at sink
         momstr = "mom1src"+rf.ptostr(
             mom1src)+"_mom2src"+rf.ptostr(
                 mom2src)+"_mom1snk"+rf.ptostr(mom1snk)
     elif lenp == 5:
-        #Cv3
+        # Cv3
         if single_p(psrc):
             momsrc = psrc
-            #reverse meaning of inner and outer, so take [1] for inner
-            momsnk = -1*np.array(psnk[1]) #complex conjugate at sink
+            # reverse meaning of inner and outer, so take [1] for inner
+            momsnk = -1*np.array(psnk[1])  # complex conjugate at sink
         elif single_p(psnk):
-            momsnk = -1*np.array(psnk) #complex conjugate at sink
+            momsnk = -1*np.array(psnk)  # complex conjugate at sink
             momsrc = psrc[0]
         momstr = "momsrc"+rf.ptostr(momsrc)+"_momsnk"+rf.ptostr(momsnk)
     elif lenp == 6:
-        #Bub2
+        # Bub2
         momstr = "mom"+rf.ptostr(psrc)
     else:
         print("Error: bad momenta:", psrc, psnk)
         sys.exit(1)
     return momstr
 
+
 def get_disfiles(onlyfiles):
     """Get bubbles."""
     file_lookup = {}
     for filen in onlyfiles:
         fign = rf.figure(filen)
-        if not fign in ["scalar-bubble", "Vdis"]:
+        if fign not in ["scalar-bubble", "Vdis"]:
             continue
         traj = rf.traj(filen)
         mom = rf.mom(filen)
@@ -83,7 +89,10 @@ def get_disfiles(onlyfiles):
             rf.ptostr(momtotal(mom)), []).append((filen, mom))
     return file_lookup
 
+
 ZERO = '000'
+
+
 def main():
     """Write disconnected diagrams, main"""
     dur = 'summed_tsrc_diagrams/'
@@ -92,7 +101,7 @@ def main():
     file_lookup = get_disfiles([
         f for f in listdir('.') if isfile(join('.', f))])
     for traj in file_lookup:
-        #count = 0
+        # count = 0
         for mt1 in file_lookup[traj]:
             lookup_local = {}
             for dsrc, momsrc in file_lookup[traj][mt1]:
@@ -103,8 +112,8 @@ def main():
                             dsrc, dsnk, outfig)
                     except TypeError:
                         continue
-                    #count += 1
-                    #print(count)
+                    # count += 1
+                    # print(count)
                     outfile = "traj_" + str(traj) + "_Figure" + outfig + \
                         sepdata.sepstr+dismom(
                             momsrc, momsnk)
@@ -113,14 +122,15 @@ def main():
                         print("Skipping:", outavg)
                         print("File exists.")
                         continue
-                    #arr_plus, arr_minus = get_data(
+                    # arr_plus, arr_minus = get_data(
                     arr_minus, lookup_local = get_data(
                         get_fourfn(dsrc, dsnk, dur), sepdata.sepval,
                         lookup, onlyreal=bool(mt1 == ZERO),
                         lookup_local=lookup_local)
-                    #rf.write_arr(arr_plus - arr_minus, outfile)
-                    #rf.write_arr(arr_plus, outfile)
+                    # rf.write_arr(arr_plus - arr_minus, outfile)
+                    # rf.write_arr(arr_plus, outfile)
                     rf.write_arr(arr_minus, outavg)
+
 
 def get_sep(dsrc, dsnk, outfig):
     """Get time sep info"""
@@ -134,9 +144,9 @@ def get_sep(dsrc, dsnk, outfig):
         sepstr = "_"
         if sepsrc and not sepsnk:
             sep = sepsrc
-            #sepval = sep
-            #we do this because src pipi bubbles don't need a
-            #separation offset when combining
+            # sepval = sep
+            # we do this because src pipi bubbles don't need a
+            # separation offset when combining
             sepstr += "sep"+str(sep)+"_"
         elif sepsnk and not sepsrc:
             sep = sepsnk
@@ -148,6 +158,7 @@ def get_sep(dsrc, dsnk, outfig):
             sepstr += "sep"+str(sep)+"_"
         retsep = sepstr, sepval
     return retsep
+
 
 def get_fourfn(dsrc, dsnk, dur):
     """Get average bubble names"""
@@ -162,10 +173,11 @@ def get_fourfn(dsrc, dsnk, dur):
     bubs.dsnk_sub = re.sub(r'traj_(\d)+_Figure_', '', bubs.dsnk_sub)
     return bubs
 
+
 def get_data(bubs, sepval, lookup, onlyreal=False, lookup_local=()):
     """Get regular data and vac subtraction diagram"""
-    #get the data
-    #Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
+    # get the data
+    # Note:  cb.comb_dis defaults to taking the complex conjugate of src only.
 
     if bubs.dsrc_sub in lookup:
         arr_minus_src = lookup[bubs.dsrc_sub]
@@ -199,12 +211,13 @@ def get_data(bubs, sepval, lookup, onlyreal=False, lookup_local=()):
 
     print("combining:", bubs.dsrc, bubs.dsnk)
     print("sub bubs:", bubs.dsrc_sub, bubs.dsnk_sub)
-    #arr_plus = cb.comb_dis(src, snk, sepval)
+    # arr_plus = cb.comb_dis(src, snk, sepval)
     arr_minus = cb.comb_dis(src-np.mean(arr_minus_src),
                             snk-np.mean(arr_minus_snk), sepval)
-    #get the  <><> subtraction array (<> indicates avg over trajectories)
-    #return arr_plus, arr_minus
+    # get the  <><> subtraction array (<> indicates avg over trajectories)
+    # return arr_plus, arr_minus
     return arr_minus, lookup_local
+
 
 if __name__ == "__main__":
     main()

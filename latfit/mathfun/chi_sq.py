@@ -11,19 +11,19 @@ if GEVP:
         """Compute chi^2 given a set of trial parameters,
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
-        #print("break")
-        #print(covinv)
-        #print("break 2")
-        #print(coords[0][1]-fit_func(coords[0][0], trial_params))
+        # print("break")
+        # print(covinv)
+        # print("break 2")
+        # print(coords[0][1]-fit_func(coords[0][0], trial_params))
         retval = np.sum([dot(dot(
-            (coords[outer][1]- fit_func(coords[outer][0], trial_params)),
+            (coords[outer][1] - fit_func(coords[outer][0], trial_params)),
             covinv[outer][inner]), (
                 coords[inner][1]-fit_func(coords[inner][0], trial_params)))
                          for outer in range(len(coords))
                          for inner in range(len(coords))])
         if retval.imag != 0:
             llll = [dot(dot((
-                coords[outer][1]- fit_func(coords[outer][0], trial_params)),
+                coords[outer][1] - fit_func(coords[outer][0], trial_params)),
                             covinv[outer][inner]),
                         (coords[inner][1]-fit_func(coords[inner][0],
                                                    trial_params)))
@@ -39,7 +39,8 @@ if GEVP:
             print("sep2")
             print(covinv[0][0])
             print("sep3")
-            print(dot((coords[0][1]- fit_func(coords[0][0], trial_params)), covinv[0][0]))
+            print(dot((coords[0][1] - fit_func(coords[0][0],
+                                               trial_params)), covinv[0][0]))
             print("sep4")
             print(llll)
             print("sep5")
@@ -52,7 +53,7 @@ else:
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
         return np.sum([dot(dot((
-            coords[outer][1]- fit_func(coords[outer][0], trial_params)),
+            coords[outer][1] - fit_func(coords[outer][0], trial_params)),
                                covinv[outer][inner]),
                            (coords[inner][1]-fit_func(coords[inner][0],
                                                       trial_params)))

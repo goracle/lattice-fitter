@@ -8,6 +8,7 @@ from os.path import isfile, join
 import numpy as np
 import read_file as rf
 
+
 def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
     """get the output file name, data
     """
@@ -20,7 +21,7 @@ def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
             outfile = re.sub(str(traj), str(binsize)+'B'+str(bin_num), filen)
     else:
         outfile = filen
-    #we've obtained the output file name, now get the data
+    # we've obtained the output file name, now get the data
     if not outfile:
         data = None
     elif os.path.isfile(dur+outfile):
@@ -32,8 +33,10 @@ def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):
         else:
             data = rf.proc_vac(filen)
         if data is None:
-            print("Skipping file", filen, "should be 4 numbers per line, non-4 value found.")
+            print("Skipping file", filen,
+                  "should be 4 numbers per line, non-4 value found.")
     return data, outfile
+
 
 def inter_sum(already_summed, onlyfiles):
     """Sum tsrc"""
@@ -49,6 +52,7 @@ def inter_sum(already_summed, onlyfiles):
             rf.write_vec_str(data, dur+outfile)
     print("Done writing files averaged over tsrc.")
 
+
 def get_baselist(onlyfiles):
     """Get list of base names from diagram file names."""
     baselist = {}
@@ -58,14 +62,15 @@ def get_baselist(onlyfiles):
             traj = int(rf.traj(filen))
         except TypeError:
             continue
-        #throw out trajectories not thermalized
+        # throw out trajectories not thermalized
         if traj < 1000:
             continue
-        if not base in baselist:
+        if base not in baselist:
             baselist[base] = [(filen, rf.traj(filen))]
         else:
             baselist[base].append((filen, rf.traj(filen)))
     return baselist
+
 
 def bin_tsrc_sum(binsize, step, already_summed=False):
     """Bin diagrams"""
@@ -76,7 +81,8 @@ def bin_tsrc_sum(binsize, step, already_summed=False):
         return
     else:
         if not already_summed:
-            dur = 'summed_tsrc_diagrams/binned_diagrams/binsize'+str(binsize)+'/'
+            dur = 'summed_tsrc_diagrams/binned_diagrams/binsize' + str(
+                binsize) + '/'
         else:
             dur = 'binned_diagrams/binsize'+str(binsize)+'/'
         if not os.path.isdir(dur):
@@ -87,7 +93,7 @@ def bin_tsrc_sum(binsize, step, already_summed=False):
             bin_num = 0
             data = None
             print("Processing base", base)
-            #sort by trajectory number
+            # sort by trajectory number
             blist = np.array(
                 sorted(baselist[base], key=lambda tup: int(tup[1])))
             for filen in blist[:, 0]:
@@ -111,9 +117,10 @@ def bin_tsrc_sum(binsize, step, already_summed=False):
         print("Done writing files binned with bin size =", binsize)
         return
 
+
 def main():
     """Sum tsrc and block"""
-    #global params, set by hand
+    # global params, set by hand
     mdstep = int(input("Please enter average non-blocked separation."))
     as1 = input("Already summed? y/n")
     if as1 == 'y':
@@ -122,7 +129,7 @@ def main():
         already_summed = False
     else:
         sys.exit(1)
-    #end global params
+    # end global params
     for binsize in [mdstep, 20, 40, 60, 80]:
         if binsize == mdstep:
             if not already_summed:
@@ -132,6 +139,7 @@ def main():
         else:
             print("Doing binsize:", binsize)
         bin_tsrc_sum(binsize, mdstep, already_summed)
+
 
 if __name__ == "__main__":
     main()

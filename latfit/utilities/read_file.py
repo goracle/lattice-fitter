@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """General utility functions"""
-#to get files
+# to get files
 import sys
-#to process file list
+# to process file list
 import os.path
 from math import sqrt
 import re
@@ -13,7 +13,9 @@ import h5py
 
 FORMAT = 'ASCII'
 
-######regex on filename stuff
+# regex on filename stuff
+
+
 def pol(filename):
     """Get polarization info from filename"""
     mat = re.search(r'pol_snk_(\d)', filename)
@@ -26,6 +28,7 @@ def pol(filename):
         polret = None
     return polret
 
+
 def traj(filename, nowarn=False):
     """Get trajectory info from filename"""
     filename = str(filename)
@@ -34,10 +37,11 @@ def traj(filename, nowarn=False):
         rettraj = mat.group(1)
     else:
         if not nowarn:
-            warnings.warn("Warning: filename:" + filename + \
+            warnings.warn("Warning: filename:" + filename +
                           " , has no configuration info")
         rettraj = None
     return rettraj
+
 
 def reverse_p(filename):
     """determine if we are dealing with a reverse diagram
@@ -52,15 +56,18 @@ def reverse_p(filename):
         boolp = False
     return boolp
 
+
 def checkp(filename):
     """determine if file contains check data on vector diagram
     """
     return bool(re.search('_vecCheck_', filename))
 
+
 def vecp(filename):
     """is the diagram a vector
     """
     return bool(re.search('_vec_', filename))
+
 
 def figure(filename):
     """return figure name
@@ -70,7 +77,7 @@ def figure(filename):
     kmat = re.search('Figure_(.*?)$', filename)
     mat = re.search('Figure(.*?)_', filename)
     nmat = re.search('Figure_(.*?)_', filename)
-    if nmat:#don't reverse m and n order, helps for some reason
+    if nmat:  # don't reverse m and n order, helps for some reason
         fign = nmat.group(1)
     elif mat:
         fign = mat.group(1)
@@ -78,13 +85,14 @@ def figure(filename):
         fign = lmat.group(1)
     elif kmat:
         fign = kmat.group(1)
-    #just a two point single particle correlator
+    # just a two point single particle correlator
     elif hmat:
         fign = hmat.group(0)
     else:
         warnings.warn("Warning: bad filename, no figure name: "+filename)
         fign = None
     return fign
+
 
 def basename(filen):
     """get basename of file
@@ -94,7 +102,8 @@ def basename(filen):
         return None
     return mat.group(1)
 
-#how many momenta returned?
+
+# how many momenta returned?
 def nmom_arr(pret):
     """Get number of momenta from momentum p array"""
     nmom1 = len(pret)
@@ -107,9 +116,11 @@ def nmom_arr(pret):
         sys.exit(1)
     return retval
 
+
 def nmom(filename):
     """Get number of momenta from filename"""
     return nmom_arr(mom(filename))
+
 
 def procmom(mstr):
     """help function for mom(filename).
@@ -121,6 +132,7 @@ def procmom(mstr):
         sys.exit(1)
     return [int(bmat[i].replace('_', '-')) for i in range(len(bmat))]
 
+
 def getmomstr(filename):
     """get momentum string from filename"""
     mat = re.search('mom.*', filename)
@@ -130,6 +142,7 @@ def getmomstr(filename):
         warnings.warn("Error: no momentum in filename: "+filename)
         pstr = None
     return pstr
+
 
 def mom(filename):
     """returns momentum of filename in the form of an int array
@@ -149,6 +162,7 @@ def mom(filename):
             filename)+"' no momenta found.  Attempting to continue.")
         pret = None
     return pret
+
 
 def two_mat(kmat, lmat, filename):
     """get two 3 momenta from filename; called by mom(filename)"""
@@ -191,12 +205,14 @@ def three_mat(mat, filename):
         sys.exit(1)
     return pret
 
+
 def pion_sep(filename):
     """Get sep info from filename
 
     returns pion separation (not to be confused with distance)
     i.e. tdis is the separation in time between src/snk
-    pion separation is how far apart the pions are in time but mostly localized to one time slice
+    pion separation is how far apart the pions are in time
+    but mostly localized to one time slice
     """
     mat = re.search(r'_sep(\d+)_', filename)
     if mat:
@@ -204,6 +220,7 @@ def pion_sep(filename):
     else:
         sep1 = None
     return sep1
+
 
 def sep(filename):
     """Get t separation, two particles, alias"""
@@ -217,7 +234,8 @@ def pchange(filename, pnew):
     nold = nmom_arr(pold)
     nnew = nmom_arr(pnew)
     traj1 = traj(filename, nowarn=True)
-    filen = re.sub("traj_.*?_", "traj_TEMPsafe_", filename) if not traj1 is None else filename
+    filen = re.sub("traj_.*?_", "traj_TEMPsafe_",
+                   filename) if traj1 is not None else filename
     if nnew != nold:
         print("Error: filename momentum mismatch")
         sys.exit(1)
@@ -231,8 +249,10 @@ def pchange(filename, pnew):
     else:
         print("Error: bad filename for momentum replacement specified.")
         sys.exit(1)
-    filen = re.sub("TEMPsafe", str(traj1), filen) if not traj1 is None else filen
+    filen = re.sub(
+        "TEMPsafe", str(traj1), filen) if traj1 is not None else filen
     return filen
+
 
 def remp(mom1, mom2, mom3=(0, 0, 0)):
     """helper function; find remaining momentum
@@ -240,10 +260,10 @@ def remp(mom1, mom2, mom3=(0, 0, 0)):
     return np.array(mom1)+np.array(mom2)-np.array(mom3)
 
 
-#################file io stuff
+# file io stuff
 
 if FORMAT == 'ASCII':
-    #####test functions
+    # test functions
     def discon_test(filename):
         """Test if diagram is disconnected"""
         filen = open(filename, 'r')
@@ -263,7 +283,7 @@ if FORMAT == 'ASCII':
             return False
         return filen
 
-    ####read file
+    # read file
 
     def get_block_data(filen, onlydirs):
         """Get array of jackknife block data (from single time slice file, e.g.)
@@ -273,7 +293,8 @@ if FORMAT == 'ASCII':
         for line in filen:
             lsp = line.split()
             if len(lsp) == 2:
-                retarr = np.append(retarr, complex(float(lsp[0]), float(lsp[1])))
+                retarr = np.append(
+                    retarr, complex(float(lsp[0]), float(lsp[1])))
             elif len(lsp) == 1:
                 retarr = np.append(retarr, complex(lsp[0]))
             else:
@@ -289,7 +310,6 @@ if FORMAT == 'ASCII':
             traj)+basename2, time+1).split()[1])
                          for traj in trajl])
 
-
     def proc_file(filename, sum_tsrc=True):
         """gets the array from the file, optionally sum tsrc
         """
@@ -297,26 +317,25 @@ if FORMAT == 'ASCII':
         if not len_t:
             return None
         front = np.zeros(shape=(len_t, len_t), dtype=complex)
-        #back = front
+        # back = front
         filen = open(filename, 'r')
         for line in filen:
             lsp = line.split()
             if len(lsp) != 4:
                 return None
-            #lsp[0] = tsrc, lsp[1] = tdis
+            # lsp[0] = tsrc, lsp[1] = tdis
             tsrc = int(lsp[0])
-            #tsnk = (int(lsp[0])+int(lsp[1]))%len_t
+            # tsnk = (int(lsp[0])+int(lsp[1]))%len_t
             tdis = int(lsp[1])
-            #tdis2 = len_t-int(lsp[1])-1
+            # tdis2 = len_t-int(lsp[1])-1
             front.itemset(tsrc, tdis, complex(float(lsp[2]), float(lsp[3])))
-            #back.itemset(tsnk, tdis2, complex(float(lsp[2]), float(lsp[3])))
+            # back.itemset(tsnk, tdis2, complex(float(lsp[2]), float(lsp[3])))
         if sum_tsrc:
-            #return sum_rows(front), sum_rows(back)
+            # return sum_rows(front), sum_rows(back)
             retarr = sum_rows(front, True)
         else:
             retarr = front
         return retarr
-            #return front, back
 
     def proc_vac_real(filen):
         """Get the bubble from the file
@@ -356,7 +375,7 @@ if FORMAT == 'ASCII':
                 sys.exit(1)
         return retarr
 
-    ##test functions which read
+    # test functions which read
 
     def find_dim(filename):
         """get dimensions of the matrix from the sqrt(num_rows) of the file
@@ -373,7 +392,7 @@ if FORMAT == 'ASCII':
         """Find number of lines in a file"""
         return sum(1 for line in open(fn1))
 
-    #####write file
+    # write file
 
     def write_blk(outblk, outfile, already_checked=False):
         """Write numerical array of jackknife block to file"""
@@ -385,7 +404,8 @@ if FORMAT == 'ASCII':
         with open(outfile, 'a') as filen:
             for line in outblk:
                 if not isinstance(line, str):
-                    line = complex('{0:.{1}f}'.format(line, sys.float_info.dig))
+                    line = complex(
+                        '{0:.{1}f}'.format(line, sys.float_info.dig))
                     line = str(line.real)+" "+str(line.imag)+"\n"
                 filen.write(line)
             print("Done writing:", outfile)
@@ -451,7 +471,8 @@ if FORMAT == 'ASCII':
             for tdis in range(len_t):
                 cnum = data[tsrc][tdis]
                 if not isinstance(cnum, str):
-                    cnum = complex('{0:.{1}f}'.format(cnum, sys.float_info.dig))
+                    cnum = complex(
+                        '{0:.{1}f}'.format(cnum, sys.float_info.dig))
                 line = str(tsrc)+" "+str(tdis)+" "+str(cnum.real)+" "+str(
                     cnum.imag)+"\n"
                 filen.write(line)
@@ -459,7 +480,7 @@ if FORMAT == 'ASCII':
         filen.close()
 
 elif FORMAT == 'HDF5':
-    #####test functions
+    # test functions
     def discon_test(filename):
         """Test if disconnected diagram (hdf5)"""
         filenp = h5py.File(filename, 'r')
@@ -469,7 +490,8 @@ elif FORMAT == 'HDF5':
             print("Disconnected.  Skipping.")
             return False
         return True
-    #to do, maybe
+    # to do, maybe
+
     def tryblk(name, time):
         """Try to open file for some purpose (hdf5)"""
         try:
@@ -479,7 +501,7 @@ elif FORMAT == 'HDF5':
             print("block name:", time, "Continuing.")
             return False
         return filen
-    #####write file
+    # write file
 
     def write_blk(outblk, outfile, already_checked=False):
         """Write numerical array of jackknife block to file"""
@@ -538,7 +560,8 @@ elif FORMAT == 'HDF5':
         filen.close()
 
     def write_arr(data, outfile):
-        """write built array to file (for use in building disconnected diagrams)
+        """write built array to file
+        (for use in building disconnected diagrams)
         real part seperated from imag by space
         """
         if os.path.isfile(outfile):
@@ -554,12 +577,14 @@ elif FORMAT == 'HDF5':
             for tdis in range(len_t):
                 cnum = data[tsrc][tdis]
                 if not isinstance(cnum, str):
-                    cnum = complex('{0:.{1}f}'.format(cnum, sys.float_info.dig))
+                    cnum = complex('{0:.{1}f}'.format(
+                        cnum, sys.float_info.dig))
                 line = str(tsrc)+" "+str(tdis)+" "+str(cnum.real)+" "+str(
                     cnum.imag)+"\n"
                 filen.write(line)
         print("Done writing file:", outfile)
         filen.close()
+
 
 else:
     print("Error: bad file format specified.")
@@ -567,16 +592,19 @@ else:
     sys.exit(1)
 
 
-#####util functions, no file interaction
+# util functions, no file interaction
 def sum_rows(inmat, avg=False):
     """np.fsum over t_src
     """
     ncol = int(sqrt(inmat.size))
     if avg:
-        col = [np.sum(inmat.item(i, j) for i in range(ncol))/(ncol) for j in range(ncol)]
+        col = [np.sum(inmat.item(i, j)
+                      for i in range(ncol))/(ncol) for j in range(ncol)]
     else:
-        col = [np.sum(inmat.item(i, j) for i in range(ncol)) for j in range(ncol)]
+        col = [np.sum(inmat.item(i, j)
+                      for i in range(ncol)) for j in range(ncol)]
     return col
+
 
 def ptostr(ploc):
     """makes momentum array into a string

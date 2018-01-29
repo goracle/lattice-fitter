@@ -9,8 +9,8 @@ usage note(2): MAKE SURE as well that you correct the other "magic"
 parts of the graph routine
 """
 
-#install pip3
-#then sudo pip3 install numdifftools
+# install pip3
+# then sudo pip3 install numdifftools
 
 from collections import namedtuple
 import os
@@ -34,6 +34,7 @@ from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
 import latfit.config
 
+
 class Logger(object):
     """log output from fit"""
     def __init__(self):
@@ -53,8 +54,10 @@ class Logger(object):
         """
         pass
 
+
 sys.stdout = Logger()
 sys.stderr = Logger()
+
 
 def setup_logger():
     """Setup the logger"""
@@ -76,15 +79,16 @@ def setup_logger():
         print("current git commit:", gitlog)
     os.chdir(cwd)
 
+
 def main():
     """Main for latfit"""
     setup_logger()
-    ####set up 1ab
+    # set up 1ab
     options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
                                  'trials', 'fitmin', 'fitmax'])
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
-    ###error processing, parameter extractions
+    # error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
     xmin, xmax = xlim_err(options.xmin, options.xmax)
     fitrange = fitrange_err(options, xmin, xmax)
@@ -96,7 +100,7 @@ def main():
     if trials == -1:
         if FIT:
             result_min, param_err, plotdata.coords, plotdata.cov = \
-            singlefit(input_f, fitrange, xmin, xmax, xstep)
+                singlefit(input_f, fitrange, xmin, xmax, xstep)
             printerr(result_min.x, param_err)
             mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
@@ -115,6 +119,7 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
 
 def fit_coord(fitrange, xstep):
     """Get xcoord to plot fit function."""
@@ -141,6 +146,7 @@ def get_fitparams_loc(list_fit_params, trials):
             len(list_fit_params[i]))])*prefactor) for i in range(
                 len(list_fit_params))]
     return avg_fit_params, err_fit_params
+
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
-"""Convert ascii files to hdf5"""
 #!/usr/bin/python3
+"""Convert ascii files to hdf5"""
 import sys
 from os.path import isfile
 import re
@@ -14,7 +14,10 @@ LT = 64
 try:
     PROFILE
 except NameError:
-    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+    def PROFILE(x):
+        """Line profiler default."""
+        return x
+
 
 @PROFILE
 def main():
@@ -54,37 +57,38 @@ def main():
         outh.close()
         print("Done converting trajectory:", traj)
 
+
 @PROFILE
 def setatr(dataset, filen):
     """Add metadata onto hdf5 datasets"""
-    #pol = rf.pol(filen)
-    #if pol is not None:
+    # pol = rf.pol(filen)
+    # if pol is not None:
     #    pass
-        #dataset.attrs['pol'] =  pol
-    #else:
+    #     dataset.attrs['pol'] =  pol
+    # else:
     #    dataset.attrs['pol'] =  False
-    #traj_here = rf.traj(filen)
-    #if traj_here is not None:
+    # traj_here = rf.traj(filen)
+    # if traj_here is not None:
     #    dataset.attrs['traj'] = traj_here
-    #else:
+    # else:
     #    dataset.attrs['traj'] = False
-    #dataset.attrs['reverse_p'] = rf.reverse_p(filen)
-    #dataset.attrs['checkp'] = rf.checkp(filen)
-    #dataset.attrs['vecp'] = rf.vecp(filen)
-    #fig = rf.figure(filen)
-    #if fig is not None:
+    # dataset.attrs['reverse_p'] = rf.reverse_p(filen)
+    # dataset.attrs['checkp'] = rf.checkp(filen)
+    # dataset.attrs['vecp'] = rf.vecp(filen)
+    # fig = rf.figure(filen)
+    # if fig is not None:
     #    dataset.attrs['figure'] = fig
-    #else:
+    # else:
     #    dataset.attrs['figure'] = False
     mom = rf.mom(filen)
     if mom is not None:
         dataset.attrs['mom'] = mom
     else:
         dataset.attrs['mom'] = False
-    #sep = rf.sep(filen)
-    #if sep is not None:
+    # sep = rf.sep(filen)
+    # if sep is not None:
     #    dataset.attrs['sep'] = sep
-    #else:
+    # else:
     #    dataset.attrs['sep'] = False
     dataset.attrs['basename'] = rf.basename(filen)
     return dataset

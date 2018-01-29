@@ -3,6 +3,7 @@ import sys
 
 from latfit.procargs import procargs
 
+
 def trials_err(ntrials):
     """Check trials given on the command line for errors.
     Return -1 if trials are not specified.

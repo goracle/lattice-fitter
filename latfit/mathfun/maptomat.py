@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from numpy import swapaxes
 
+
 def maptomat(cov, dimops=1):
     """Map tensor to matrix, using dimops to get dimensions of
     covariance tensor's third and fourth rank.

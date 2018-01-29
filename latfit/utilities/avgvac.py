@@ -18,7 +18,7 @@ def avg_vdis():
     onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     for filen in onlyfiles:
         fign = rf.figure(filen)
-        if not fign in ['Vdis', 'scalar-bubble']:
+        if fign not in ['Vdis', 'scalar-bubble']:
             continue
         flag = 0
         outfile = get_outfile(filen, fign, dur)
@@ -32,16 +32,16 @@ def avg_vdis():
                 continue
         avg = np.array(rf.proc_vac(filen))
         numt = 1
-        #use this first file to bootstrap the rest of the files
-        #(traj substitution)
+        # use this first file to bootstrap the rest of the files
+        # (traj substitution)
         err_fact = deque()
         err_fact.append(avg)
         for traj in traj_list(onlyfiles):
             if str(traj) == rf.traj(filen) or int(traj) == rf.traj(filen):
                 continue
-            #slightly less stringent checking here on substitute:
-            #no checking of anything following second underscore.
-            #probably fine since user warned above.
+            # slightly less stringent checking here on substitute:
+            # no checking of anything following second underscore.
+            # probably fine since user warned above.
             filen2 = re.sub('traj_([B0-9]+)_', 'traj_'+str(traj)+'_', filen)
             retarr = np.array(rf.proc_vac(filen2))
             err_fact.append(retarr)
@@ -60,6 +60,7 @@ def avg_vdis():
     print("Done writing Vdis averaged over trajectories.")
     return
 
+
 def get_outfile(filen, fign, dur):
     """get output file name"""
     mom = rf.mom(filen)
@@ -76,9 +77,11 @@ def get_outfile(filen, fign, dur):
         sepstr = ""
     return dur+"Avg_"+fign+sepstr+momstr
 
+
 def main():
     """Main; get the average bubble values."""
     avg_vdis()
+
 
 if __name__ == "__main__":
     main()

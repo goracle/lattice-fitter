@@ -10,6 +10,7 @@ from collections import namedtuple
 import numpy as np
 import read_file as rf
 
+
 def get_outblock(coeffs_arr, flag, outfile, time, sent):
     """Get block to write in linear sum of jackknife blocks"""
     outblk = np.array([])
@@ -17,8 +18,8 @@ def get_outblock(coeffs_arr, flag, outfile, time, sent):
         name, coeff = pair
         if flag == sent:
             print("Including:", name, "with coefficient", coeff)
-        #do the check after printing out the coefficients
-        #so we can check afterwards
+        # do the check after printing out the coefficients
+        # so we can check afterwards
         if os.path.isfile(outfile):
             print("Skipping:", outfile)
             print("File exists.")
@@ -44,6 +45,7 @@ def get_outblock(coeffs_arr, flag, outfile, time, sent):
                 outblk = np.append(outblk, val)
     return outblk
 
+
 def sum_blks(outdir, coeffs_arr):
     """Given a list of directories of jackknife blocks and coefficients,
     do a linear sum of the blocks line by line and output the resulting
@@ -60,8 +62,8 @@ def sum_blks(outdir, coeffs_arr):
     onlyfiles = [f for f in
                  listdir('./'+coeffs_arr[0][0])
                  if isfile(join('./'+coeffs_arr[0][0], f))]
-    #make new directory if it doesn't exist
-    #loop over time slices until there are none left
+    # make new directory if it doesn't exist
+    # loop over time slices until there are none left
     sent = object()
     flag = sent
     for time in onlyfiles:
@@ -76,6 +78,7 @@ def sum_blks(outdir, coeffs_arr):
         rf.write_blk(outblk, outfile, already_checked=True)
     print("End of blocks:", outdir,
           "--------------------------------------------")
+
 
 def norm_fix(filen):
     """Fix norms due to incorrect coefficients given in production."""
@@ -104,6 +107,7 @@ def norm_fix(filen):
         norm = 2.0
     return norm
 
+
 def isospin_coeff(filen, iso):
     """Get isospin coefficient"""
     norm = 1.0
@@ -120,6 +124,7 @@ def isospin_coeff(filen, iso):
         sys.exit(1)
     return norm
 
+
 def iso2(vecp, name):
     """Isospin coeff, I = 2"""
     if name == 'D' and not vecp:
@@ -129,6 +134,7 @@ def iso2(vecp, name):
     else:
         norm = None
     return norm
+
 
 def iso1(vecp, name):
     """Isospin coeff, I = 1"""
@@ -143,6 +149,7 @@ def iso1(vecp, name):
     else:
         norm = None
     return norm
+
 
 def iso0(vecp, name):
     """Isospin coeff, I = 0"""
@@ -166,6 +173,7 @@ def iso0(vecp, name):
         norm = None
     return norm
 
+
 def momtotal(plist, fig=None):
     """Get total center of mass momentum given a list of momenta"""
     if len(plist) == 3 and isinstance(plist[0], (np.integer, int)):
@@ -187,6 +195,7 @@ def momtotal(plist, fig=None):
         sys.exit(1)
     return momret
 
+
 PION = set(['pioncorr'])
 PIPI = set(['C', 'D', 'R', 'V'])
 PIPIRHO = set(['T'])
@@ -195,25 +204,26 @@ PIPISIGMA = set(['Cv3R', 'T'])
 SIGMAPIPI = set(['Cv3', 'T'])
 SIGMASIGMA = set(['Hbub', 'Bub2', 'bub2'])
 RHORHO = set(['Hbub'])
-FILTERLIST = {'pion':(PION, [1], False),
-              'pipi':(PIPI, [0, 1, 2], False),
-              'pipirho':(PIPIRHO, [1], True),
-              'pipisigma':(PIPISIGMA, [0], True),
-              'sigmasigma':(SIGMASIGMA, [0], False),
-              'rhorho':(RHORHO, [1], False),
-              'sigmapipi':(SIGMAPIPI, [0], False),
-              'rhopipi':(RHOPIPI, [1], False)}
+FILTERLIST = {'pion': (PION, [1], False),
+              'pipi': (PIPI, [0, 1, 2], False),
+              'pipirho': (PIPIRHO, [1], True),
+              'pipisigma': (PIPISIGMA, [0], True),
+              'sigmasigma': (SIGMASIGMA, [0], False),
+              'rhorho': (RHORHO, [1], False),
+              'sigmapipi': (SIGMAPIPI, [0], False),
+              'rhopipi': (RHOPIPI, [1], False)}
+
 
 def get_sep_mom(dlist):
     """Get momentum and time separation lists"""
     momlist = {}
     seplist = {}
-    #def is a tuple consisting of list of particles, Isospin,
-    #and whether the diagram is a reverse diagram
+    # def is a tuple consisting of list of particles, Isospin,
+    # and whether the diagram is a reverse diagram
     for dur in dlist:
         momstr = rf.getmomstr(dur)
         sep = rf.sep(dur)
-        if not momstr in momlist:
+        if momstr not in momlist:
             momlist[momstr] = set([dur])
         else:
             momlist[momstr].add(dur)
@@ -221,20 +231,21 @@ def get_sep_mom(dlist):
             seplist[sep] = set([dur])
         else:
             seplist[sep].add(dur)
-        #mom1 = rf.mom(d)
-        #if not mom1:
+        # mom1 = rf.mom(d)
+        # if not mom1:
         #    continue
-        #if len(mom1) == 2:
+        # if len(mom1) == 2:
         #    momlist.add(tuple(momtotal(mom1, rf.figure(d))))
-        #else:
+        # else:
         #    momlist.add(tuple(momtotal(mom1)))
     return seplist, momlist
+
 
 def get_norm(loop, dur, fixn):
     """Get norm given loop variables, direction dur to check,
     and whether to fix norms (fixn)
     """
-    #if momtotal(rf.mom(d), d) != loop.mom:
+    # if momtotal(rf.mom(d), d) != loop.mom:
     if not rf.figure(dur) in FILTERLIST[loop.opa][0]:
         norm = None
     elif rf.reverse_p(dur) is not FILTERLIST[loop.opa][2]:
@@ -255,6 +266,7 @@ def get_norm(loop, dur, fixn):
             norm = norm1*norm2
     return norm
 
+
 def get_outdir(loop, dirnum):
     """Get output directory for new linear combination of jackknife blocks.
     """
@@ -262,18 +274,20 @@ def get_outdir(loop, dirnum):
         sepstr = ''
         if loop.sep:
             sepstr = sepstr+"sep"+str(loop.sep)+'/'
-        #outdir = loop.opa+"_I"+str(loop.iso)+sepstr+loop.mom
+        # outdir = loop.opa+"_I"+str(loop.iso)+sepstr+loop.mom
         outdir = 'I'+str(loop.iso)+'/'+sepstr+loop.opa+'_'+loop.mom
     elif dirnum == 1:
         sepstr = '_'
         if loop.sep:
             sepstr = sepstr+"sep"+str(loop.sep)+'_'
-        #outdir = loop.opa+"_I"+str(loop.iso)+sepstr+"_momtotal"+rf.ptostr(loop.mom)
+        # outdir = loop.opa+"_I"+
+        # str(loop.iso)+sepstr+"_momtotal"+rf.ptostr(loop.mom)
         outdir = loop.opa+"_I"+str(loop.iso)+sepstr+loop.mom
     else:
         print("Error: bad flag specified. dirnum =", dirnum)
         sys.exit(1)
     return outdir
+
 
 def get_coeffs_arr(loop, fixn, dlist):
     """Get array of coefficients for jackknife block sum.
@@ -285,6 +299,7 @@ def get_coeffs_arr(loop, fixn, dlist):
             continue
         coeffs_arr.append((dur, norm))
     return coeffs_arr
+
 
 def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
     """Isospin projection of jackknife blocks (main)"""
@@ -300,7 +315,7 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
         for loop.iso in FILTERLIST[loop.opa][1]:
             for loop.sep in seplist:
                 for loop.mom in momlist:
-                    #loop.mom = list(loop.mom)
+                    # loop.mom = list(loop.mom)
                     coeffs_arr = get_coeffs_arr(
                         loop, fixn, seplist[loop.sep] & momlist[loop.mom])
                     if coeffs_arr == []:
@@ -313,6 +328,7 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
     if stype == 'ascii':
         print("Done writing jackknife sums.")
     return projlist
+
 
 if __name__ == '__main__':
     FIXN = input("Need fix norms before summing? True/False?")

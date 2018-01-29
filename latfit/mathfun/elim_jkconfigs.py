@@ -5,6 +5,7 @@ import numpy as np
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import JACKKNIFE
 
+
 def elim_jkconfigs(jkblk, elim_list=None):
     """Takes a jackknife block as an argument, eliminates configs
     corresponding to ELIM_JKCONF_LIST, then returns the new jackknife block.

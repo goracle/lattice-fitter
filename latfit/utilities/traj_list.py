@@ -4,6 +4,7 @@ from os import listdir
 from os.path import isfile, join
 import read_file as rf
 
+
 def traj_list(onlyfiles=None, base=None):
     """get list of trajectories from file list
     """
@@ -18,10 +19,12 @@ def traj_list(onlyfiles=None, base=None):
     print("Done getting trajectory list. N trajectories = "+str(len(trajl)))
     return trajl
 
+
 def main():
     """get traj list main"""
     onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     print(traj_list(onlyfiles))
+
 
 if __name__ == "__main__":
     main()

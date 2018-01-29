@@ -6,6 +6,7 @@ import os.path
 import numpy as np
 import read_file as rf
 
+
 def unsub():
     """Do the un-subtraction of vacuum bubbles on jk blks"""
     dur = '.'
@@ -13,13 +14,13 @@ def unsub():
                 for o in os.listdir(dur)
                 if os.path.isdir(os.path.join(dur, o))]
     for lindex, datadir in enumerate(onlydirs):
-        #get rid of preceding slash
+        # get rid of preceding slash
         datadir = datadir[2:]
         subfile = 'AvgVac_'+datadir
         if not os.path.isfile(subfile):
             continue
         subarr = rf.proc_vac(subfile)
-        #average buble with respect to time
+        # average buble with respect to time
         mean_bubble = np.repeat(np.mean(subarr), len(subarr))
         outdirs = [datadir+'_sub', datadir+'_avgsub']
         if not os.path.isdir(outdirs[0]):
@@ -30,6 +31,7 @@ def unsub():
         subarrs = [subarr, mean_bubble]
         write_blocks_todirs(datadir, outdirs, subarrs,
                             coeffs, onlydirs[:lindex+1])
+
 
 def write_blocks_todirs(datadir, outdirs, subarrs, coeffs, onlydirs):
     """Get jackknife blocks, then for each one
@@ -46,9 +48,11 @@ def write_blocks_todirs(datadir, outdirs, subarrs, coeffs, onlydirs):
                 print("Writing block:", i, "for diagram:", odir)
                 rf.WRITE_BLOCK(mainarr+cfm*avgi, wfn, already_checked=True)
 
+
 def main():
     """unsub main"""
     unsub()
+
 
 if __name__ == "__main__":
     main()

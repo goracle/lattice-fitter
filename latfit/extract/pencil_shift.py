@@ -8,6 +8,8 @@ from latfit.config import NUM_PENCILS
 from latfit.config import GEVP_DIRS
 
 DIMOPS = len(GEVP_DIRS)
+
+
 def pencil_shift_lhs(time, xstep):
     """pencil shift the lhs of the gevp"""
     lhs_penarr = np.array([0])
@@ -25,6 +27,7 @@ def pencil_shift_lhs(time, xstep):
     for _ in range(NUM_PENCILS):
         files = np.append(files, lhs_files_arr, axis=0)
     return files
+
 
 def pencil_shift_rhs(time2, xstep):
     """pencil shift the rhs of the gevp"""

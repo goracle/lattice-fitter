@@ -22,7 +22,8 @@ elif STYPE == 'hdf5':
     def pre_proc_file(ifile, input_f):
         """ifile is now an array. Do a meaningless check.
         (could be meaningful later)"""
-        if not isinstance(ifile, np.ndarray) or not isinstance(ifile[0], np.complex):
+        if not isinstance(ifile,
+                          np.ndarray) or not isinstance(ifile[0], np.complex):
             print("***ERROR***")
             print("The samples are not in the right format")
             print("File/sample mismatch:")

@@ -4,9 +4,11 @@ import sys
 
 from latfit.config import STYPE
 
+
 def tree():
     """Return a multidimensional dict"""
     return defaultdict(tree)
+
 
 def get_ccovandcoords(kfile, cxmin, cxmax):
     """Extract precomputed covariance matrix from file.
@@ -31,9 +33,9 @@ def get_ccovandcoords(kfile, cxmin, cxmax):
             print("ignored line: '", line, "'")
             continue
         if len(cols) == 2 and cxmin <= cols[0] <= cxmax:
-            #only store coordinates in the valid range
+            # only store coordinates in the valid range
             proccoords.append([cols[0], cols[1]])
-            #two columns mean coordinate section, 3 covariance section
+            # two columns mean coordinate section, 3 covariance section
         elif len(cols) == 3:
             cdict[cols[0]][cols[1]] = cols[2]
         elif not len(cols) == 2 and not len(cols) == 3:

@@ -1,6 +1,7 @@
 """Check to see if matrix is symmetric"""
 import sys
 
+
 def sym_check(ccov):
     """Perform a symmetry check on the covariance matrix, just in case
     Note, pos def => symmetric.

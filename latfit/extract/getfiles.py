@@ -14,9 +14,9 @@ from latfit.config import GEVP
 if EFF_MASS:
     def getfiles_simple(time, input_f, xstep):
         """Get files for a given time slice."""
-        #extract file
+        # extract file
         ijfile = proc_folder(input_f, time)
-        #check for errors
+        # check for errors
         ijfile = pre_proc_file(ijfile, input_f)
         ij2file = proc_folder(input_f, time+xstep)
         ij3file = proc_folder(input_f, time+2*xstep)
@@ -29,16 +29,16 @@ if EFF_MASS:
 else:
     def getfiles_simple(time, input_f, _):
         """Get files for a given time slice."""
-        #extract file
+        # extract file
         ijfile = proc_folder(input_f, time)
-        #check for errors
+        # check for errors
         ijfile = pre_proc_file(ijfile, input_f)
         return ijfile
 
 if EFF_MASS:
     def getfiles_gevp(time, time2, xstep):
         """Get files, gevp, eff_mass"""
-        #extract files
+        # extract files
         if NUM_PENCILS < 1:
             files = gevp_getfiles_onetime(time)
             files2 = gevp_getfiles_onetime(time2)
@@ -51,19 +51,19 @@ if EFF_MASS:
             files3 = pencil_shift_lhs(time+xstep, xstep)
             files4 = pencil_shift_lhs(time+2*xstep, xstep)
             files5 = pencil_shift_lhs(time+3*xstep, xstep)
-        #eff mass stuff
+        # eff mass stuff
         return (files, files2, files3, files4, files5)
 else:
     def getfiles_gevp(time, time2, xstep):
         """Get files, gevp"""
-        #extract files
+        # extract files
         if NUM_PENCILS < 1:
             files = gevp_getfiles_onetime(time)
             files2 = gevp_getfiles_onetime(time2)
         else:
             files = pencil_shift_lhs(time, xstep)
             files2 = pencil_shift_rhs(time2, xstep)
-        #eff mass stuff
+        # eff mass stuff
         return (files, files2)
 
 if GEVP:
@@ -72,7 +72,7 @@ if GEVP:
         time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
             float(time)/2.0) != time else max(
                 floor(float(time)/2.0/xstep)*xstep, xmin)
-        #time2 = xmin-2*xstep
+        # time2 = xmin-2*xstep
         return getfiles_gevp(time, time2, xstep)
 else:
     def getfiles(time, xstep, _, input_f):

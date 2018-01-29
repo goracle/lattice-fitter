@@ -4,7 +4,9 @@ import sys
 from latfit.procargs import procargs
 from latfit.config import FIT
 
+
 if not FIT:
+
     def fitrange_err(options, xmin, xmax):
         """Set fit range to be maximum."""
         if options:
@@ -12,6 +14,7 @@ if not FIT:
         return xmin, xmax
 
 else:
+
     def fitrange_err(options, xmin, xmax):
         """Return fit range after checking for errors."""
         sent1 = object()
@@ -43,6 +46,7 @@ else:
         if fitmax1 < fitmin1:
             fitmin1, fitmax1 = swap_minmax(fitmin1, fitmax1)
         return fitmin1, fitmax1
+
 
 def xlim_err(xmin, xmax):
     """Check for errors in the input of xmin and xmax.
@@ -78,6 +82,7 @@ def xlim_err(xmin, xmax):
     if xmax1 < xmin1:
         xmin1, xmax1 = swap_minmax(xmin1, xmax1)
     return xmin1, xmax1
+
 
 def swap_minmax(xmin, xmax):
     """Try to swap xmin with xmax if xmax < xmin"""

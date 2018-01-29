@@ -4,6 +4,7 @@ from latfit.extract.proc_folder import proc_folder
 
 from latfit.config import GEVP_DIRS
 
+
 def gevp_getfiles_onetime(time):
     """Get matrix of files for a particular time slice
     (read from the gevp directories)

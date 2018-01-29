@@ -17,7 +17,7 @@ from latfit.config import NORMS
 from latfit.config import BINNUM
 from latfit.config import STYPE
 
-#todo, check for neg/imag eigenvals
+# todo, check for neg/imag eigenvals
 
 if STYPE == 'hdf5':
     def getline_loc(filetup, num):
@@ -33,11 +33,13 @@ if STYPE == 'hdf5':
             sys.exit(1)
         return filetup[num-1]
 else:
+
     def getline_loc(filetup, num):
         """This function does get the line from the ascii file
         it is a simple wrapper for linecache.getline
         """
         return getline(filetup, num)
+
 
 def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
     """get the nth generalized eigenvalue from matrices of files
@@ -65,6 +67,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
             print("Eigenvalue=", j)
             raise ImaginaryEigenvalue
     return eigfin
+
 
 class ImaginaryEigenvalue(Exception):
     """Exception for imaginary GEVP eigenvalue"""
@@ -142,7 +145,7 @@ if EFF_MASS:
         elif STYPE == 'hdf5':
             zipfs = zip(file_tup[0], file_tup[1], file_tup[2], file_tup[3])
         for line, line2, line3, line4 in zipfs:
-            if not line+line2+line3 in reuse:
+            if line+line2+line3 not in reuse:
                 reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
                     (line, line2, line3, line4),
                     file_tup, time_arr=timeij)
@@ -167,9 +170,10 @@ else:
             retblk.append(proc_line(line, ijfile))
         return retblk
 
-###system stuff, do the subtraction of bad configs as well
+# system stuff, do the subtraction of bad configs as well
 
 if GEVP:
+
     def test_imagblk(blk):
         """test block for imaginary eigenvalues in gevp"""
         for test1 in blk:
@@ -178,6 +182,7 @@ if GEVP:
                     print("***ERROR***")
                     print("GEVP has negative eigenvalues.")
                     sys.exit(1)
+
     def getblock_plus(file_tup, reuse, timeij=None):
         """get the block"""
         if reuse:
@@ -186,9 +191,11 @@ if GEVP:
         test_imagblk(retblk)
         return retblk
 else:
+
     def getblock_plus(file_tup, reuse, timeij=None):
         """get the block"""
         return getblock_simple(file_tup, reuse, timeij)
+
 
 def getblock(file_tup, reuse, timeij=None):
     """get the block and subtract any bad configs"""

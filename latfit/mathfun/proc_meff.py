@@ -1,12 +1,12 @@
 """Get the effective mass from lines/files provided."""
-#from math import log, acosh
+# from math import log, acosh
 import sys
 import re
 from math import acosh
 import numbers
 from sympy import nsolve
 from sympy.abc import x, y, z
-#from scipy.optimize import minimize_scalar, brentq
+# from scipy.optimize import minimize_scalar, brentq
 from scipy.optimize import minimize_scalar
 
 from latfit.extract.proc_line import proc_line
@@ -21,10 +21,10 @@ from latfit.config import RANGE1P
 from latfit.config import fit_func_1p
 from latfit.config import ratio
 from latfit.config import acosh_ratio
-#from latfit.analysis.profile import PROFILE
+# from latfit.analysis.profile import PROFILE
 import latfit.config
 
-#almost solve a cosh, analytic
+# almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
     def proc_meff(lines, files=None, time_arr=None):
         """Gets the effective mass, given three points
@@ -35,7 +35,7 @@ if EFF_MASS_METHOD == 1:
         sol = acosh_ratio(corrs, times)
         if sol < 1:
             print("***ERROR***")
-            print("argument to acosh in effective mass" + \
+            print("argument to acosh in effective mass" +
                   " calc is less than 1:", sol)
             if files:
                 for fn1 in files:
@@ -45,7 +45,8 @@ if EFF_MASS_METHOD == 1:
             sys.exit(1)
         return acosh(sol)
 
-#sliding window method, solved by solving a system of (transcendental) equations
+# sliding window method,
+# solved by solving a system of (transcendental) equations
 elif EFF_MASS_METHOD == 2:
     def proc_meff(lines, files=None, time_arr=None):
         """numerically solve a system of three transcendental equations
@@ -86,7 +87,7 @@ elif EFF_MASS_METHOD == 2:
                            fit_func_sym(times[1], [x, y])-corrs[1]),
                           (x, y), START_PARAMS)
 
-#one parameter fit, optional additive constant (determined in config)
+# one parameter fit, optional additive constant (determined in config)
 elif EFF_MASS_METHOD == 3:
     def proc_meff(lines, files=None, time_arr=None):
         """fit to a function with one free parameter
@@ -96,19 +97,21 @@ elif EFF_MASS_METHOD == 3:
         sol = ratio(corrs, times)
         return sol
 
-#sliding window, solved by minimizing a one parameter cost function
+# sliding window, solved by minimizing a one parameter cost function
 elif EFF_MASS_METHOD == 4:
 
     def proc_meff(lines, files=None, time_arr=None):
         """Process data, meff (traditional definition)"""
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        corrs[2], corrs[3] = (None, None) if not ADD_CONST else (corrs[2], None)
+        corrs[2], corrs[3] = (None,
+                              None) if not ADD_CONST else (corrs[2], None)
         return proc_meff4(corrs, files, times)
 
     def eff_mass_tomin(energy, ctime, sol):
         """Minimize this
         (quadratic) to solve a sliding window problem."""
         return (fit_func_1p(ctime, [energy])-sol)**2
+
     def eff_mass_root(energy, ctime, sol):
         """Minimize this
         (find a root) to solve a sliding window problem."""
@@ -125,9 +128,11 @@ elif EFF_MASS_METHOD == 4:
                                   args=(times[0], sol), bounds=(0, None))
             fun = sol.fun
             sol = sol.x
-            #other solution methods:
-            #sol = brentq(eff_mass_root, 0, 5, args=(times[0], sol)) #too unstable
-            #sol = nsolve((logs(fit_func_3pt_sym( #too slow
+            # other solution methods:
+            # too unstable
+            # sol = brentq(eff_mass_root, 0, 5, args=(times[0], sol))
+            # too slow
+            # sol = nsolve((logs(fit_func_3pt_sym( #too slow
             #    time1, [1, y, 0])/fit_func_3pt_sym(
             #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
             sol = float(sol)
@@ -139,9 +144,9 @@ elif EFF_MASS_METHOD == 4:
             sys.exit(1)
         if sol < 0:
             if (eff_mass_tomin(-sol, times[0],
-                               ratio(corrs, times)) -fun)/fun < 10:
+                               ratio(corrs, times)) - fun)/fun < 10:
                 sol = -sol
-                print("positive solution close to" + \
+                print("positive solution close to" +
                       " negative solution; switching.")
             else:
                 print("***ERROR***\nnegative energy found:", sol, times)
@@ -165,8 +170,9 @@ if STYPE == 'hdf5':
     def pre_proc_meff(lines, files=None, times=None):
         """Extract values from files or from fake files for proc_meff"""
         corrs = lines
-        #delete this next line if everything is workign
-        assert isinstance(times, numbers.Number), "time_arr is not number. hdf5."
+        # delete this next line if everything is workign
+        assert isinstance(times,
+                          numbers.Number), "time_arr is not number. hdf5."
         times = [times+i*latfit.config.TSTEP for i in range(RANGE1P)]
         if files:
             corrs = [proc_line(line, cfile) for

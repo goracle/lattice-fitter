@@ -15,91 +15,98 @@ import aux_write as aux
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
-    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+    def PROFILE(x):
+        """Line profiler default."""
+        return x
 
-#representative hdf5 file, to get info about lattice
+# representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
 FNDEF = PREFIX+'1000.'+EXTENSION
-#size of lattice in time, lattice units
+# size of lattice in time, lattice units
 LT = 64
 TSEP = 3
-#format for files; don't change
+# format for files; don't change
 STYPE = 'hdf5'
-#precomputed indexing matrices; DON'T CHANGE
+# precomputed indexing matrices; DON'T CHANGE
 ROWST = np.tile(np.arange(LT), (LT, 1))
 ROWS = np.tile(np.arange(LT), (LT, 1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
-##options concerning how bubble subtraction is done
-TAKEREAL = False #take real of bubble if momtotal=0
-STILLSUB = False #don't do subtraction on bubbles with net momentum
-TIMEAVGD = False #do a time translation average (bubble is scalar now)
-NOSUB = False #don't do any subtraction if true; set false if doing GEVP
+# options concerning how bubble subtraction is done
+TAKEREAL = False  # take real of bubble if momtotal=0
+STILLSUB = False  # don't do subtraction on bubbles with net momentum
+TIMEAVGD = False  # do a time translation average (bubble is scalar now)
+NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 
-##other config options
-THERMNUM = 0 #eliminate configs below this number to thermalize
-TSTEP = 8 #we only measure every TSTEP time slices to save on time
+# other config options
+THERMNUM = 0  # eliminate configs below this number to thermalize
+TSTEP = 8  # we only measure every TSTEP time slices to save on time
 
-###DO NOT CHANGE IF NOT DEBUGGING
-#do subtraction in the old way
-OUTERSUB = False # (True): <AB>-<A><B>.  New way (False): <A-<A>><B-<B>>
-JACKBUB = True #keep true for correctness; false for checking incorrect results
+# DO NOT CHANGE IF NOT DEBUGGING
+# do subtraction in the old way
+OUTERSUB = False  # (True): <AB>-<A><B>.  New way (False): <A-<A>><B-<B>>
+JACKBUB = True  # keep true for correctness; false to debug incorrect results
 assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True," + \
-"OUTERSUB = False, " + " debug:JACKBUB = False, OUTERSUB = False"
-#FOLD = True #average about the mirror point in time (True)
+    "OUTERSUB = False, " + " debug:JACKBUB = False, OUTERSUB = False"
+# FOLD = True # average about the mirror point in time (True)
 FOLD = False
-#Print isospin and irrep projection coefficients of operator to be written
+# Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
 CONJBUB = False
-#ANTIPERIODIC in time (false for mesons,
-#the true option only happens for tanh shapes of the correlator);
-#this is a bad feature, keep it false!
+# ANTIPERIODIC in time (false for mesons,
+# the true option only happens for tanh shapes of the correlator);
+# this is a bad feature, keep it false!
 ANTIPERIODIC = False
 
-#diagram to look at for bubble subtraction test
-#TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
+# diagram to look at for bubble subtraction test
+# TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
-#TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
-#TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
-#TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
-#TESTKEY = 'FigureHbub_scalar_mom000'
-#TESTKEY = 'FigureBub2_mom000'
+# TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
+# TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
+# TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
+# TESTKEY = 'FigureHbub_scalar_mom000'
+# TESTKEY = 'FigureBub2_mom000'
 TESTKEY = ''
 
-#Print out the jackknife block at t=TSLICE (0..N or ALL for all time slices) for a diagram TESTKEY2
+# Print out the jackknife block at t=TSLICE
+# (0..N or ALL for all time slices) for a diagram TESTKEY2
 TESTKEY2 = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 TESTKEY2 = ''
 TSLICE = 0
 
-#Individual diagram's jackknife block to write
+# Individual diagram's jackknife block to write
 WRITEBLOCK = ''
 WRITEBLOCK = 'pioncorrChk_mom000'
 
-#debug rows/columns slicing
+# debug rows/columns slicing
 DEBUG_ROWS_COLS = False
 
-#only save this bubble (speeds up checks involving single bubbles)
+# only save this bubble (speeds up checks involving single bubbles)
 BUBKEY = ''
-#BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
+# BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
 
 try:
     PROFILE  # throws an exception when PROFILE isn't defined
 except NameError:
-    PROFILE = lambda x: x   # if it's not defined simply ignore the decorator.
+    def PROFILE(x):
+        """Line profiler default."""
+        return x
+
 
 def getindices(tsep, nmomaux):
     """Get aux indices"""
     if nmomaux == 1:
         retrows = COLS
-        retcols = (-ROWST)%LT
+        retcols = (-ROWST) % LT
     elif nmomaux == 2:
         retrows = COLS
-        retcols = (-ROWST-tsep)%LT
+        retcols = (-ROWST-tsep) % LT
     elif nmomaux == 3:
         retrows = np.roll(COLS, -tsep, axis=1)
-        retcols = (-ROWST - 2*tsep)%LT
+        retcols = (-ROWST - 2 * tsep) % LT
     return retrows, retcols
+
 
 @PROFILE
 def trajlist():
@@ -108,11 +115,12 @@ def trajlist():
     trajl = set()
     for fn1 in glob.glob(PREFIX+'*.'+EXTENSION):
         toadd = int(re.sub('.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
-        if toadd >= THERMNUM: #filter out unthermalized
+        if toadd >= THERMNUM:  # filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
     print("Done getting trajectory list")
     return trajl
+
 
 @PROFILE
 def baselist(fn1=None):
@@ -137,6 +145,7 @@ def baselist(fn1=None):
     print("Done getting baselist")
     return basl
 
+
 @PROFILE
 def bublist(fn1=None):
     """Get list of disconnected bubbles."""
@@ -154,6 +163,7 @@ def bublist(fn1=None):
     print("Done getting bubble list")
     return bubl
 
+
 @PROFILE
 def dojackknife(blk):
     """Apply jackknife to block with shape = (L_traj, L_time)"""
@@ -161,6 +171,7 @@ def dojackknife(blk):
     for i, _ in enumerate(blk):
         np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
     return out
+
 
 @PROFILE
 def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
@@ -203,9 +214,11 @@ def overall_coeffs(iso, irr):
                     continue
                 for original_block, inner_coeff in iso[iso_dir]:
                     ocs.setdefault(isospin_str+operator,
-                                   []).append((original_block, outer_coeff*inner_coeff))
+                                   []).append((original_block,
+                                               outer_coeff*inner_coeff))
     print("Done getting projection coefficients")
     return ocs
+
 
 def jackknife_err(blk):
     """Get jackknife error from block with shape=(L_traj, L_time)"""
@@ -214,6 +227,7 @@ def jackknife_err(blk):
     prefactor = (len_t-1)/len_t
     err = np.sqrt(prefactor*np.sum((blk-avg).real**2, axis=0))
     return avg, err
+
 
 def formnum(num):
     """Format complex number in scientific notation"""
@@ -227,6 +241,7 @@ def formnum(num):
             plm = '+'
         imag = '%.8e' % num.imag
         return real+plm+imag+'j'
+
 
 def buberr(bubblks):
     """Show the result of different options for bubble subtraction"""
@@ -242,6 +257,7 @@ def buberr(bubblks):
                 avgval, errval = ntup
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
+
 
 @PROFILE
 def h5sum_blks(allblks, ocs, outblk_shape):
@@ -259,25 +275,29 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 ntchk = allblks[base].shape[0]
                 outblk = np.zeros((ntchk, outblk_shape[1]), dtype=np.complex)
                 if ntchk != outblk.shape[0]:
-                    print("Warning:", opa, "has different number of trajectories")
+                    print("Warning:", opa,
+                          "has different number of trajectories")
                     print("new traj=", ntchk)
                     print("old traj=", outblk_shape[0])
                     print("Be careful in using these blocks in the GEVP!")
                 basechk = base
             else:
                 if allblks[base].shape[0] != ntchk:
-                    #we have a different number of trajectories.  not intra-operator consistent
+                    # we have a different number of trajectories.
+                    # not intra-operator consistent
                     print("Statistics mismatch.  Not enough trajectories.")
                     print("Problematic operator:", opa)
                     print("base:", base, "base check:", basechk)
-                    print("number of trajectories in base", allblks[base].shape[0])
+                    print("number of trajectories in base",
+                          allblks[base].shape[0])
                     print("does not match:", ntchk)
                     flag = 1
                     break
             try:
                 outblk += coeff*allblks[base]
             except ValueError:
-                #mismatch between shapes of outblk and base.  This is a programming error!
+                # mismatch between shapes of outblk and base.
+                # This is a programming error!
                 print("Error: trajectory number mismatch")
                 print("Problematic operator:", opa)
                 print("Problematic base:", base)
@@ -292,6 +312,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
     print("Done writing summed blocks.")
     return
 
+
 @PROFILE
 def fold_time(outblk, base=''):
     """average data about the midpoint in time for better statistics.
@@ -305,12 +326,16 @@ def fold_time(outblk, base=''):
         tsep = TSEP
     if FOLD:
         if ANTIPERIODIC:
-            retblk = [1/2 *(outblk[:, t]-outblk[:, (LT-t-2*tsep)%LT]) for t in range(LT)]
+            retblk = [1/2 * (outblk[:, t] - outblk[:, (LT-t-2 * tsep) % LT])
+                      for t in range(LT)]
         else:
-            retblk = [1/2 *(outblk[:, t]+outblk[:, (LT-t-2*tsep)%LT]) for t in range(LT)]
+            retblk = [1/2 * (outblk[:, t] + outblk[:, (LT-t-2*tsep) % LT])
+                      for t in range(LT)]
         return np.array(retblk).T
     else:
         return outblk
+
+
 @PROFILE
 def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     """Get generic connected diagram of base = base
@@ -338,13 +363,14 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         except KeyError:
             skip.append(i)
             continue
-        if not rows is None and not cols is None:
+        if rows is not None and cols is not None:
             outarr = outarr[rows, cols]
         if avgtsrc:
             np.mean(TSTEP*outarr, axis=0, out=blk[i])
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
+
 
 @PROFILE
 def getmostblks(basl, trajl, openlist):
@@ -359,10 +385,11 @@ def getmostblks(basl, trajl, openlist):
             print("Printing non-averaged-over-tsrc data")
             printblk(TESTKEY2, blk)
             print("beginning of traj list = ", trajl[0], trajl[1], trajl[2])
-            #sys.exit(0)
+            # sys.exit(0)
         mostblks[base] = dojackknife(blk)
     print("Done getting most of the jackknife blocks.")
     return mostblks
+
 
 @PROFILE
 def getbubbles(bubl, trajl, openlist=None):
@@ -377,9 +404,9 @@ def getbubbles(bubl, trajl, openlist=None):
                 fn1 = h5py.File(filekey, 'r')
             else:
                 fn1 = openlist[filekey]
-            keysrc = 'traj_'+str(traj)+'_'+dsrc
-            assert(keysrc in fn1), "key = "+keysrc+ \
-            " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
+            keysrc = 'traj_' + str(traj) + '_' + dsrc
+            assert(keysrc in fn1), "key = " + keysrc + \
+                " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
             try:
                 pdiag = fn1[keysrc].attrs['mom']
             except KeyError:
@@ -395,6 +422,7 @@ def getbubbles(bubl, trajl, openlist=None):
         bubbles[key] = np.asarray(bubbles[key])
     print("Done getting bubbles.")
     return bubbles
+
 
 @PROFILE
 def bubsub(bubbles):
@@ -425,16 +453,20 @@ def bubsub(bubbles):
     print("Done getting averaged bubbles.")
     return sub
 
+
 if CONJBUB:
     @PROFILE
     def conjbub(bub):
-        """Complex conjugate bubble depending on global variable (conjugate)"""
+        """Complex conjugate bubble depending on global variable
+        (conjugate)"""
         return np.conjugate(bub)
 else:
     @PROFILE
     def conjbub(bub):
-        """Complex conjugate bubble depending on global variable (do not conjugate)"""
+        """Complex conjugate bubble depending on global variable
+        (do not conjugate)"""
         return bub
+
 
 def debug_rows(cols, outkey):
     """debug function"""
@@ -448,6 +480,7 @@ def debug_rows(cols, outkey):
         print(COLS)
         sys.exit(0)
 
+
 @PROFILE
 def getdiscon_name(dsrc_split, dsnk_split):
     """Get output disconnected diagram figure name
@@ -459,8 +492,8 @@ def getdiscon_name(dsrc_split, dsnk_split):
     dsnk = dsnk_split[0]
     if not (ptot[0] == -1*ptot2[0] and
             ptot[1] == -1*ptot2[1] and
-            ptot[2] == -1*ptot2[2]): #cc at sink, conserve momentum
-        #dummy values to tell the function to stop processing this diagram
+            ptot[2] == -1*ptot2[2]):  # cc at sink, conserve momentum
+        # dummy values to tell the function to stop processing this diagram
         sepval = -1
         discname = None
     else:
@@ -475,6 +508,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
         print(dsrc, dsnk, sepval)
     return discname, sepval
 
+
 def check_key(key):
     """Only look at the key in question, tell parent to skip the rest"""
     if (TESTKEY and key != TESTKEY) or (TESTKEY2 and key != TESTKEY2):
@@ -482,6 +516,7 @@ def check_key(key):
     else:
         retval = True
     return retval
+
 
 @PROFILE
 def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
@@ -491,6 +526,7 @@ def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
     if sub is None:
         sub = bubsub(bubbles)
     return dobubjack(bubbles, sub)
+
 
 @PROFILE
 def dobubjack(bubbles, sub):
@@ -525,9 +561,9 @@ def dobubjack(bubbles, sub):
                             bubbles[snkkey], excl, axis=0)-sub[snkkey][excl])
                         outcome = np.tensordot(src, snk, axes=(0, 0))[
                             ROWS, cols]/(len(src)*1.0)
-                        #mean is over tsrc
-                        #len(src) division is average over configs
-                        #(except for excluded one)
+                        # mean is over tsrc
+                        # len(src) division is average over configs
+                        # (except for excluded one)
                     np.mean(outcome, axis=0, out=out[outkey][excl])
                     testkey2(outkey, outcome, 0, excl)
             else:
@@ -536,9 +572,10 @@ def dobubjack(bubbles, sub):
                     snk = conjbub(bubbles[snkkey])
                     outcome = -1*np.outer(sub[srckey], sub[snkkey])[ROWS, cols]
                     for excl in range(numt):
-                        outcome = outcome+np.outer(src[excl], snk[excl])[ROWS, cols]
+                        outcome = outcome + np.outer(
+                            src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
-                        #np.mean is avg over tsrc
+                        # np.mean is avg over tsrc
                         np.mean(outcome, axis=0, out=out[outkey][excl])
                 else:
                     src = bubbles[srckey]-sub[srckey]
@@ -546,7 +583,7 @@ def dobubjack(bubbles, sub):
                     for excl in range(numt):
                         outcome = np.outer(src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
-                        #np.mean is avg over tsrc
+                        # np.mean is avg over tsrc
                         np.mean(outcome, axis=0, out=out[outkey][excl])
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])
@@ -554,13 +591,14 @@ def dobubjack(bubbles, sub):
     print("Done getting the disconnected diagram jackknife blocks.")
     return out
 
+
 def testkey2(outkey, outcome, flag, excl=-1):
     """Print non-averaged over tsrc disconnected diagram"""
     if outkey != TESTKEY2:
         pass
     elif flag == 0 and excl == 0:
-        print("Printing non-averaged over"+ \
-              " tsrc disconnected diagram ("+ \
+        print("Printing non-averaged over" +
+              " tsrc disconnected diagram (" +
               " lowest traj number in list):", TESTKEY2)
         print(outcome.shape)
         print(outcome)
@@ -572,12 +610,13 @@ def testkey2(outkey, outcome, flag, excl=-1):
         printblk(TESTKEY2, outcome)
         sys.exit(0)
 
+
 @PROFILE
 def aux_jack(basl, trajl, numt, openlist):
     """Get the aux diagram blocks"""
     auxblks = {}
     for base in basl:
-        #get aux diagram name
+        # get aux diagram name
         outfn = aux.aux_filen(base, stype='hdf5')
         if not outfn:
             continue
@@ -589,10 +628,10 @@ def aux_jack(basl, trajl, numt, openlist):
         if tsep is not None:
             assert tsep == TSEP, "tsep of base = "+str(tsep)+" base = "+base
         nmomaux = rf.nmom(base)
-        #get modified tsrc and tdis
+        # get modified tsrc and tdis
         rows, cols = getindices(tsep, nmomaux)
-        #get block from which to construct the auxdiagram
-        #mean is avg over tsrc
+        # get block from which to construct the auxdiagram
+        # mean is avg over tsrc
         blk = np.zeros((numt, LT), dtype=np.complex)
         np.mean(TSTEP*getgenconblk(base, trajl, openlist=openlist,
                                    avgtsrc=False, rowcols=[rows, cols]),
@@ -600,6 +639,7 @@ def aux_jack(basl, trajl, numt, openlist):
         auxblks[outfn] = dojackknife(blk)
     print("Done getting the auxiliary jackknife blocks.")
     return auxblks
+
 
 @PROFILE
 def main(fixn=True):
@@ -617,15 +657,17 @@ def main(fixn=True):
     auxblks = aux_jack(basl, trajl, numt, openlist)
     bubblks = bubjack(bubl, trajl, openlist)
     mostblks = getmostblks(basl, trajl, openlist)
-    #do things in this order to overwrite already composed disconnected diagrams (next line)
-    allblks = {**auxblks, **mostblks, **bubblks} #for non-gparity
+    # do things in this order to overwrite already composed
+    # disconnected diagrams (next line)
+    allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     for filekey in openlist:
         openlist[filekey].close()
     if WRITEBLOCK and not (
             TESTKEY or TESTKEY2) and WRITEBLOCK not in bubblks:
         allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
-        h5write_blk(allblks[WRITEBLOCK], WRITEBLOCK, extension='.jkdat', ocs=None)
-    #allblks = {**mostblks, **bubblks} #for gparity
+        h5write_blk(allblks[WRITEBLOCK],
+                    WRITEBLOCK, extension='.jkdat', ocs=None)
+    # allblks = {**mostblks, **bubblks} # for gparity
     ocs = overall_coeffs(
         isoproj(fixn, 0, dlist=list(
             allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
@@ -633,6 +675,7 @@ def main(fixn=True):
         buberr(allblks)
         sys.exit(0)
     h5sum_blks(allblks, ocs, (numt, LT))
+
 
 @PROFILE
 def printblk(basename, blk):
@@ -645,9 +688,10 @@ def printblk(basename, blk):
         print("Printing all time slices of", basename)
         print(blk)
 
+
 if __name__ == '__main__':
     FIXN = input("Need fix norms before summing? True/False?")
-    #FIXN = 'False'
+    # FIXN = 'False'
     FIXN = FIXN in ['true', '1', 't', 'y',
                     'yes', 'yeah', 'yup', 'certainly', 'True']
     if not FIXN and FIXN not in ['false', '0', 'f', 'n',

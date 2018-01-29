@@ -3,7 +3,7 @@ import os.path
 import os
 import re
 import sys
-#from warnings import warn
+# from warnings import warn
 from decimal import Decimal
 from numbers import Number
 import itertools
@@ -40,11 +40,12 @@ from latfit.config import ADD_CONST
 import latfit.config
 rcParams.update({'figure.autolayout': True})
 
+
 def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
 
-    ###GET COORDS
+    # GET COORDS
     try:
         error2 = np.array(result_min.error_bars)
     except AttributeError:
@@ -58,10 +59,11 @@ def mkplot(plotdata, input_f,
         xcoord, ycoord, error2 = get_coord(plotdata.coords,
                                            plotdata.cov, error2)
 
-    #get dimension of GEVP, or set to one if not doing gevp (this is needed in several places)
+    # get dimension of GEVP,
+    # or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(plotdata.cov, result_min, plotdata.coords)
 
-    ###GET STRINGS
+    # GET STRINGS
     title = get_title(input_f)
     file_str = get_file_string(title, dimops)
 
@@ -72,28 +74,29 @@ def mkplot(plotdata, input_f,
                                       result_min, fitrange)
         print_messages(result_min, param_err, param_chisq)
 
-    ###STOP IF NO PLOT
+    # STOP IF NO PLOT
     if NO_PLOT:
         return 0
 
-    ###DO PLOT
+    # DO PLOT
     with PdfPages(file_str) as pdf:
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
-            #plot fit function
+            # plot fit function
             plot_fit(plotdata.fitcoord, result_min, dimops)
 
-            #tolerance box plot
+            # tolerance box plot
             if EFF_MASS and BOX_PLOT:
                 plot_box(plotdata.fitcoord, result_min, param_err, dimops)
 
             annotate(dimops, result_min, param_err,
                      param_chisq, plotdata.coords)
 
-        #save, output
+        # save, output
         do_plot(title, pdf)
 
     return 0
+
 
 def get_dimops(cov, result_min, coords):
     """Get dimension of GEVP matrix or return 1 if not GEVP
@@ -115,11 +118,12 @@ def get_dimops(cov, result_min, coords):
             sys.exit(1)
     return dimops
 
+
 def get_title(input_f):
     """get title info"""
-    #title/filename stuff
+    # title/filename stuff
     if TITLE == '' or not TITLE:
-        #then plot title should be the location directory of the jk blocks
+        # then plot title should be the location directory of the jk blocks
         cwd = os.getcwd()
         if os.path.isdir(input_f):
             os.chdir(input_f)
@@ -135,10 +139,11 @@ def get_title(input_f):
         title = re.sub('.jkdat', '', title)
     return title
 
+
 def get_file_string(title, dimops):
     """get strings"""
 
-    #brief attempt at sanitization
+    # brief attempt at sanitization
     title_safe = re.sub(r'\$', '', title)
     title_safe = re.sub(r'\\', '', title_safe)
     title_safe = re.sub(r', ', ' ', title_safe)
@@ -169,6 +174,7 @@ def get_file_string(title, dimops):
     file_str = re.sub(' ', '_', file_str) + '.pdf'
     return file_str
 
+
 def get_coord(coords, cov, error2=None):
     """Plotted coordinates setup
     """
@@ -187,11 +193,12 @@ def get_coord(coords, cov, error2=None):
     print(list(zip(xcoord, error2)))
     return xcoord, ycoord, error2
 
+
 def print_messages(result_min, param_err, param_chisq):
     """print message up here because of weirdness with pdfpages
     """
     startp = np.array(START_PARAMS)
-    #print plot info
+    # print plot info
     print("Minimizer thinks that it worked.  Plotting fit.")
     print("Fit info:")
     print("Autofit:", AUTO_FIT)
@@ -201,7 +208,8 @@ def print_messages(result_min, param_err, param_chisq):
         print("Bounds:", BINDS)
     print("Guessed params:  ", np.array2string(startp, separator=', '))
     print("Minimized params:", np.array2string(result_min.x, separator=', '))
-    print("Error in params :", np.array2string(np.array(param_err), separator=', '))
+    print("Error in params :", np.array2string(np.array(param_err),
+                                               separator=', '))
     chisq_str = str(result_min.fun)
     if JACKKNIFE_FIT:
         chisq_str += '+/-'+str(result_min.err_in_chisq)
@@ -216,15 +224,18 @@ def print_messages(result_min, param_err, param_chisq):
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
 
+
 def get_param_chisq(coords, dimops, result_min, fitrange=None):
     """Get chi^2 parameters."""
-    param_chisq = namedtuple('param_chisq', ('redchisq', 'redchisq_round_str', 'dof'))
+    param_chisq = namedtuple('param_chisq',
+                             ('redchisq', 'redchisq_round_str', 'dof'))
     if fitrange is None:
         param_chisq.dof = int(len(coords)*dimops-len(result_min.x))
     else:
         param_chisq.dof = int((fitrange[1]-fitrange[0]+1)*dimops-len(
             result_min.x))
-    #Do this because C parameter is a fit parameter, it just happens to be guessed by hand
+    # Do this because C parameter is a fit parameter,
+    # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
     param_chisq.redchisq = result_min.fun/param_chisq.dof
@@ -243,6 +254,7 @@ def get_param_chisq(coords, dimops, result_min, fitrange=None):
                 result_min.err_in_chisq/param_chisq.dof, plus=True)
     return param_chisq
 
+
 def format_chisq_str(chisq, err, plus=False):
     """Format the reduced chi^2 string for plot annotation, jackknife fit"""
     formstr = '{:0.'+str(int(PREC_DISP))+'e}'
@@ -254,7 +266,7 @@ def format_chisq_str(chisq, err, plus=False):
             retstr = formstr.format(chisq)
         else:
             retstr = form_str_plus.format(chisq)
-    retstr = retstr+ '+/-'
+    retstr = retstr + '+/-'
     if chisq >= 1 and chisq < 10:
         if plus:
             retstr = retstr + str(round(err, PREC_DISP+2))
@@ -267,13 +279,14 @@ def format_chisq_str(chisq, err, plus=False):
             retstr = retstr + formstr.format(err)
     return retstr
 
+
 def plot_errorbar(dimops, xcoord, ycoord, error2):
     """plot data error bars
     """
     if dimops != 1:
         lcoord = len(xcoord)
-        #for color-blind people,
-        #make plot lines have (hopefully) unique markers
+        # for color-blind people,
+        # make plot lines have (hopefully) unique markers
         marker = itertools.cycle(('o', 'X', 'd', 'p', 's'))
         for curve_num in range(dimops):
             ycurve = np.array([ycoord[i][curve_num]
@@ -286,6 +299,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
         plt.errorbar(xcoord, ycoord, yerr=error2,
                      linestyle='None', ms=3.75, marker='o')
 
+
 def plot_fit(xcoord, result_min, dimops):
     """Plot fit function
     the fit function is plotted on a scale FINE times more fine
@@ -293,8 +307,8 @@ def plot_fit(xcoord, result_min, dimops):
     """
     if EFF_MASS and EFF_MASS_METHOD == 3:
         pass
-        #warn('step size assumed 1 for fitted plot.')
-        #step_size = 1
+        # warn('step size assumed 1 for fitted plot.')
+        # step_size = 1
     else:
         pass
     step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
@@ -302,30 +316,31 @@ def plot_fit(xcoord, result_min, dimops):
     xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
                      step_size)
     for curve_num in range(dimops):
-        #result_min.x is is the array of minimized fit params
+        # result_min.x is is the array of minimized fit params
         yfit = np.array([
             fit_func(xfit[i], result_min.x)[curve_num] if dimops > 1 else
             fit_func(xfit[i], result_min.x)
             for i in range(len(xfit))])
-        #only plot fit function if minimizer result makes sense
-        #if result_min.status == 0:
+        # only plot fit function if minimizer result makes sense
+        # if result_min.status == 0:
         plt.plot(xfit, yfit)
+
 
 if GEVP:
     def plot_box(xcoord, result_min, param_err, dimops):
         """plot tolerance box around straight line fit for effective mass
         """
         axvar = plt.gca()
-        #gca, gcf = getcurrentaxes getcurrentfigure
+        # gca, gcf = getcurrentaxes getcurrentfigure
         fig = plt.gcf()
         for i in range(dimops):
             axvar.add_patch((
-                plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
+                plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
                     (xcoord[0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                    xcoord[len(xcoord)-1]-xcoord[0]+1, # width
-                    2*param_err[i],          # height
+                    xcoord[len(xcoord)-1]-xcoord[0]+1,  # width
+                    2*param_err[i],  # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
-                    #transform=fig.transFigure
+                    # transform=fig.transFigure
                 )))
 else:
     def plot_box(xcoord, result_min, param_err, dimops=1):
@@ -334,15 +349,15 @@ else:
         if dimops:
             pass
         axvar = plt.gca()
-        #gca, gcf = getcurrentaxes getcurrentfigure
+        # gca, gcf = getcurrentaxes getcurrentfigure
         fig = plt.gcf()
         axvar.add_patch((
-            plt.Rectangle(#(11.0, 0.24514532441), 3,.001,
+            plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
                 (xcoord[0]-.5, result_min.x[0]-param_err[0]),   # (x, y)
-                xcoord[len(xcoord)-1]-xcoord[0]+1, # width
+                xcoord[len(xcoord)-1]-xcoord[0]+1,  # width
                 2*param_err[0],          # height
                 fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
-                #transform=fig.transFigure
+                # transform=fig.transFigure
             )))
 
 if ADD_CONST:
@@ -355,10 +370,11 @@ if GEVP:
         YSTART = 0.45
     else:
         YSTART = 0.35
+
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (GEVP)
         """
-        #annotate plot with fitted energy
+        # annotate plot with fitted energy
         plt.legend(loc='center right')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
@@ -370,6 +386,7 @@ else:
         YSTART = 0.95
     else:
         YSTART = 0.35
+
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (non GEVP)
         """
@@ -377,16 +394,18 @@ else:
             estring = trunc_prec(result_min.x[1])+"+/-"+trunc_prec(
                 param_err[1], 2)
         else:
-            #for an effective mass plot
+            # for an effective mass plot
             estring = trunc_prec(result_min.x[0])+"+/-"+trunc_prec(
                 param_err[0], 2)
         plt.annotate("Energy="+estring, xy=(0.05, ystart),
                      xycoords='axes fraction')
 
+
 def trunc_prec(num, extra_trunc=0):
     """Truncate the amount of displayed digits of precision to PREC_DISP"""
     formstr = '%.'+str(int(PREC_DISP-extra_trunc))+'e'
     return str(float(formstr % Decimal(str(num))))
+
 
 if EFF_MASS and EFF_MASS_METHOD == 3:
     if GEVP:
@@ -394,6 +413,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             YSTART2 = 0.55
         else:
             YSTART2 = 0.55
+
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
@@ -402,11 +422,13 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             rcp += redchisq_round_str+", dof = "+str(dof)
             plt.annotate(rcp, xy=(0.05, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
+
     else:
         if ADD_CONST:
             YSTART2 = 0.85
         else:
             YSTART2 = 0.55
+
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
@@ -417,7 +439,10 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             rcp += redchisq_round_str+", dof = "+str(dof)
             plt.annotate(rcp, xy=(0.05, ystart),
                          xycoords='axes fraction')
+
+
 else:
+
     def annotate_chisq(redchisq_round_str, dof, result_min=None):
         """Annotate with resultant chi^2
         """
@@ -428,32 +453,47 @@ else:
             xy=(0.05, 0.05),
             xycoords='axes fraction')
 
+
 if JACKKNIFE_FIT:
     if JACKKNIFE_FIT == 'FROZEN':
+
         def annotate_jack():
             """Annotate jackknife type (frozen)"""
             plt.annotate('Frozen (single) jackknife fit.', xy=(
                 0.05, 0.15), xycoords='axes fraction')
+
     elif JACKKNIFE_FIT == 'SINGLE':
+
         def annotate_jack():
             """Annotate jackknife type (single elim)"""
             plt.annotate('Single jackknife fit.', xy=(
                 0.05, 0.15), xycoords='axes fraction')
+
     elif JACKKNIFE_FIT == 'DOUBLE':
+
         def annotate_jack():
             """Annotate jackknife type (double)"""
             plt.annotate('Double jackknife fit.', xy=(
                 0.05, 0.15), xycoords='axes fraction')
+
+
 elif JACKKNIFE:
+
     def annotate_jack():
         """Annotate jackknife type (only avg)"""
         plt.annotate('Avg. fit, jackknife est. cov. matrix',
                      xy=(0.05, 0.15), xycoords='axes fraction')
+
+
 else:
+
     def annotate_jack():
         """Annotate jackknife type (none)"""
         pass
+
+
 if UNCORR:
+
     def annotate_uncorr(coords, dimops):
         """Annotate plot with uncorr"""
         if dimops > 1:
@@ -461,31 +501,36 @@ if UNCORR:
                          xycoords='axes fraction')
         else:
             plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
+
+
 else:
+
     def annotate_uncorr(*args):
         """Annotate plot with uncorr"""
         return args
 
+
 def do_plot(title, pdf):
     """Do the plot, given the title."""
-    #setup fonts
-    hfontt = {'fontname':'FreeSans', 'size':12}
-    hfontl = {'fontname':'FreeSans', 'size':14}
-    #add axes labels, title
+    # setup fonts
+    hfontt = {'fontname': 'FreeSans', 'size': 12}
+    hfontl = {'fontname': 'FreeSans', 'size': 14}
+    # add axes labels, title
     plt.title(title, **hfontt)
     plt.xlabel(XLABEL, **hfontl)
     plt.ylabel(YLABEL, **hfontl)
-    #read out into a pdf
+    # read out into a pdf
     pdf.savefig()
-    #show the plot
+    # show the plot
     plt.show()
+
 
 def annotate(dimops, result_min, param_err, param_chisq, coords):
     """Annotate plot.
     param_chisq=[redchisq, redchisq_round_str, dof]
     """
     annotate_energy(result_min, param_err)
-    #if result_min.status == 0 and param_chisq.redchisq < 2:
+    # if result_min.status == 0 and param_chisq.redchisq < 2:
     if param_chisq.redchisq < 2:
         annotate_chisq(param_chisq.redchisq_round_str,
                        param_chisq.dof, result_min)

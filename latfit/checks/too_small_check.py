@@ -2,6 +2,7 @@
 import sys
 from numpy.linalg import eigvals
 
+
 def too_small_check(ccov, eigcut=10**(-10)):
     """Check to see if the matrix eigenvalues are too small.
     This can cause problems when computing chi^2 due to precision loss

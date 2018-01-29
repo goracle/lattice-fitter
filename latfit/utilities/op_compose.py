@@ -8,6 +8,7 @@ import numpy as np
 from sum_blks import sum_blks
 import read_file as rf
 
+
 def momstr(psrc, psnk):
     """Take psrc and psnk and return a diagram string of the combination.
     """
@@ -41,6 +42,7 @@ def momstr(psrc, psnk):
         else:
             pstr = 'mom'+rf.ptostr(psrc)
     return pstr
+
 
 A0 = [
     (1/8, 'pipi', [[1, 1, 1], [-1, -1, -1]]),
@@ -76,7 +78,7 @@ A_1PLUS = [
     (1/sqrt(12), 'UUpipi', [[1, -1, 0], [-1, 1, 0]]),
 ]
 
-#A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
+# A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
 T_1_1MINUS = [
     (-1/2, 'pipi', [[1, 0, 0], [-1, 0, 0]]),
@@ -94,16 +96,17 @@ T_1_2MINUS = [
     (1/sqrt(2), 'pipi', [[0, 0, 1], [0, 0, -1]]),
     (-1/sqrt(2), 'pipi', [[0, 0, -1], [0, 0, 1]])]
 
-OPLIST = {'A_1PLUS':A_1PLUS,
-          'T_1_1MINUS':T_1_1MINUS,
-          'T_1_3MINUS':T_1_3MINUS,
-          'T_1_2MINUS':T_1_2MINUS,
-          'A0':A0}
-#OPLIST = {'A0':A0}
+OPLIST = {'A_1PLUS': A_1PLUS,
+          'T_1_1MINUS': T_1_1MINUS,
+          'T_1_3MINUS': T_1_3MINUS,
+          'T_1_2MINUS': T_1_2MINUS,
+          'A0': A0}
+# OPLIST = {'A0': A0}
 PART_LIST = set([])
 for opa_out in OPLIST:
     for item in OPLIST[opa_out]:
         PART_LIST.add(item[1])
+
 
 def partstr(srcpart, snkpart):
     """Get string from particle strings at source and sink"""
@@ -113,10 +116,12 @@ def partstr(srcpart, snkpart):
         particles = snkpart+srcpart
     return particles
 
+
 PART_COMBS = set([])
 for srcout in PART_LIST:
     for snkout in PART_LIST:
         PART_COMBS.add(partstr(srcout, snkout))
+
 
 def sepmod(dur, opa):
     """make different directory name for different time separations
@@ -130,6 +135,7 @@ def sepmod(dur, opa):
     else:
         dur = 'sep4/'+dur
     return dur
+
 
 def op_list(stype='ascii'):
     """Compose irrep operators at source and sink to do irrep projection.
@@ -167,9 +173,11 @@ def op_list(stype='ascii'):
         print("End of operator list.")
     return projlist
 
+
 def main():
     """Do irrep projection (main)"""
     op_list()
+
 
 if __name__ == "__main__":
     main()

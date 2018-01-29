@@ -3,6 +3,7 @@ import sys
 from warnings import warn
 import numpy as np
 
+
 def proc_line(line, pifile="BLANK"):
     """take the real and test for error"""
     try:
