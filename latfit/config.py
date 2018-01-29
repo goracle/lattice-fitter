@@ -197,7 +197,8 @@ PREC_DISP = 4
 MINTOL = False
 MINTOL = True
 
-###setup is for cosh fit, but one can easily modify it.
+#how many time slices to skip at a time
+TSTEP = 1
 
 ###starting values for fit parameters
 if GEVP:

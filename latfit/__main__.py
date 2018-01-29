@@ -32,6 +32,7 @@ from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
+import latfit.config
 
 class Logger(object):
     """log output from fit"""
@@ -88,6 +89,7 @@ def main():
     xmin, xmax = xlim_err(options.xmin, options.xmax)
     fitrange = fitrange_err(options, xmin, xmax)
     xstep = xstep_err(options.xstep, input_f)
+    latfit.config.TSTEP = xstep
     plotdata.fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
 
