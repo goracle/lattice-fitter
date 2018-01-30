@@ -225,7 +225,7 @@ def jackknife_err(blk):
     len_t = len(blk)
     avg = np.mean(blk, axis=0)
     prefactor = (len_t-1)/len_t
-    err = np.sqrt(prefactor*np.sum((blk-avg).real**2, axis=0))
+    err = np.sqrt(prefactor*np.sum((blk-avg)**2, axis=0))
     return avg, err
 
 
