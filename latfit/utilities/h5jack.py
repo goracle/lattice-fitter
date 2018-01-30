@@ -50,7 +50,7 @@ JACKBUB = True  # keep true for correctness; false to debug incorrect results
 assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True," + \
     "OUTERSUB = False, " + " debug:JACKBUB = False, OUTERSUB = False"
 # FOLD = True # average about the mirror point in time (True)
-FOLD = False
+FOLD = True
 # Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
 CONJBUB = False
@@ -692,9 +692,10 @@ def printblk(basename, blk):
 if __name__ == '__main__':
     FIXN = input("Need fix norms before summing? True/False?")
     # FIXN = 'False'
+    FIXNSTR = FIXN
     FIXN = FIXN in ['true', '1', 't', 'y',
                     'yes', 'yeah', 'yup', 'certainly', 'True']
-    if not FIXN and FIXN not in ['false', '0', 'f', 'n',
+    if not FIXN and FIXNSTR not in ['false', '0', 'f', 'n',
                                  'no', 'nope', 'certainly not', 'False']:
         sys.exit(1)
     main(FIXN)

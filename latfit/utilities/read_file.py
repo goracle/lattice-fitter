@@ -247,8 +247,11 @@ def pchange(filename, pnew):
         for i in range(nmom1):
             filen = filen.replace("temp"+str(i), ptostr(pnew[i]), 1)
     else:
-        print("Error: bad filename for momentum replacement specified.")
-        sys.exit(1)
+        if nmom1 != 1:
+            print("Error: bad filename for momentum replacement specified.")
+            print("filen:", filen)
+            print("filename:", filename)
+            sys.exit(1)
     filen = re.sub(
         "TEMPsafe", str(traj1), filen) if traj1 is not None else filen
     return filen
