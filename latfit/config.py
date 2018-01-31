@@ -2,6 +2,7 @@
 import sys
 from copy import copy
 from math import log
+from numbers import Number
 import numpy as np
 from numpy import exp
 from sympy import exp as exps
@@ -291,7 +292,7 @@ def fit_func_1p(ctime, trial_params):
     corrs = [exp(-trial_params[0]*(ctime+i*TSTEP)) +
              exp(-trial_params[0]*(LT-(ctime+i*TSTEP)))
              for i in range(RANGE1P)]
-    return ratio(corrs, ctime)
+    return ratio(corrs, ctime, nocheck=True)
 
 
 # library of functions to fit.  define them in the usual way
@@ -303,22 +304,28 @@ if ADD_CONST:
         return trial_params[0]*(exp(-trial_params[1]*ctime) + exp(
             -trial_params[1]*(LT-ctime))) + trial_params[2]
 
-    def ratio(corrs, times=None):
+    def ratio(corrs, times=None, nocheck=False):
         """Process data points into effective mass ratio (and take log)"""
         times = [-99999, -99999, -99999] if times is None else times
-        zero_p(corrs[1], corrs[2], times[1:])
+        times = [times, None, None] if isinstance(times, Number) else times
+        if not nocheck:
+            zero_p(corrs[1], corrs[2], times)
         sol = (corrs[1]-corrs[0])/(corrs[2]-corrs[1])
-        testsol(sol, corrs, times)
+        if not nocheck:
+            testsol(sol, corrs, times)
         sol = log(sol) if LOG else sol
         return sol
 
-    def acosh_ratio(corrs, times=None):
+    def acosh_ratio(corrs, times=None, nocheck=False):
         """Process data into effective mass ratio,
         for an exact call to acosh."""
         times = [-99999, -99999, -99999] if times is None else times
-        zero_p(corrs[1]-C, times[1:])
+        times = [times, None, None] if isinstance(times, Number) else times
+        if not nocheck:
+            zero_p(corrs[1]-C, times[1:])
         sol = (corrs[0]-corrs[1]+corrs[2]-corrs[3])/2.0/(corrs[1]-corrs[2])
-        testsol(sol, corrs, times)
+        if not nocheck:
+            testsol(sol, corrs, times)
         return sol
 
     def fit_func_sym(ctime, trial_params):
@@ -349,24 +356,30 @@ else:
         return trial_params[0]*(exp(-trial_params[1]*ctime) +
                                 exp(-trial_params[1]*(LT-ctime)))
 
-    def ratio(corrs, times=None):
+    def ratio(corrs, times=None, nocheck=False):
         """Process data points into effective mass ratio
         (and take log), no additive constant
         """
         times = [-99999, -99999] if times is None else times
-        zero_p(corrs[1], times[1])
+        times = [times, None, None] if isinstance(times, Number) else times
+        if not nocheck:
+            zero_p(corrs[1], times[1])
         sol = (corrs[0])/(corrs[1])
-        testsol(sol, corrs, times)
+        if not nocheck:
+            testsol(sol, corrs, times)
         sol = log(sol) if LOG else sol
         return sol
 
-    def acosh_ratio(corrs, times=None):
+    def acosh_ratio(corrs, times=None, nocheck=False):
         """Process data into effective mass ratio,
         for an exact call to acosh (no additive constant)."""
         times = [-99999, -99999] if times is None else times
-        zero_p(corrs[1]-C, times[1])
+        times = [times, None, None] if isinstance(times, Number) else times
+        if not nocheck:
+            zero_p(corrs[1]-C, times[1])
         sol = (corrs[0]+corrs[2]-2*C)/2/(corrs[1]-C)
-        testsol(sol, corrs, times)
+        if not nocheck:
+            testsol(sol, corrs, times)
         return sol
 
     def fit_func_sym(ctime, trial_params):
