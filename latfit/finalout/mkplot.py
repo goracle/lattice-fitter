@@ -420,7 +420,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """
             rcp = "Reduced "+r"$\chi^2 = $"
             rcp += redchisq_round_str+", dof = "+str(dof)
-            plt.annotate(rcp, xy=(0.05, ystart-.05*(len(result_min.x)-2)),
+            plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
 
     else:
@@ -437,7 +437,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
                 pass
             rcp = "Reduced "+r"$\chi^2 = $"
             rcp += redchisq_round_str+", dof = "+str(dof)
-            plt.annotate(rcp, xy=(0.05, ystart),
+            plt.annotate(rcp, xy=(0.15, ystart),
                          xycoords='axes fraction')
 
 
@@ -450,7 +450,7 @@ else:
             pass
         plt.annotate(
             "Reduced "+r"$\chi^2=$"+redchisq_round_str+", dof="+str(dof),
-            xy=(0.05, 0.05),
+            xy=(0.15, 0.05),
             xycoords='axes fraction')
 
 

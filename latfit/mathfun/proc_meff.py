@@ -143,11 +143,12 @@ elif EFF_MASS_METHOD == 4:
             print(minimize_scalar(eff_mass_tomin, args=(times[0], sol)))
             sys.exit(1)
         if sol < 0:
-            if (eff_mass_tomin(-sol, times[0],
-                               ratio(corrs, times)) - fun)/fun < 10:
+            tryfun = (eff_mass_tomin(-sol, times[0],
+                                     ratio(corrs, times)) - fun)
+            if tryfun/fun < 10:
                 sol = -sol
                 print("positive solution close to" +
-                      " negative solution; switching.")
+                      " negative solution; switching; new tol", tryfun)
             else:
                 print("***ERROR***\nnegative energy found:", sol, times)
                 print(eff_mass_tomin(sol, times[0], ratio(corrs, times)))
