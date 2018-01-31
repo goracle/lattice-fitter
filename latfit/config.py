@@ -10,6 +10,11 @@ from latfit.analysis.test_arg import zero_p, testsol
 
 # TYPE OF FIT
 
+# print correlation function, and sqrt(diag(cov)) and exit
+
+PRINT_CORR = True
+PRINT_CORR = False
+
 # plot anything at all?
 
 NO_PLOT = True
@@ -33,25 +38,28 @@ UNCORR = False
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = True
 EFF_MASS = False
+EFF_MASS = True
+
+# EFF_MASS_METHOD 1: analytic for arg to acosh
+# (good for when additive const = 0)
+# EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
+# (bad for all cases; DO NOT USE.  It doesn't converge very often.)
+# EFF_MASS_METHOD 3: one param fit
+
+EFF_MASS_METHOD = 3
 
 # solve the generalized eigenvalue problem (GEVP)
 
 GEVP = True
 GEVP = False
 
-# print correlation function, and sqrt(diag(cov)) and exit
-
-PRINT_CORR = True
-PRINT_CORR = False
-
 # METHODS/PARAMS
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
-LT = 64-2*TSEP
+TSEP = 4
+LT = 32-2*TSEP
 
 # rhs time separation (t0) of GEVP matrix
 # (used for non eff mass fits)
@@ -63,48 +71,25 @@ TRHS = 6
 ADD_CONST = False
 ADD_CONST = True
 
-# EFF_MASS_METHOD 1: analytic for arg to acosh
-# (good for when additive const = 0)
-# EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
-# (bad for all cases; DO NOT USE.  It doesn't converge very often.)
-# EFF_MASS_METHOD 3: one param fit
-
-EFF_MASS_METHOD = 3
-
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
 LOG = False
 LOG = True
 
-# do inverse via a correlation matrix (for higher numerical stability)
-CORRMATRIX = False
-CORRMATRIX = True
-
-# eliminate problematic configs.
-# Simply set this to a list of ints indexing the configs,
-# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
-
-ELIM_JKCONF_LIST = []
-ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
-                    45, 26, 28, 33, 35, 40, 41, 43, 50]
-
-# dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
-
-# rescale the fit function by factor RESCALE
-RESCALE = 1.0
-RESCALE = -1e13
-
 # stringent tolerance for minimizer?  true = stringent
 MINTOL = False
 MINTOL = True
+
+# rescale the fit function by factor RESCALE
+RESCALE = 1.0
+RESCALE = 1e11
 
 # starting values for fit parameters
 if EFF_MASS:
     START_PARAMS = [.5]
 else:
     if ADD_CONST:
-        START_PARAMS = [1.14580294, 2.8e-01, -3.0120e-02]
+        START_PARAMS = [1.4580294, 5.0e-01, 3.0120e-02]
     else:
         START_PARAMS = [-1.18203895e+01, 4.46978036e-01]
 
@@ -153,6 +138,20 @@ GEVP_DIRS = [
 # 'S_pipiUUpipi_A_1PLUS'],
 # ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS', 'pipiUUpipi_A_1PLUS'],
 # ['UUpipiS_pipi_A_1PLUS', 'UUpipipipi_A_1PLUS', 'UUpipiUUpipi_A_1PLUS']]
+
+# modify the configs used and bin
+
+# eliminate problematic configs.
+# Simply set this to a list of ints indexing the configs,
+# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
+
+ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
+                    45, 26, 28, 33, 35, 40, 41, 43, 50]
+ELIM_JKCONF_LIST = []
+
+# dynamic binning of configs.  BINNUM is number of configs per bin.
+BINNUM = 1
+
 
 
 # DISPLAY PARAMETERS
