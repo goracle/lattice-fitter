@@ -259,7 +259,7 @@ def get_param_chisq(coords, dimops, result_min, fitrange=None):
     param_chisq.redchisq = result_min.fun/param_chisq.dof
     if JACKKNIFE_FIT:
         redchisq_str = str(param_chisq.redchisq)
-        redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
+        #redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
                 result_min.err_in_chisq/param_chisq.dof > 10
                 or result_min.err_in_chisq/param_chisq.dof < .1):
@@ -284,19 +284,7 @@ def format_chisq_str(chisq, err, plus=False):
             retstr = formstr.format(chisq)
         else:
             retstr = form_str_plus.format(chisq)
-    retstr = retstr + '+/-'
-    if chisq >= 1 and chisq < 10:
-        if plus:
-            retstr = retstr + str(round(err, PREC_DISP+2))
-        else:
-            retstr = retstr + str(round(err, PREC_DISP+1))
-    else:
-        if plus:
-            retstr = retstr + form_str_plus.format(err)
-        else:
-            retstr = retstr + formstr.format(err)
     return retstr
-
 
 def plot_errorbar(dimops, xcoord, ycoord, error2):
     """plot data error bars
@@ -468,7 +456,7 @@ else:
             pass
         plt.annotate(
             "Reduced "+r"$\chi^2=$"+redchisq_round_str+", dof="+str(dof),
-            xy=(0.15, 0.05),
+            xy=(0.5, 0.95),
             xycoords='axes fraction')
 
 
