@@ -388,7 +388,7 @@ if GEVP:
                 "Energy["+str(i)+"] = "+estring,
                 xy=(0.05, ystart-i*.05), xycoords='axes fraction')
 else:
-    if ADD_CONST:
+    if ADD_CONST or not EFF_MASS:
         YSTART = 0.95
     else:
         YSTART = 0.35
