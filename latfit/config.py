@@ -227,6 +227,18 @@ BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
 
 FINE = 1000.0
 
+# do inverse via a correlation matrix (for higher numerical stability)
+
+CORRMATRIX = False
+CORRMATRIX = True
+
+# use experimental average of jackknife error bars for error bars
+# this switch appears to have a negligible impact on the result, and
+# should be identical to using the avg. cov. in the infinite statistics limit
+
+ERROR_BAR_METHOD = 'jk'
+ERROR_BAR_METHOD = 'avgcov'
+
 # method used by the scipy.optimize.minimize
 # other internals will need to be edited if you change this
 # it's probably not a good idea

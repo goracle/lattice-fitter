@@ -37,6 +37,7 @@ from latfit.config import JACKKNIFE
 from latfit.config import PREC_DISP
 from latfit.config import STYPE
 from latfit.config import ADD_CONST
+from latfit.config import ERROR_BAR_METHOD
 import latfit.config
 rcParams.update({'figure.autolayout': True})
 
@@ -46,10 +47,7 @@ def mkplot(plotdata, input_f,
     """Plot the fitted graph."""
 
     # GET COORDS
-    try:
-        error2 = np.array(result_min.error_bars)
-    except AttributeError:
-        error2 = None
+    error2 = get_prelim_errbars(result_min)
     if error2 is None:
         print("Using average covariance matrix to find error bars.")
         xcoord, ycoord, error2 = get_coord(plotdata.coords,
@@ -96,6 +94,26 @@ def mkplot(plotdata, input_f,
         do_plot(title, pdf)
 
     return 0
+
+def get_prelim_errbars(result_min):
+    """If the fit range is not identical to the plot range,
+    we are forced to use the traditional error bar method 
+    (although this case is already handled by this point in singlefit), i.e.
+    the (jackknifed) average covariance matrix.
+    Otherwise, defer to the user preference (from config).
+    """
+    try:
+        error2 = np.array(result_min.error_bars)
+    except AttributeError:
+        error2 = None
+    if ERROR_BAR_METHOD == 'avgcov':
+        error2 = None #since other method not well understood
+    elif ERROR_BAR_METHOD == 'jk':
+        pass
+    else:
+        print("mkplot:Bad error bar method specified:", ERROR_BAR_METHOD)
+        sys.exit(1)
+    return error2
 
 
 def get_dimops(cov, result_min, coords):
