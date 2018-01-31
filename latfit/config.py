@@ -516,3 +516,7 @@ else:
 MULT = len(GEVP_DIRS) if GEVP else 1
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 RANGE1P = 3 if ADD_CONST else 2
+if EFF_MASS:
+    if EFF_MASS_METHOD in [1, 2, 4] or LOG:
+        print("rescale set to 1.0")
+        RESCALE = 1.0
