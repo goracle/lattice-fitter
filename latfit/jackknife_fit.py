@@ -12,6 +12,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
+from latfit.utilities.zeta.zeta import zeta
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -66,8 +67,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # storage for results
         result_min = namedtuple('min',
-                                ['x', 'fun', 'status', 'pvalue', 'pvalue_err'
-                                 'err_in_chisq', 'error_bars', 'dof'])
+                                ['x', 'fun', 'status',
+                                 'pvalue', 'pvalue_err' 'err_in_chisq',
+                                 'error_bars', 'dof', 'phase_shift',
+                                 'phase_shift_err'])
 
         # no errors gives us 0 status
         result_min.status = 0
@@ -80,6 +83,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # fit by fit p-values
         result_min.pvalue = np.zeros(params.num_configs)
+
+        #phase shift
+        result_min.phase_shift = np.zeros((
+            params.num_configs, params.dimops), dtype=np.float) if \
+            params.dimops > 1 else np.zeros((
+                params.num_configs), dtype=np.float)
 
         # allocate storage for jackknifed x,y coordinates
         coords_jack = np.copy(coords)
@@ -119,6 +128,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
 
+            # compute phase shift, if necessary
+            result_min.phase_shift[config_num] = phase_shift_jk(
+                params, result_min_jack.x)
+
             # compute p value for this fit
             result_min.pvalue[config_num] = 1 - stats.chi2.cdf(
                 result_min_jack.fun, result_min.dof)
@@ -142,6 +155,17 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the average fit params
         result_min.x = np.mean(min_arr, axis=0)
 
+        # compute error in phase shift
+        if result_min.phase_shift[0] is not None:
+            result_min.phase_shift_err = np.sqrt(params.prefactor*np.sum((
+                result_min.phase_shift-np.mean(
+                    result_min.phase_shift, axis=0))**2, axis=0))
+            result_min.phase_shift = np.mean(result_min.phase_shift)
+        else:
+            result_min.phase_shift = None
+        # compute average phase shift
+        result_min.phase_shift()
+
         # compute the error on the params
         param_err = np.sqrt(params.prefactor*np.sum(
             (min_arr-result_min.x)**2, 0))
@@ -159,6 +183,13 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def phase_shift_jk(params, epipi_arr):
+    """Compute the nth jackknifed phase shift"""
+    if params.dimops > 1:
+        retlist = [zeta(epipi) for epipi in epipi_arr]
+    else:
+        retlist = zeta(epipi_arr)
+    return retlist
 
 def copy_block_no_sidefx(params, blk):
     """Copy a jackknife block (for a particular config)

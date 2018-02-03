@@ -71,6 +71,13 @@ TRHS = 6
 ADD_CONST = False
 ADD_CONST = True
 
+# calculate the I=0 phase shift?
+
+L_BOX = 24
+PION_MASS = 0.140
+CALC_PHASE_SHIFT = False
+CALC_PHASE_SHIFT = True
+
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
 LOG = False

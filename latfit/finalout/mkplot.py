@@ -241,6 +241,9 @@ def print_messages(result_min, param_err, param_chisq):
                                                             result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
+    if CALC_PHASE_SHIFT:
+        print("I=0 phase shift = ",
+              result_min.phase_shift, "+/-", result_min.phase_shift_err)
 
 
 def get_param_chisq(coords, dimops, result_min, fitrange=None):

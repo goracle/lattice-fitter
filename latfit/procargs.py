@@ -84,6 +84,7 @@ def printhelp():
     print("These values are located in proc_folder.py and in",
           "__main__.py\n")
     print("latfit by Dan Hoying,", "Copyright 2018")
-    print("License: Gnu Public License Version 3" +
+    print("luscherzeta.h by Christopher Kelly,", "Copyright 2014")
+    print("Both under License: Gnu Public License Version 3" +
           "\nYou should've obtained a copy of this license " +
           "in the\ndistribution of these files.")
