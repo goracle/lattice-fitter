@@ -6,14 +6,7 @@ from os.path import isfile, join
 import os.path
 import numpy as np
 import read_file as rf
-
-try:
-    PROFILE  # throws an exception when profile isn't defined
-except NameError:
-    def PROFILE(x):  # if it's not defined simply ignore the decorator.
-        """line profiler default."""
-        return x
-
+#from latfit.analysis.profile import PROFILE
 
 def transtime(tsrc, tdis, tsep, nmomaux, len_t):
     """Transform tsrc and tdis to aux diagram versions"""

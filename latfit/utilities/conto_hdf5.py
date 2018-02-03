@@ -8,15 +8,17 @@ import numpy as np
 import h5py
 import read_file as rf
 from traj_list import traj_list
+#from latfit.analysis.profile import PROFILE
 
 LT = 64
 # throws an exception when profile isn't defined
 try:
-    PROFILE
+    PROFILE = profile
 except NameError:
-    def PROFILE(x):
+    def profile(arg):
         """Line profiler default."""
-        return x
+        return arg
+    PROFILE = profile
 
 
 @PROFILE

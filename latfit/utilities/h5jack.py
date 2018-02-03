@@ -15,9 +15,10 @@ import aux_write as aux
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
-    def PROFILE(x):
+    def profile(arg2):
         """Line profiler default."""
-        return x
+        return arg2
+    PROFILE = profile
 
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
@@ -85,14 +86,6 @@ DEBUG_ROWS_COLS = False
 # only save this bubble (speeds up checks involving single bubbles)
 BUBKEY = ''
 # BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
-
-try:
-    PROFILE  # throws an exception when PROFILE isn't defined
-except NameError:
-    def PROFILE(x):
-        """Line profiler default."""
-        return x
-
 
 def getindices(tsep, nmomaux):
     """Get aux indices"""
@@ -696,6 +689,6 @@ if __name__ == '__main__':
     FIXN = FIXN in ['true', '1', 't', 'y',
                     'yes', 'yeah', 'yup', 'certainly', 'True']
     if not FIXN and FIXNSTR not in ['false', '0', 'f', 'n',
-                                 'no', 'nope', 'certainly not', 'False']:
+                                    'no', 'nope', 'certainly not', 'False']:
         sys.exit(1)
     main(FIXN)
