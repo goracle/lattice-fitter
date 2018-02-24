@@ -10,11 +10,6 @@ from latfit.analysis.test_arg import zero_p, testsol
 
 # TYPE OF FIT
 
-# print correlation function, and sqrt(diag(cov)) and exit
-
-PRINT_CORR = True
-PRINT_CORR = False
-
 # plot anything at all?
 
 NO_PLOT = True
@@ -38,8 +33,8 @@ UNCORR = False
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
 # (good for when additive const = 0)
@@ -58,23 +53,21 @@ GEVP = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 4
-LT = 32-2*TSEP
-
-# rhs time separation (t0) of GEVP matrix
-# (used for non eff mass fits)
-
-TRHS = 6
+TSEP = 3
+LT = 64-2*TSEP
 
 # additive constant
 
 ADD_CONST = False
 ADD_CONST = True
 
+#isospin value (convenience switch)
+ISOSPIN = 2
+
 # calculate the I=0 phase shift?
 
 L_BOX = 24
-PION_MASS = 0.140
+PION_MASS = 0.13908
 CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
 
@@ -89,10 +82,10 @@ MINTOL = True
 
 # rescale the fit function by factor RESCALE
 RESCALE = 1.0
-RESCALE = 1e11
+RESCALE = 1e12
 
 # starting values for fit parameters
-if EFF_MASS:
+if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5]
 else:
     if ADD_CONST:
@@ -108,36 +101,38 @@ else:
 # GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
 # 'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
-# 3x3, I0
-GEVP_DIRS = [
-    ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-     'I0/S_pipisigma_A_1PLUS.jkdat',
-     'I0/S_pipipipi_A_1PLUS.jkdat'],
-    ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-     'I0/sigmasigma_A_1PLUS.jkdat',
-     'I0/sigmapipi_A_1PLUS.jkdat'],
-    ['I0/pipiS_pipi_A_1PLUS.jkdat',
-     'I0/pipisigma_A_1PLUS.jkdat',
-     'I0/pipi_A_1PLUS.jkdat']
-]
+if ISOSPIN == 0:
+    # 3x3, I0
+    GEVP_DIRS = [
+        ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+        'I0/S_pipisigma_A_1PLUS.jkdat',
+        'I0/S_pipipipi_A_1PLUS.jkdat'],
+        ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+        'I0/sigmasigma_A_1PLUS.jkdat',
+        'I0/sigmapipi_A_1PLUS.jkdat'],
+        ['I0/pipiS_pipi_A_1PLUS.jkdat',
+        'I0/pipisigma_A_1PLUS.jkdat',
+        'I0/pipi_A_1PLUS.jkdat']
+    ]
 
-# sigma
-GEVP_DIRS = [
-    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
-    ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
-]
+    # sigma
+    GEVP_DIRS = [
+        ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
+        ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
+    ]
 
-# no sigma
-GEVP_DIRS = [
-    ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
-    ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
-]
+    # no sigma
+    GEVP_DIRS = [
+        ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
+        ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
+    ]
+elif ISOSPIN == 2:
+    # pipi with one unit of momentum
+    GEVP_DIRS = [
+        ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
+        ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
+    ]
 
-# pipi with one unit of momentum
-GEVP_DIRS = [
-    ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
-    ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
-]
 
 
 # 3x3, I2, pipi, 000, 100, 110
@@ -167,8 +162,10 @@ BINNUM = 1
 # title prefix
 if GEVP:
     if len(GEVP_DIRS) == 2:
-        TITLE_PREFIX = r'$\pi\pi, momtotal000 '
-        TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
+        if ISOSPIN == 0:
+            TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
+        elif ISOSPIN == 2:
+            TITLE_PREFIX = r'$\pi\pi, I2, momtotal000 '
     elif len(GEVP_DIRS) == 3:
         # TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
         TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
@@ -257,6 +254,11 @@ METHOD = 'Nelder-Mead'
 
 JACKKNIFE = 'YES'
 
+# print correlation function, and sqrt(diag(cov)) and exit
+
+PRINT_CORR = True
+PRINT_CORR = False
+
 # -------BEGIN POSSIBLY OBSOLETE------#
 
 # multiply both sides of the gevp matrix by norms
@@ -298,6 +300,11 @@ CUTOFF = 10**(7)
 # questionable, since this is an extra, badly optimized, fit parameter
 C = 1.935*SCALE*0 if (ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
 
+# rhs time separation (t0) of GEVP matrix
+# (used for non eff mass fits), probably obsolete
+
+TRHS = 6
+
 # -------END POSSIBLY OBSOLETE------#
 
 # FIT FUNCTION/PROCESSING FUNCTION SELECTION
@@ -311,7 +318,6 @@ def fit_func_1p(ctime, trial_params):
              exp(-trial_params[0]*(LT-(ctime+i*TSTEP)))
              for i in range(RANGE1P)]
     return ratio(corrs, ctime, nocheck=True)
-
 
 # library of functions to fit.  define them in the usual way
 if ADD_CONST:
@@ -427,7 +433,7 @@ ORIGL = len(START_PARAMS)
 if EFF_MASS:
 
     # check len of start params
-    if ORIGL != 1:
+    if ORIGL != 1 and EFF_MASS_METHOD != 2:
         print("***ERROR***")
         print("dimension of GEVP matrix and start params do not match")
         print("(or for non-gevp fits, the start_param len>1)")
@@ -535,6 +541,8 @@ MULT = len(GEVP_DIRS) if GEVP else 1
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 RANGE1P = 3 if ADD_CONST else 2
 if EFF_MASS:
-    if EFF_MASS_METHOD in [1, 2, 4] or LOG:
+    if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
         RESCALE = 1.0
+if TSEP == 0:
+    CALC_PHASE_SHIFT = False
