@@ -223,6 +223,9 @@ def print_messages(result_min, param_err, param_chisq):
     print("Minimizer thinks that it worked.  Plotting fit.")
     print("Fit info:")
     print("Autofit:", AUTO_FIT)
+    print("Model includes additive constant:", ADD_CONST)
+    if EFF_MASS:
+        print("Effective mass method:", EFF_MASS_METHOD)
     print("Assisted Fit:", ASSISTED_FIT)
     print("Minimizer (of chi^2) method:", METHOD)
     if METHOD == 'L-BFGS-B':
@@ -486,7 +489,7 @@ if JACKKNIFE_FIT:
         def annotate_jack():
             """Annotate jackknife type (double)"""
             plt.annotate('Double jackknife fit.', xy=(
-                0.05, 0.15), xycoords='axes fraction')
+                0.70, 0.35), xycoords='axes fraction')
 
 
 elif JACKKNIFE:

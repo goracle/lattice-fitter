@@ -13,7 +13,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import CALC_PHASE_SHIFT
-from latfit.utilities.zeta.zeta import zeta
+from latfit.utilities.zeta.zeta import zeta, ZetaError
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -157,13 +157,20 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.x = np.mean(min_arr, axis=0)
 
         # compute phase shift and error in phase shift
-        if result_min.phase_shift[0] is not None:
-            result_min.phase_shift_err = np.sqrt(params.prefactor*np.sum((
-                result_min.phase_shift-np.mean(
-                    result_min.phase_shift, axis=0))**2, axis=0))
-            result_min.phase_shift = np.mean(result_min.phase_shift, axis=0)
-        else:
-            result_min.phase_shift = None
+        if CALC_PHASE_SHIFT:
+            result_min.phase_shift = np.delete(result_min.phase_shift,
+                                               prune_phase_shift_arr(
+                                                   result_min.phase_shift),
+                                               axis=0)
+            if len(result_min.phase_shift) > 0:
+                result_min.phase_shift_err = np.sqrt(
+                    params.prefactor*np.sum((
+                        result_min.phase_shift-np.mean(
+                        result_min.phase_shift, axis=0))**2, axis=0))
+                result_min.phase_shift = np.mean(
+                    result_min.phase_shift, axis=0)
+            else:
+                result_min.phase_shift = None
 
         # compute the error on the params
         param_err = np.sqrt(params.prefactor*np.sum(
@@ -182,12 +189,27 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def prune_phase_shift_arr(arr):
+    """Get rid of jackknife samples for which the phase shift calc failed.
+    (useful for testing, not useful for final output graphs)
+    """
+    dellist = []
+    for i, phi in enumerate(arr):
+        if np.isnan(np.sum(phi)):  # delete the config
+            print("Bad phase shift in jackknife block # "+
+                    str(i)+", omitting.")
+            dellist.append(i)
+    return dellist
+
 def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
-    if params.dimops > 1:
-        retlist = [zeta(epipi) for epipi in epipi_arr]
-    else:
-        retlist = zeta(epipi_arr)
+    try:
+        if params.dimops > 1:
+            retlist = [zeta(epipi) for epipi in epipi_arr]
+        else:
+            retlist = zeta(epipi_arr)
+    except ZetaError:
+        retlist = None
     return retlist
 
 def copy_block_no_sidefx(params, blk):

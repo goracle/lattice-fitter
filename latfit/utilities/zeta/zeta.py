@@ -5,6 +5,10 @@ import inspect
 import os
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS
 
+class ZetaError(Exception):
+    def __init__(self, mismatch):
+        Exception.__init__(self, mismatch)
+
 if CALC_PHASE_SHIFT:
     def zeta(epipi):
         """Calculate the I=0 scattering phase shift given the pipi energy
@@ -26,9 +30,9 @@ if CALC_PHASE_SHIFT:
         except subprocess.CalledProcessError:
             print("Error in zeta: calc of phase shift error:")
             print(epipi)
-            print(subprocess.Popen(arglist,
-                                   stdout=subprocess.PIPE).stdout.read())
-            sys.exit(1)
+            errstr = subprocess.Popen(arglist,
+                                   stdout=subprocess.PIPE).stdout.read()
+            raise ZetaError(errstr)
         return float(out)
 else:
     def zeta(_):
