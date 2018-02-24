@@ -38,7 +38,10 @@ from latfit.config import PREC_DISP
 from latfit.config import STYPE
 from latfit.config import ADD_CONST
 from latfit.config import ERROR_BAR_METHOD
+from latfit.config import CALC_PHASE_SHIFT
+from latfit.config import ISOSPIN
 import latfit.config
+
 rcParams.update({'figure.autolayout': True})
 
 
@@ -174,8 +177,8 @@ def get_file_string(title, dimops):
         jk_str = ''
     if EFF_MASS:
         eff_str = '_eff_mass'
+        eff_str += '_meth'+str(EFF_MASS_METHOD)
         if EFF_MASS_METHOD == 1:
-            eff_str += '_meth1'
             print("C = ", C)
     else:
         eff_str = ''
@@ -242,7 +245,7 @@ def print_messages(result_min, param_err, param_chisq):
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2 reduced = ", redchisq_str)
     if CALC_PHASE_SHIFT:
-        print("I=0 phase shift = ",
+        print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
               result_min.phase_shift, "+/-", result_min.phase_shift_err)
 
 
