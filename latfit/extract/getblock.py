@@ -25,7 +25,7 @@ if STYPE == 'hdf5':
         This function pretends to get the line from an ascii file
         """
         try:
-            float(filetup[num-1])
+            complex(filetup[num-1])
         except TypeError:
             print("***ERROR***")
             print("Expecting an array; in getblock")
