@@ -12,6 +12,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
+from latfit.config import CALC_PHASE_SHIFT
 from latfit.utilities.zeta.zeta import zeta
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -155,16 +156,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the average fit params
         result_min.x = np.mean(min_arr, axis=0)
 
-        # compute error in phase shift
+        # compute phase shift and error in phase shift
         if result_min.phase_shift[0] is not None:
             result_min.phase_shift_err = np.sqrt(params.prefactor*np.sum((
                 result_min.phase_shift-np.mean(
                     result_min.phase_shift, axis=0))**2, axis=0))
-            result_min.phase_shift = np.mean(result_min.phase_shift)
+            result_min.phase_shift = np.mean(result_min.phase_shift, axis=0)
         else:
             result_min.phase_shift = None
-        # compute average phase shift
-        result_min.phase_shift()
 
         # compute the error on the params
         param_err = np.sqrt(params.prefactor*np.sum(
