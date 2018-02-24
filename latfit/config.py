@@ -37,12 +37,14 @@ EFF_MASS = True
 EFF_MASS = False
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
-# (good for when additive const = 0)
+# (good for when additive const = 0, but noiser than 3 and 4)
 # EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
 # (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 # EFF_MASS_METHOD 3: one param fit
+# EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
+# traditional effective mass method), typically a fast version of 3
 
-EFF_MASS_METHOD = 3
+EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -62,12 +64,12 @@ ADD_CONST = False
 ADD_CONST = True
 
 #isospin value (convenience switch)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # calculate the I=0 phase shift?
 
 L_BOX = 24
-PION_MASS = 0.13908
+PION_MASS = 0.13975
 CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
 
@@ -165,7 +167,7 @@ if GEVP:
         if ISOSPIN == 0:
             TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
         elif ISOSPIN == 2:
-            TITLE_PREFIX = r'$\pi\pi, I2, momtotal000 '
+            TITLE_PREFIX = r'$\pi\pi$, I2, momtotal000 '
     elif len(GEVP_DIRS) == 3:
         # TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
         TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
@@ -332,7 +334,10 @@ if ADD_CONST:
         """Process data points into effective mass ratio (and take log)"""
         times = [-99999, -99999, -99999] if times is None else times
         times = [times, None, None] if isinstance(times, Number) else times
-        if not nocheck:
+        if nocheck:
+            np.seterr(invalid='ignore')
+        else:
+            np.seterr(invalid='raise')
             zero_p(corrs[1], corrs[2], times)
         sol = (corrs[1]-corrs[0])/(corrs[2]-corrs[1])
         if not nocheck:
@@ -345,7 +350,10 @@ if ADD_CONST:
         for an exact call to acosh."""
         times = [-99999, -99999, -99999] if times is None else times
         times = [times, None, None] if isinstance(times, Number) else times
-        if not nocheck:
+        if nocheck:
+            np.seterr(invalid='ignore')
+        else:
+            np.seterr(invalid='raise')
             zero_p(corrs[1]-C, times[1:])
         sol = (corrs[0]-corrs[1]+corrs[2]-corrs[3])/2.0/(corrs[1]-corrs[2])
         if not nocheck:
@@ -386,7 +394,10 @@ else:
         """
         times = [-99999, -99999] if times is None else times
         times = [times, None, None] if isinstance(times, Number) else times
-        if not nocheck:
+        if nocheck:
+            np.seterr(invalid='ignore')
+        else:
+            np.seterr(invalid='raise')
             zero_p(corrs[1], times[1])
         sol = (corrs[0])/(corrs[1])
         if not nocheck:
@@ -399,7 +410,10 @@ else:
         for an exact call to acosh (no additive constant)."""
         times = [-99999, -99999] if times is None else times
         times = [times, None, None] if isinstance(times, Number) else times
-        if not nocheck:
+        if nocheck:
+            np.seterr(invalid='ignore')
+        else:
+            np.seterr(invalid='raise')
             zero_p(corrs[1]-C, times[1])
         sol = (corrs[0]+corrs[2]-2*C)/2/(corrs[1]-C)
         if not nocheck:
@@ -536,7 +550,6 @@ else:
         """Fit function."""
         return prefit_func(ctime, trial_params)
 
-
 MULT = len(GEVP_DIRS) if GEVP else 1
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 RANGE1P = 3 if ADD_CONST else 2
@@ -544,5 +557,3 @@ if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
         RESCALE = 1.0
-if TSEP == 0:
-    CALC_PHASE_SHIFT = False

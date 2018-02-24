@@ -26,6 +26,11 @@ def zero_p(corr1, corr2=None, times=None):
         errlevel = 1
     elif np.array_equal(corr1, corr2):
         errlevel = 2
+    try:
+        np.testing.assert_allclose(corr1, corr2)
+        errlevel = 2
+    except AssertionError:
+        pass
     if errlevel:
         corrs = (corr1, corr2)
         print("Error in zero_p.")
