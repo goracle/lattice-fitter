@@ -21,6 +21,8 @@ from latfit.config import RANGE1P
 from latfit.config import fit_func_1p
 from latfit.config import ratio
 from latfit.config import acosh_ratio
+from latfit.config import RESCALE
+from latfit.config import GEVP
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -70,8 +72,8 @@ elif EFF_MASS_METHOD == 2:
                 for cfile in files:
                     print(files)
             sys.exit(1)
-        print("Found solution:", sol[1])
         return sol[1]
+        #print("Found solution:", sol[1])
 
     if ADD_CONST:
         def proc_meff_systemofeqns(corrs, times):
@@ -83,9 +85,9 @@ elif EFF_MASS_METHOD == 2:
     else:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 2 equations numerically."""
-            return nsolve((fit_func_sym(times[0], [x, y])-corrs[0],
+            return  nsolve((fit_func_sym(times[0], [x, y])-corrs[0],
                            fit_func_sym(times[1], [x, y])-corrs[1]),
-                          (x, y), START_PARAMS)
+                           (x, y), START_PARAMS)
 
 # one parameter fit, optional additive constant (determined in config)
 elif EFF_MASS_METHOD == 3:
@@ -103,8 +105,16 @@ elif EFF_MASS_METHOD == 4:
     def proc_meff(lines, files=None, time_arr=None):
         """Process data, meff (traditional definition)"""
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        corrs[2], corrs[3] = (None,
-                              None) if not ADD_CONST else (corrs[2], None)
+        if GEVP:
+            print("eff mass method 4 and gevp unsupported.")
+            sys.exit(1)
+            corrs[2][:], corrs[3][:] = (None,
+                                  None) if not ADD_CONST else (
+                                      corrs[2][:], None)
+        else:
+            corrs[2], corrs[3] = (None,
+                                  None) if not ADD_CONST else (
+                                      corrs[2], None)
         return proc_meff4(corrs, files, times)
 
     def eff_mass_tomin(energy, ctime, sol):
