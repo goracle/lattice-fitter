@@ -105,12 +105,11 @@ elif EFF_MASS_METHOD == 4:
     def proc_meff(lines, files=None, time_arr=None):
         """Process data, meff (traditional definition)"""
         corrs, times = pre_proc_meff(lines, files, time_arr)
+        corrs = list(corrs)
         if GEVP:
-            print("eff mass method 4 and gevp unsupported.")
-            sys.exit(1)
-            corrs[2][:], corrs[3][:] = (None,
+            corrs[2], corrs[3] = (None,
                                   None) if not ADD_CONST else (
-                                      corrs[2][:], None)
+                                      corrs[2], None)
         else:
             corrs[2], corrs[3] = (None,
                                   None) if not ADD_CONST else (
@@ -181,7 +180,6 @@ if STYPE == 'hdf5':
     def pre_proc_meff(lines, files=None, times=None):
         """Extract values from files or from fake files for proc_meff"""
         corrs = lines
-        # delete this next line if everything is workign
         assert isinstance(times,
                           numbers.Number), "time_arr is not number. hdf5."
         times = [times+i*latfit.config.TSTEP for i in range(RANGE1P)]
