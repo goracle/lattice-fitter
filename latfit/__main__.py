@@ -92,6 +92,7 @@ def main():
     input_f, options = procargs(sys.argv[1:])
     xmin, xmax = xlim_err(options.xmin, options.xmax)
     fitrange = fitrange_err(options, xmin, xmax)
+    print("fit range = ", fitrange)
     xstep = xstep_err(options.xstep, input_f)
     latfit.config.TSTEP = xstep
     plotdata.fitcoord = fit_coord(fitrange, xstep)
