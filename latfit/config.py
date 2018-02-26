@@ -33,8 +33,8 @@ UNCORR = False
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = True
 EFF_MASS = False
+EFF_MASS = True
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
 # (good for when additive const = 0, but noiser than 3 and 4)
@@ -44,7 +44,7 @@ EFF_MASS = False
 # EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
 # traditional effective mass method), typically a fast version of 3
 
-EFF_MASS_METHOD = 4
+EFF_MASS_METHOD = 3
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -55,16 +55,18 @@ GEVP = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
+TSEP = 0
 LT = 64-2*TSEP
 
 # additive constant
 
-ADD_CONST = False
 ADD_CONST = True
+ADD_CONST = False
 
-#isospin value (convenience switch)
+# isospin value (convenience switch)
 ISOSPIN = 0
+# don't include the sigma in the gevp fits
+SIGMA = True
 
 # calculate the I=0 phase shift?
 
@@ -84,7 +86,7 @@ MINTOL = True
 
 # rescale the fit function by factor RESCALE
 RESCALE = 1.0
-RESCALE = 1e12
+RESCALE = 1e5
 
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
@@ -104,30 +106,35 @@ else:
 # 'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
 if ISOSPIN == 0:
-    # 3x3, I0
-    GEVP_DIRS = [
-        ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-        'I0/S_pipisigma_A_1PLUS.jkdat',
-        'I0/S_pipipipi_A_1PLUS.jkdat'],
-        ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-        'I0/sigmasigma_A_1PLUS.jkdat',
-        'I0/sigmapipi_A_1PLUS.jkdat'],
-        ['I0/pipiS_pipi_A_1PLUS.jkdat',
-        'I0/pipisigma_A_1PLUS.jkdat',
-        'I0/pipi_A_1PLUS.jkdat']
-    ]
+    if not SIGMA:
+        # no sigma
+        GEVP_DIRS = [
+            ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
+            ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
+        ]
+    else:
 
-    # sigma
-    GEVP_DIRS = [
-        ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipisigma_A_1PLUS.jkdat'],
-        ['I0/sigmaS_pipi_A_1PLUS.jkdat', 'I0/sigmasigma_A_1PLUS.jkdat']
-    ]
+        # 3x3, I0
+        GEVP_DIRS = [
+            ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+            'I0/S_pipisigma_A_1PLUS.jkdat',
+            'I0/S_pipipipi_A_1PLUS.jkdat'],
+            ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+            'I0/sigmasigma_A_1PLUS.jkdat',
+            'I0/sigmapipi_A_1PLUS.jkdat'],
+            ['I0/pipiS_pipi_A_1PLUS.jkdat',
+            'I0/pipisigma_A_1PLUS.jkdat',
+            'I0/pipi_A_1PLUS.jkdat']
+        ]
+        # sigma
+        GEVP_DIRS = [
+            ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+             'I0/S_pipisigma_A_1PLUS.jkdat'],
+            ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+             'I0/sigmasigma_A_1PLUS.jkdat']
+        ]
 
-    # no sigma
-    GEVP_DIRS = [
-        ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
-        ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
-    ]
+
 elif ISOSPIN == 2:
     # pipi with one unit of momentum
     GEVP_DIRS = [
@@ -165,12 +172,17 @@ BINNUM = 1
 if GEVP:
     if len(GEVP_DIRS) == 2:
         if ISOSPIN == 0:
-            TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
+            if SIGMA:
+                TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
+            else:
+                TITLE_PREFIX = r'$\pi\pi$, momtotal000 '
         elif ISOSPIN == 2:
             TITLE_PREFIX = r'$\pi\pi$, I2, momtotal000 '
     elif len(GEVP_DIRS) == 3:
-        # TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
-        TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
+        if SIGMA and ISOSPIN == 0:
+            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
+        else:
+            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
 else:
     TITLE_PREFIX = '24c '
 
