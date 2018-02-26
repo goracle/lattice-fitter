@@ -17,7 +17,10 @@ if CALC_PHASE_SHIFT:
         try:
             epipi = epipi[1]
         except IndexError:
-            pass
+            try:
+                epipi = epipi[0]
+            except TypeError:
+                pass
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX)]
         try:

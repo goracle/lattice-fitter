@@ -12,6 +12,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
+from latfit.config import GEVP
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
@@ -86,8 +87,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.pvalue = np.zeros(params.num_configs)
 
         #phase shift
+        nphase = 1 if not GEVP else params.dimops-1
         result_min.phase_shift = np.zeros((
-            params.num_configs, params.dimops), dtype=np.float) if \
+            params.num_configs, nphase), dtype=np.float) if \
             params.dimops > 1 else np.zeros((
                 params.num_configs), dtype=np.float)
 
@@ -205,7 +207,7 @@ def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
     try:
         if params.dimops > 1:
-            retlist = [zeta(epipi) for epipi in epipi_arr]
+            retlist = [zeta(epipi) for epipi in epipi_arr[1:]]
         else:
             retlist = zeta(epipi_arr)
     except ZetaError:
