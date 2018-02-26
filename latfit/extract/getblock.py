@@ -102,7 +102,8 @@ if EFF_MASS:
                 eigvals4 = get_eigvals(num, file_tup[4], file_tup[1],
                                        overb=True)
             except ImaginaryEigenvalue:
-                print(num, file_tup)
+                #print(num, file_tup)
+                print(num, timeij)
                 sys.exit(1)
             retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op], eigvals4[op]),
