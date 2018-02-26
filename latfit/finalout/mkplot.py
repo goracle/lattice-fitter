@@ -81,6 +81,7 @@ def mkplot(plotdata, input_f,
 
     # DO PLOT
     with PdfPages(file_str) as pdf:
+        print("file name of saved plot:", file_str)
         plot_errorbar(dimops, xcoord, ycoord, error2)
         if FIT:
             # plot fit function
