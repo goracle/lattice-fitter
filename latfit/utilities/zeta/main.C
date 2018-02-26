@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   zeta.setTwists(0,0,0); //periodic BC's
 
   double phi = zeta.calcPhi(q_pipi)*180/M_PI;
-  printf("%.16e", phi);
+  printf("%.16e", -phi);
 
   return 0;
 
