@@ -6,6 +6,7 @@ import sys
 import re
 import numpy as np
 from sum_blks import sum_blks
+from write_discon import momtotal
 import read_file as rf
 
 
@@ -78,6 +79,34 @@ A_1PLUS = [
     (1/sqrt(12), 'UUpipi', [[1, -1, 0], [-1, 1, 0]]),
 ]
 
+A2 = [
+    (1/sqrt(6), 'pipi', [[1, 0, 0], [0, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 1, 0], [0, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 0, 1], [0, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[-1, 0, 0], [0, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, -1, 0], [0, 0, 0]]),
+    (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 0]]),
+    (1, 'sigma', [1, 0, 0]),
+    (1, 'sigma', [0, 1, 0]),
+    (1, 'sigma', [0, 0, 1]),
+    (1, 'sigma', [-1, 0, 0]),
+    (1, 'sigma', [0, -1, 0]),
+    (1, 'sigma', [0, 0, -1]),
+    (1/sqrt(12), 'UUpipi', [[0, 1, 1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[1, 0, 1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[1, 1, 0], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[0, -1, -1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[-1, 0, -1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[-1, -1, 0], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[0, -1, 1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[-1, 0, 1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[-1, 1, 0], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[0, 1, -1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[1, 0, -1], [0, 0, 0]]),
+    (1/sqrt(12), 'UUpipi', [[1, -1, 0], [0, 0, 0]]),
+]
+
+
 # A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
 T_1_1MINUS = [
@@ -100,7 +129,7 @@ OPLIST = {'A_1PLUS': A_1PLUS,
           'T_1_1MINUS': T_1_1MINUS,
           'T_1_3MINUS': T_1_3MINUS,
           'T_1_2MINUS': T_1_2MINUS,
-          'A0': A0}
+          'A0': A0, 'A2': A2}
 # OPLIST = {'A0': A0}
 PART_LIST = set([])
 for opa_out in OPLIST:
@@ -145,6 +174,8 @@ def op_list(stype='ascii'):
         coeffs_tuple = []
         for src in OPLIST[opa]:
             for snk in OPLIST[opa]:
+                if not cons_mom(src, snk):
+                    continue
                 part_str = partstr(src[1], snk[1])
                 coeff = src[0]*snk[0]
                 p_str = momstr(src[2], snk[2])
@@ -172,6 +203,13 @@ def op_list(stype='ascii'):
     if stype == 'ascii':
         print("End of operator list.")
     return projlist
+
+def cons_mom(src, snk):
+    """Check for momentum conservation"""
+    psrc = momtotal(src[2])
+    psnk = momtotal(snk[2])
+    return psrc[0] == psnk[0] and psrc[1] == psnk[1] and psrc[2] == psnk[2]
+    
 
 
 def main():

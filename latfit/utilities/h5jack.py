@@ -23,7 +23,7 @@ except NameError:
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
-FNDEF = PREFIX+'1000.'+EXTENSION
+FNDEF = PREFIX+'1140.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64
 TSEP = 3
