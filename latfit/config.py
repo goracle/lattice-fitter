@@ -48,25 +48,29 @@ EFF_MASS_METHOD = 3
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # METHODS/PARAMS
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 0
+TSEP = 3
 LT = 64-2*TSEP
 
 # additive constant
 
-ADD_CONST = True
 ADD_CONST = False
+ADD_CONST = True
 
 # isospin value (convenience switch)
 ISOSPIN = 0
 # don't include the sigma in the gevp fits
 SIGMA = True
+# non-zero center of mass
+MOMSTR = 'momtotal000'
+MOMSTR = 'perm momtotal001'
+PTOTSQ = 1 
 
 # calculate the I=0 phase shift?
 
@@ -106,13 +110,13 @@ else:
 # 'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
 
 if ISOSPIN == 0:
-    if not SIGMA:
+    if not SIGMA and MOMSTR == 'momtotal000':
         # no sigma
         GEVP_DIRS = [
             ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
             ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
         ]
-    else:
+    elif MOMSTR == 'momtotal000':
 
         # 3x3, I0
         GEVP_DIRS = [
@@ -133,14 +137,33 @@ if ISOSPIN == 0:
             ['I0/sigmaS_pipi_A_1PLUS.jkdat',
              'I0/sigmasigma_A_1PLUS.jkdat']
         ]
+        ##non-zero center of mass momentum, one stationary pion
+        # sigma
+    else:
+        GEVP_DIRS = [
+            ['I0/pipi_A2.jkdat',
+             'I0/pipisigma_A2.jkdat'],
+            ['I0/sigmapipi_A2.jkdat',
+             'I0/sigmasigma_A2.jkdat']
+        ]
 
 
 elif ISOSPIN == 2:
-    # pipi with one unit of momentum
-    GEVP_DIRS = [
-        ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
-        ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
-    ]
+    if MOMSTR == 'momtotal000':
+        # pipi with one unit of momentum
+        GEVP_DIRS = [
+            ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
+            ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
+        ]
+    else:
+        ##non-zero center of mass momentum, one stationary pion
+        # sigma
+        GEVP_DIRS = [
+            ['I0/pipi_A2.jkdat',
+                'I0/pipisigma_A2.jkdat'],
+            ['I0/sigmapipi_A2.jkdat',
+                'I0/sigmasigma_A2.jkdat']
+        ]
 
 
 
@@ -173,16 +196,16 @@ if GEVP:
     if len(GEVP_DIRS) == 2:
         if ISOSPIN == 0:
             if SIGMA:
-                TITLE_PREFIX = r'$\pi\pi, \sigma$, momtotal000 '
+                TITLE_PREFIX = r'$\pi\pi, \sigma$, ' + MOMSTR + ' '
             else:
-                TITLE_PREFIX = r'$\pi\pi$, momtotal000 '
+                TITLE_PREFIX = r'$\pi\pi$, ' + MOMSTR + ' '
         elif ISOSPIN == 2:
-            TITLE_PREFIX = r'$\pi\pi$, I2, momtotal000 '
+            TITLE_PREFIX = r'$\pi\pi$, I2, ' + MOMSTR + ' '
     elif len(GEVP_DIRS) == 3:
         if SIGMA and ISOSPIN == 0:
-            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, momtotal000 '
+            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
         else:
-            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, momtotal000 '
+            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, ' + MOMSTR + ' '
 else:
     TITLE_PREFIX = '24c '
 

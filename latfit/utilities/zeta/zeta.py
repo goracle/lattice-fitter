@@ -3,7 +3,9 @@ import sys
 import subprocess
 import inspect
 import os
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS
+import math
+import numpy as np
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ
 
 class ZetaError(Exception):
     def __init__(self, mismatch):
@@ -19,8 +21,9 @@ if CALC_PHASE_SHIFT:
         except IndexError:
             try:
                 epipi = epipi[0]
-            except TypeError:
+            except IndexError:
                 pass
+        epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ)
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX)]
         try:

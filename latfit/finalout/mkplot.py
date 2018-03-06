@@ -247,7 +247,7 @@ def print_messages(result_min, param_err, param_chisq):
         print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
                                                             result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
-    print("chi^2 reduced = ", redchisq_str)
+    print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
         print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
               result_min.phase_shift, "+/-", result_min.phase_shift_err)
@@ -284,7 +284,7 @@ def get_param_chisq(coords, dimops, result_min, fitrange=None):
 
 
 def format_chisq_str(chisq, err, plus=False):
-    """Format the reduced chi^2 string for plot annotation, jackknife fit"""
+    """Format the chi^2/dof string for plot annotation, jackknife fit"""
     formstr = '{:0.'+str(int(PREC_DISP))+'e}'
     form_str_plus = '{:0.'+str(int(PREC_DISP)+1)+'e}'
     if chisq >= 1 and chisq < 10:
@@ -426,15 +426,15 @@ def trunc_prec(num, extra_trunc=0):
 if EFF_MASS and EFF_MASS_METHOD == 3:
     if GEVP:
         if ADD_CONST:
-            YSTART2 = 0.55
+            YSTART2 = 0.75
         else:
-            YSTART2 = 0.55
+            YSTART2 = 0.75
 
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
-            rcp = "Reduced "+r"$\chi^2 = $"
+            rcp = r"$\chi^2$/dof = "
             rcp += redchisq_round_str+", dof = "+str(dof)
             plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
@@ -451,7 +451,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """
             if result_min:
                 pass
-            rcp = "Reduced "+r"$\chi^2 = $"
+            rcp = r"$\chi^2$/dof = "
             rcp += redchisq_round_str+", dof = "+str(dof)
             plt.annotate(rcp, xy=(0.15, ystart),
                          xycoords='axes fraction')
@@ -465,7 +465,7 @@ else:
         if result_min:
             pass
         plt.annotate(
-            "Reduced "+r"$\chi^2=$"+redchisq_round_str+", dof="+str(dof),
+            r"$\chi^2$/dof="+redchisq_round_str+", dof="+str(dof),
             xy=(0.5, 0.95),
             xycoords='axes fraction')
 
