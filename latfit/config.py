@@ -44,7 +44,7 @@ EFF_MASS = True
 # EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
 # traditional effective mass method), typically a fast version of 3
 
-EFF_MASS_METHOD = 3
+EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -60,16 +60,16 @@ LT = 64-2*TSEP
 
 # additive constant
 
-ADD_CONST = False
 ADD_CONST = True
+ADD_CONST = False
 
 # isospin value (convenience switch)
-ISOSPIN = 0
+ISOSPIN = 1
 # don't include the sigma in the gevp fits
 SIGMA = True
 # non-zero center of mass
-MOMSTR = 'momtotal000'
 MOMSTR = 'perm momtotal001'
+MOMSTR = 'momtotal000'
 PTOTSQ = 1 
 
 # calculate the I=0 phase shift?
@@ -165,7 +165,13 @@ elif ISOSPIN == 2:
                 'I0/sigmasigma_A2.jkdat']
         ]
 
-
+elif ISOSPIN == 1:
+    GEVP_DIRS = [
+        ['I1/pipi_A_1PLUS.jkdat',
+            'I1/pipirho_A_1PLUS.jkdat'],
+        ['I1/rhopipi_A_1PLUS.jkdat',
+            'I1/rhorho_A_1PLUS.jkdat']
+    ]
 
 # 3x3, I2, pipi, 000, 100, 110
 # GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',
@@ -201,6 +207,8 @@ if GEVP:
                 TITLE_PREFIX = r'$\pi\pi$, ' + MOMSTR + ' '
         elif ISOSPIN == 2:
             TITLE_PREFIX = r'$\pi\pi$, I2, ' + MOMSTR + ' '
+        elif ISOSPIN == 1:
+            TITLE_PREFIX = r'$\pi\pi, \rho$ I1, ' + MOMSTR + ' '
     elif len(GEVP_DIRS) == 3:
         if SIGMA and ISOSPIN == 0:
             TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '

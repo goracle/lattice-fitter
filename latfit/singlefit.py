@@ -67,7 +67,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
     if GEVP:
         print("(Rough) scale of errors in data points = ",
-              np.diag(sqrt(cov[0][0])))
+              np.sqrt(np.diag(cov[0][0])))
     else:
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
