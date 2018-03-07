@@ -60,17 +60,16 @@ LT = 64-2*TSEP
 
 # additive constant
 
-ADD_CONST = True
 ADD_CONST = False
+ADD_CONST = True
 
 # isospin value (convenience switch)
-ISOSPIN = 1
+ISOSPIN = 0
 # don't include the sigma in the gevp fits
-SIGMA = True
+SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal000'
-PTOTSQ = 1 
 
 # calculate the I=0 phase shift?
 
@@ -192,8 +191,6 @@ ELIM_JKCONF_LIST = []
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
-
-
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title
 
@@ -202,9 +199,9 @@ if GEVP:
     if len(GEVP_DIRS) == 2:
         if ISOSPIN == 0:
             if SIGMA:
-                TITLE_PREFIX = r'$\pi\pi, \sigma$, ' + MOMSTR + ' '
+                TITLE_PREFIX = r'$\pi\pi, \sigma$, I0, ' + MOMSTR + ' '
             else:
-                TITLE_PREFIX = r'$\pi\pi$, ' + MOMSTR + ' '
+                TITLE_PREFIX = r'$\pi\pi$, I0, ' + MOMSTR + ' '
         elif ISOSPIN == 2:
             TITLE_PREFIX = r'$\pi\pi$, I2, ' + MOMSTR + ' '
         elif ISOSPIN == 1:
@@ -349,6 +346,9 @@ C = 1.935*SCALE*0 if (ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
 # (used for non eff mass fits), probably obsolete
 
 TRHS = 6
+
+# not correct, do not modify
+PTOTSQ = 0
 
 # -------END POSSIBLY OBSOLETE------#
 

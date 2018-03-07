@@ -149,9 +149,9 @@ class LuscherZeta{
     return result;
   }
 
-  double z3sum(const double q, const GSLvector &n) const{
+  double z3sum(const double q, const GSLvector &n, const bool imag_q = false) const{
     double r2 = square(n[0]+d[0]/2.0)+square(n[1]+d[1]/2.0)+square(n[2]+d[2]/2.0);
-    double q2 = square(q);
+    double q2 = imag_q ? -square(q) : square(q);
     double out = 0.0;
         
     //printf("z3sum with q = %f and n = %f %f %f\n",q,n[0],n[1],n[2]);
@@ -200,7 +200,7 @@ class LuscherZeta{
     N = iN;
   }
         
-  double calcZeta00(const double q) const{
+  double calcZeta00(const double q, const bool imag_q = false) const{
     //q is a scalar modulus
     double result = 0.0;
     //outer loop over vectors in Z^3
@@ -211,7 +211,7 @@ class LuscherZeta{
 	for(int nz = -Nz; nz <= Nz; ++nz){
 	  GSLvector n(3);
 	  n[0] = nx; n[1] = ny; n[2] = nz;
-	  result += z3sum(q,n);
+	  result += z3sum(q,n, imag_q);
 	}
       }
     }
@@ -235,8 +235,8 @@ class LuscherZeta{
     return result;
   }
 
-  inline double calcPhi(const double q) const{
-    return atan(-q*pow(M_PI,1.5)/calcZeta00(q));
+  inline double calcPhi(const double q, const bool imag_q = false) const{
+    return atan(-q*pow(M_PI,1.5)/calcZeta00(q, imag_q));
   }
 
   inline double calcPhiDeriv(const double q, const double frac_shift = 1e-04) const{

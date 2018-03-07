@@ -13,7 +13,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP
-from latfit.config import CALC_PHASE_SHIFT
+from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -72,7 +72,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                 ['x', 'fun', 'status',
                                  'pvalue', 'pvalue_err' 'err_in_chisq',
                                  'error_bars', 'dof', 'phase_shift',
-                                 'phase_shift_err'])
+                                 'phase_shift_err', 'scattering_length',
+                                 'scattering_length_err'])
 
         # no errors gives us 0 status
         result_min.status = 0
@@ -87,11 +88,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.pvalue = np.zeros(params.num_configs)
 
         #phase shift
-        nphase = 1 if not GEVP else params.dimops-1
+        #nphase = 1 if not GEVP else params.dimops-1
+        nphase = 1 if not GEVP else params.dimops
         result_min.phase_shift = np.zeros((
-            params.num_configs, nphase), dtype=np.float) if \
+            params.num_configs, nphase), dtype=np.complex) if \
             params.dimops > 1 else np.zeros((
-                params.num_configs), dtype=np.float)
+                params.num_configs), dtype=np.complex)
 
         # allocate storage for jackknifed x,y coordinates
         coords_jack = np.copy(coords)
@@ -165,12 +167,21 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                                    result_min.phase_shift),
                                                axis=0)
             if len(result_min.phase_shift) > 0:
+                result_min.scattering_length = -1.0*np.tan(
+                    result_min.phase_shift)/np.sqrt(
+                        (min_arr**2/4-PION_MASS**2).astype(complex))
                 result_min.phase_shift_err = np.sqrt(
                     params.prefactor*np.sum((
                         result_min.phase_shift-np.mean(
                         result_min.phase_shift, axis=0))**2, axis=0))
+                result_min.scattering_length_err = np.sqrt(
+                    params.prefactor*np.sum((
+                        result_min.scattering_length-np.mean(
+                        result_min.scattering_length, axis=0))**2, axis=0))
                 result_min.phase_shift = np.mean(
                     result_min.phase_shift, axis=0)
+                result_min.scattering_length = np.mean(
+                    result_min.scattering_length, axis=0)
             else:
                 result_min.phase_shift = None
 
@@ -207,7 +218,7 @@ def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
     try:
         if params.dimops > 1:
-            retlist = [zeta(epipi) for epipi in epipi_arr[1:]]
+            retlist = [zeta(epipi) for epipi in epipi_arr]
         else:
             retlist = zeta(epipi_arr)
     except ZetaError:

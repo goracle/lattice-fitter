@@ -23,7 +23,7 @@ if CALC_PHASE_SHIFT:
                 epipi = epipi[0]
             except IndexError:
                 pass
-        epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ)
+        #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX)]
         try:
@@ -39,7 +39,11 @@ if CALC_PHASE_SHIFT:
             errstr = subprocess.Popen(arglist,
                                    stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
-        return float(out)
+        if(epipi*epipi/4-PION_MASS**2<0):
+            out = float(out)*1j
+        else:
+            out = complex(float(out))
+        return out
 else:
     def zeta(_):
         """Blank function; do not calculate phase shift"""

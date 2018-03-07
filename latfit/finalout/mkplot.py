@@ -249,8 +249,14 @@ def print_messages(result_min, param_err, param_chisq):
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
-        print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-              result_min.phase_shift, "+/-", result_min.phase_shift_err)
+        for i in range(len(result_min.scattering_length)):
+            print("state["+str(i)+"]:")
+            print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
+                  result_min.phase_shift[i], "+/-",
+                  result_min.phase_shift_err[i])
+            print("I="+str(ISOSPIN)+" scattering length = ",
+                  result_min.scattering_length[i], "+/-",
+                  result_min.scattering_length_err[i])
 
 
 def get_param_chisq(coords, dimops, result_min, fitrange=None):
