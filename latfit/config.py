@@ -65,7 +65,9 @@ ADD_CONST = True
 
 # isospin value (convenience switch)
 ISOSPIN = 0
+DIM = 2
 # don't include the sigma in the gevp fits
+SIGMA = True
 SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
@@ -117,25 +119,28 @@ if ISOSPIN == 0:
         ]
     elif MOMSTR == 'momtotal000':
 
-        # 3x3, I0
-        GEVP_DIRS = [
-            ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-            'I0/S_pipisigma_A_1PLUS.jkdat',
-            'I0/S_pipipipi_A_1PLUS.jkdat'],
-            ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-            'I0/sigmasigma_A_1PLUS.jkdat',
-            'I0/sigmapipi_A_1PLUS.jkdat'],
-            ['I0/pipiS_pipi_A_1PLUS.jkdat',
-            'I0/pipisigma_A_1PLUS.jkdat',
-            'I0/pipi_A_1PLUS.jkdat']
-        ]
-        # sigma
-        GEVP_DIRS = [
-            ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-             'I0/S_pipisigma_A_1PLUS.jkdat'],
-            ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-             'I0/sigmasigma_A_1PLUS.jkdat']
-        ]
+        if DIM == 2:
+            # sigma
+            GEVP_DIRS = [
+                ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+                 'I0/S_pipisigma_A_1PLUS.jkdat'],
+                ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+                 'I0/sigmasigma_A_1PLUS.jkdat']
+            ]
+        elif DIM == 3:
+            # 3x3, I0
+            GEVP_DIRS = [
+                ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+                'I0/S_pipisigma_A_1PLUS.jkdat',
+                'I0/S_pipipipi_A_1PLUS.jkdat'],
+                ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+                'I0/sigmasigma_A_1PLUS.jkdat',
+                'I0/sigmapipi_A_1PLUS.jkdat'],
+                ['I0/pipiS_pipi_A_1PLUS.jkdat',
+                'I0/pipisigma_A_1PLUS.jkdat',
+                'I0/pipi_A_1PLUS.jkdat']
+            ]
+
         ##non-zero center of mass momentum, one stationary pion
         # sigma
     else:
