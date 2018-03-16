@@ -1,16 +1,22 @@
 #!/usr/bin/python3
 """Write jackknife blocks from h5py files"""
 import sys
+import time
 import os
 import glob
 import re
 import numpy as np
+from mpi4py import MPI
 import h5py
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
 import write_discon as wd
 import aux_write as aux
+import math
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -62,12 +68,12 @@ ANTIPERIODIC = False
 
 # diagram to look at for bubble subtraction test
 # TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
-TESTKEY = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 # TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
 # TESTKEY = 'FigureV_sep4_mom1src001_mom2src000_mom1snk001'
 # TESTKEY = 'FigureC_sep4_mom1src000_mom2src000_mom1snk000'
 # TESTKEY = 'FigureHbub_scalar_mom000'
 # TESTKEY = 'FigureBub2_mom000'
+TESTKEY = 'FigureV_sep3_mom1src000_mom2src000_mom1snk000'
 TESTKEY = ''
 
 # Print out the jackknife block at t=TSLICE
@@ -111,7 +117,8 @@ def trajlist():
         if toadd >= THERMNUM:  # filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
-    print("Done getting trajectory list")
+    if MPIRANK == 0:
+        print("Done getting trajectory list")
     return trajl
 
 
@@ -135,7 +142,8 @@ def baselist(fn1=None):
         if len(fn1[dat].shape) == 2 and basen:
             basl.add(basen)
     fn1.close()
-    print("Done getting baselist")
+    if MPIRANK == 0:
+        print("Done getting baselist")
     return basl
 
 
@@ -153,7 +161,8 @@ def bublist(fn1=None):
         if len(fn1[dat].shape) == 1 and basen:
             bubl.add(basen)
     fn1.close()
-    print("Done getting bubble list")
+    if MPIRANK == 0:
+        print("Done getting bubble list")
     return bubl
 
 
@@ -186,7 +195,8 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
     filen = h5py.File(outh5, 'w')
     filen[outfile] = blk
     filen.close()
-    print("done writing jackknife blocks: ", outh5)
+    if MPIRANK == 0:
+        print("done writing jackknife blocks: ", outh5)
 
 
 def overall_coeffs(iso, irr):
@@ -209,7 +219,8 @@ def overall_coeffs(iso, irr):
                     ocs.setdefault(isospin_str+operator,
                                    []).append((original_block,
                                                outer_coeff*inner_coeff))
-    print("Done getting projection coefficients")
+    if MPIRANK == 0:
+        print("Done getting projection coefficients")
     return ocs
 
 
@@ -244,7 +255,7 @@ def buberr(bubblks):
             print("Printing first three jackknife samples from t=0:")
             print(bubblks[key][0][0])
             print(bubblks[key][1][0])
-            print(bubblks[key][3][0])
+            print(bubblks[key][2][0])
             print(key, ":")
             for i, ntup in enumerate(zip(avg, err)):
                 avgval, errval = ntup
@@ -302,7 +313,8 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 break
         if flag == 0:
             h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
-    print("Done writing summed blocks.")
+    if MPIRANK == 0:
+        print("Done writing summed blocks.")
     return
 
 
@@ -353,9 +365,14 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
             fn1 = openlist[filekey]
         try:
             outarr = np.array(fn1['traj_'+str(traj)+base2])
-        except KeyError:
-            skip.append(i)
-            continue
+        except:
+            c='traj_'+str(traj)+base2
+            print(c in fn1)
+            print(fn1[c])
+            raise
+    #    except KeyError:
+    #        skip.append(i)
+    #        continue
         if rows is not None and cols is not None:
             outarr = outarr[rows, cols]
         if avgtsrc:
@@ -380,7 +397,8 @@ def getmostblks(basl, trajl, openlist):
             print("beginning of traj list = ", trajl[0], trajl[1], trajl[2])
             # sys.exit(0)
         mostblks[base] = dojackknife(blk)
-    print("Done getting most of the jackknife blocks.")
+    if MPIRANK == 0:
+        print("Done getting most of the jackknife blocks.")
     return mostblks
 
 
@@ -413,7 +431,7 @@ def getbubbles(bubl, trajl, openlist=None):
             bubbles.setdefault(savekey, []).append(toapp)
     for key in bubbles:
         bubbles[key] = np.asarray(bubbles[key])
-    print("Done getting bubbles.")
+    #print("Done getting bubbles.")
     return bubbles
 
 
@@ -443,7 +461,7 @@ def bubsub(bubbles):
                 sub[bubkey] = np.mean(bubbles[bubkey])
             else:
                 sub[bubkey] = np.mean(bubbles[bubkey], axis=0)
-    print("Done getting averaged bubbles.")
+    #print("Done getting averaged bubbles.")
     return sub
 
 
@@ -518,8 +536,9 @@ def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
         bubbles = getbubbles(bubl, trajl, openlist=openlist)
     if sub is None:
         sub = bubsub(bubbles)
+    if MPIRANK == 0:
+        print("Done composing disconnected diagrams.")
     return dobubjack(bubbles, sub)
-
 
 @PROFILE
 def dobubjack(bubbles, sub):
@@ -581,7 +600,6 @@ def dobubjack(bubbles, sub):
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])
                 testkey2(outkey, out[outkey], 2)
-    print("Done getting the disconnected diagram jackknife blocks.")
     return out
 
 
@@ -630,9 +648,45 @@ def aux_jack(basl, trajl, numt, openlist):
                                    avgtsrc=False, rowcols=[rows, cols]),
                 axis=1, out=blk)
         auxblks[outfn] = dojackknife(blk)
-    print("Done getting the auxiliary jackknife blocks.")
+    if MPIRANK == 0:
+        print("Done getting the auxiliary jackknife blocks.")
     return auxblks
 
+def gatherdicts(gatherblks, root=0):
+    """Gather blocks from other sub processes."""
+    gatherblks = MPI.COMM_WORLD.gather(gatherblks, root)
+    retdict = {}
+    if MPIRANK == root:
+        for blkdict in gatherblks:
+            retdict.update(blkdict)
+    return retdict
+
+def getwork(worklistin, mpirank=MPIRANK):
+    """Split work over processes."""
+    worklist = sorted(list(worklistin))
+    work = math.floor(len(worklist)/MPISIZE)
+    backfill = len(worklist)-work*MPISIZE
+    offset = work*mpirank
+    nodework = set(worklist[offset:offset+work])
+    baselen = len(nodework)
+    if mpirank==0:
+        nodework = nodework.union(set(worklist[work*MPISIZE:]))
+        assert len(nodework) == backfill+baselen, "get work bug."
+    return nodework
+
+def getdisconwork(bubl):
+    """Get bubble combinations to compose for this rank"""
+    bublcomb = set()
+    bubl = sorted(list(bubl))
+    for src in bubl:
+        for snk in bubl:
+            bublcomb.add((src,snk))
+    nodebublcomb = getwork(list(bublcomb))
+    nodebubl = set()
+    for src, snk in nodebublcomb:
+        nodebubl.add(src)
+        nodebubl.add(snk)
+    return nodebubl
 
 @PROFILE
 def main(fixn=True):
@@ -642,32 +696,41 @@ def main(fixn=True):
     basl = baselist()
     numt = len(trajl)
     openlist = {}
-    for traj in trajl:
-        print("processing traj =", traj, "into memory.")
-        filekey = PREFIX+str(traj)+'.'+EXTENSION
-        openlist[filekey] = h5py.File(filekey, 'r', driver='core')
-    print("done processinge files into memory.")
-    auxblks = aux_jack(basl, trajl, numt, openlist)
-    bubblks = bubjack(bubl, trajl, openlist)
-    mostblks = getmostblks(basl, trajl, openlist)
+    #for traj in trajl:
+    #    print("processing traj =", traj, "into memory.")
+    #    filekey = PREFIX+str(traj)+'.'+EXTENSION
+    #    openlist[filekey] = h5py.File(filekey, 'r', driver='mpio', comm=MPI.COMM_WORLD)
+    openlist = None
+    # print("done processinge files into memory.")
+
+    # connected work
+    nodebases = getwork(basl)
+    #disconnected work
+    nodebubl = getdisconwork(bubl)
+
+    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
+    auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
+    mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
+
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
-    for filekey in openlist:
-        openlist[filekey].close()
-    if WRITEBLOCK and not (
-            TESTKEY or TESTKEY2) and WRITEBLOCK not in bubblks:
-        allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
-        h5write_blk(allblks[WRITEBLOCK],
-                    WRITEBLOCK, extension='.jkdat', ocs=None)
-    # allblks = {**mostblks, **bubblks} # for gparity
-    ocs = overall_coeffs(
-        isoproj(fixn, 0, dlist=list(
-            allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
-    if TESTKEY:
-        buberr(allblks)
-        sys.exit(0)
-    h5sum_blks(allblks, ocs, (numt, LT))
+    #for filekey in openlist:
+    #    openlist[filekey].close()
+    if(MPIRANK==0): # write only needs one process, is fast
+        if WRITEBLOCK and not (
+                TESTKEY or TESTKEY2) and WRITEBLOCK not in bubblks:
+            allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
+            h5write_blk(allblks[WRITEBLOCK],
+                        WRITEBLOCK, extension='.jkdat', ocs=None)
+        # allblks = {**mostblks, **bubblks} # for gparity
+        ocs = overall_coeffs(
+            isoproj(fixn, 0, dlist=list(
+                allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+        if TESTKEY:
+            buberr(allblks)
+            sys.exit(0)
+        h5sum_blks(allblks, ocs, (numt, LT))
 
 
 @PROFILE
@@ -683,12 +746,20 @@ def printblk(basename, blk):
 
 
 if __name__ == '__main__':
-    FIXN = input("Need fix norms before summing? True/False?")
-    # FIXN = 'False'
-    FIXNSTR = FIXN
-    FIXN = FIXN in ['true', '1', 't', 'y',
-                    'yes', 'yeah', 'yup', 'certainly', 'True']
-    if not FIXN and FIXNSTR not in ['false', '0', 'f', 'n',
-                                    'no', 'nope', 'certainly not', 'False']:
-        sys.exit(1)
+    FIXN = None
+    if MPIRANK == 0:
+        FIXN = input("Need fix norms before summing? True/False?")
+        # FIXN = 'False'
+        FIXNSTR = FIXN
+        FIXN = FIXN in ['true', '1', 't', 'y',
+                        'yes', 'yeah', 'yup', 'certainly', 'True']
+        if not FIXN and FIXNSTR not in ['false', '0', 'f', 'n',
+                                        'no', 'nope',
+                                        'certainly not', 'False']:
+            sys.exit(1)
+    FIXN = MPI.COMM_WORLD.bcast(FIXN, 0)
+    start = time.perf_counter()
     main(FIXN)
+    end = time.perf_counter()
+    if MPIRANK == 0:
+        print("Total elapsed time =", end-start, "seconds")
