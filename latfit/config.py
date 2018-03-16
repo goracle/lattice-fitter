@@ -48,14 +48,14 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # METHODS/PARAMS
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 3
+TSEP = 0
 LT = 64-2*TSEP
 
 # additive constant
@@ -76,7 +76,8 @@ MOMSTR = 'momtotal000'
 # calculate the I=0 phase shift?
 
 L_BOX = 24
-PION_MASS = 0.13975
+AINVERSE = 1.015
+PION_MASS = 0.13975*AINVERSE
 CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
 

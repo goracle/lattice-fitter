@@ -5,7 +5,7 @@ import inspect
 import os
 import math
 import numpy as np
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ, AINVERSE
 
 class ZetaError(Exception):
     def __init__(self, mismatch):
@@ -23,6 +23,7 @@ if CALC_PHASE_SHIFT:
                 epipi = epipi[0]
             except IndexError:
                 pass
+        epipi = epipi*AINVERSE
         #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX)]

@@ -160,8 +160,19 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the average fit params
         result_min.x = np.mean(min_arr, axis=0)
 
+        # compute the error on the params
+        param_err = np.sqrt(params.prefactor*np.sum(
+            (min_arr-result_min.x)**2, 0))
+
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
+            try:
+                min_arr = min_arr[:,1]
+            except IndexError:
+                try:
+                    min_arr = min_arr[:,0]
+                except IndexError:
+                    raise
             result_min.phase_shift = np.delete(result_min.phase_shift,
                                                prune_phase_shift_arr(
                                                    result_min.phase_shift),
@@ -184,10 +195,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     result_min.scattering_length, axis=0)
             else:
                 result_min.phase_shift = None
-
-        # compute the error on the params
-        param_err = np.sqrt(params.prefactor*np.sum(
-            (min_arr-result_min.x)**2, 0))
 
         # compute average chi^2
         result_min.fun = np.mean(chisq_min_arr)
