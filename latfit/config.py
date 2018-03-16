@@ -7,6 +7,8 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
+import latfit.analysis.misc as misc
+
 
 # TYPE OF FIT
 
@@ -80,6 +82,13 @@ AINVERSE = 1.015
 PION_MASS = 0.13975*AINVERSE
 CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
+misc.BOX_LENGTH = L_BOX
+misc.MASS = PION_MASS/AINVERSE
+
+# dispersive lines
+PLOT_DISPERSIVE = True
+PLOT_DISPERSIVE = False
+DISP_ENERGIES = [2*misc.dispersive([1,0,0])]
 
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 

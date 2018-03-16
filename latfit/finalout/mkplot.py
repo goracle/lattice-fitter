@@ -40,6 +40,7 @@ from latfit.config import ADD_CONST
 from latfit.config import ERROR_BAR_METHOD
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
+from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -83,6 +84,11 @@ def mkplot(plotdata, input_f,
     with PdfPages(file_str) as pdf:
         print("file name of saved plot:", file_str)
         plot_errorbar(dimops, xcoord, ycoord, error2)
+
+        #plot dispersion analysis
+        if DISP_ENERGIES:
+            plot_dispersive(xcoord)
+
         if FIT:
             # plot fit function
             plot_fit(plotdata.fitcoord, result_min, dimops)
@@ -98,6 +104,16 @@ def mkplot(plotdata, input_f,
         do_plot(title, pdf)
 
     return 0
+
+def plot_dispersive(xcoord):
+    """Plot lines corresponding to dispersive analysis energies"""
+    for i, energy in enumerate(DISP_ENERGIES):
+        estring = trunc_prec(energy)
+        plt.annotate(
+            "Dispersive energy["+str(i)+"] = "+estring,
+            xy=(0.05, 0.85-i*.05), xycoords='axes fraction')
+        plt.plot(xcoord, list([energy])*len(xcoord), label='Dispersive('+str(i)+')')
+    plt.legend(loc='lower left')
 
 def get_prelim_errbars(result_min):
     """If the fit range is not identical to the plot range,
