@@ -5,6 +5,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_gamma.h>
+#include <assert.h>
 
 //C.Kelly 2014
 //Classes and methods to determine and manipulate Luscher's \zeta and \phi functions for use in the quantization condition and Lellouch-Luscher factor
@@ -282,6 +283,7 @@ public:
     double _4mpi2 = 4*pow(mpi,2);
     double sbrack = (s - _4mpi2)/_4mpi2;
     //printf("(s-4m_pi^2)/(4m_pi^2) = %f\n",sbrack);
+    assert(I!=1);
     
     int i= (I == 0 ? 0 : 1);
     int fci;
