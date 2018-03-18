@@ -127,7 +127,7 @@ def plotcrosscurves(plot_both=False):
                   str(ISOSPIN), **hfontt)
         plt.xlabel('Ea (Lattice Units, a^(-1)='+
                    str(AINVERSE)+' GeV)', **hfontl)
-        plt.ylabel('Degrees', **hfontl)
+        plt.ylabel('$\delta$ (degrees)', **hfontl)
         plt.legend(loc='best')
         pdf.savefig()
         #plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),  shadow=True, ncol=nplots)
