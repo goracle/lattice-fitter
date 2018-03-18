@@ -28,11 +28,6 @@ JACKKNIFE_FIT = 'FROZEN'
 JACKKNIFE_FIT = 'SINGLE'
 JACKKNIFE_FIT = 'DOUBLE'
 
-# Uncorrelated fit? True or False
-
-UNCORR = True
-UNCORR = False
-
 # Plot Effective Mass? True or False
 
 EFF_MASS = False
@@ -50,15 +45,20 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # METHODS/PARAMS
 
+# Uncorrelated fit? True or False
+
+UNCORR = True
+UNCORR = False
+
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP = 0
-LT = 64-2*TSEP
+TSEP_VEC = [3, 3]
+LT = 64
 
 # additive constant
 
@@ -66,7 +66,7 @@ ADD_CONST = False
 ADD_CONST = True
 
 # isospin value (convenience switch)
-ISOSPIN = 2
+ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
 SIGMA = True
@@ -362,20 +362,27 @@ C = 1.935*SCALE*0 if (ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
 
 TRHS = 6
 
-# not correct, do not modify
+# not correct, do not modify, should be 0
 PTOTSQ = 0
+
+# Do not modify
+LT_VEC = []
+for tsep in TSEP_VEC:
+    LT_VEC.append(LT-2*tsep)
+LT = LT_VEC[0]
+
 
 # -------END POSSIBLY OBSOLETE------#
 
 # FIT FUNCTION/PROCESSING FUNCTION SELECTION
 
 
-def fit_func_1p(ctime, trial_params):
+def fit_func_1p(ctime, trial_params, lt=LT):
     """one parameter eff. mass fit function
     for EFF_MASS_METHOD = 3
     """
     corrs = [exp(-trial_params[0]*(ctime+i*TSTEP)) +
-             exp(-trial_params[0]*(LT-(ctime+i*TSTEP)))
+             exp(-trial_params[0]*(lt-(ctime+i*TSTEP)))
              for i in range(RANGE1P)]
     return ratio(corrs, ctime, nocheck=True)
 
@@ -428,15 +435,15 @@ if ADD_CONST:
             exps(-trial_params[1]*ctime) +
             exps(-trial_params[1]*(LT-ctime)))+trial_params[2]
 
-    def fit_func_exp_gevp(ctime, trial_params):
+    def fit_func_exp_gevp(ctime, trial_params, lt=LT):
         """Give result of function,
         computed to fit the data given in <inputfile>
         (See procargs(argv)) GEVP, cosh+const
         """
         return ((exp(-trial_params[0]*ctime) +
-                 exp(-trial_params[1]*(LT-ctime))) + trial_params[2])/(
+                 exp(-trial_params[1]*(lt-ctime))) + trial_params[2])/(
                      (exp(-trial_params[0]*(TRHS)) +
-                      exp(-trial_params[1]*(LT-(TRHS)))) + trial_params[2])
+                      exp(-trial_params[1]*(lt-(TRHS)))) + trial_params[2])
 
 else:
     def fit_func_exp(ctime, trial_params):
@@ -488,15 +495,15 @@ else:
             exps(-trial_params[1]*ctime) +
             exps(-trial_params[1]*(LT-ctime)))
 
-    def fit_func_exp_gevp(ctime, trial_params):
+    def fit_func_exp_gevp(ctime, trial_params, lt=LT):
         """Give result of function,
         computed to fit the data given in <inputfile>
         (See procargs(argv)) GEVP, cosh+const
         """
         return (exp(-trial_params[0]*ctime) +
-                exp(-trial_params[1]*(LT-ctime)))/(
+                exp(-trial_params[1]*(lt-ctime)))/(
                     (exp(-trial_params[0]*(TRHS)) +
-                     exp(-trial_params[1]*(LT-(TRHS)))))
+                     exp(-trial_params[1]*(lt-(TRHS)))))
 
 
 # select which of the above library functions to use
@@ -536,13 +543,13 @@ if EFF_MASS:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [RESCALE * fit_func_1p(ctime, trial_params[j:j+1])
+                return [RESCALE * fit_func_1p(ctime, trial_params[j:j+1], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [fit_func_1p(ctime, trial_params[j:j+1])
+                return [fit_func_1p(ctime, trial_params[j:j+1], LT_VEC[j])
                         for j in range(MULT)]
     else:
         print("***ERROR***")
@@ -561,13 +568,13 @@ else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
                 return [RESCALE*fit_func_exp_gevp(
-                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
+                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
                 return [fit_func_exp_gevp(
-                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL])
+                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
     else:
         if FIT:
@@ -609,6 +616,7 @@ else:
         return prefit_func(ctime, trial_params)
 
 MULT = len(GEVP_DIRS) if GEVP else 1
+assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 RANGE1P = 3 if ADD_CONST else 2
 if EFF_MASS:
