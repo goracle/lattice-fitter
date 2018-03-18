@@ -1,4 +1,5 @@
 """Get a single entry in the covariance matrix."""
+import sys
 import numpy as np
 
 from latfit.config import UNCORR, GEVP
@@ -8,12 +9,13 @@ if UNCORR:
         """Get entry in cov. mat., GEVP, uncorr"""
         dimops = len(avgi)
         coventry = np.zeros((dimops, dimops))
+        num_configs = len(reuse['i'])
         if sameblk:
             for opa in range(dimops):
                 coventry[opa][opa] = np.sum(
                     [(avgi[opa]-reuse['i'][k][opa])*(
                         avgi[opa]-reuse['i'][k][opa])
-                     for k in range(dimops)], axis=0)
+                     for k in range(num_configs)], axis=0)
         else:
             pass  # keep it zero, off diagonals are zero
         return coventry

@@ -13,6 +13,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP
+from latfit.config import UNCORR
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
@@ -166,13 +167,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
-            try:
-                min_arr = min_arr[:,1]
-            except IndexError:
+            if not GEVP:
                 try:
-                    min_arr = min_arr[:,0]
+                    min_arr = min_arr[:,1]
                 except IndexError:
-                    raise
+                    try:
+                        min_arr = min_arr[:,0]
+                    except IndexError:
+                        raise
             result_min.phase_shift = np.delete(result_min.phase_shift,
                                                prune_phase_shift_arr(
                                                    result_min.phase_shift),
@@ -290,6 +292,8 @@ if CORRMATRIX:
     def invert_cov(covjack, params):
         """Invert the covariance matrix via correlation matrix"""
         if params.dimops == 1:  # i.e. if not using the GEVP
+            if UNCORR:
+                covjack = np.diagflat(covjack)
             corrjack = np.zeros(covjack.shape)
             weightings = np.sqrt(np.diag(covjack))
             reweight = np.diagflat(1./weightings)
@@ -302,6 +306,12 @@ if CORRMATRIX:
                 for j in range(params.dimops):
                     reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])
             corrjack = np.tensordot(np.tensordot(reweight, covjack), reweight)
+            if UNCORR:
+                diagcorr = np.zeros(corrjack.shape)
+                for i in range(lent):
+                    for j in range(params.dimops):
+                        diagcorr[i][j][i][j] = corrjack[i][j][i][j]
+                corrjack = diagcorr
             covinv_jack = swap(np.tensordot(reweight, np.tensordot(
                 tensorinv(corrjack), reweight)), 1, 2)
         return covinv_jack
