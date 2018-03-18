@@ -66,7 +66,7 @@ ADD_CONST = False
 ADD_CONST = True
 
 # isospin value (convenience switch)
-ISOSPIN = 0
+ISOSPIN = 2
 DIM = 2
 # don't include the sigma in the gevp fits
 SIGMA = True

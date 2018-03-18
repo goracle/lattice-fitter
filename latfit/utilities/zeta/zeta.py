@@ -5,6 +5,7 @@ import inspect
 import os
 import math
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ, AINVERSE, ISOSPIN
 import matplotlib.pyplot as plt
 
@@ -108,15 +109,26 @@ def plotcrosscurves(plot_both=False):
     #ylist_pheno_minus = list(map(lambda y: -pheno(y), xlist))
     #plt.plot(xlist, ylist_pheno_minus, label='pheno-')
     #plt.plot(xlist, ylist_pheno_plus, label='pheno+')
-    if plot_both:
-        ylist_pheno_plus = list(map(lambda y: pheno(y), xlist))
-        ylist_zeta = list(map(lambda y: zeta(y), xlist))
-        plt.plot(xlist, ylist_pheno_plus, label='pheno')
-        plt.plot(xlist, ylist_zeta, label='luscher zeta')
-    else:
-        ylist_dif = list(map(lambda y: zeta_real(y)-pheno(y), xlist))
-        
-        plt.plot(xlist, np.zeros((len(xlist))))
-        plt.plot(xlist, ylist_dif, label='luscher zeta-pheno')
-    plt.legend(loc='best')
-    plt.show()
+    hfontt = {'fontname': 'FreeSans', 'size': 12}
+    hfontl = {'fontname': 'FreeSans', 'size': 14}
+    print('Isospin=', ISOSPIN)
+    with PdfPages('SchenkVLuscherI'+str(ISOSPIN)+'.pdf') as pdf:
+        if plot_both:
+            ylist_pheno_plus = list(map(lambda y: pheno(y), xlist))
+            ylist_zeta = list(map(lambda y: zeta(y), xlist))
+            plt.plot(xlist, ylist_pheno_plus, label='Schenk')
+            plt.plot(xlist, ylist_zeta, label='Luscher')
+        else:
+            ylist_dif = list(map(lambda y: zeta_real(y)-pheno(y), xlist))
+
+            plt.plot(xlist, np.zeros((len(xlist))))
+            plt.plot(xlist, ylist_dif, label='Luscher-Schenk')
+        plt.title('Luscher Method, Schenk Phenomenology, Isospin='+
+                  str(ISOSPIN), **hfontt)
+        plt.xlabel('Ea (Lattice Units, a^(-1)='+
+                   str(AINVERSE)+' GeV)', **hfontl)
+        plt.ylabel('Degrees', **hfontl)
+        plt.legend(loc='best')
+        pdf.savefig()
+        #plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),  shadow=True, ncol=nplots)
+        plt.show()
