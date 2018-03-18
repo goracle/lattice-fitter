@@ -282,8 +282,12 @@ public:
   static double compute(const double &s, const int &I, const double &mpi, const char fitcurve = 'B'){
     double _4mpi2 = 4*pow(mpi,2);
     double sbrack = (s - _4mpi2)/_4mpi2;
+    double gammarho = 149;
+    double mrho = 769;
+    double mrho2 = pow(769, 2);
     //printf("(s-4m_pi^2)/(4m_pi^2) = %f\n",sbrack);
-    assert(I!=1);
+    assert(I==0 || I==1 || I==2);
+    if(I==1) assert(sqrt(s)<769); //only valid below inelastic threshold
     
     int i= (I == 0 ? 0 : 1);
     int fci;
@@ -306,7 +310,11 @@ public:
       {-0.015,0.0} 
     };
 
-    double tandelta = sqrt(1. - _4mpi2/s) * ( a[i] + b[i]*sbrack + c[fci][i]*pow(sbrack,2) ) * (_4mpi2 - sl[fci][i])/(s-sl[fci][i]);
+    double tandelta;
+    if(I == 0 || I == 2)
+      tandelta = sqrt(1. - _4mpi2/s) * ( a[i] + b[i]*sbrack + c[fci][i]*pow(sbrack,2) ) * (_4mpi2 - sl[fci][i])/(s-sl[fci][i]);
+    else //I=1
+      tandelta = ((_4mpi2-mrho2)/(s-mrho2))*(mrho*gammarho/(mrho2-_4mpi2));
     return atan(tandelta);
   }
   static double compute_deriv(const double &s, const int &I, const double &mpi, const char fitcurve = 'B', const double &frac_shift = 1e-04){
