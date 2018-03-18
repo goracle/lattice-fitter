@@ -41,6 +41,7 @@ from latfit.config import ERROR_BAR_METHOD
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
+from latfit.config import AINVERSE
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -86,7 +87,7 @@ def mkplot(plotdata, input_f,
         plot_errorbar(dimops, xcoord, ycoord, error2)
 
         #plot dispersion analysis
-        if DISP_ENERGIES:
+        if PLOT_DISPERSIVE:
             plot_dispersive(xcoord)
 
         if FIT:
@@ -248,9 +249,16 @@ def print_messages(result_min, param_err, param_chisq):
     if METHOD == 'L-BFGS-B':
         print("Bounds:", BINDS)
     print("Guessed params:  ", np.array2string(startp, separator=', '))
-    print("Minimized params:", np.array2string(result_min.x, separator=', '))
-    print("Error in params :", np.array2string(np.array(param_err),
-                                               separator=', '))
+    if EFF_MASS:
+        print("Energies (MeV):", np.array2string(
+            1000*AINVERSE*np.array(result_min.x), separator=', '))
+        print("Error in energies (MeV):", np.array2string(
+            1000*AINVERSE*np.array(param_err), separator=', '))
+    else:
+        print("Minimized params:", np.array2string(
+            result_min.x, separator=', '))
+        print("Error in params :", np.array2string(np.array(param_err),
+                                                   separator=', '))
     chisq_str = str(result_min.fun)
     if JACKKNIFE_FIT:
         chisq_str += '+/-'+str(result_min.err_in_chisq)
@@ -413,15 +421,18 @@ else:
 
 if GEVP:
     if ADD_CONST:
-        YSTART = 0.45
+        YSTART = 0.90
     else:
-        YSTART = 0.35
+        YSTART = 0.90
 
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (GEVP)
         """
         # annotate plot with fitted energy
-        plt.legend(loc='center right')
+        nplots = len(param_err)+(len(DISP_ENERGIES) if PLOT_DISPERSIVE else 0)
+        print('nplots=', nplots)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),  shadow=True, ncol=nplots)
+        #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             plt.annotate(
@@ -520,7 +531,7 @@ if JACKKNIFE_FIT:
         def annotate_jack():
             """Annotate jackknife type (double)"""
             plt.annotate('Double jackknife fit.', xy=(
-                0.70, 0.35), xycoords='axes fraction')
+                0.10, 0.95), xycoords='axes fraction')
 
 
 elif JACKKNIFE:
@@ -543,7 +554,7 @@ if UNCORR:
     def annotate_uncorr(coords, dimops):
         """Annotate plot with uncorr"""
         if dimops > 1:
-            plt.annotate("Uncorrelated fit.", xy=(0.05, 0.10),
+            plt.annotate("Uncorrelated fit.", xy=(0.05, 0.90-dimops*0.05),
                          xycoords='axes fraction')
         else:
             plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
