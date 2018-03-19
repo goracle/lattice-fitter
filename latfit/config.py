@@ -1,14 +1,9 @@
 """Config for lattice fitter."""
 import sys
 from copy import copy
-from math import log
-from numbers import Number
 import numpy as np
-from numpy import exp
-from sympy import exp as exps
-from latfit.analysis.test_arg import zero_p, testsol
 import latfit.analysis.misc as misc
-
+from latfit.fit_funcs import FitFunctions
 
 # TYPE OF FIT
 
@@ -57,20 +52,19 @@ UNCORR = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 3]
+TSEP_VEC = [3, 0]
 LT = 64
 
 # additive constant
-
-ADD_CONST = False
-ADD_CONST = True
+ADD_CONST_VEC = [True, False]
+ADD_CONST = ADD_CONST_VEC[0]
 
 # isospin value (convenience switch)
-ISOSPIN = 2
+ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal000'
@@ -86,8 +80,8 @@ misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False
+PLOT_DISPERSIVE = True
 DISP_ENERGIES = [2*misc.dispersive([1,0,0])]
 
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
@@ -365,145 +359,23 @@ TRHS = 6
 # not correct, do not modify, should be 0
 PTOTSQ = 0
 
-# Do not modify
+# DO NOT MODIFY
 LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
+ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
+# library of functions to fit.  define them in the usual way
+
+FITS = FitFunctions()
+FITS.select(ADD_CONST, LOG, LT, C, TSTEP)
+
+# END DO NOT MODIFY
 
 # -------END POSSIBLY OBSOLETE------#
 
 # FIT FUNCTION/PROCESSING FUNCTION SELECTION
-
-
-def fit_func_1p(ctime, trial_params, lt=LT):
-    """one parameter eff. mass fit function
-    for EFF_MASS_METHOD = 3
-    """
-    corrs = [exp(-trial_params[0]*(ctime+i*TSTEP)) +
-             exp(-trial_params[0]*(lt-(ctime+i*TSTEP)))
-             for i in range(RANGE1P)]
-    return ratio(corrs, ctime, nocheck=True)
-
-# library of functions to fit.  define them in the usual way
-if ADD_CONST:
-    def fit_func_exp(ctime, trial_params):
-        """Give result of function,
-        computed to fit the data given in <inputfile> (See procargs(argv))
-        """
-        return trial_params[0]*(exp(-trial_params[1]*ctime) + exp(
-            -trial_params[1]*(LT-ctime))) + trial_params[2]
-
-    def ratio(corrs, times=None, nocheck=False):
-        """Process data points into effective mass ratio (and take log)"""
-        times = [-99999, -99999, -99999] if times is None else times
-        times = [times, None, None] if isinstance(times, Number) else times
-        if nocheck:
-            np.seterr(invalid='ignore')
-        else:
-            np.seterr(invalid='raise')
-            zero_p(corrs[1], corrs[2], times)
-        sol = (corrs[1]-corrs[0])/(corrs[2]-corrs[1])
-        if not nocheck:
-            testsol(sol, corrs, times)
-        sol = log(sol) if LOG else sol
-        return sol
-
-    def acosh_ratio(corrs, times=None, nocheck=False):
-        """Process data into effective mass ratio,
-        for an exact call to acosh."""
-        times = [-99999, -99999, -99999] if times is None else times
-        times = [times, None, None] if isinstance(times, Number) else times
-        if nocheck:
-            np.seterr(invalid='ignore')
-        else:
-            np.seterr(invalid='raise')
-            zero_p(corrs[1]-C, times[1:])
-        sol = (corrs[0]-corrs[1]+corrs[2]-corrs[3])/2.0/(corrs[1]-corrs[2])
-        if not nocheck:
-            testsol(sol, corrs, times)
-        return sol
-
-    def fit_func_sym(ctime, trial_params):
-        """Give result of function,
-        computed to fit the data given in <inputfile>
-        (See procargs(argv))
-        for EFF_MASS_METHOD = 2
-        """
-        return trial_params[0]*(
-            exps(-trial_params[1]*ctime) +
-            exps(-trial_params[1]*(LT-ctime)))+trial_params[2]
-
-    def fit_func_exp_gevp(ctime, trial_params, lt=LT):
-        """Give result of function,
-        computed to fit the data given in <inputfile>
-        (See procargs(argv)) GEVP, cosh+const
-        """
-        return ((exp(-trial_params[0]*ctime) +
-                 exp(-trial_params[1]*(lt-ctime))) + trial_params[2])/(
-                     (exp(-trial_params[0]*(TRHS)) +
-                      exp(-trial_params[1]*(lt-(TRHS)))) + trial_params[2])
-
-else:
-    def fit_func_exp(ctime, trial_params):
-        """Give result of function,
-        computed to fit the data given in <inputfile> (See procargs(argv))
-        """
-        return trial_params[0]*(exp(-trial_params[1]*ctime) +
-                                exp(-trial_params[1]*(LT-ctime)))
-
-    def ratio(corrs, times=None, nocheck=False):
-        """Process data points into effective mass ratio
-        (and take log), no additive constant
-        """
-        times = [-99999, -99999] if times is None else times
-        times = [times, None, None] if isinstance(times, Number) else times
-        if nocheck:
-            np.seterr(invalid='ignore')
-        else:
-            np.seterr(invalid='raise')
-            zero_p(corrs[1], times[1])
-        sol = (corrs[0])/(corrs[1])
-        if not nocheck:
-            testsol(sol, corrs, times)
-        sol = log(sol) if LOG else sol
-        return sol
-
-    def acosh_ratio(corrs, times=None, nocheck=False):
-        """Process data into effective mass ratio,
-        for an exact call to acosh (no additive constant)."""
-        times = [-99999, -99999] if times is None else times
-        times = [times, None, None] if isinstance(times, Number) else times
-        if nocheck:
-            np.seterr(invalid='ignore')
-        else:
-            np.seterr(invalid='raise')
-            zero_p(corrs[1]-C, times[1])
-        sol = (corrs[0]+corrs[2]-2*C)/2/(corrs[1]-C)
-        if not nocheck:
-            testsol(sol, corrs, times)
-        return sol
-
-    def fit_func_sym(ctime, trial_params):
-        """Give result of function,
-        computed to fit the data given in <inputfile>
-        (See procargs(argv))
-        for EFF_MASS_METHOD = 2
-        """
-        return trial_params[0]*(
-            exps(-trial_params[1]*ctime) +
-            exps(-trial_params[1]*(LT-ctime)))
-
-    def fit_func_exp_gevp(ctime, trial_params, lt=LT):
-        """Give result of function,
-        computed to fit the data given in <inputfile>
-        (See procargs(argv)) GEVP, cosh+const
-        """
-        return (exp(-trial_params[0]*ctime) +
-                exp(-trial_params[1]*(lt-ctime)))/(
-                    (exp(-trial_params[0]*(TRHS)) +
-                     exp(-trial_params[1]*(lt-(TRHS)))))
 
 
 # select which of the above library functions to use
@@ -543,13 +415,13 @@ if EFF_MASS:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [RESCALE * fit_func_1p(ctime, trial_params[j:j+1], LT_VEC[j])
+                return [RESCALE * FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [fit_func_1p(ctime, trial_params[j:j+1], LT_VEC[j])
+                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1], LT_VEC[j])
                         for j in range(MULT)]
     else:
         print("***ERROR***")
@@ -567,13 +439,13 @@ else:
         if RESCALE != 1.0:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
-                return [RESCALE*fit_func_exp_gevp(
+                return [RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
                     ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
-                return [fit_func_exp_gevp(
+                return [FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
                     ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
     else:
@@ -587,11 +459,11 @@ else:
             if RESCALE != 1.0:
                 def prefit_func(ctime, trial_params):
                     """Rescaled exp fit function."""
-                    return RESCALE*fit_func_exp(ctime, trial_params)
+                    return RESCALE*FITS['fit_func_exp'](ctime, trial_params)
             else:
                 def prefit_func(ctime, trial_params):
                     """Prefit function, copy of exponential fit function."""
-                    return fit_func_exp(ctime, trial_params)
+                    return FITS['fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
@@ -617,8 +489,8 @@ else:
 
 MULT = len(GEVP_DIRS) if GEVP else 1
 assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
+assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
-RANGE1P = 3 if ADD_CONST else 2
 if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")

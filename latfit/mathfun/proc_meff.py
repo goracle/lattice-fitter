@@ -13,28 +13,26 @@ from latfit.extract.proc_line import proc_line
 
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import FIT
-from latfit.config import fit_func_sym
 from latfit.config import START_PARAMS
 from latfit.config import ADD_CONST
 from latfit.config import STYPE
-from latfit.config import RANGE1P
-from latfit.config import fit_func_1p
-from latfit.config import ratio
-from latfit.config import acosh_ratio
+from latfit.config import FITS
 from latfit.config import RESCALE
-from latfit.config import GEVP
+from latfit.config import GEVP, ADD_CONST_VEC
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
+RANGE1P = 3 if ADD_CONST else 2
+
 # almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
-    def proc_meff(lines, files=None, time_arr=None):
+    def proc_meff(lines, index=None, files=None, time_arr=None):
         """Gets the effective mass, given three points
         Solve an acosh.  (Needs a user input on the addititive const)
         (See config)
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = acosh_ratio(corrs, times)
+        sol = FITS['acosh_ratio'](corrs, times) if index is None else FITS.f['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
         if sol < 1:
             print("***ERROR***")
             print("argument to acosh in effective mass" +
@@ -50,7 +48,7 @@ if EFF_MASS_METHOD == 1:
 # sliding window method,
 # solved by solving a system of (transcendental) equations
 elif EFF_MASS_METHOD == 2:
-    def proc_meff(lines, files=None, time_arr=None):
+    def proc_meff(lines, index=None, files=None, time_arr=None):
         """numerically solve a system of three transcendental equations
         return the eff. mass
         """
@@ -78,31 +76,34 @@ elif EFF_MASS_METHOD == 2:
     if ADD_CONST:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 3 equations numerically."""
-            return nsolve((fit_func_sym(times[0], [x, y, z])-corrs[0],
-                           fit_func_sym(times[1], [x, y, z])-corrs[1],
-                           fit_func_sym(times[2], [x, y, z])-corrs[2]),
+            return nsolve((FITS['fit_func_sym'](times[0],
+                                                [x, y, z])-corrs[0],
+                           FITS['fit_func_sym'](times[1],
+                                                [x, y, z])-corrs[1],
+                           FITS['fit_func_sym'](times[2],
+                                                [x, y, z])-corrs[2]),
                           (x, y, z), START_PARAMS)
     else:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 2 equations numerically."""
-            return  nsolve((fit_func_sym(times[0], [x, y])-corrs[0],
-                           fit_func_sym(times[1], [x, y])-corrs[1]),
+            return  nsolve((FITS['fit_func_sym'](times[0], [x, y])-corrs[0],
+                           FITS['fit_func_sym'](times[1], [x, y])-corrs[1]),
                            (x, y), START_PARAMS)
 
 # one parameter fit, optional additive constant (determined in config)
 elif EFF_MASS_METHOD == 3:
-    def proc_meff(lines, files=None, time_arr=None):
+    def proc_meff(lines, index=None, files=None, time_arr=None):
         """fit to a function with one free parameter
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = ratio(corrs, times)
+        sol = FITS['ratio'](corrs, times) if index is None else FITS.f['ratio'][ADD_CONST_VEC[index]](corrs, times)
         return sol
 
 # sliding window, solved by minimizing a one parameter cost function
 elif EFF_MASS_METHOD == 4:
 
-    def proc_meff(lines, files=None, time_arr=None):
+    def proc_meff(lines, index=None, files=None, time_arr=None):
         """Process data, meff (traditional definition)"""
         corrs, times = pre_proc_meff(lines, files, time_arr)
         corrs = list(corrs)
@@ -114,26 +115,35 @@ elif EFF_MASS_METHOD == 4:
             corrs[2], corrs[3] = (None,
                                   None) if not ADD_CONST else (
                                       corrs[2], None)
-        return proc_meff4(corrs, files, times)
+        return proc_meff4(corrs, index, files, times)
 
-    def eff_mass_tomin(energy, ctime, sol):
-        """Minimize this
-        (quadratic) to solve a sliding window problem."""
-        return (fit_func_1p(ctime, [energy])-sol)**2
+    def make_eff_mass_tomin(add_const_bool):
+        def eff_mass_tomin(energy, ctime, sol):
+            """Minimize this
+            (quadratic) to solve a sliding window problem."""
+            return (FITS.f['fit_func_1p'][add_const_bool](ctime,
+                                                          [energy])-sol)**2
+        return eff_mass_tomin
+
+    EFF_MASS_TOMIN = []
+    for i in ADD_CONST_VEC:
+        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i))
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this
         (find a root) to solve a sliding window problem."""
-        return fit_func_1p(ctime, [energy])-sol
+        raise #not supported anymore
+        return FITS['fit_func_1p'](ctime, [energy])-sol
 
-    def proc_meff4(corrs, _, times=(None)):
+    def proc_meff4(corrs, index, _, times=(None)):
         """numerically solve a function with one free parameter
         (e.g.) [ C(t) ]/[ C(t+1) ]
         This is the conventional effective mass formula.
         """
-        sol = ratio(corrs, times)
+        sol = FITS['ratio'] if index is None else FITS.f[
+            'ratio'][ADD_CONST_VEC[index]](corrs, times)
         try:
-            sol = minimize_scalar(eff_mass_tomin,
+            sol = minimize_scalar(EFF_MASS_TOMIN[index],
                                   args=(times[0], sol), bounds=(0, None))
             fun = sol.fun
             sol = sol.x
@@ -149,19 +159,20 @@ elif EFF_MASS_METHOD == 4:
             print("***ERROR***\nSolution not within tolerance.")
             print("sol, time_arr:", sol, times)
             print("corrs:", corrs)
-            print(minimize_scalar(eff_mass_tomin, args=(times[0], sol)))
+            print(minimize_scalar(EFF_MASS_TOMIN[index], args=(times[0], sol)))
             sys.exit(1)
         if sol < 0:
-            tryfun = (eff_mass_tomin(-sol, times[0],
-                                     ratio(corrs, times)) - fun)
+            ratioval = FITS.f['ratio'] if index is None else FITS.f[
+                'ratio'][ADD_CONST_VEC[index]](corrs, times)
+            tryfun = (EFF_MASS_TOMIN[index](-sol, times[0], ratioval) - fun)
             if tryfun/fun < 10:
                 sol = -sol
                 print("positive solution close to" +
                       " negative solution; switching; new tol", tryfun)
             else:
                 print("***ERROR***\nnegative energy found:", sol, times)
-                print(eff_mass_tomin(sol, times[0], ratio(corrs, times)))
-                print(eff_mass_tomin(-sol, times[0], ratio(corrs, times)))
+                print(EFF_MASS_TOMIN[index](sol, times[0], ratioval))
+                print(EFF_MASS_TOMIN[index](-sol, times[0], ratioval))
                 sys.exit(1)
         return sol
 
@@ -210,3 +221,4 @@ elif STYPE == 'ascii':
         return corrs, times
 else:
     raise Exception("Unsupported file type:", STYPE)
+

@@ -88,7 +88,7 @@ def mkplot(plotdata, input_f,
 
         #plot dispersion analysis
         if PLOT_DISPERSIVE:
-            plot_dispersive(xcoord)
+            plot_dispersive(dimops, xcoord)
 
         if FIT:
             # plot fit function
@@ -106,14 +106,15 @@ def mkplot(plotdata, input_f,
 
     return 0
 
-def plot_dispersive(xcoord):
+def plot_dispersive(dimops, xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
         estring = trunc_prec(energy)
         plt.annotate(
             "Dispersive energy["+str(i)+"] = "+estring,
-            xy=(0.05, 0.85-i*.05), xycoords='axes fraction')
-        plt.plot(xcoord, list([energy])*len(xcoord), label='Dispersive('+str(i)+')')
+            xy=(0.05, 0.90-(i+dimops)*.05), xycoords='axes fraction')
+        plt.plot(xcoord, list([energy])*len(xcoord),
+                 label='Dispersive('+str(i)+')')
     plt.legend(loc='lower left')
 
 def get_prelim_errbars(result_min):
@@ -440,7 +441,7 @@ if GEVP:
                 xy=(0.05, ystart-i*.05), xycoords='axes fraction')
 else:
     if ADD_CONST or not EFF_MASS:
-        YSTART = 0.95
+        YSTART = 0.90
     else:
         YSTART = 0.35
 
@@ -553,8 +554,10 @@ if UNCORR:
 
     def annotate_uncorr(coords, dimops):
         """Annotate plot with uncorr"""
+        ldisp = len(DISP_ENERGIES)
         if dimops > 1:
-            plt.annotate("Uncorrelated fit.", xy=(0.05, 0.90-dimops*0.05),
+            plt.annotate("Uncorrelated fit.", xy=(0.05,
+                                                  0.90-(ldisp+dimops)*0.05),
                          xycoords='axes fraction')
         else:
             plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
