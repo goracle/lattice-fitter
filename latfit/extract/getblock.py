@@ -149,7 +149,7 @@ if EFF_MASS:
             if line+line2+line3 not in reuse:
                 reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
                     (line, line2, line3, line4),
-                    file_tup, time_arr=timeij)
+                    files=file_tup, time_arr=timeij)
             if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
                 raise Exception("Something has gone wrong.")
             retblk.append(reuse[str(line)+'@'+str(line2)+'@'+str(line3)])

@@ -40,8 +40,8 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # METHODS/PARAMS
 
@@ -52,11 +52,11 @@ UNCORR = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 0]
+TSEP_VEC = [0]
 LT = 64
 
 # additive constant
-ADD_CONST_VEC = [True, False]
+ADD_CONST_VEC = [True]
 ADD_CONST = ADD_CONST_VEC[0]
 
 # isospin value (convenience switch)

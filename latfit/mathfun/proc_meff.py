@@ -140,8 +140,9 @@ elif EFF_MASS_METHOD == 4:
         (e.g.) [ C(t) ]/[ C(t+1) ]
         This is the conventional effective mass formula.
         """
-        sol = FITS['ratio'] if index is None else FITS.f[
+        sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
             'ratio'][ADD_CONST_VEC[index]](corrs, times)
+        index = 0 if index is None else index
         try:
             sol = minimize_scalar(EFF_MASS_TOMIN[index],
                                   args=(times[0], sol), bounds=(0, None))
