@@ -29,6 +29,7 @@ from latfit.config import EFF_MASS
 from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
+from latfit.config import FIT_EXCL
 from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
@@ -73,7 +74,7 @@ def mkplot(plotdata, input_f,
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(plotdata.coords, dimops,
+        param_chisq = get_param_chisq(plotdata.coords, dimops, plotdata.fitcoord,
                                       result_min, fitrange)
         print_messages(result_min, param_err, param_chisq)
 
@@ -270,7 +271,7 @@ def print_messages(result_min, param_err, param_chisq):
         print("avg p-value = ", result_min.pvalue, "+/-",
               result_min.pvalue_err)
         print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
-                                                            result_min.dof))
+                                                            param_chisq.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
@@ -292,7 +293,7 @@ def print_messages(result_min, param_err, param_chisq):
                 result_min.scattering_length_err)
 
 
-def get_param_chisq(coords, dimops, result_min, fitrange=None):
+def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     """Get chi^2 parameters."""
     param_chisq = namedtuple('param_chisq',
                              ('redchisq', 'redchisq_round_str', 'dof'))
@@ -305,6 +306,10 @@ def get_param_chisq(coords, dimops, result_min, fitrange=None):
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
+    for i in FIT_EXCL:
+        for j in i:
+            if j in xcoord:
+                param_chisq.dof -= 1
     param_chisq.redchisq = result_min.fun/param_chisq.dof
     if JACKKNIFE_FIT:
         redchisq_str = str(param_chisq.redchisq)
@@ -366,19 +371,37 @@ def plot_fit(xcoord, result_min, dimops):
         # step_size = 1
     else:
         pass
-    step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
-        len(xcoord)-1)
-    xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                     step_size)
+    xfit = get_xfit(dimops, xcoord)
     for curve_num in range(dimops):
         # result_min.x is is the array of minimized fit params
         yfit = np.array([
-            fit_func(xfit[i], result_min.x)[curve_num] if dimops > 1 else
+            fit_func(xfit[curve_num][i], result_min.x)[curve_num] if dimops > 1 else
             fit_func(xfit[i], result_min.x)
-            for i in range(len(xfit))])
+            for i in range(len(xfit[curve_num] if dimops > 1 else xfit))])
         # only plot fit function if minimizer result makes sense
         # if result_min.status == 0:
-        plt.plot(xfit, yfit)
+        plt.plot(xfit[curve_num] if dimops > 1 else xfit, yfit)
+
+def get_xfit(dimops, xcoord, step_size=None):
+    """Return the abscissa for the plot of the fit function."""
+    if dimops == 1:
+        step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
+            len(xcoord)-1)
+        xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
+                        step_size)
+    else:
+        xfit = np.zeros((dimops), dtype=object)
+        for i in range(dimops):
+            xfit[i] = xcoord
+            todel = []
+            for j, coord in enumerate(xcoord):
+                if coord in FIT_EXCL[i]:
+                    todel.append(j)
+            xfit[i] = np.delete(xfit[i], todel)
+            step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
+                len(xfit[i])-1) if step_size is None else step_size
+            xfit[i] = list(np.arange(xfit[i][0], xcoord[len(xfit[i])-1]+step_size, step_size))
+    return xfit
 
 
 if GEVP:
@@ -388,11 +411,13 @@ if GEVP:
         axvar = plt.gca()
         # gca, gcf = getcurrentaxes getcurrentfigure
         fig = plt.gcf()
+        xfit = get_xfit(dimops, xcoord, 1)
+        xfit = [xfit] if dimops == 1 else xfit
         for i in range(dimops):
             axvar.add_patch((
                 plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                    (xcoord[0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                    xcoord[len(xcoord)-1]-xcoord[0]+1,  # width
+                    (xfit[i][0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                    xcoord[len(xfit[i])-1]-xfit[i][0]+1,  # width
                     2*param_err[i],  # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                     # transform=fig.transFigure

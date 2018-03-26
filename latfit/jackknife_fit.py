@@ -1,7 +1,9 @@
 """Fit under a jackknife"""
 import sys
 from collections import namedtuple
+from copy import deepcopy as copy
 import numpy as np
+from numpy import ma
 from numpy import swapaxes as swap
 from numpy.linalg import inv, tensorinv
 from scipy import stats
@@ -14,6 +16,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP
 from latfit.config import UNCORR
+from latfit.config import FIT_EXCL
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
@@ -81,6 +84,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute degrees of freedom
         result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
+        for i in coords[:, 0]:
+            for j in FIT_EXCL:
+                if i in j:
+                    result_min.dof -= 1
 
         # alloc storage
         # one fit for every jackknife block (N fits for N configs)
@@ -211,6 +218,21 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def prune_fit_range(covinv_jack, coords_jack):
+    """Zero out parts of the inverse covariance matrix to exclude items
+    from fit range.  Thus, the contribution to chi^2 will be 0.
+    """
+    excl = FIT_EXCL
+    for i, xcoord in enumerate(coords_jack[:,0]):
+        for a in range(len(excl)):
+            for j in range(len(excl[a])):
+                if xcoord == excl[a][j]:
+                    assert covinv_jack[i,:,a,:].all() == 0, "Prune failed."
+                    assert covinv_jack[:,i,a,:].all() == 0, "Prune failed."
+                    assert covinv_jack[:,i,:,a].all() == 0, "Prune failed."
+                    assert covinv_jack[i,:,:,a].all() == 0, "Prune failed."
+    return covinv_jack
+
 def prune_phase_shift_arr(arr):
     """Get rid of jackknife samples for which the phase shift calc failed.
     (useful for testing, not useful for final output graphs)
@@ -290,10 +312,13 @@ def get_covjack(cov_factor, params):
 
 if CORRMATRIX:
     def invert_cov(covjack, params):
-        """Invert the covariance matrix via correlation matrix"""
+        """Invert the covariance matrix via correlation matrix
+        assumes shape is time, time or time, dimops, time dimops;
+        returns time, time or time, time, dimops, dimops
+        """
         if params.dimops == 1:  # i.e. if not using the GEVP
             if UNCORR:
-                covjack = np.diagflat(covjack)
+                covjack = np.diagflat(np.diag(covjack))
             corrjack = np.zeros(covjack.shape)
             weightings = np.sqrt(np.diag(covjack))
             reweight = np.diagflat(1./weightings)
@@ -318,7 +343,10 @@ if CORRMATRIX:
 
 else:
     def invert_cov(covjack, params):
-        """Invert the covariance matrix"""
+        """Invert the covariance matrix,
+        assumes shape is time, time or time, dimops, time dimops;
+        returns time, time or time, time, dimops, dimops
+        """
         if params.dimops == 1:  # i.e. if not using the GEVP
             covinv_jack = inv(covjack)
         else:
@@ -366,24 +394,74 @@ def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
         else:
             cov_factor = getcovfactor(params, reuse, config_num, reuse_inv)
         covjack = get_covjack(cov_factor, params)
-        try:
-            covinv_jack = invert_cov(covjack, params)
-            covinv_jack = normalize_covinv(covinv_jack, params)
-            flag = 0
-        except np.linalg.linalg.LinAlgError as err:
-            if str(err) == 'Singular matrix':
-                print("Covariance matrix is singular",
-                      "in jackknife fit.")
-                print("Failing config_num=", config_num)
-                print("Attempting to continue",
-                      "fit with every other time slice",
-                      "eliminated.")
-                print("Plotted error bars should be " +
-                      "considered suspect.")
-                flag = 1
-            else:
-                raise
+        covinv_jack_pruned, flag = prune_covjack(params, covjack,
+                                             coords_jack, flag)
+    covinv_jack = prune_fit_range(covinv_jack_pruned, coords_jack)
     return coords_jack, covinv_jack, jack_errorbars(covjack, params)
+
+def prune_covjack(params, covjack, coords_jack, flag):
+    """Prune the covariance matrix based on config excluded time slices"""
+    excl = []
+    time = len(params.time_range)
+    # convert x-coordinates to index basis
+    for i, xcoord in enumerate(coords_jack[:,0]):
+        for a in range(len(FIT_EXCL)):
+            for j in range(len(FIT_EXCL[a])):
+                if xcoord == FIT_EXCL[a][j]:
+                    excl.append(a*time+i)
+    # allocate space for matrix
+    dim = int(np.sqrt(np.prod(list(covjack.shape))))
+    matrix = np.zeros((dim, dim))
+    # rotate tensor basis to dimops, dimops, time, time
+    # (or time, time if not GEVP)
+    covjack = swap(covjack, len(covjack.shape)-1, 0)
+    # fill in matrix
+    if params.dimops == 1:
+        matrix = np.copy(covjack)
+    else:
+        for a in range(params.dimops):
+            for b in range(params.dimops):
+                matrix[a*time:( a+1)*time,
+                        b*time:( b+1)*time] = covjack[a, b, :, :]
+    mask = np.zeros(matrix.shape)
+    mask[excl, :] = 1
+    mask[:, excl] = 1
+    marray = ma.masked_array(matrix, dtype=float,
+                             fill_value=0, copy=True, mask=mask)
+    matrix = np.delete(matrix, excl, axis=0)
+    matrix = np.delete(matrix, excl, axis=1)
+    params2 = namedtuple('temp', ['dimops', 'num_configs'])
+    params2.dimops = 1
+    params2.num_configs = params.num_configs
+    try:
+        matrix = invert_cov(matrix, params2)
+        marray[~marray.mask] = normalize_covinv(matrix, params2).reshape(-1)
+        flag = 0
+    except np.linalg.linalg.LinAlgError as err:
+        if str(err) == 'Singular matrix':
+            print("Covariance matrix is singular",
+                  "in jackknife fit.")
+            print("Failing config_num=", config_num)
+            print("Attempting to continue",
+                  "fit with every other time slice",
+                  "eliminated.")
+            print("Plotted error bars should be " +
+                  "considered suspect.")
+            flag = 1
+        else:
+            raise
+    marray[marray.mask] = marray.fill_value
+    covinv_jack = np.zeros(covjack.shape, dtype=float)
+    if params.dimops == 1:
+        covinv_jack = np.copy(marray.data)
+    else:
+        for a in range(params.dimops):
+            for b in range(params.dimops):
+                covinv_jack[a, b, :, :] = marray.data[a*time:(a+1)*time,
+                                                      b*time:(b+1)*time]
+    covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
+    covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)
+    return covinv_jack, flag
 
 
 def jack_errorbars(covjack, params):

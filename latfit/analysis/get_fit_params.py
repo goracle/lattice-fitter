@@ -13,7 +13,8 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     num_configs is the number of configurations to average over.
     """
     params = namedtuple('fit_params', ['dimops', 'num_configs',
-                                       'prefactor', 'time_range'])
+                                       'prefactor', 'time_range', 'xstep'])
+    params.xstep = xstep
     params.num_configs = len(reuse[xmin])
     try:
         params.dimops = len(cov[0][0])

@@ -40,8 +40,8 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # METHODS/PARAMS
 
@@ -52,19 +52,23 @@ UNCORR = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [0]
+TSEP_VEC = [3, 3]
 LT = 64
 
+# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
+
+FIT_EXCL = [[],[7, 8]]
+
 # additive constant
-ADD_CONST_VEC = [True]
+ADD_CONST_VEC = [True, True]
 ADD_CONST = ADD_CONST_VEC[0]
 
 # isospin value (convenience switch)
 ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = False
 SIGMA = True
+SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal000'
