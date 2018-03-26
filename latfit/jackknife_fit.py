@@ -459,6 +459,7 @@ def prune_covjack(params, covjack, coords_jack, flag):
             for b in range(params.dimops):
                 covinv_jack[a, b, :, :] = marray.data[a*time:(a+1)*time,
                                                       b*time:(b+1)*time]
+        # to put things back in time, time, dimops, dimops basis
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)
     return covinv_jack, flag
