@@ -38,8 +38,14 @@ def main():
                 pass
             gn1 = h5py.File(file2, 'r')
             datal = []
-            for data in gn1:
-                datal.append(str(data))
+            try:
+                for data in gn1:
+                    datal.append(str(data))
+            except RuntimeError:
+                print("Bad symbol table in:", file2)
+                print("Dataset right before failure:", datal)
+                print("trying to link to", file1)
+                raise
             gn1.close()
             for data in datal:
                 if data not in fn1:
