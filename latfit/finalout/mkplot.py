@@ -43,6 +43,7 @@ from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
+from latfit.config import PICKLE
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})

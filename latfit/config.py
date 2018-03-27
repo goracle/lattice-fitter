@@ -3,6 +3,7 @@ import sys
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
+from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
 
 # TYPE OF FIT
@@ -67,11 +68,18 @@ ADD_CONST = ADD_CONST_VEC[0]
 ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal000'
+MOMSTR = 'momtotal001'
+# group irrep
+IRREP = 'T_1_1MINUS'
+IRREP = 'T_1_2MINUS'
+IRREP = 'T_1_3MINUS'
+IRREP = 'A_1PLUS'
+IRREP = 'A1'
 
 # calculate the I=0 phase shift?
 
@@ -86,14 +94,14 @@ misc.MASS = PION_MASS/AINVERSE
 # dispersive lines
 PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
-DISP_ENERGIES = [2*misc.dispersive([1,0,0])]
+DISP_ENERGIES = [2*misc.dispersive([1,0,1])]
 
 # pickle, unpickle
 
+PICKLE = None
+PICKLE = 'clean'
 PICKLE = 'pickle'
 PICKLE = 'unpickle'
-PICKLE = 'clean'
-PICKLE = None
 
 PICKLE_LIST = []
 
@@ -119,86 +127,7 @@ else:
     else:
         START_PARAMS = [-1.18203895e+01, 4.46978036e-01]
 
-# 2x2 I = 0
-# GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-# 'sep4/pipisigma_momsrc000_momsnk000'],
-# ['sep4/sigmapipi_momsrc000_momsnk000', 'sigmasigma_mom000']]
 
-# GEVP_DIRS = [['sep4/pipi_mom1src000_mom2src000_mom1snk000',
-# 'S_pipipipi_A_1PLUS'], ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS']]
-
-if ISOSPIN == 0:
-    if not SIGMA and MOMSTR == 'momtotal000':
-        # no sigma
-        GEVP_DIRS = [
-            ['I0/S_pipiS_pipi_A_1PLUS.jkdat', 'I0/S_pipipipi_A_1PLUS.jkdat'],
-            ['I0/pipiS_pipi_A_1PLUS.jkdat', 'I0/pipi_A_1PLUS.jkdat']
-        ]
-    elif MOMSTR == 'momtotal000':
-
-        if DIM == 2:
-            # sigma
-            GEVP_DIRS = [
-                ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-                 'I0/S_pipisigma_A_1PLUS.jkdat'],
-                ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-                 'I0/sigmasigma_A_1PLUS.jkdat']
-            ]
-        elif DIM == 3:
-            # 3x3, I0
-            GEVP_DIRS = [
-                ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
-                'I0/S_pipisigma_A_1PLUS.jkdat',
-                'I0/S_pipipipi_A_1PLUS.jkdat'],
-                ['I0/sigmaS_pipi_A_1PLUS.jkdat',
-                'I0/sigmasigma_A_1PLUS.jkdat',
-                'I0/sigmapipi_A_1PLUS.jkdat'],
-                ['I0/pipiS_pipi_A_1PLUS.jkdat',
-                'I0/pipisigma_A_1PLUS.jkdat',
-                'I0/pipi_A_1PLUS.jkdat']
-            ]
-
-        ##non-zero center of mass momentum, one stationary pion
-        # sigma
-    else:
-        GEVP_DIRS = [
-            ['I0/pipi_A2.jkdat',
-             'I0/pipisigma_A2.jkdat'],
-            ['I0/sigmapipi_A2.jkdat',
-             'I0/sigmasigma_A2.jkdat']
-        ]
-
-
-elif ISOSPIN == 2:
-    if MOMSTR == 'momtotal000':
-        # pipi with one unit of momentum
-        GEVP_DIRS = [
-            ['I2/S_pipiS_pipi_A_1PLUS.jkdat', 'I2/S_pipipipi_A_1PLUS.jkdat'],
-            ['I2/pipiS_pipi_A_1PLUS.jkdat', 'I2/pipi_A_1PLUS.jkdat']
-        ]
-    else:
-        ##non-zero center of mass momentum, one stationary pion
-        # sigma
-        GEVP_DIRS = [
-            ['I0/pipi_A2.jkdat',
-                'I0/pipisigma_A2.jkdat'],
-            ['I0/sigmapipi_A2.jkdat',
-                'I0/sigmasigma_A2.jkdat']
-        ]
-
-elif ISOSPIN == 1:
-    GEVP_DIRS = [
-        ['I1/pipi_A_1PLUS.jkdat',
-            'I1/pipirho_A_1PLUS.jkdat'],
-        ['I1/rhopipi_A_1PLUS.jkdat',
-            'I1/rhorho_A_1PLUS.jkdat']
-    ]
-
-# 3x3, I2, pipi, 000, 100, 110
-# GEVP_DIRS = [['S_pipiS_pipi_A_1PLUS', 'S_pipipipi_A_1PLUS',
-# 'S_pipiUUpipi_A_1PLUS'],
-# ['pipiS_pipi_A_1PLUS', 'pipi_A_1PLUS', 'pipiUUpipi_A_1PLUS'],
-# ['UUpipiS_pipi_A_1PLUS', 'UUpipipipi_A_1PLUS', 'UUpipiUUpipi_A_1PLUS']]
 
 # modify the configs used and bin
 
@@ -218,7 +147,7 @@ BINNUM = 1
 
 # title prefix
 if GEVP:
-    if len(GEVP_DIRS) == 2:
+    if DIM == 2:
         if ISOSPIN == 0:
             if SIGMA:
                 TITLE_PREFIX = r'$\pi\pi, \sigma$, I0, ' + MOMSTR + ' '
@@ -228,7 +157,7 @@ if GEVP:
             TITLE_PREFIX = r'$\pi\pi$, I2, ' + MOMSTR + ' '
         elif ISOSPIN == 1:
             TITLE_PREFIX = r'$\pi\pi, \rho$ I1, ' + MOMSTR + ' '
-    elif len(GEVP_DIRS) == 3:
+    elif DIM == 3:
         if SIGMA and ISOSPIN == 0:
             TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
         else:
@@ -500,7 +429,11 @@ else:
         """Fit function."""
         return prefit_func(ctime, trial_params)
 
+GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
+print(GEVP_DIRS)
 MULT = len(GEVP_DIRS) if GEVP else 1
+if GEVP:
+    assert DIM == MULT, "Error in GEVP_DIRS length."
 assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS

@@ -160,7 +160,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # average results, compute jackknife uncertainties
 
         # pickle/unpickle the jackknifed arrays
-        min_arr, result_min = pickl(min_arr, result_min)
+        min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
 
         # compute p-value jackknife uncertainty
         result_min.pvalue_err = np.sqrt(params.prefactor*np.sum((
@@ -224,23 +224,30 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
-def pickl(min_arr, result_min):
+def pickl(min_arr, result_min, chisq_min_arr):
     """Pickle or unpickle the results from the jackknife fit loop
     to do: make more general use **kwargs
     """
     if PICKLE == 'pickle':
         pickle.dump(min_arr, open(unique_pickle_file("min_arr"), "wb"))
         pickle.dump(result_min.phase_shift, open(unique_pickle_file("phase_shift"), "wb"))
+        pickle.dump(chisq_min_arr, open(unique_pickle_file("chisq_min_arr"), "wb"))
     elif PICKLE == 'unpickle':
         _, ri = unique_pickle_file("min_arr", True)
-        _, rj = unique_pickle_file("min_arr", True)
+        _, rj = unique_pickle_file("phase_shift", True)
+        _, rk = unique_pickle_file("chisq_min_arr", True)
         for i in range(ri):
-            min_arr += 1.0/ri*pickle.load(open("min_arr"+str(i)+".p", "rb"))
+            min_arr /= (ri+1)
+            min_arr += 1.0/(ri+1)*pickle.load(open("min_arr"+str(i)+".p", "rb"))
         for j in range(rj):
-            result_min.phase_shift += 1.0/rj*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
+            result_min.phase_shift /= (rj+1)
+            result_min.phase_shift += 1.0/(rj+1)*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
+        for k in range(rk):
+            chisq_min_arr /= (rk+1)
+            chisq_min_arr += 1.0/(rk+1)*pickle.load(open("chisq_min_arr"+str(k)+".p", "rb"))
     elif PICKLE is None:
         pass
-    return min_arr, result_min
+    return min_arr, result_min, chisq_min_arr
 
 def unique_pickle_file(filestr, reti=False):
     i = 0
