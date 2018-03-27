@@ -1,7 +1,9 @@
 """Fit under a jackknife"""
 import sys
+import os
 from collections import namedtuple
 from copy import deepcopy as copy
+import pickle
 import numpy as np
 from numpy import ma
 from numpy import swapaxes as swap
@@ -17,6 +19,7 @@ from latfit.config import CORRMATRIX
 from latfit.config import GEVP
 from latfit.config import UNCORR
 from latfit.config import FIT_EXCL
+from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
@@ -156,6 +159,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # average results, compute jackknife uncertainties
 
+        # pickle/unpickle the jackknifed arrays
+        min_arr, result_min = pickl(min_arr, result_min)
+
         # compute p-value jackknife uncertainty
         result_min.pvalue_err = np.sqrt(params.prefactor*np.sum((
             result_min.pvalue-np.mean(result_min.pvalue))**2))
@@ -217,6 +223,38 @@ else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def pickl(min_arr, result_min):
+    """Pickle or unpickle the results from the jackknife fit loop
+    to do: make more general use **kwargs
+    """
+    if PICKLE == 'pickle':
+        pickle.dump(min_arr, open(unique_pickle_file("min_arr"), "wb"))
+        pickle.dump(result_min.phase_shift, open(unique_pickle_file("phase_shift"), "wb"))
+    elif PICKLE == 'unpickle':
+        _, ri = unique_pickle_file("min_arr", True)
+        _, rj = unique_pickle_file("min_arr", True)
+        for i in range(ri):
+            min_arr += 1.0/ri*pickle.load(open("min_arr"+str(i)+".p", "rb"))
+        for j in range(rj):
+            result_min.phase_shift += 1.0/rj*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
+    elif PICKLE is None:
+        pass
+    return min_arr, result_min
+
+def unique_pickle_file(filestr, reti=False):
+    i = 0
+    while os.path.exists(filestr+"%s.p" % i):
+        if PICKLE == 'clean':
+            os.remove(filestr+"%s.p")
+        i += 1
+    unique_filestr = filestr+str(i)+".p"
+    if reti:
+        retval = (unique_filestr, i)
+    else:
+        retval = unique_filestr
+    return retval
+
 
 def prune_fit_range(covinv_jack, coords_jack):
     """Zero out parts of the inverse covariance matrix to exclude items

@@ -88,6 +88,15 @@ PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
 DISP_ENERGIES = [2*misc.dispersive([1,0,0])]
 
+# pickle, unpickle
+
+PICKLE = 'pickle'
+PICKLE = 'unpickle'
+PICKLE = 'clean'
+PICKLE = None
+
+PICKLE_LIST = []
+
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
 LOG = False
