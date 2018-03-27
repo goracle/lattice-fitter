@@ -45,6 +45,7 @@ def main():
                 print("Bad symbol table in:", file2)
                 print("Dataset right before failure:", datal)
                 print("trying to link to", file1)
+                continue
                 raise
             gn1.close()
             for data in datal:
