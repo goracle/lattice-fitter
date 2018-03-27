@@ -57,7 +57,7 @@ LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-FIT_EXCL = [[],[7, 8]]
+FIT_EXCL = [[],[6, 7, 8]]
 
 # additive constant
 ADD_CONST_VEC = [True, True]

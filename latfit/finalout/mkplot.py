@@ -392,7 +392,7 @@ def get_xfit(dimops, xcoord, step_size=None):
     else:
         xfit = np.zeros((dimops), dtype=object)
         for i in range(dimops):
-            xfit[i] = xcoord
+            xfit[i] = np.array(xcoord)
             todel = []
             for j, coord in enumerate(xcoord):
                 if coord in FIT_EXCL[i]:
@@ -400,7 +400,7 @@ def get_xfit(dimops, xcoord, step_size=None):
             xfit[i] = np.delete(xfit[i], todel)
             step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
                 len(xfit[i])-1) if step_size is None else step_size
-            xfit[i] = list(np.arange(xfit[i][0], xcoord[len(xfit[i])-1]+step_size, step_size))
+            xfit[i] = list(np.arange(xfit[i][0], xfit[i][len(xfit[i])-1]+step_size, step_size))
     return xfit
 
 
@@ -417,7 +417,7 @@ if GEVP:
             axvar.add_patch((
                 plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
                     (xfit[i][0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                    xcoord[len(xfit[i])-1]-xfit[i][0]+1,  # width
+                    xfit[i][len(xfit[i])-1]-xfit[i][0]+1,  # width
                     2*param_err[i],  # height
                     fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
                     # transform=fig.transFigure
