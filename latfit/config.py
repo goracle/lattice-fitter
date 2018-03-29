@@ -68,18 +68,18 @@ ADD_CONST = ADD_CONST_VEC[0]
 ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = False
 SIGMA = True
+SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal000'
 MOMSTR = 'momtotal001'
+MOMSTR = 'momtotal000'
 # group irrep
 IRREP = 'T_1_1MINUS'
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_3MINUS'
-IRREP = 'A_1PLUS'
 IRREP = 'A1'
+IRREP = 'A_1PLUS'
 
 # calculate the I=0 phase shift?
 
@@ -94,14 +94,14 @@ misc.MASS = PION_MASS/AINVERSE
 # dispersive lines
 PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
-DISP_ENERGIES = [2*misc.dispersive([1,0,1])]
+DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
 
 # pickle, unpickle
 
-PICKLE = None
 PICKLE = 'clean'
 PICKLE = 'pickle'
 PICKLE = 'unpickle'
+PICKLE = None
 
 PICKLE_LIST = []
 
