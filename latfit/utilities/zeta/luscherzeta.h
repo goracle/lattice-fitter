@@ -111,6 +111,7 @@ class LuscherZeta{
   GSLvector d; //H-parity or G-parity twist directions (x,y,z): there is a twist, use 1.0 or else use 0.0 
   GSLvector dnorm; //Normalised BC vector
   int N; //First integral is over integer-component vectors in Z^3. The input parameter 'N" sets the maximum magnitude of these vectors
+  double gamma; // standard relativistic boost factor
 
   //Errors on the integrals
   double epsabs;
@@ -151,7 +152,13 @@ class LuscherZeta{
   }
 
   double z3sum(const double q, const GSLvector &n, const bool imag_q = false) const{
-    double r2 = square(n[0]+d[0]/2.0)+square(n[1]+d[1]/2.0)+square(n[2]+d[2]/2.0);
+    //inverse gamma transform n
+    double dcoeff = dot(n, dnorm);
+    GSLvector nperp = n - dcoeff*dnorm;
+    GSLvector nmod = (dcoeff/gamma)*dnorm; //n_parallel
+    nmod += nperp;
+
+    double r2 = square(nmod[0]+d[0]/(2.0*gamma))+square(nmod[1]+d[1]/(2.0*gamma))+square(nmod[2]+d[2]/(2.0*gamma));
     double q2 = imag_q ? -square(q) : square(q);
     double out = 0.0;
         
@@ -166,20 +173,28 @@ class LuscherZeta{
 
     //integral \int_0^1 dt e^{q^2t} (\pi/t)^{3/2} e^{-\pi^2 r^2/t} modified for APBC where appropriate (modifies r (aka n) )
     //define n_perp = n - (n \cdot dnorm) dnorm  is perpendicular to d
-    double dcoeff = dot(n,dnorm);
-    GSLvector np = n - dcoeff*dnorm;
-    double gn2 = square(dcoeff) + np.norm2();
+    double gn2 = square(dcoeff*gamma) + nperp.norm2();
 
     double int_n = int_zeta(q*q,gn2);
-    out += int_n*pow(-1, dot(n,d));
+    out += int_n*pow(-1, dot(n,d))*gamma;
 
     return out;
   }
   
  public:
-  LuscherZeta(): d(3), dnorm(3), N(5), epsabs(1e-06),epsrel(1e-06) {}
-  LuscherZeta(const double x, const double y, const double z): d(3), dnorm(3), N(5), epsabs(1e-06),epsrel(1e-06){
+  LuscherZeta(): d(3), dnorm(3), N(5), epsabs(1e-06),epsrel(1e-06), gamma(1.0) {}
+  LuscherZeta(const double x, const double y, const double z): d(3), dnorm(3), N(5), epsabs(1e-06),epsrel(1e-06), gamma(1.0){
     setTwists(x,y,z);
+  }
+
+  void setBoost(const double x, const double y, const double z, const double _gamma){
+    setTwists(x,y,z); 
+    gamma = _gamma;
+  }
+
+  void setBoost(GSLvector boost, const double _gamma){
+    setTwists(boost[0], boost[1], boost[2]);
+    gamma = _gamma; 
   }
 
   void setTwists(const double x, const double y, const double z){
@@ -188,7 +203,7 @@ class LuscherZeta{
     if(d[0]==d[1]==d[2]==0) dnrm = 1;
     
     for(int i=0;i<3;i++){
-      if(d[i] != 0.0 && d[i] != 1.0){ std::cout << "LuscherZeta::setTwists : Error, arguments must be 0 or 1\n"; exit(-1); }
+      //if(d[i] != 0.0 && d[i] != 1.0){ std::cout << "LuscherZeta::setTwists : Error, arguments must be 0 or 1\n"; exit(-1); }
       dnorm[i] = double(d[i])/dnrm; //normalize d
     }
   }
@@ -231,13 +246,13 @@ class LuscherZeta{
     }
     if(warn) printf("Warning: reaches the maximum loop number when doing the summation\n");
 
-    result += pow(M_PI,1.5)*const_part;
+    result += pow(M_PI,1.5)*const_part*gamma;
     result /= sqrt(4*M_PI);
     return result;
   }
 
   inline double calcPhi(const double q, const bool imag_q = false) const{
-    return atan(-q*pow(M_PI,1.5)/calcZeta00(q, imag_q));
+    return atan(-q*pow(M_PI,1.5)*gamma/calcZeta00(q, imag_q));
   }
 
   inline double calcPhiDeriv(const double q, const double frac_shift = 1e-04) const{

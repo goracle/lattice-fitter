@@ -2,18 +2,33 @@
 #include <stdlib.h>     /* strtod */
 #include <ostream>
 #include <iostream>
+#include <gsl/gsl_vector.h>
 #include "luscherzeta.h"
 
 int main(int argc, char* argv[])
 {
-  if(argc!=4){
-    printf("wrong number of arguments; expected E_pipi, m_pi, L\n");
+  if(argc > 1 && argc!=4 && argc!= 7){
+    printf("wrong number of arguments; expected E_pipi, m_pi, L (optional:boost)\n");
     exit(-1);
+  }else if(argc == 1){
+    ZetaTesting z;
+    exit(0);
   }
 
   double E_pipi = strtod(argv[1], NULL);
   double m_pi = strtod(argv[2], NULL);
   double L_box = strtod(argv[3], NULL);
+  GSLvector boost(3);
+  if(argc==4){boost[0] = 0; boost[1] = 0; boost[2] = 0;}
+  else if(argc == 7) {
+    //printf("setting boost argv length = %d\n", argc);
+    for(int i=0; i<3; i++){
+      boost[i] = strtod(argv[4+i], NULL);
+    }
+  }else{
+    printf("boost vector input invalid (needs 3 ints)\n");
+    exit(-1);
+  }
 
   //printf("calculating phase shift with E_pipi=%e, m_pi=%e, L_box=%e\n", E_pipi, m_pi, L_box);
 
@@ -24,10 +39,16 @@ int main(int argc, char* argv[])
   double p_pipi = sqrt( arg );
   double q_pipi = L_box * p_pipi /( 2 * M_PI ); //M_PI = pi
 
+  double center_of_mass = E_pipi*E_pipi-(2 * M_PI/L_box)*(2 * M_PI/L_box)*boost.norm2();
+  assert(center_of_mass>0);
+  double gamma = E_pipi/sqrt(center_of_mass);
+
   //printf("calculating phase shift with p_pipi=%e, q_pipi=%e, test=%e\n", p_pipi, q_pipi, sqrt(E_pipi));
 
+  //printf("boost=%d, %d, %d\n", (int)boost[0], (int)boost[1], (int)boost[2]);
+
   LuscherZeta zeta;
-  zeta.setTwists(0,0,0); //periodic BC's
+  zeta.setBoost(boost, gamma); //periodic BC's
 
   double phi = zeta.calcPhi(q_pipi, imag_q)*180/M_PI;
   printf("%.16e", -phi);

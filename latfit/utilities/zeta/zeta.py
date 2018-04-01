@@ -6,7 +6,8 @@ import os
 import math
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ, AINVERSE, ISOSPIN
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ, AINVERSE, ISOSPIN, MOMSTR
+from latfit.utilities import read_file as rf
 import matplotlib.pyplot as plt
 
 class ZetaError(Exception):
@@ -26,9 +27,12 @@ if CALC_PHASE_SHIFT:
             except (IndexError, TypeError):
                 pass
         epipi = epipi*AINVERSE
+
+        comp = np.array(rf.procmom(MOMSTR))*AINVERSE
         #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
-        arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX)]
+        arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX),
+                   str(comp[0]), str(comp[1]), str(comp[2])]
         try:
             out = subprocess.check_output(arglist)
         except FileNotFoundError:
