@@ -53,33 +53,34 @@ UNCORR = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 3]
+TSEP_VEC = [3, 0]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-FIT_EXCL = [[],[6, 7, 8]]
+FIT_EXCL = [[],[6, 7,8  ]]
 
 # additive constant
-ADD_CONST_VEC = [True, True]
-ADD_CONST = ADD_CONST_VEC[0]
+ADD_CONST_VEC = [True, False]
+ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
 ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal001'
 MOMSTR = 'momtotal000'
+MOMSTR = 'momtotal001'
 # group irrep
 IRREP = 'T_1_1MINUS'
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_3MINUS'
-IRREP = 'A1'
+IRREP = 'T_1_MINUS'
 IRREP = 'A_1PLUS'
+IRREP = 'A1'
 
 # calculate the I=0 phase shift?
 
@@ -99,11 +100,9 @@ DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
 # pickle, unpickle
 
 PICKLE = 'clean'
-PICKLE = 'pickle'
 PICKLE = 'unpickle'
+PICKLE = 'pickle'
 PICKLE = None
-
-PICKLE_LIST = []
 
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
@@ -137,7 +136,7 @@ else:
 
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
-ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = [0]
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
