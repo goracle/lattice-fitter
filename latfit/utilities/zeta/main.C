@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-  if(argc > 1 && argc!=4 && argc!= 7){
+  if(argc > 1 && argc!=4 && argc!= 8){
     printf("wrong number of arguments; expected E_pipi, m_pi, L (optional:boost)\n");
     exit(-1);
   }else if(argc == 1){
@@ -18,13 +18,15 @@ int main(int argc, char* argv[])
   double E_pipi = strtod(argv[1], NULL);
   double m_pi = strtod(argv[2], NULL);
   double L_box = strtod(argv[3], NULL);
+  double gamma = 1.0;
   GSLvector boost(3);
   if(argc==4){boost[0] = 0; boost[1] = 0; boost[2] = 0;}
-  else if(argc == 7) {
+  else if(argc == 8) {
     //printf("setting boost argv length = %d\n", argc);
     for(int i=0; i<3; i++){
       boost[i] = strtod(argv[4+i], NULL);
     }
+    gamma = strtod(argv[7], NULL);
   }else{
     printf("boost vector input invalid (needs 3 ints)\n");
     exit(-1);
@@ -39,9 +41,7 @@ int main(int argc, char* argv[])
   double p_pipi = sqrt( arg );
   double q_pipi = L_box * p_pipi /( 2 * M_PI ); //M_PI = pi
 
-  double center_of_mass = E_pipi*E_pipi-(2 * M_PI/L_box)*(2 * M_PI/L_box)*boost.norm2();
-  assert(center_of_mass>0);
-  double gamma = E_pipi/sqrt(center_of_mass);
+  assert(gamma>=1.0);
 
   //printf("calculating phase shift with p_pipi=%e, q_pipi=%e, test=%e\n", p_pipi, q_pipi, sqrt(E_pipi));
 
