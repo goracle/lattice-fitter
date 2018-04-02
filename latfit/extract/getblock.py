@@ -105,10 +105,10 @@ if EFF_MASS:
                 #print(num, file_tup)
                 print(num, timeij)
                 sys.exit(1)
-            retblk.append(np.array(sorted([proc_meff(
+            retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op],
                  eigvals4[op]), index=op, time_arr=timeij)
-                                    for op in range(dimops)])))
+                                    for op in range(dimops)]))
         return retblk
 
 else:
