@@ -20,7 +20,7 @@ def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
 
 def hierarchy(index, dim, isospin, sigma):
     """Return the operator for this dimension, in ascending energy order"""
-    if isospin == 0 or isopsin == 2:
+    if isospin == 0 or isospin == 2:
         if index == 0:
             retstr = 'S_pipi'
         elif index > 0:
