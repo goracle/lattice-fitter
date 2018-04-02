@@ -5,6 +5,7 @@ import numpy as np
 import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
+from math import sqrt, pi
 
 # TYPE OF FIT
 
@@ -58,7 +59,7 @@ LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-FIT_EXCL = [[],[6, 7,8  ]]
+FIT_EXCL = [[],[2,5,6, 7,8  ]]
 
 # additive constant
 ADD_CONST_VEC = [True, False]
@@ -80,7 +81,7 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A_1PLUS'
-IRREP = 'A1'
+IRREP = 'A1_avg'
 
 # calculate the I=0 phase shift?
 
@@ -95,7 +96,8 @@ misc.MASS = PION_MASS/AINVERSE
 # dispersive lines
 PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
-DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
+DISP_ADD = (2*pi/L_BOX)**2*1
+DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 
 # pickle, unpickle
 
@@ -136,7 +138,7 @@ else:
 
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
-ELIM_JKCONF_LIST = [0]
+ELIM_JKCONF_LIST = []
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1

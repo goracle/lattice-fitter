@@ -7,7 +7,7 @@ def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
     """Return array of gevp dirs"""
     dirstr = 'I'+str(isospin)+"/"
     irrepstr = '_'+str(irrep)
-    endstr = '.jkdat' if momstr == 'momtotal000' else comp(momstr)+'.jkdat'
+    endstr = '.jkdat' if irrep != 'A1' else comp(momstr)+'.jkdat'
     retdirs = [[None for i in range(dim)] for j in range(dim)]
     for i in range(dim):
         for j in range(dim):
