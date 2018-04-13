@@ -1,6 +1,8 @@
 """Library of fit functions to use"""
 
-from math import log
+import sys
+from collections import namedtuple
+from math import log, cosh, sinh, tanh
 from numbers import Number
 import numpy as np
 from numpy import exp
@@ -13,7 +15,8 @@ class FitFunctions:
     def __init__(self):
         """Define functions from flist."""
         self.flist = ['fit_func_exp', 'ratio',  'acosh_ratio',
-                      'fit_func_1p', 'fit_func_sym', 'fit_func_exp_gevp']
+                      'fit_func_1p', 'fit_func_sym', 'fit_func_exp_gevp',
+                      'pion_ratio', 'fit_func_1p_exp', 'fit_func_1p_pionratio']
         self.f = {}
         self._select = {}
         self._fitfunc = FitFunc()
@@ -25,15 +28,17 @@ class FitFunctions:
             self.f[func] = [getattr(self._fitfunc, func),
                             getattr(self._fitfuncadd, func)]
 
-    def select(self, add_const, log, lt, c, tstep):
+    def select(self, up):
         """Select which set of functions to use"""
-        index = 1 if add_const else 0
-        LOG = log
-        LT = lt
-        C = c
-        TSTEP = tstep
-        self._fitfuncadd.update(log, lt, c, tstep)
-        self._fitfunc.update(log, lt, c, tstep)
+        index = 1 if up.add_const else 0
+        LOG = up.log
+        LT = up.lt
+        C = up.c
+        TSTEP = up.tstep
+        PION_MASS = up.pionmass
+        PIONRATIO = up.pionratio
+        self._fitfuncadd.update(up)
+        self._fitfunc.update(up)
         self._update_f()
         for func in self.f:
             self._select[func] = self.f[func][index]
@@ -47,6 +52,8 @@ LOG = True
 LT = 1
 C = 0
 TSTEP = 1
+PION_MASS = 0
+PIONRATIO = False
 
 class FitFuncAdd:
     """Exponential fit functions with additive constant"""
@@ -56,12 +63,16 @@ class FitFuncAdd:
         self._lt = LT
         self._c = C
         self._tstep = TSTEP
+        self._pionmass = PION_MASS
+        self._pionratio = PIONRATIO
 
-    def update(self, log, lt, c, tstep):
-        self._log = log
-        self._lt = lt
-        self._c = c
-        self._tstep = tstep
+    def update(self, up):
+        self._log = up.log
+        self._lt = up.lt
+        self._c = up.c
+        self._tstep = up.tstep
+        self._pionmass = up.pionmass
+        self._pionratio = up.pionratio 
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -122,6 +133,11 @@ class FitFuncAdd:
                     exp(-trial_params[1]*(lt-(TRHS)))) + trial_params[2])
 
     def fit_func_1p(self, ctime, trial_params, lt=None):
+        """Meta function for effective mass."""
+        ret = self.fit_func_1p_pionratio(ctime, trial_params, lt) if self._pionratio else self.fit_func_1p_exp(ctime, trial_params, lt)
+        return ret
+
+    def fit_func_1p_exp(self, ctime, trial_params, lt=None):
         """one parameter eff. mass fit function
         for EFF_MASS_METHOD = 3
         """
@@ -131,6 +147,17 @@ class FitFuncAdd:
                 for i in range(3)]
         return self.ratio(corrs, ctime, nocheck=True)
 
+    def fit_func_1p_pionratio(self, ctime, trial_params, lt=None):
+        lt = self._lt if lt is None else lt
+        tp = [ctime+i*self._tstep+1/2-lt/2.0 for i in range(3)]
+        corrs = [sinh(tp[i]*trial_params[0])+cosh(tp[i]*trial_params[0])/tanh(2*tp[i]*trial_params[1]) for i in range(3)]
+        return self.ratio(corrs, ctime, nocheck=True)
+
+    def pion_ratio(self, ctime, trial_params, lt=None):
+        """Include pions in the denominator of eff mass ratio."""
+        tp = ctime+1/2-self._lt/2.0
+        return trial_params[0]*(cosh(tp*trial_params[1])+sinh(tp*trial_params[1])/tanh(2*tp*trial_params[2]))
+
 class FitFunc:
     """Exponential fit functions without additive constant"""
 
@@ -139,12 +166,16 @@ class FitFunc:
         self._lt = LT
         self._c = C
         self._tstep = TSTEP
+        self._pionmass = PION_MASS
+        self._pionratio = PIONRATIO
 
-    def update(self, log, lt, c, tstep):
-        self._log = log
-        self._lt = lt
-        self._c = c
-        self._tstep = tstep
+    def update(self, up):
+        self._log = up.log
+        self._lt = up.lt
+        self._c = up.c
+        self._tstep = up.tstep
+        self._pionmass = up.pionmass
+        self._pionratio = up.pionratio 
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -207,6 +238,11 @@ class FitFunc:
                      exp(-trial_params[1]*(lt-(TRHS)))))
 
     def fit_func_1p(self, ctime, trial_params, lt=None):
+        """Meta function for effective mass."""
+        ret = self.fit_func_1p_pionratio(ctime, trial_params, lt) if self._pionratio else self.fit_func_1p_exp(ctime, trial_params, lt)
+        return ret
+
+    def fit_func_1p_exp(self, ctime, trial_params, lt=None):
         """one parameter eff. mass fit function
         for EFF_MASS_METHOD = 3
         """
@@ -216,3 +252,17 @@ class FitFunc:
                 for i in range(2)]
         return self.ratio(corrs, ctime, nocheck=True)
 
+    def fit_func_1p_pionratio(self, ctime, trial_params, lt=None):
+        """one parameter eff. mass fit function
+        for EFF_MASS_METHOD = 3
+        """
+        lt = self._lt if lt is None else lt
+        tp = [ctime+i*self._tstep+1/2-lt/2.0 for i in range(2)]
+        corrs = [sinh(tp[i]*trial_params[0])+cosh(tp[i]*trial_params[0])/tanh(2*tp[i]*self._pionmass) for i in range(2)]
+        return self.ratio(corrs, ctime, nocheck=True)
+
+    def pion_ratio(self, ctime, trial_params, lt=None):
+        """Include pions in the denominator of eff mass ratio."""
+        lt = self._lt if lt is None else lt
+        tp = ctime+1/2-self._lt/2.0
+        return trial_params[0]*(sinh(tp*trial_params[1])+cosh(tp*trial_params[1]))

@@ -1,5 +1,6 @@
 """Config for lattice fitter."""
 import sys
+from collections import namedtuple
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
@@ -42,27 +43,33 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # METHODS/PARAMS
 
 # Uncorrelated fit? True or False
 
-UNCORR = True
 UNCORR = False
+UNCORR = True
+
+# Pion ratio?  Put single pion correlators in the denominator
+# of the eff mass equation to get better statistics.
+PIONRATIO = True
+PIONRATIO = False
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 0]
+TSEP_VEC = [0]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
+FIT_EXCL = [[]]
 
 # additive constant
-ADD_CONST_VEC = [True, False]
+ADD_CONST_VEC = [False]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
@@ -73,8 +80,8 @@ SIGMA = False
 SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal000'
 MOMSTR = 'momtotal001'
+MOMSTR = 'momtotal000'
 # group irrep
 IRREP = 'T_1_1MINUS'
 IRREP = 'T_1_2MINUS'
@@ -87,15 +94,15 @@ IRREP = 'A1_avg'
 
 L_BOX = 24
 AINVERSE = 1.015
-PION_MASS = 0.13975*AINVERSE
-CALC_PHASE_SHIFT = False
+PION_MASS = 0.43975*AINVERSE
 CALC_PHASE_SHIFT = True
+CALC_PHASE_SHIFT = False
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
+PLOT_DISPERSIVE = False
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 
@@ -116,17 +123,19 @@ MINTOL = False
 MINTOL = True
 
 # rescale the fit function by factor RESCALE
+RESCALE = 1e12
 RESCALE = 1.0
-RESCALE = 1e5
 
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5]
+    if PIONRATIO:
+        START_PARAMS = [0.05, .5]
 else:
     if ADD_CONST:
-        START_PARAMS = [1.4580294, 5.0e-01, 3.0120e-02]
+        START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
-        START_PARAMS = [-1.18203895e+01, 4.46978036e-01]
+        START_PARAMS = [1.18203895, 0.046978036e-01]
 
 
 
@@ -139,9 +148,13 @@ else:
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
 ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = [2, 3]
+ELIM_JKCONF_LIST = [4, 5, 6, 7]
+ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
+
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
+BINNUM = 3
 
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title
@@ -312,7 +325,16 @@ ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 # library of functions to fit.  define them in the usual way
 
 FITS = FitFunctions()
-FITS.select(ADD_CONST, LOG, LT, C, TSTEP)
+
+UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep', 'pionmass', 'pionratio'])
+UP.add_const = ADD_CONST
+UP.log = LOG
+UP.c = C
+UP.tstep = TSTEP
+UP.pionmass = misc.MASS
+UP.pionratio = PIONRATIO
+UP.lt = LT
+FITS.select(UP)
 
 # END DO NOT MODIFY
 
@@ -327,7 +349,7 @@ ORIGL = len(START_PARAMS)
 if EFF_MASS:
 
     # check len of start params
-    if ORIGL != 1 and EFF_MASS_METHOD != 2:
+    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO:
         print("***ERROR***")
         print("dimension of GEVP matrix and start params do not match")
         print("(or for non-gevp fits, the start_param len>1)")
@@ -400,13 +422,27 @@ else:
                 sys.exit(1)
             # select fit function
             if RESCALE != 1.0:
-                def prefit_func(ctime, trial_params):
-                    """Rescaled exp fit function."""
-                    return RESCALE*FITS['fit_func_exp'](ctime, trial_params)
+                if PIONRATIO:
+                    def prefit_func(ctime, trial_params):
+                        """Pion ratio"""
+                        return RESCALE*FITS[
+                            'pion_ratio'](ctime, trial_params)
+                else:
+                    def prefit_func(ctime, trial_params):
+                        """Rescaled exp fit function."""
+                        return RESCALE*FITS[
+                            'fit_func_exp'](ctime, trial_params)
             else:
-                def prefit_func(ctime, trial_params):
-                    """Prefit function, copy of exponential fit function."""
-                    return FITS['fit_func_exp'](ctime, trial_params)
+                if PIONRATIO:
+                    def prefit_func(ctime, trial_params):
+                        """Prefit function, copy of
+                        exponential fit function."""
+                        return FITS['pion_ratio'](ctime, trial_params)
+                else:
+                    def prefit_func(ctime, trial_params):
+                        """Prefit function, copy of
+                        exponential fit function."""
+                        return FITS['fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
@@ -437,6 +473,8 @@ if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
 assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
+assert PIONRATIO or not EFF_MASS_METHOD == 1, "No exact inverse function exists for pion ratio method."
+assert PIONRATIO or not EFF_MASS_METHOD == 2, "Symbolic solve not supported for pion ratio method."
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:

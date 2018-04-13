@@ -2,12 +2,15 @@
 # from math import log, acosh
 import sys
 import re
+import collections
 from math import acosh
 import numbers
 from sympy import nsolve
 from sympy.abc import x, y, z
 # from scipy.optimize import minimize_scalar, brentq
 from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize
+import numpy as np
 
 from latfit.extract.proc_line import proc_line
 
@@ -17,8 +20,10 @@ from latfit.config import START_PARAMS
 from latfit.config import ADD_CONST
 from latfit.config import STYPE
 from latfit.config import FITS
+from latfit.config import PIONRATIO
 from latfit.config import RESCALE
 from latfit.config import GEVP, ADD_CONST_VEC
+from latfit.config import MINTOL, METHOD, BINDS
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -118,11 +123,13 @@ elif EFF_MASS_METHOD == 4:
         return proc_meff4(corrs, index, files, times)
 
     def make_eff_mass_tomin(add_const_bool):
-        def eff_mass_tomin(energy, ctime, sol):
+        def eff_mass_tomin(trial_params, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
-            return (FITS.f['fit_func_1p'][add_const_bool](ctime,
-                                                          [energy])-sol)**2
+            trial_params = trial_params if len(
+                START_PARAMS) > 1 else [trial_params]
+            return (FITS.f['fit_func_1p'][add_const_bool](
+                ctime, trial_params)-sol)**2
         return eff_mass_tomin
 
     EFF_MASS_TOMIN = []
@@ -144,8 +151,16 @@ elif EFF_MASS_METHOD == 4:
             'ratio'][ADD_CONST_VEC[index]](corrs, times)
         index = 0 if index is None else index
         try:
-            sol = minimize_scalar(EFF_MASS_TOMIN[index],
-                                  args=(times[0], sol), bounds=(0, None))
+            if len(START_PARAMS) > 1:
+
+                sol = minimize(EFF_MASS_TOMIN[index], START_PARAMS,
+                               args=(times[0], sol),
+                               method=METHOD, tol=1e-20,
+                               options={'disp': True, 'maxiter': 10000,
+                                                       'maxfev': 10000,})
+            else:
+                sol = minimize_scalar(EFF_MASS_TOMIN[index],
+                                      args=(times[0], sol), bounds=(0, None))
             fun = sol.fun
             sol = sol.x
             # other solution methods:
@@ -155,16 +170,26 @@ elif EFF_MASS_METHOD == 4:
             # sol = nsolve((logs(fit_func_3pt_sym( #too slow
             #    time1, [1, y, 0])/fit_func_3pt_sym(
             #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
-            sol = float(sol)
+            sol = float(sol) if len(START_PARAMS) == 1 else [
+                float(i) for i in sol]
         except ValueError:
             print("***ERROR***\nSolution not within tolerance.")
             print("sol, time_arr:", sol, times)
             print("corrs:", corrs)
             print(minimize_scalar(EFF_MASS_TOMIN[index], args=(times[0], sol)))
             sys.exit(1)
-        if sol < 0:
+        sol = checksol(sol, index, times, corrs, fun)
+        return sol
+
+    def checksol(sol, index, times, corrs, fun):
+        if isinstance(sol, collections.Iterable) and PIONRATIO:
+            test = any(i < 0 for i in sol[1:])
+        else:
+            test = sol < 0
+        if test:
             ratioval = FITS.f['ratio'] if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
+            sol = np.array(sol)
             tryfun = (EFF_MASS_TOMIN[index](-sol, times[0], ratioval) - fun)
             if tryfun/fun < 10:
                 sol = -sol
