@@ -12,5 +12,6 @@ A1_PI_Sub_prop
 *\#*
 *.pyc
 *egg-info*
+*.log
 build
 dist
