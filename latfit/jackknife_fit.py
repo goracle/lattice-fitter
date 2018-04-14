@@ -145,8 +145,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             min_arr[config_num] = result_min_jack.x
 
             # compute phase shift, if necessary
-            result_min.phase_shift[config_num] = phase_shift_jk(
-                params, result_min_jack.x)
+            if CALC_PHASE_SHIFT:
+                result_min.phase_shift[config_num] = phase_shift_jk(
+                    params, result_min_jack.x)
 
             # compute p value for this fit
             result_min.pvalue[config_num] = 1 - stats.chi2.cdf(
@@ -173,6 +174,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute the average fit params
         result_min.x = np.mean(min_arr, axis=0)
+        print('result=', result_min.x)
 
         # compute the error on the params
         param_err = np.sqrt(params.prefactor*np.sum(

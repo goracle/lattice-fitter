@@ -3,7 +3,7 @@
 import sys
 import re
 import collections
-from math import acosh
+from math import acosh, sqrt
 import numbers
 from sympy import nsolve
 from sympy.abc import x, y, z
@@ -24,6 +24,7 @@ from latfit.config import PIONRATIO
 from latfit.config import RESCALE
 from latfit.config import GEVP, ADD_CONST_VEC
 from latfit.config import MINTOL, METHOD, BINDS
+from latfit.config import ORIGL
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -114,22 +115,20 @@ elif EFF_MASS_METHOD == 4:
         corrs = list(corrs)
         if GEVP:
             corrs[2], corrs[3] = (None,
-                                  None) if not ADD_CONST else (
+                                  None) if not (ADD_CONST) else (
                                       corrs[2], None)
         else:
             corrs[2], corrs[3] = (None,
-                                  None) if not ADD_CONST else (
+                                  None) if not (ADD_CONST) else (
                                       corrs[2], None)
         return proc_meff4(corrs, index, files, times)
 
     def make_eff_mass_tomin(add_const_bool):
-        def eff_mass_tomin(trial_params, ctime, sol):
+        def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
-            trial_params = trial_params if len(
-                START_PARAMS) > 1 else [trial_params]
             return (FITS.f['fit_func_1p'][add_const_bool](
-                ctime, trial_params)-sol)**2
+                ctime, [energy])-sol)**2
         return eff_mass_tomin
 
     EFF_MASS_TOMIN = []
@@ -151,8 +150,8 @@ elif EFF_MASS_METHOD == 4:
             'ratio'][ADD_CONST_VEC[index]](corrs, times)
         index = 0 if index is None else index
         try:
-            if len(START_PARAMS) > 1:
-
+            if ORIGL > 1:
+                assert None, "This method is not supported and is based on flawed assumptions."
                 sol = minimize(EFF_MASS_TOMIN[index], START_PARAMS,
                                args=(times[0], sol),
                                method=METHOD, tol=1e-20,
@@ -170,8 +169,7 @@ elif EFF_MASS_METHOD == 4:
             # sol = nsolve((logs(fit_func_3pt_sym( #too slow
             #    time1, [1, y, 0])/fit_func_3pt_sym(
             #        time1+1, [1, y, 0]))-sol), (y), START_PARAMS)
-            sol = float(sol) if len(START_PARAMS) == 1 else [
-                float(i) for i in sol]
+            sol = float(sol)
         except ValueError:
             print("***ERROR***\nSolution not within tolerance.")
             print("sol, time_arr:", sol, times)
@@ -186,7 +184,7 @@ elif EFF_MASS_METHOD == 4:
             test = any(i < 0 for i in sol[1:])
         else:
             test = sol < 0
-        if test:
+        if test and not PIONRATIO:
             ratioval = FITS.f['ratio'] if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             sol = np.array(sol)

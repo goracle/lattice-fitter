@@ -66,13 +66,18 @@ else:
         # eff mass stuff
         return (files, files2)
 
+def roundup(time, xstep, xmin):
+    """ceil(t/2) with xstep factored in"""
+    time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
+        float(time)/2.0) != time else max(
+            floor(float(time)/2.0/xstep)*xstep, xmin)
+    return time2
+
 if GEVP:
     def getfiles(time, xstep, xmin, _):
         """Get files, gevp (meta)"""
-        time2 = ceil(float(time)/2.0/xstep)*xstep if ceil(
-            float(time)/2.0) != time else max(
-                floor(float(time)/2.0/xstep)*xstep, xmin)
-        # time2 = xmin-2*xstep
+        time2 = 3
+        time2 = roundup(time, xstep, xmin)
         return getfiles_gevp(time, time2, xstep)
 else:
     def getfiles(time, xstep, _, input_f):

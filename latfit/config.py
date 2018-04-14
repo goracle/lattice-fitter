@@ -6,6 +6,7 @@ import numpy as np
 import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
+import latfit.fit_funcs
 from math import sqrt, pi
 
 # TYPE OF FIT
@@ -17,8 +18,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # Jackknife fit?
 
@@ -50,25 +51,32 @@ GEVP = False
 
 # Uncorrelated fit? True or False
 
-UNCORR = False
 UNCORR = True
+UNCORR = False
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
 PIONRATIO = True
 PIONRATIO = False
 
+# use fixed pion mass in ratio fits?
+USE_FIXED_MASS = False
+USE_FIXED_MASS = True
+
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
+TSEP_VEC = [3, 3]
 TSEP_VEC = [0]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
+FIT_EXCL = [[],[6, 7, 8]]
 FIT_EXCL = [[]]
 
 # additive constant
+ADD_CONST_VEC = [True, True]
 ADD_CONST_VEC = [False]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
@@ -76,8 +84,8 @@ ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 ISOSPIN = 0
 DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = False
 SIGMA = True
+SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal001'
@@ -87,24 +95,26 @@ IRREP = 'T_1_1MINUS'
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A_1PLUS'
 IRREP = 'A1_avg'
+IRREP = 'A_1PLUS'
 
 # calculate the I=0 phase shift?
 
 L_BOX = 24
 AINVERSE = 1.015
-PION_MASS = 0.43975*AINVERSE
-CALC_PHASE_SHIFT = True
+PION_MASS = 0.13975*AINVERSE
 CALC_PHASE_SHIFT = False
+CALC_PHASE_SHIFT = True
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False
+PLOT_DISPERSIVE = True
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
+DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
+DISP_ENERGIES = [misc.dispersive([0,0,1])]
 
 # pickle, unpickle
 
@@ -117,6 +127,7 @@ PICKLE = None
 
 LOG = False
 LOG = True
+LOG = False if PIONRATIO else LOG
 
 # stringent tolerance for minimizer?  true = stringent
 MINTOL = False
@@ -130,7 +141,7 @@ RESCALE = 1.0
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5]
     if PIONRATIO:
-        START_PARAMS = [0.05, .5]
+        START_PARAMS = [.05,0.0005]
 else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
@@ -147,14 +158,14 @@ else:
 
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
-ELIM_JKCONF_LIST = []
 ELIM_JKCONF_LIST = [2, 3]
 ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
+ELIM_JKCONF_LIST = []
 
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 3
+BINNUM = 1
 
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title
@@ -380,13 +391,13 @@ if EFF_MASS:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [RESCALE * FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1], LT_VEC[j])
+                return [RESCALE * FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1], LT_VEC[j])
+                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
     else:
         print("***ERROR***")
@@ -471,11 +482,15 @@ print(GEVP_DIRS)
 MULT = len(GEVP_DIRS) if GEVP else 1
 if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
+assert not(LOG and PIONRATIO), "Taking a log is improper when doing a pion ratio fit."
 assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
 assert PIONRATIO or not EFF_MASS_METHOD == 1, "No exact inverse function exists for pion ratio method."
 assert PIONRATIO or not EFF_MASS_METHOD == 2, "Symbolic solve not supported for pion ratio method."
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
+latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
+if PIONRATIO:
+    FITS.test()
 if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")

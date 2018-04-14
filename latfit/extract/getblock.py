@@ -4,6 +4,7 @@ from collections import deque
 from linecache import getline
 from scipy.linalg import eig
 import numpy as np
+import h5py
 
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
@@ -16,8 +17,16 @@ from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS
 from latfit.config import BINNUM
 from latfit.config import STYPE
+from latfit.config import PIONRATIO, GEVP, ADD_CONST_VEC
 
-# todo, check for neg/imag eigenvals
+if PIONRATIO:
+    PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+('s' if i != 1 else '') for i in range(2)]
+    PION = []
+    for i in PIONSTR:
+        print("using pion correlator:", i)
+        GN1 = h5py.File(i+'.jkdat', 'r')
+        PION.append(np.array(GN1[i]))
+    PION = np.array(PION)
 
 if STYPE == 'hdf5':
     def getline_loc(filetup, num):
@@ -100,7 +109,16 @@ if EFF_MASS:
                 eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
                 eigvals3 = get_eigvals(num, file_tup[3], file_tup[1])
                 eigvals4 = get_eigvals(num, file_tup[4], file_tup[1],
-                                       overb=True)
+                                           overb=True)
+                if PIONRATIO:
+                    div = np.array([np.real(PION[i][num][int(timeij)]**2-PION[i][num][int(timeij)+1]**2) for i in range(dimops)])/1e10
+                    eigvals /= div
+                    eigvals2 /= div
+                    eigvals3 /= div
+                    eigvals4 /= div
+                    for i, j in enumerate(ADD_CONST_VEC):
+                        eigvals[i] -= eigvals2[i]*j
+                        eigvals2[i] -= eigvals3[i]*j
             except ImaginaryEigenvalue:
                 #print(num, file_tup)
                 print(num, timeij)
