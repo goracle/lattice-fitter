@@ -169,35 +169,35 @@ A2 = [
 # A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
 T_1_1MINUS = [
-    (-1/2, 'pipi', [[1, 0, 0], [-1, 0, 0]]),
-    (complex(0, -1/2), 'pipi', [[0, 1, 0], [0, -1, 0]]),
-    (1/2, 'pipi', [[-1, 0, 0], [1, 0, 0]]),
-    (complex(0, -1/2), 'pipi', [[0, -1, 0], [0, 1, 0]]),
+    (1/sqrt(2), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
+    (-1/sqrt(2), 'pipi', [[-1, 0, 0], [1, 0, 0]]),
     (1, 'rho', [0, 0, 0])
 ]
-
-T_1_3MINUS = [
-    (1/2, 'pipi', [[1, 0, 0], [-1, 0, 0]]),
-    (complex(0, -1/2), 'pipi', [[0, 1, 0], [0, -1, 0]]),
-    (-1/2, 'pipi', [[-1, 0, 0], [1, 0, 0]]),
-    (complex(0, 1/2), 'pipi', [[0, -1, 0], [0, 1, 0]])
-    (1, 'rho', [0, 0, 0])
-]
-
 T_1_2MINUS = [
+    (1/sqrt(2), 'pipi', [[0, 1, 0], [0, -1, 0]]),
+    (-1/sqrt(2), 'pipi', [[0, -1, 0], [0, 1, 0]]),
+    (1, 'rho', [0, 0, 0])
+]
+T_1_3MINUS = [
     (1/sqrt(2), 'pipi', [[0, 0, 1], [0, 0, -1]]),
     (-1/sqrt(2), 'pipi', [[0, 0, -1], [0, 0, 1]]),
     (1, 'rho', [0, 0, 0])
 ]
 
+# specify polarization info here
 OPLIST = {'A_1PLUS': A_1PLUS,
-          'T_1_1MINUS': T_1_1MINUS,
-          'T_1_3MINUS': T_1_3MINUS,
-          'T_1_2MINUS': T_1_2MINUS,
+          'T_1_1MINUS?pol=1': T_1_1MINUS,
+          'T_1_3MINUS?pol=2': T_1_3MINUS,
+          'T_1_2MINUS?pol=3': T_1_2MINUS,
           'A0': A0, 'A2': A2,
           'A1x': A1x, 'A1mx': A1mx,
           'A1y': A1y, 'A1my': A1my,
           'A1z': A1z, 'A1mz': A1mz,
+}
+
+AVG_ROWS = {
+    'T_1_MINUS': ('T_1_1MINUS', 'T_1_2MINUS', 'T_1_3MINUS'),
+    'A1': ('A1x', 'A1mx', 'A1y', 'A1my', 'A1z', 'A1mz')
 }
 
 # OPLIST = {'A0': A0}
@@ -287,7 +287,7 @@ def main():
     l = op_list('hdf5')
     for i in l:
         print(i)
-    print(l['pipi_A1z'])
+    print(l['rhorho_T_1_1MINUS'])
 
 
 if __name__ == "__main__":

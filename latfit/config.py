@@ -66,7 +66,7 @@ USE_FIXED_MASS = True
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 TSEP_VEC = [3, 3]
-TSEP_VEC = [0]
+TSEP_VEC = [3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
@@ -109,8 +109,8 @@ misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
+PLOT_DISPERSIVE = False
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
@@ -158,14 +158,16 @@ else:
 
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
+ELIM_JKCONF_LIST = []
 ELIM_JKCONF_LIST = [2, 3]
 ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
-ELIM_JKCONF_LIST = []
 
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
+BINNUM = 3
+
+assert BINNUM == len(ELIM_JKCONF_LIST)/2, "fix it."
 
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title

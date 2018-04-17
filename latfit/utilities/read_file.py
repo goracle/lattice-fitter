@@ -28,6 +28,22 @@ def pol(filename):
         polret = None
     return polret
 
+def compare_pols(pol1, pol2):
+    """Return true if both polarization specifiers are the same.
+    false if they are different
+    None if one is None
+    """
+    if pol1 is None or pol2 is None:
+        retval = None
+    elif str(pol1).isdigit() and str(pol2).isdigit():
+        retval = pol1 == pol2
+    elif str(pol1).isdigit():
+        retval = all([int(i) == int(pol1) for i in pol2])
+    elif str(pol2).isdigit():
+        retval = all([int(i) == int(pol2) for i in pol1])
+    else:
+        retval = all([int(i) == int(j) for i in pol1 for j in pol2])
+    return retval
 
 def traj(filename, nowarn=False):
     """Get trajectory info from filename"""

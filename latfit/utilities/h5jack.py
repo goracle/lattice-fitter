@@ -7,13 +7,17 @@ import glob
 import re
 import numpy as np
 from mpi4py import MPI
+import itertools
 import h5py
 import read_file as rf
 from sum_blks import isoproj
 import op_compose as opc
+from op_compose import AVG_ROWS
 import write_discon as wd
 import aux_write as aux
 import math
+import avg_hdf5
+import glob
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -29,7 +33,7 @@ except NameError:
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
-FNDEF = PREFIX+'1140.'+EXTENSION
+FNDEF = PREFIX+'2160.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64
 TSEP = 3
@@ -83,8 +87,23 @@ TESTKEY2 = ''
 TSLICE = 0
 
 # Individual diagram's jackknife block to write
-WRITEBLOCK = ''
-WRITEBLOCK = 'pioncorrChk_mom000'
+
+def fill_write_block(fndef=FNDEF):
+    fn1 = h5py.File(fndef, 'r')
+    retlist = []
+    for i in fn1:
+        if 'pioncorrChk' in i:
+            spl = i.split('_')
+            needed = spl[2:]
+            ret = needed[0]
+            for j in needed[1:]:
+                ret = ret+'_'+j
+            retlist.append(ret)
+    return retlist
+
+WRITEBLOCK = []
+WRITEBLOCK = ['pioncorrChk_mom000']
+WRITEBLOCK = fill_write_block(FNDEF)
 
 # debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -206,22 +225,46 @@ def overall_coeffs(iso, irr):
     ocs = {}
     for iso_dir in iso:
         for operator in irr:
+            pol_req = get_polreq(operator)
             mat = re.search(r'I(\d+)/', iso_dir)
             if not mat:
                 print("Error: No isopsin info found")
                 sys.exit(1)
             isospin_str = mat.group(0)
-            opstr = re.sub(isospin_str, '', re.sub(r'sep(\d)+/', '', iso_dir))
+            opstr = re.sub(isospin_str,
+                           '', re.sub(r'sep(\d)+/', '', iso_dir))
             for opstr_chk, outer_coeff in irr[operator]:
                 if opstr_chk != opstr:
                     continue
                 for original_block, inner_coeff in iso[iso_dir]:
-                    ocs.setdefault(isospin_str+operator,
+                    pols = rf.pol(original_block)
+                    if rf.compare_pols(pols, pol_req) == False:
+                        continue
+                    ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
                                                outer_coeff*inner_coeff))
     if MPIRANK == 0:
         print("Done getting projection coefficients")
     return ocs
+
+def strip_op(op1):
+    """Strips off extra specifiers including polarizations."""
+    return op1.split('?')[0]
+
+def get_polreq(op1):
+    """Get the required polarization for this irrep, if any
+    e.g. T_1_1MINUS needs to have vector particle polarized in x
+    """
+    spl = op1.split('?')
+    if len(spl) == 1:
+        reqpol = None
+    else:
+        polstrspl = spl[1].split(',')[0].split('=')
+        if polstrspl[0] == 'pol':
+            reqpol = int(polstrspl[1])
+        else:
+            reqpol = None
+    return reqpol
 
 
 def jackknife_err(blk):
@@ -719,10 +762,12 @@ def main(fixn=True):
     #    openlist[filekey].close()
     if(MPIRANK==0): # write only needs one process, is fast
         if WRITEBLOCK and not (
-                TESTKEY or TESTKEY2) and WRITEBLOCK not in bubblks:
-            allblks[WRITEBLOCK] = fold_time(allblks[WRITEBLOCK], WRITEBLOCK)
-            h5write_blk(allblks[WRITEBLOCK],
-                        WRITEBLOCK, extension='.jkdat', ocs=None)
+                TESTKEY or TESTKEY2) and WRITEBLOCK[0] not in bubblks:
+            for single_block in WRITEBLOCK:
+                allblks[single_block] = fold_time(allblks[
+                    single_block], single_block)
+                h5write_blk(allblks[single_block],
+                            single_block, extension='.jkdat', ocs=None)
         # allblks = {**mostblks, **bubblks} # for gparity
         ocs = overall_coeffs(
             isoproj(fixn, 0, dlist=list(
@@ -731,7 +776,24 @@ def main(fixn=True):
             buberr(allblks)
             sys.exit(0)
         h5sum_blks(allblks, ocs, (numt, LT))
+        avg_irreps()
 
+def avg_irreps():
+    """Average irreps"""
+    if(MPIRANK==0):
+        for isostr in ('I0', 'I1', 'I2'):
+            for irrep in AVG_ROWS:
+                op_list = set()
+                for example_row in AVG_ROWS[irrep]:
+                    for op1 in glob.glob(isostr+'/'+'*'+example_row+'.jkdat'):
+                        op_list.add(re.sub(example_row+'.jkdat',
+                                              '', re.sub(isostr+'/', '', op1)))
+                for op1 in list(op_list):
+                    avg_hdf5.OUTNAME = isostr+'/'+op1+irrep+'.jkdat'
+                    avg_list = []
+                    for row in AVG_ROWS[irrep]:
+                        avg_list.append(isostr+'/'+op1+row+'.jkdat')
+                    avg_hdf5.main(*avg_list)
 
 @PROFILE
 def printblk(basename, blk):
