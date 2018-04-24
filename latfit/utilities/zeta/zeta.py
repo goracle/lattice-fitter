@@ -29,6 +29,9 @@ if CALC_PHASE_SHIFT:
                 pass
         comp = np.array(rf.procmom(MOMSTR))
         gamma = epipi/sqrt(epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
+        if gamma < 1:
+            print("gamma < 1: gamma=", gamma, "Epipi=", epipi)
+            sys.exit(1)
         epipi = epipi*AINVERSE/gamma
 
         #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct

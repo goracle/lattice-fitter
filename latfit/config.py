@@ -18,8 +18,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # Jackknife fit?
 
@@ -44,8 +44,8 @@ EFF_MASS_METHOD = 4
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # METHODS/PARAMS
 
@@ -65,37 +65,39 @@ USE_FIXED_MASS = True
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 3]
 TSEP_VEC = [3]
+TSEP_VEC = [3, 0]
+TSEP_VEC = [3, 0, 3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
-FIT_EXCL = [[],[6, 7, 8]]
-FIT_EXCL = [[]]
+FIT_EXCL = [[],[ 6, 7]]
+FIT_EXCL = [[  ], [  5,6], [ 6]]
 
 # additive constant
-ADD_CONST_VEC = [True, True]
 ADD_CONST_VEC = [False]
+ADD_CONST_VEC = [True, True]
+ADD_CONST_VEC = [True, False, False]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
 ISOSPIN = 0
-DIM = 2
+DIM = 3
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal001'
 MOMSTR = 'momtotal000'
 # group irrep
-IRREP = 'T_1_1MINUS'
+IRREP = 'A1_avg'
 IRREP = 'T_1_2MINUS'
+IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A1_avg'
 IRREP = 'A_1PLUS'
 
 # calculate the I=0 phase shift?
@@ -109,12 +111,11 @@ misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False
+PLOT_DISPERSIVE = True
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
-DISP_ENERGIES = [misc.dispersive([0,0,1])]
 
 # pickle, unpickle
 
@@ -158,16 +159,14 @@ else:
 
 ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
                     45, 26, 28, 33, 35, 40, 41, 43, 50]
-ELIM_JKCONF_LIST = []
 ELIM_JKCONF_LIST = [2, 3]
 ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
+ELIM_JKCONF_LIST = []
 
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 3
-
-assert BINNUM == len(ELIM_JKCONF_LIST)/2, "fix it."
+BINNUM = 1
 
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title

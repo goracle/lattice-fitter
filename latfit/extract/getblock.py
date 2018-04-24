@@ -105,11 +105,12 @@ if EFF_MASS:
             num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
             try:
-                eigvals = get_eigvals(num, file_tup[0], file_tup[1])
-                eigvals2 = get_eigvals(num, file_tup[2], file_tup[1])
-                eigvals3 = get_eigvals(num, file_tup[3], file_tup[1])
-                eigvals4 = get_eigvals(num, file_tup[4], file_tup[1],
-                                           overb=True)
+                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1]), reverse=True)
+                eigvals2 = sorted(get_eigvals(num, file_tup[2], file_tup[1]), reverse=True)
+                eigvals3 = sorted(get_eigvals(num, file_tup[3], file_tup[1]), reverse=True)
+                eigvals4 = sorted(get_eigvals(num, file_tup[4], file_tup[1],
+                                           overb=True), reverse=True)
+
                 if PIONRATIO:
                     div = np.array([np.real(PION[i][num][int(timeij)]**2-PION[i][num][int(timeij)+1]**2) for i in range(dimops)])/1e10
                     eigvals /= div
