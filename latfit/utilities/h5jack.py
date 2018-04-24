@@ -70,6 +70,11 @@ CONJBUB = False
 # this is a bad feature, keep it false!
 ANTIPERIODIC = False
 
+# Filter out the cross momenta
+# (back to back x momenta going to back to back y momenta, e.g.)
+FILTER_OUT_CROSS_MOMENTA = False
+FILTER_OUT_CROSS_MOMENTA = True
+
 # diagram to look at for bubble subtraction test
 # TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
 # TESTKEY = 'FigureV_sep4_mom1src000_mom2src001_mom1snk000'
@@ -240,12 +245,32 @@ def overall_coeffs(iso, irr):
                     pols = rf.pol(original_block)
                     if rf.compare_pols(pols, pol_req) == False:
                         continue
+                    if crossP(original_block):
+                        continue
                     ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
                                                outer_coeff*inner_coeff))
     if MPIRANK == 0:
         print("Done getting projection coefficients")
     return ocs
+
+def crossP(fname):
+    """Check if this is a pipi diagram with cross momenta (x+-x->y+-y)
+    """
+    mom = rf.mom(fname)
+    compare = set()
+    ret = False
+    if rf.nmom_arr(mom) == 3 and FILTER_OUT_CROSS_MOMENTA:
+        for i, momex in enumerate(mom):
+            for j, k in enumerate(momex):
+                if k != 0:
+                    if i == 0 or not compare:
+                        compare.add(j)
+                    else:
+                        if j not in compare:
+                            ret = True
+    return ret
+        
 
 def strip_op(op1):
     """Strips off extra specifiers including polarizations."""
