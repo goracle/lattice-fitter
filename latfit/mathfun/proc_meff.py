@@ -22,7 +22,7 @@ from latfit.config import STYPE
 from latfit.config import FITS
 from latfit.config import PIONRATIO
 from latfit.config import RESCALE
-from latfit.config import GEVP, ADD_CONST_VEC
+from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import MINTOL, METHOD, BINDS
 from latfit.config import ORIGL
 # from latfit.analysis.profile import PROFILE
@@ -123,17 +123,17 @@ elif EFF_MASS_METHOD == 4:
                                       corrs[2], None)
         return proc_meff4(corrs, index, files, times)
 
-    def make_eff_mass_tomin(add_const_bool):
+    def make_eff_mass_tomin(ini, add_const_bool):
         def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
             return (FITS.f['fit_func_1p'][add_const_bool](
-                ctime, [energy])-sol)**2
+                ctime, [energy], LT_VEC[ini])-sol)**2
         return eff_mass_tomin
 
     EFF_MASS_TOMIN = []
-    for i in ADD_CONST_VEC:
-        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i))
+    for i, j in enumerate(ADD_CONST_VEC):
+        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j))
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this
