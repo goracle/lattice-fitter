@@ -14,7 +14,7 @@ from latfit.extract.proc_line import proc_line
 from latfit.config import EFF_MASS
 from latfit.config import GEVP
 from latfit.config import ELIM_JKCONF_LIST
-from latfit.config import NORMS
+from latfit.config import NORMS, GEVP_DEBUG
 from latfit.config import BINNUM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, GEVP, ADD_CONST_VEC
@@ -50,11 +50,17 @@ else:
         return getline(filetup, num)
 
 
-def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
+def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
     optionally, overwrite the rhs matrix we get if we don't need it anymore.
     """
+    print_evecs = False if not GEVP_DEBUG else print_evecs
+    if not get_eigvals.sent and print_evecs:
+        print("First solve, so printing norms which are multiplied onto GEVP entries.")
+        print("e.g. C(t)_ij -> Norms[i][j]*C(t)_ij")
+        print("Norms=", NORMS)
+        get_eigvals.sent = True
     dimops = len(file_tup_lhs)
     c_lhs = np.zeros((dimops, dimops), dtype=float)
     c_rhs = np.zeros((dimops, dimops), dtype=float)
@@ -66,8 +72,15 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
             c_rhs[opa][opb] = proc_line(
                 getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
-    eigvals, _ = eig(c_lhs, c_rhs, overwrite_a=True,
+    eigvals, evecs = eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
+    if print_evecs:
+        print("start solve")
+        print("lhs=", c_lhs)
+        print("rhs=", c_rhs)
+        for i, j in enumerate(eigvals):
+            print("eigval #",i,"=", j, "evec #", i, "=", evecs[:,i])
+        print("end solve")
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
@@ -76,6 +89,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False):
             print("Eigenvalue=", j)
             raise ImaginaryEigenvalue
     return eigfin
+get_eigvals.sent = False
 
 
 class ImaginaryEigenvalue(Exception):
@@ -103,9 +117,11 @@ if EFF_MASS:
             num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         elif STYPE == 'hdf5':
             num_configs = len(file_tup[0][0][0])
+        print("Getting block for time slice=", timeij)
         for num in range(num_configs):
+            print("config #=", num)
             try:
-                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1]), reverse=True)
+                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1], print_evecs=True), reverse=True)
                 eigvals2 = sorted(get_eigvals(num, file_tup[2], file_tup[1]), reverse=True)
                 eigvals3 = sorted(get_eigvals(num, file_tup[3], file_tup[1]), reverse=True)
                 eigvals4 = sorted(get_eigvals(num, file_tup[4], file_tup[1],

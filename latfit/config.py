@@ -66,28 +66,28 @@ USE_FIXED_MASS = True
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 TSEP_VEC = [3]
-TSEP_VEC = [3, 0, 3]
 TSEP_VEC = [3, 0]
+TSEP_VEC = [3, 0, 3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
-FIT_EXCL = [[  ], [  5,6], [ 6]]
 FIT_EXCL = [[],[ 6, 7]]
+FIT_EXCL = [[  ], [  5,6], [ 6]]
 
 # additive constant
 ADD_CONST_VEC = [False]
-ADD_CONST_VEC = [True, False, False]
 ADD_CONST_VEC = [True, True]
+ADD_CONST_VEC = [True, False, False]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
 ISOSPIN = 0
-DIM = 2
+DIM = 3
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal001'
@@ -278,12 +278,17 @@ JACKKNIFE = 'YES'
 PRINT_CORR = True
 PRINT_CORR = False
 
+# print raw gevp info (for debugging source construction)
+
+PRINT_GEVP = True
+PRINT_GEVP = False
+
 # -------BEGIN POSSIBLY OBSOLETE------#
 
 # multiply both sides of the gevp matrix by norms
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
-NORMS = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11]]
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
