@@ -280,8 +280,8 @@ PRINT_CORR = False
 
 # print raw gevp info (for debugging source construction)
 
-PRINT_GEVP = True
-PRINT_GEVP = False
+GEVP_DEBUG = True
+GEVP_DEBUG = False
 
 # -------BEGIN POSSIBLY OBSOLETE------#
 

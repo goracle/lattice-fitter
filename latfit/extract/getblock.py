@@ -117,9 +117,11 @@ if EFF_MASS:
             num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         elif STYPE == 'hdf5':
             num_configs = len(file_tup[0][0][0])
-        print("Getting block for time slice=", timeij)
+        if GEVP_DEBUG:
+            print("Getting block for time slice=", timeij)
         for num in range(num_configs):
-            print("config #=", num)
+            if GEVP_DEBUG:
+                print("config #=", num)
             try:
                 eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1], print_evecs=True), reverse=True)
                 eigvals2 = sorted(get_eigvals(num, file_tup[2], file_tup[1]), reverse=True)
