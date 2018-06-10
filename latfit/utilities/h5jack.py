@@ -34,6 +34,8 @@ except NameError:
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
 FNDEF = PREFIX+'2160.'+EXTENSION
+GNDEF = PREFIX+'250.'+EXTENSION
+HNDEF = PREFIX+'350.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64
 TSEP = 3
@@ -72,8 +74,8 @@ ANTIPERIODIC = False
 
 # Filter out the cross momenta
 # (back to back x momenta going to back to back y momenta, e.g.)
-FILTER_OUT_CROSS_MOMENTA = False
 FILTER_OUT_CROSS_MOMENTA = True
+FILTER_OUT_CROSS_MOMENTA = False
 
 # diagram to look at for bubble subtraction test
 # TESTKEY = 'FigureV_sep4_mom1src001_mom2src010_mom1snk010'
@@ -145,18 +147,8 @@ def trajlist():
         print("Done getting trajectory list")
     return trajl
 
-
-@PROFILE
-def baselist(fn1=None):
-    """Get base names of diagrams
-    (exclude trajectory info)"""
-    if not fn1:
-        try:
-            fn1 = h5py.File(FNDEF, 'r')
-        except OSError:
-            print("Error: unable to locate", FNDEF)
-            print("Make sure the working directory is correct.")
-            sys.exit(1)
+def getbasl(fn1):
+    """ok"""
     basl = set()
     for dat in fn1:
         try:
@@ -165,17 +157,31 @@ def baselist(fn1=None):
             basen = rf.basename(dat)
         if len(fn1[dat].shape) == 2 and basen:
             basl.add(basen)
+    return basl
+
+@PROFILE
+def baselist(fn1=None):
+    """Get base names of diagrams
+    (exclude trajectory info)"""
+    if not fn1:
+        try:
+            fn1 = h5py.File(FNDEF, 'r')
+            gn1 = h5py.File(GNDEF, 'r')
+            hn1 = h5py.File(HNDEF, 'r')
+        except OSError:
+            print("Error: unable to locate", FNDEF)
+            print("Make sure the working directory is correct.")
+            sys.exit(1)
+    basl = getbasl(fn1).intersection(getbasl(gn1)).intersection(getbasl(hn1))
     fn1.close()
+    gn1.close()
+    hn1.close()
     if MPIRANK == 0:
         print("Done getting baselist")
     return basl
 
-
-@PROFILE
-def bublist(fn1=None):
-    """Get list of disconnected bubbles."""
-    if not fn1:
-        fn1 = h5py.File(FNDEF, 'r')
+def getbubl(fn1):
+    """ok"""
     bubl = set()
     for dat in fn1:
         try:
@@ -184,7 +190,19 @@ def bublist(fn1=None):
             basen = rf.basename(dat)
         if len(fn1[dat].shape) == 1 and basen:
             bubl.add(basen)
+    return bubl
+
+@PROFILE
+def bublist(fn1=None):
+    """Get list of disconnected bubbles."""
+    if not fn1:
+        fn1 = h5py.File(FNDEF, 'r')
+        gn1 = h5py.File(GNDEF, 'r')
+        hn1 = h5py.File(HNDEF, 'r')
+    bubl = getbubl(fn1).intersection(getbubl(gn1)).intersection(getbubl(hn1))
     fn1.close()
+    gn1.close()
+    hn1.close()
     if MPIRANK == 0:
         print("Done getting bubble list")
     return bubl
@@ -789,8 +807,12 @@ def main(fixn=True):
         if WRITEBLOCK and not (
                 TESTKEY or TESTKEY2) and WRITEBLOCK[0] not in bubblks:
             for single_block in WRITEBLOCK:
-                allblks[single_block] = fold_time(allblks[
-                    single_block], single_block)
+                try:
+                    allblks[single_block] = fold_time(allblks[
+                        single_block], single_block)
+                except KeyError:
+                    print(single_block, "not found.  not writing.")
+                    continue
                 h5write_blk(allblks[single_block],
                             single_block, extension='.jkdat', ocs=None)
         # allblks = {**mostblks, **bubblks} # for gparity

@@ -65,8 +65,8 @@ USE_FIXED_MASS = True
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3]
 TSEP_VEC = [3, 0]
+TSEP_VEC = [0]
 TSEP_VEC = [3, 0, 3]
 LT = 64
 
@@ -74,12 +74,13 @@ LT = 64
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
 FIT_EXCL = [[],[ 6, 7]]
-FIT_EXCL = [[  ], [  5,6], [ 6]]
+FIT_EXCL = [[  ],[],[]]
+FIT_EXCL = [[ 5 ], [ 5, 6], [5,6 ]]
 
 # additive constant
-ADD_CONST_VEC = [False]
 ADD_CONST_VEC = [True, True]
-ADD_CONST_VEC = [True, False, False]
+ADD_CONST_VEC = [False]
+ADD_CONST_VEC = [True, True, True]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
@@ -111,8 +112,8 @@ misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
 # dispersive lines
-PLOT_DISPERSIVE = False
 PLOT_DISPERSIVE = True
+PLOT_DISPERSIVE = False if not GEVP else True
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
@@ -162,8 +163,11 @@ ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
 ELIM_JKCONF_LIST = [2, 3]
 ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
+ELIM_JKCONF_LIST = [  0,   1,   2,   3,   4,   5,   6,   7,   8,  10,  12,  13,  15, 17,  19,  21,  23,  24,  39,  43,  45,  49,  52,  54,  57,  65, 75,  78,  80,  82,  84,  98, 100, 102, 104, 106, 114, 117, 119, 121, 123, 125, 127, 129, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145]
 ELIM_JKCONF_LIST = []
-
+#print(ELIM_JKCONF_LIST[36])
+#sys.exit(0)
+#ELIM_JKCONF_LIST = ELIM_JKCONF_LIST[37:]
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1

@@ -68,6 +68,16 @@ def mkplot(plotdata, input_f,
     # or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(plotdata.cov, result_min, plotdata.coords)
 
+    xfit_check = get_xfit(dimops, plotdata.fitcoord) # determines if we left out a gevp dimension
+    todel = []
+    dimops_mod = dimops
+    result_min_mod = result_min
+    for i, j in enumerate(xfit_check):
+        if j == []:
+            dimops_mod -= 1
+            todel.append(i)
+    result_min_mod.x = np.delete(result_min.x, todel)
+
     # GET STRINGS
     title = get_title(input_f)
     file_str = get_file_string(title, dimops)
@@ -75,9 +85,9 @@ def mkplot(plotdata, input_f,
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(plotdata.coords, dimops, plotdata.fitcoord,
-                                      result_min, fitrange)
-        print_messages(result_min, param_err, param_chisq)
+        param_chisq = get_param_chisq(plotdata.coords, dimops_mod, plotdata.fitcoord,
+                                      result_min_mod, fitrange)
+        print_messages(result_min_mod, param_err, param_chisq)
 
     # STOP IF NO PLOT
     if NO_PLOT:
@@ -94,13 +104,14 @@ def mkplot(plotdata, input_f,
 
         if FIT:
             # plot fit function
-            plot_fit(plotdata.fitcoord, result_min, dimops)
+            plot_fit(plotdata.fitcoord, result_min_mod, dimops_mod)
 
             # tolerance box plot
             if EFF_MASS and BOX_PLOT:
-                plot_box(plotdata.fitcoord, result_min, param_err, dimops)
+                plot_box(plotdata.fitcoord, result_min_mod, param_err,
+                         dimops_mod)
 
-            annotate(dimops, result_min, param_err,
+            annotate(dimops_mod, result_min_mod, param_err,
                      param_chisq, plotdata.coords)
 
         # save, output
@@ -307,7 +318,9 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
-    for i in FIT_EXCL:
+    for k, i in enumerate(FIT_EXCL):
+        if k >= len(result_min.x): # if we leave off a gevp dimension
+            break
         for j in i:
             if j in xcoord:
                 param_chisq.dof -= 1
@@ -401,7 +414,10 @@ def get_xfit(dimops, xcoord, step_size=None):
             xfit[i] = np.delete(xfit[i], todel)
             step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
                 len(xfit[i])-1) if step_size is None else step_size
-            xfit[i] = list(np.arange(xfit[i][0], xfit[i][len(xfit[i])-1]+step_size, step_size))
+            try:
+                xfit[i] = list(np.arange(xfit[i][0], xfit[i][len(xfit[i])-1]+step_size, step_size))
+            except IndexError:
+                xfit[i] = []
     return xfit
 
 
@@ -415,14 +431,17 @@ if GEVP:
         xfit = get_xfit(dimops, xcoord, 1)
         xfit = [xfit] if dimops == 1 else xfit
         for i in range(dimops):
-            axvar.add_patch((
-                plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                    (xfit[i][0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                    xfit[i][len(xfit[i])-1]-xfit[i][0]+1,  # width
-                    2*param_err[i],  # height
-                    fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
-                    # transform=fig.transFigure
-                )))
+            try:
+                axvar.add_patch((
+                    plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
+                        (xfit[i][0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                        xfit[i][len(xfit[i])-1]-xfit[i][0]+1,  # width
+                        2*param_err[i],  # height
+                        fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
+                        # transform=fig.transFigure
+                    )))
+            except IndexError:
+                pass
 else:
     def plot_box(xcoord, result_min, param_err, dimops=1):
         """plot tolerance box around straight line fit for effective mass

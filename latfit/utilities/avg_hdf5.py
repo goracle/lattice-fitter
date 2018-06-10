@@ -23,7 +23,7 @@ def main(*args):
         try:
             fn = h5py.File(data, 'r')
         except OSError:
-            print("Not including:", data, "File doesn't exit.")
+            print("Not including:", data, "File doesn't exist.")
             norm = 1.0/(1.0/norm-1)
             continue
         print("Including", data)

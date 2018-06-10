@@ -20,6 +20,7 @@ def pol(filename):
     """Get polarization info from filename"""
     mat = re.search(r'pol_snk_(\d)', filename)
     nmat = re.search(r'pol_src-snk_(\d)-(\d)', filename)
+    assert not (mat and nmat), "Conflicting polarizations found."
     if mat:
         polret = int(mat.group(1))
     elif nmat:
@@ -44,6 +45,10 @@ def compare_pols(pol1, pol2):
     else:
         retval = all([int(i) == int(j) for i in pol1 for j in pol2])
     return retval
+
+def norm2(mom):
+    """p[0]^2+p[1]^2"+p[2]^2"""
+    return mom[0]**2+mom[1]**2+mom[2]**2
 
 def traj(filename, nowarn=False):
     """Get trajectory info from filename"""

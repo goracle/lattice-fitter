@@ -36,7 +36,11 @@ def main():
         for j, file2 in enumerate(glob.glob('traj_'+str(traj)+'_*hdf5')):
             if j:
                 pass
-            gn1 = h5py.File(file2, 'r')
+            try:
+                gn1 = h5py.File(file2, 'r')
+            except OSError:
+                print("file=", file2)
+                sys.exit(1)
             datal = []
             try:
                 for data in gn1:
