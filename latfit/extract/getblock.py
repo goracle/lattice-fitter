@@ -166,7 +166,7 @@ else:
             try:
                 eigvals = get_eigvals(num, file_tup[0], file_tup[1])
             except ImaginaryEigenvalue:
-                print(file_tup)
+                print(num, timeij)
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk

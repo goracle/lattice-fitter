@@ -30,11 +30,24 @@ def hierarchy(index, dim, isospin, sigma):
                 else:
                     retstr = 'pipi'
             elif dim == 3:
-                assert isospin == 0, "3x3 I=2 not supported"
+                if isospin == 0:
+                    if index == 1:
+                        retstr = 'sigma'
+                    else:
+                        retstr = 'pipi'
+                else:
+                    if index == 1:
+                        retstr = 'pipi'
+                    elif index == 2:
+                        retstr = 'UUpipi'
+            elif dim == 4:
+                assert isospin == 0, "4x4 I=2 not supported"
                 if index == 1:
                     retstr = 'sigma'
-                else:
+                elif index == 2:
                     retstr = 'pipi'
+                elif index == 3:
+                    retstr = 'UUpipi'
     else: # isospin = 1
         if index == 0:
             retstr = 'pipi'
@@ -113,6 +126,33 @@ if isospin == 0:
                 'I0/pipisigma_A_1PLUS.jkdat',
                 'I0/pipi_A_1PLUS.jkdat']
             ]
+
+        elif DIM == 4:
+            # 3x3, I0
+            retdirs = [
+                ['I0/S_pipiS_pipi_A_1PLUS.jkdat',
+                'I0/S_pipisigma_A_1PLUS.jkdat',
+                'I0/S_pipipipi_A_1PLUS.jkdat',
+                'I0/S_pipiUUpipi_A_1PLUS.jkdat'
+                 ]
+                ['I0/sigmaS_pipi_A_1PLUS.jkdat',
+                'I0/sigmasigma_A_1PLUS.jkdat',
+                 'I0/sigmapipi_A_1PLUS.jkdat',
+                 'I0/sigmaUUpipi_A_1PLUS.jkdat'
+                ],
+                ['I0/pipiS_pipi_A_1PLUS.jkdat',
+                'I0/pipisigma_A_1PLUS.jkdat',
+                 'I0/pipi_A_1PLUS.jkdat',
+                 'I0/pipiUUpipi_A_1PLUS.jkdat'
+                ],
+                [
+                 'I0/UUpipiS_pipi_A_1PLUS.jkdat',
+                'I0/UUpipisigma_A_1PLUS.jkdat',
+                 'I0/UUpipipipi_A_1PLUS.jkdat',
+                 'I0/UUpipiUUpipi_A_1PLUS.jkdat'
+                ]
+            ]
+
 
         ##non-zero center of mass momentum, one stationary pion
         # sigma

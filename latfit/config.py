@@ -47,6 +47,11 @@ EFF_MASS_METHOD = 4
 GEVP = False
 GEVP = True
 
+# T0 behavior for GEVP (t/2 or t-1)
+
+T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
+
 # METHODS/PARAMS
 
 # Uncorrelated fit? True or False
@@ -65,26 +70,29 @@ USE_FIXED_MASS = True
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
-TSEP_VEC = [3, 0]
 TSEP_VEC = [0]
+TSEP_VEC = [3, 3]
+TSEP_VEC = [3, 0, 3,3]
 TSEP_VEC = [3, 0, 3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
-FIT_EXCL = [[],[ 6, 7]]
 FIT_EXCL = [[  ],[],[]]
-FIT_EXCL = [[ 5 ], [ 5, 6], [5,6 ]]
+FIT_EXCL = [[],[6 ]]
+FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
+FIT_EXCL = [[ ], [  ], [10 ]]
 
 # additive constant
-ADD_CONST_VEC = [True, True]
 ADD_CONST_VEC = [False]
+ADD_CONST_VEC = [False, False]
+ADD_CONST_VEC = [True, True, True, False]
 ADD_CONST_VEC = [True, True, True]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
-ISOSPIN = 0
+ISOSPIN = 2
 DIM = 3
 # don't include the sigma in the gevp fits
 SIGMA = False
@@ -116,7 +124,7 @@ PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False if not GEVP else True
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
-DISP_ENERGIES = [2*misc.dispersive([0,0,1])]
+DISP_ENERGIES = [2*misc.dispersive([0,0,1]), 2*misc.dispersive([0,1,1])]
 
 # pickle, unpickle
 
@@ -190,8 +198,16 @@ if GEVP:
     elif DIM == 3:
         if SIGMA and ISOSPIN == 0:
             TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
+        elif ISOSPIN == 0:
+            TITLE_PREFIX = r'3x3 GEVP, I0, $\pi\pi, \sigma$, ' + MOMSTR + ' '
+        else:
+            TITLE_PREFIX = r'3x3 GEVP, I2, $\pi\pi$, ' + MOMSTR + ' '
+    elif DIM == 4:
+        if SIGMA and ISOSPIN == 0:
+            TITLE_PREFIX = r'4x4 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
         else:
             TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, ' + MOMSTR + ' '
+
 else:
     TITLE_PREFIX = '24c '
 
@@ -293,6 +309,7 @@ GEVP_DEBUG = False
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11]]
+NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5,1.0], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5,1.0], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11,1.0], [1.0,1.0,1.0,1.0]]
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
@@ -487,6 +504,8 @@ else:
         """Fit function."""
         return prefit_func(ctime, trial_params)
 
+if ISOSPIN != 0:
+    SIGMA = False
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
 print(GEVP_DIRS)
 MULT = len(GEVP_DIRS) if GEVP else 1
@@ -495,8 +514,8 @@ if GEVP:
 assert not(LOG and PIONRATIO), "Taking a log is improper when doing a pion ratio fit."
 assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
-assert PIONRATIO or not EFF_MASS_METHOD == 1, "No exact inverse function exists for pion ratio method."
-assert PIONRATIO or not EFF_MASS_METHOD == 2, "Symbolic solve not supported for pion ratio method."
+assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse function exists for pion ratio method."
+assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve not supported for pion ratio method."
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 if PIONRATIO:
@@ -505,3 +524,4 @@ if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
         RESCALE = 1.0
+

@@ -8,7 +8,7 @@ from latfit.extract.proc_folder import proc_folder
 
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
-from latfit.config import GEVP
+from latfit.config import GEVP, T0
 
 
 if EFF_MASS:
@@ -76,8 +76,10 @@ def roundup(time, xstep, xmin):
 if GEVP:
     def getfiles(time, xstep, xmin, _):
         """Get files, gevp (meta)"""
-        time2 = 3
-        time2 = roundup(time, xstep, xmin)
+        if T0 == 'ROUND':
+            time2 = roundup(time, xstep, xmin)
+        elif T0 == 'TMINUS1':
+            time2 = time-xstep
         return getfiles_gevp(time, time2, xstep)
 else:
     def getfiles(time, xstep, _, input_f):

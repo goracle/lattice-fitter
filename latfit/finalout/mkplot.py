@@ -76,7 +76,8 @@ def mkplot(plotdata, input_f,
         if j == []:
             dimops_mod -= 1
             todel.append(i)
-    result_min_mod.x = np.delete(result_min.x, todel)
+    if FIT:
+        result_min_mod.x = np.delete(result_min.x, todel)
 
     # GET STRINGS
     title = get_title(input_f)
