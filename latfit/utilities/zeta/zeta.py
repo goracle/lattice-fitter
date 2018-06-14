@@ -56,7 +56,7 @@ if CALC_PHASE_SHIFT:
         else:
             out = complex(float(out))
             if ISOSPIN == 0:
-                if out.real < 0:
+                if out.real < 0 and abs(out.real) > 90:
                     out = np.complex(out.real+
                                     math.ceil(-out.real/180)*180, out.imag)
                 if out.real > 180:

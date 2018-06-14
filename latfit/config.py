@@ -49,8 +49,8 @@ GEVP = True
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
+T0 = 'ROUND' # ceil(t/2)
 
 # METHODS/PARAMS
 
@@ -71,42 +71,42 @@ USE_FIXED_MASS = True
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 TSEP_VEC = [0]
-TSEP_VEC = [3, 3]
 TSEP_VEC = [3, 0, 3,3]
 TSEP_VEC = [3, 0, 3]
+TSEP_VEC = [3, 3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
 FIT_EXCL = [[  ],[],[]]
-FIT_EXCL = [[],[6 ]]
 FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
 FIT_EXCL = [[ ], [  ], [10 ]]
+FIT_EXCL = [[],[ ]]
 
 # additive constant
 ADD_CONST_VEC = [False]
-ADD_CONST_VEC = [False, False]
 ADD_CONST_VEC = [True, True, True, False]
-ADD_CONST_VEC = [True, True, True]
+ADD_CONST_VEC = [False, False, False]
+ADD_CONST_VEC = [True, True]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
 # isospin value (convenience switch)
 ISOSPIN = 2
-DIM = 3
+DIM = 2
 # don't include the sigma in the gevp fits
-SIGMA = False
 SIGMA = True
+SIGMA = False
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal001'
 MOMSTR = 'momtotal000'
 # group irrep
-IRREP = 'A1_avg'
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
+IRREP = 'A1'
 IRREP = 'A_1PLUS'
 
 # calculate the I=0 phase shift?

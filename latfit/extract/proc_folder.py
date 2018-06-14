@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 import h5py
+import linecache
 
 from latfit.config import GEVP
 from latfit.config import STYPE
@@ -117,7 +118,16 @@ elif STYPE == 'ascii':
             print("Can't find file corresponding to x-value = ", ctime)
             print("regex = ", my_regex)
             sys.exit(1)
-        return retname
+        if GEVP:
+            ret = []
+            with open(retname) as fn1:
+                for i, l in enumerate(fn1):
+                    line = linecache.getline(fn1, i+1)
+                    ret.append(np.complex(float(line[0]), float(line[1])))
+            ret = np.array(ret)
+        else:
+            ret = retname
+        return ret
 
     def lookat_dir(folder, my_regex, regex_reject, temp4, retname):
         """loop on dir, look for file we want"""

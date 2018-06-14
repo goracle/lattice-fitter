@@ -28,26 +28,31 @@ if PIONRATIO:
         PION.append(np.array(GN1[i]))
     PION = np.array(PION)
 
-if STYPE == 'hdf5':
-    def getline_loc(filetup, num):
-        """The file tup is actually already a numpy array.
-        This function pretends to get the line from an ascii file
-        """
-        try:
-            complex(filetup[num-1])
-        except TypeError:
-            print("***ERROR***")
-            print("Expecting an array; in getblock")
-            print(filetup[num-1], "should be array of floats")
-            sys.exit(1)
-        return filetup[num-1]
-else:
-
+#if STYPE == 'hdf5':
+def getline_loc(filetup, num):
+    """The file tup is actually already a numpy array.
+    This function pretends to get the line from an ascii file
+    """
+    try:
+        complex(filetup[num-1])
+    except TypeError:
+        print("***ERROR***")
+        print("Expecting an array; in getblock")
+        print(filetup[num-1], "should be array of floats")
+        sys.exit(1)
+    return filetup[num-1]
+#else:
+if None:
     def getline_loc(filetup, num):
         """This function does get the line from the ascii file
         it is a simple wrapper for linecache.getline
+        
+        proc_folder now turns this into a numpy array preemptively,
+        so we don't need this function anymore
+        (that code change makes things more uniform)
         """
-        return getline(filetup, num)
+        return filetup[num-1]
+       # return getline(filetup, num)
 
 
 def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False):

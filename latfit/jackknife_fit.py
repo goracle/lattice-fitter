@@ -290,6 +290,7 @@ def prune_phase_shift_arr(arr):
             print("Bad phase shift in jackknife block # "+
                     str(i)+", omitting.")
             dellist.append(i)
+            sys.exit(1)
     return dellist
 
 def phase_shift_jk(params, epipi_arr):
