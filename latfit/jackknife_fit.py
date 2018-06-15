@@ -21,6 +21,7 @@ from latfit.config import UNCORR
 from latfit.config import FIT_EXCL
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
+from latfit.config import SUPERJACK_CUTOFF
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -31,6 +32,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         and whether the minimizer succeeded on all fits
         ('status' == 0 if all were successful)
         """
+        assert 0, "not currently supported"
         result_min = namedtuple(
             'min', ['x', 'fun', 'status', 'err_in_chisq', 'dof'])
         result_min.status = 0
@@ -61,6 +63,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
+
 
 
 elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
@@ -99,12 +102,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.pvalue = np.zeros(params.num_configs)
 
         #phase shift
-        #nphase = 1 if not GEVP else params.dimops-1
-        nphase = 1 if not GEVP else params.dimops
-        result_min.phase_shift = np.zeros((
-            params.num_configs, nphase), dtype=np.complex) if \
-            params.dimops > 1 else np.zeros((
-                params.num_configs), dtype=np.complex)
+        result_min.phase_shift = alloc_phase_shift(params)
 
         # allocate storage for jackknifed x,y coordinates
         coords_jack = np.copy(coords)
@@ -115,8 +113,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # storage for fit by fit chi^2
         chisq_min_arr = np.zeros(params.num_configs)
 
-        # original data, obtained by reversing single jackknife procedure
-        reuse_inv = inverse_jk(reuse, params.time_range, params.num_configs)
 
         # fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
@@ -132,8 +128,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.error_bars[
                 config_num] = get_doublejk_data(params, coords_jack,
-                                                reuse, config_num,
-                                                reuse_inv)
+                                                reuse, config_num)
 
             # minimize chi^2 given the inverse covariance matrix and data
             result_min_jack = mkmin(covinv_jack, coords_jack)
@@ -164,21 +159,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
 
         # compute p-value jackknife uncertainty
-        result_min.pvalue_err = np.sqrt(params.prefactor*np.sum((
-            result_min.pvalue-np.mean(result_min.pvalue))**2))
-        # average the p-value
-        result_min.pvalue = np.mean(result_min.pvalue)
+        result_min.pvalue, result_min.pvalue_err = JackMeanErr(result_min.pvalue)
+
+        # compute the mean, error on the params
+        result_min.x, param_err = JackMeanErr(min_arr)
 
         # average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
 
-        # compute the average fit params
-        result_min.x = np.mean(min_arr, axis=0)
-        print('result=', result_min.x)
-
-        # compute the error on the params
-        param_err = np.sqrt(params.prefactor*np.sum(
-            (min_arr-result_min.x)**2, 0))
 
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
@@ -190,41 +178,80 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                         min_arr = min_arr[:,0]
                     except IndexError:
                         raise
+
+            # get rid of configs were phase shift calculation failed
+            # (good for debug only)
             result_min.phase_shift = np.delete(result_min.phase_shift,
                                                prune_phase_shift_arr(
                                                    result_min.phase_shift),
                                                axis=0)
+
             if len(result_min.phase_shift) > 0:
+
+                # calculate scattering length via energy, phase shift
                 result_min.scattering_length = -1.0*np.tan(
                     result_min.phase_shift)/np.sqrt(
                         (min_arr**2/4-PION_MASS**2).astype(complex))
-                result_min.phase_shift_err = np.sqrt(
-                    params.prefactor*np.sum((
-                        result_min.phase_shift-np.mean(
-                        result_min.phase_shift, axis=0))**2, axis=0))
-                result_min.scattering_length_err = np.sqrt(
-                    params.prefactor*np.sum((
-                        result_min.scattering_length-np.mean(
-                        result_min.scattering_length, axis=0))**2, axis=0))
-                result_min.phase_shift = np.mean(
-                    result_min.phase_shift, axis=0)
-                result_min.scattering_length = np.mean(
-                    result_min.scattering_length, axis=0)
+
+                # calc mean, err on phase shift and scattering length
+                result_min.phase_shift, result_min.phase_shift_err  = \
+                    JackMeanErr(result_min.phase_shift)
+                result_min.scattering_length, result_min.scattering_length_err = \
+                    JackMeanErr(result_min.scattering_length)
+
             else:
                 result_min.phase_shift = None
 
-        # compute average chi^2
-        result_min.fun = np.mean(chisq_min_arr)
-
-        # compute jackknife uncertainty on chi^2
-        result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
-            (chisq_min_arr-result_min.fun)**2))
+        # compute mean, jackknife uncertainty of chi^2
+        result_min.fun, result_min.err_in_chisq = JackMeanErr(chisq_min_arr)
 
         return result_min, param_err
 else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def alloc_phase_shift(params):
+    """Get an empty array for Nconfig phase shifts"""
+    nphase = 1 if not GEVP else params.dimops
+    ret = np.zeros((
+        params.num_configs, nphase), dtype=np.complex) if \
+        params.dimops > 1 else np.zeros((
+            params.num_configs), dtype=np.complex)
+    return ret
+
+
+def JackMeanErr(arr, sjcut=SUPERJACK_CUTOFF):
+    """Calculate error in arr over axis=0 via jackknife factor
+    first n configs up to and including sjcut are exact
+    the rest are sloppy.
+    """
+    len_total = len(arr)
+    len_sloppy = len_total-sjcut
+
+    # get jackknife correction prefactors
+    exact_prefactor = (sjcut-1)/sjcut if sjcut else 0
+    sloppy_prefactor = (len_sloppy-1)/(len_sloppy)
+
+    # calculate error on exact and sloppy
+    if sjcut:
+        errexact = np.sqrt(exact_prefactor*np.sum(
+            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))**2, axis=0))
+    else:
+        errexact = 0
+    errsloppy = np.sqrt(sloppy_prefactor*np.sum(
+        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))**2, axis=0))
+
+    # add errors in quadrature (assumes errors are small,
+    # decorrelated, linear approx)
+    quad_sloppy = errsloppy * len_sloppy/len_total
+    quad_exact = errexact * sjcut/len_total
+    err = np.sqrt(quad_sloppy**2+quad_exact**2)
+
+    # calculate the mean
+    mean = np.mean(arr, axis=0)
+
+    return mean, err
 
 def pickl(min_arr, result_min, chisq_min_arr):
     """Pickle or unpickle the results from the jackknife fit loop
@@ -290,7 +317,7 @@ def prune_phase_shift_arr(arr):
             print("Bad phase shift in jackknife block # "+
                     str(i)+", omitting.")
             dellist.append(i)
-            sys.exit(1)
+            sys.exit(1) # remove this if debugging
     return dellist
 
 def phase_shift_jk(params, epipi_arr):
@@ -422,13 +449,17 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         return covjack / ((params.num_configs-1)/(params.num_configs-2))
 
 
-def get_doublejk_data(params, coords_jack, reuse, config_num, reuse_inv):
+def get_doublejk_data(params, coords_jack, reuse, config_num):
     """Primarily, get the inverse covariance matrix for the particular
     double jackknife fit we are on (=config_num)
     reuse_inv is the original unjackknifed data
     coords_jack are the coordinates, we also return truncated coordinates
     if the fit fails.
     """
+
+    # original data, obtained by reversing single jackknife procedure
+    reuse_inv = inverse_jk(reuse, params.time_range, params.num_configs)
+
     flag = 2
     while flag > 0:
         if flag == 1:
