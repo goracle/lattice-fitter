@@ -18,6 +18,10 @@ from latfit.config import NORMS, GEVP_DEBUG
 from latfit.config import BINNUM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, GEVP, ADD_CONST_VEC
+from latfit.config import MATRIX_SUBTRACTION
+
+if MATRIX_SUBTRACTION and GEVP:
+    ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
 
 if PIONRATIO:
     PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+('s' if i != 1 else '') for i in range(2)]

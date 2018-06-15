@@ -19,8 +19,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # Jackknife fit?
 
@@ -86,14 +86,16 @@ FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
 FIT_EXCL = [[],[ ]]
 
 # additive constant, due to around-the-world effect
-MATRIX_SUBTRACTION = True
+# do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = False
-DELTA_T_MATRIX_SUBTRACTION = 1
+MATRIX_SUBTRACTION = True
+DELTA_T_MATRIX_SUBTRACTION = 3
+# do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [False]
 ADD_CONST_VEC = [True, True, True, False]
 ADD_CONST_VEC = [True, True, True]
 ADD_CONST_VEC = [True, True]
-ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
+ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 
 # isospin value (convenience switch)
 ISOSPIN = 2
@@ -129,6 +131,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
 DISP_ENERGIES = [2*misc.dispersive([0,0,1]), 2*misc.dispersive([0,1,1])]
+DISP_ENERGIES = [2*misc.dispersive([0,0,1]), 2*misc.dispersive([0,0,0])]
 
 # pickle, unpickle
 
@@ -225,6 +228,11 @@ if SUPERJACK_CUTOFF:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
     TITLE_PREFIX = TITLE_PREFIX + 'sloppy '
+if MATRIX_SUBTRACTION:
+    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+str(DELTA_T_MATRIX_SUBTRACTION)+' '
+elif True in ADD_CONST_VEC:
+    TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
+    
 
 # title
 
@@ -373,6 +381,10 @@ LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
+MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
+if MATRIX_SUBTRACTION:
+    for i in range(len(ADD_CONST_VEC)):
+        ADD_CONST_VEC[i] = MATRIX_SUBTRACTION
 ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
 # library of functions to fit.  define them in the usual way
@@ -383,7 +395,8 @@ UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep', 'pionmass', '
 UP.add_const = ADD_CONST
 UP.log = LOG
 UP.c = C
-UP.tstep = TSTEP
+# make global tstep equal to delta t so fit functions below will be setup correctly
+UP.tstep = TSTEP if not GEVP else DELTA_T_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
 UP.lt = LT
@@ -533,6 +546,8 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse function exis
 assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve not supported for pion ratio method."
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
+UP.tstep = TSTEP # revert back
+FITS.select(UP)
 if PIONRATIO:
     FITS.test()
 if EFF_MASS:
