@@ -8,6 +8,7 @@ from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
 from math import sqrt, pi
+from latfit.utilities import read_file as rf
 
 # TYPE OF FIT
 
@@ -49,8 +50,8 @@ GEVP = True
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
 
 # METHODS/PARAMS
 
@@ -80,14 +81,17 @@ LT = 64
 
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
 FIT_EXCL = [[  ],[],[]]
-FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
 FIT_EXCL = [[ ], [  ], [10 ]]
+FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
 FIT_EXCL = [[],[ ]]
 
-# additive constant
+# additive constant, due to around-the-world effect
+MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False
+DELTA_T_MATRIX_SUBTRACTION = 1
 ADD_CONST_VEC = [False]
 ADD_CONST_VEC = [True, True, True, False]
-ADD_CONST_VEC = [False, False, False]
+ADD_CONST_VEC = [True, True, True]
 ADD_CONST_VEC = [True, True]
 ADD_CONST = ADD_CONST_VEC[0]  # no need to modify
 
@@ -173,6 +177,12 @@ ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
 ELIM_JKCONF_LIST = [  0,   1,   2,   3,   4,   5,   6,   7,   8,  10,  12,  13,  15, 17,  19,  21,  23,  24,  39,  43,  45,  49,  52,  54,  57,  65, 75,  78,  80,  82,  84,  98, 100, 102, 104, 106, 114, 117, 119, 121, 123, 125, 127, 129, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145]
 ELIM_JKCONF_LIST = []
+
+# super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
+# variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
+SUPERJACK_CUTOFF = 10
+SUPERJACK_CUTOFF = 0
+
 #print(ELIM_JKCONF_LIST[36])
 #sys.exit(0)
 #ELIM_JKCONF_LIST = ELIM_JKCONF_LIST[37:]
@@ -210,6 +220,11 @@ if GEVP:
 
 else:
     TITLE_PREFIX = '24c '
+
+if SUPERJACK_CUTOFF:
+    TITLE_PREFIX = TITLE_PREFIX + 'exact '
+else:
+    TITLE_PREFIX = TITLE_PREFIX + 'sloppy '
 
 # title
 
@@ -524,4 +539,8 @@ if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
         RESCALE = 1.0
+# change this if the slowest pion is not stationary
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
+print("Assuming slowest around the world term particle is stationary.  Emin=",
+      DELTA_E_AROUND_THE_WORLD)
 
