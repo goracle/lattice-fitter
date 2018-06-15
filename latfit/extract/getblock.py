@@ -2,7 +2,7 @@
 import sys
 from collections import deque
 from linecache import getline
-from scipy.linalg import eig
+import scipy.linalg
 import numpy as np
 import h5py
 
@@ -77,7 +77,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
             c_rhs[opa][opb] = proc_line(
                 getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
-    eigvals, evecs = eig(c_lhs, c_rhs, overwrite_a=True,
+    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
                      overwrite_b=overb, check_finite=False)
     if print_evecs:
         print("start solve")
