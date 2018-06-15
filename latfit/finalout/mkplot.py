@@ -44,6 +44,7 @@ from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
 from latfit.config import PICKLE
+from latfit.config import DELTA_E_AROUND_THE_WORLD
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -77,7 +78,12 @@ def mkplot(plotdata, input_f,
             dimops_mod -= 1
             todel.append(i)
     if FIT:
+        # we shifted the GEVP energy spectrum down
+        # to fix the leading order around the world term so shift it back
+        result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
+        # delete the unwanted dimensions
         result_min_mod.x = np.delete(result_min.x, todel)
+
 
     # GET STRINGS
     title = get_title(input_f)
