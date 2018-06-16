@@ -332,7 +332,7 @@ GEVP_DEBUG = False
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11]]
-NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5,1.0], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5,1.0], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11,1.0], [1.0,1.0,1.0,1.0]]
+NORMS = [[1.0, 1.0, 1.0,1.0], [1.0, 1.0, 1.0,1.0], [1.0, 1.0, 1.0,1.0], [1.0,1.0,1.0,1.0]]
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
@@ -558,4 +558,5 @@ if EFF_MASS:
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
-
+assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
+    " only with eff mass method 4"

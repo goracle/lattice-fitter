@@ -2,6 +2,7 @@
 import sys
 import math
 import numpy as np
+import copy
 
 from latfit.extract.gevp_getfiles_onetime import gevp_getfiles_onetime
 from latfit.extract.pencil_shift import pencil_shift_lhs, pencil_shift_rhs
@@ -104,8 +105,10 @@ def matsub(files, sub, dt1):
     for timeidx in files:
         subidx = max(timeidx-dt1, 0)
         subterm[timeidx] = files[subidx] if subidx in files else sub[subidx]
+        subterm[timeidx] = copy.deepcopy(subterm[timeidx])
         #print("C_weighted(", timeidx, ") -= C_weighted(", subidx, ")", "check with delta_t=", dt1)
     for timeidx in files:
+        subtraction = copy.deepcopy(subterm[timeidx])
         files[timeidx] -= subterm[timeidx]
     return files
     

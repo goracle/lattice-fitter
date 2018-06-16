@@ -141,7 +141,7 @@ elif EFF_MASS_METHOD == 4:
         tstep = None
         if MATRIX_SUBTRACTION and GEVP:
             j = 1
-            tstep = DELTA_T_MATRIX_SUBTRACTION
+            tstep = -DELTA_T_MATRIX_SUBTRACTION
         EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, tstep))
 
     def eff_mass_root(energy, ctime, sol):

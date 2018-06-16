@@ -102,8 +102,8 @@ class FitFuncAdd:
             np.seterr(invalid='ignore')
         else:
             np.seterr(invalid='raise')
-            zero_p(corrs[1], corrs[2], times)
-        sol = (corrs[1]-corrs[0])/(corrs[2]-corrs[1])
+            zero_p(corrs[3], corrs[2], times)
+        sol = (corrs[1]-corrs[0])/(corrs[3]-corrs[2])
         if not nocheck:
             testsol(sol, corrs, times)
         sol = log(sol) if self._log else sol
@@ -156,9 +156,13 @@ class FitFuncAdd:
         """
         lt = self._lt if lt is None else lt
         tstep = self._tstep if tstep is None else tstep
-        corrs = [exp(-trial_params[0]*(ctime+i*self._tstep)) +
-                 exp(-trial_params[0]*(lt-(ctime+i*self._tstep)))
-                 for i in range(3)]
+        corrs_num = [exp(-trial_params[0]*(ctime+i*tstep)) +
+                 exp(-trial_params[0]*(lt-(ctime+i*tstep)))
+                 for i in range(2)]
+        corrs_denom = [exp(-trial_params[0]*(ctime+1+i*tstep)) +
+                 exp(-trial_params[0]*(lt-(ctime+1+i*tstep)))
+                 for i in range(2)]
+        corrs = [*corrs_num, *corrs_denom]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
     def pion_ratio(self, ctime, trial_params, lt=None):
@@ -184,7 +188,7 @@ class FitFuncAdd:
     def fit_func_1p_pionratio(self, ctime, trial_params, lt=None, tstep=None):
         lt = self._lt if lt is None else lt
         tstep = self._tstep if tstep is None else tstep
-        tp = [ctime+i*self._tstep+1/2-lt/2.0 for i in range(3)]
+        tp = [ctime+i*tstep+1/2-lt/2.0 for i in range(3)]
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
         corrs = [trial_params[0]*(sinh(tp[i]*trial_params[1])+cosh(tp[i]*trial_params[1])/tanh(2*tp[i]*pionmass)) for i in range(3)]
         #return self.ratio_pionratio(corrs, ctime, nocheck=True)
@@ -284,8 +288,8 @@ class FitFunc:
         """
         tstep = self._tstep if tstep is None else tstep
         lt = self._lt if lt is None else lt
-        corrs = [exp(-trial_params[0]*(ctime+i*self._tstep)) +
-                exp(-trial_params[0]*(lt-(ctime+i*self._tstep)))
+        corrs = [exp(-trial_params[0]*(ctime+i*tstep)) +
+                exp(-trial_params[0]*(lt-(ctime+i*tstep)))
                 for i in range(2)]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
@@ -296,7 +300,7 @@ class FitFunc:
         lt = self._lt if lt is None else lt
         tstep = self._tstep if tstep is None else tstep
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
-        tp = [ctime+i*self._tstep+1/2-lt/2.0 for i in range(2)]
+        tp = [ctime+i*tstep+1/2-lt/2.0 for i in range(2)]
         corrs = [trial_params[0]*(sinh((tp[i]-1/2)*trial_params[1]-1/2*pionmass)+cosh((tp[i]-1/2)*trial_params[1]-1/2*pionmass))/tanh(2*tp[i]*pionmass) for i in range(2)]
         #return self.ratio_pionratio(corrs, ctime, nocheck=True)
         return corrs[0]
@@ -322,6 +326,6 @@ class FitFunc:
     def pion_ratio(self, ctime, trial_params, lt=None):
         """Include pions in the denominator of eff mass ratio."""
         lt = self._lt if lt is None else lt
-        tp = ctime+1/2-self._lt/2.0
+        tp = ctime+1/2-lt/2.0
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[2]
         return trial_params[0]*(sinh(tp*trial_params[1])+cosh(tp*trial_params[1])/tanh(2*tp*pionmass))
