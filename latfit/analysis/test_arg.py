@@ -49,4 +49,5 @@ def testsol(sol, corrs, times=None):
             print("corrs["+str(i)+"] = ", corr)
         if times is not None:
             print("problematic time slices:", times)
+        # raise
         sys.exit(1)

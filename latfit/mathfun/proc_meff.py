@@ -24,7 +24,7 @@ from latfit.config import PIONRATIO
 from latfit.config import RESCALE
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import MINTOL, METHOD, BINDS
-from latfit.config import ORIGL
+from latfit.config import ORIGL, DIM, FIT_EXCL
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 # from latfit.analysis.profile import PROFILE
 import latfit.config
@@ -155,8 +155,15 @@ elif EFF_MASS_METHOD == 4:
         (e.g.) [ C(t) ]/[ C(t+1) ]
         This is the conventional effective mass formula.
         """
-        sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
-            'ratio'][ADD_CONST_VEC[index]](corrs, times)
+        try:
+            sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
+                'ratio'][ADD_CONST_VEC[index]](corrs, times)
+        except:
+            assert times and times[0] in FIT_EXCL[index], "bad time/op"+\
+                "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
+            print('operator index=', index)
+            print("times=", times)
+            sol = .1
         index = 0 if index is None else index
         try:
             if ORIGL > 1:

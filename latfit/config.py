@@ -19,8 +19,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # Jackknife fit?
 
@@ -50,8 +50,8 @@ GEVP = True
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
+T0 = 'ROUND' # ceil(t/2)
 
 # METHODS/PARAMS
 
@@ -69,40 +69,17 @@ PIONRATIO = False
 USE_FIXED_MASS = False
 USE_FIXED_MASS = True
 
-# time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
-
-TSEP_VEC = [0]
-TSEP_VEC = [3, 0, 3,3]
-TSEP_VEC = [3, 0, 3]
-TSEP_VEC = [3, 3]
-LT = 64
-
-# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
-
-FIT_EXCL = [[],[2,5,6, 7,8  ]]
-FIT_EXCL = [[  ],[],[]]
-FIT_EXCL = [[ ], [  ], [10 ]]
-FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
-FIT_EXCL = [[],[ ]]
-
-# additive constant, due to around-the-world effect
-# do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
-MATRIX_SUBTRACTION = True
-DELTA_T_MATRIX_SUBTRACTION = 3
-# do the subtraction at the level of the eigenvalues
-ADD_CONST_VEC = [False]
-ADD_CONST_VEC = [True, True, True, False]
-ADD_CONST_VEC = [True, True, True]
-ADD_CONST_VEC = [True, True]
-ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+# super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
+# variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
+SUPERJACK_CUTOFF = 0
+SUPERJACK_CUTOFF = 10
 
 # isospin value (convenience switch)
-ISOSPIN = 2
-DIM = 2
+ISOSPIN = 0
+DIM = 3
 # don't include the sigma in the gevp fits
-SIGMA = True
 SIGMA = False
+SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
 MOMSTR = 'momtotal001'
@@ -114,6 +91,35 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1'
 IRREP = 'A_1PLUS'
+
+# time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
+
+TSEP_VEC = [0]
+TSEP_VEC = [3, 0, 3,3]
+TSEP_VEC = [3, 3]
+TSEP_VEC = [3]*DIM if GEVP else [0]
+LT = 64
+
+# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
+
+FIT_EXCL = [[],[2,5,6, 7,8  ]]
+FIT_EXCL = [[  ],[],[]]
+FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [[ ], [ 5,10,11,12, 13,14,15,16,17 ], [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
+
+
+
+# additive constant, due to around-the-world effect
+# do the subtraction at the level of the GEVP matrix
+MATRIX_SUBTRACTION = False
+MATRIX_SUBTRACTION = True
+DELTA_T_MATRIX_SUBTRACTION = 2
+# do the subtraction at the level of the eigenvalues
+ADD_CONST_VEC = [True]*DIM if GEVP else [False]
+ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+
+
 
 # calculate the I=0 phase shift?
 
@@ -180,11 +186,6 @@ ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
 ELIM_JKCONF_LIST = [  0,   1,   2,   3,   4,   5,   6,   7,   8,  10,  12,  13,  15, 17,  19,  21,  23,  24,  39,  43,  45,  49,  52,  54,  57,  65, 75,  78,  80,  82,  84,  98, 100, 102, 104, 106, 114, 117, 119, 121, 123, 125, 127, 129, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145]
 ELIM_JKCONF_LIST = []
-
-# super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
-# variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 10
-SUPERJACK_CUTOFF = 0
 
 #print(ELIM_JKCONF_LIST[36])
 #sys.exit(0)

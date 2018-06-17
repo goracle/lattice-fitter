@@ -239,14 +239,13 @@ def JackMeanErr(arr, sjcut=SUPERJACK_CUTOFF):
             (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))**2, axis=0))
     else:
         errexact = 0
+    print('errexact=', errexact)
     errsloppy = np.sqrt(sloppy_prefactor*np.sum(
         (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))**2, axis=0))
 
     # add errors in quadrature (assumes errors are small,
     # decorrelated, linear approx)
-    quad_sloppy = errsloppy * len_sloppy/len_total
-    quad_exact = errexact * sjcut/len_total
-    err = np.sqrt(quad_sloppy**2+quad_exact**2)
+    err = np.sqrt(errsloppy**2+errexact**2)/2
 
     # calculate the mean
     mean = np.mean(arr, axis=0)
