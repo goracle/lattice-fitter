@@ -33,9 +33,12 @@ except NameError:
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
-FNDEF = PREFIX+'2160.'+EXTENSION
+FNDEF = PREFIX+'1530.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
-HNDEF = PREFIX+'350.'+EXTENSION
+HNDEF = PREFIX+'410.'+EXTENSION
+FNDEF = PREFIX+'350.'+EXTENSION
+GNDEF = PREFIX+'250.'+EXTENSION
+HNDEF = PREFIX+'400.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64
 TSEP = 3
@@ -93,6 +96,12 @@ TESTKEY2 = 'FigureV_sep4_mom1src000_mom2src000_mom1snk000'
 TESTKEY2 = ''
 TSLICE = 0
 
+# ama correction
+DOAMA = False
+DOAMA = True
+EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
+
+
 # Individual diagram's jackknife block to write
 
 def fill_write_block(fndef=FNDEF):
@@ -134,18 +143,47 @@ def getindices(tsep, nmomaux):
 
 
 @PROFILE
-def trajlist():
+def trajlist(getexactconfigs=False, getsloppysubtraction=False):
     """Get trajectory list from files of form
     <traj>.EXTENSION"""
+    assert getexactconfigs == False or getsloppysubtraction == False, "Must choose one or the other."
     trajl = set()
-    for fn1 in glob.glob(PREFIX+'*.'+EXTENSION):
-        toadd = int(re.sub('.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
+    suffix = '_exact' if getexactconfigs else ''
+    for fn1 in glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION):
+
+        try:
+            toadd = int(re.sub(suffix+'.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
+        
+        except ValueError:
+            if not '_exact' in str(fn1) or getexactconfigs:
+                print("skipping:", re.sub(suffix+'.'+EXTENSION, '',
+                                            re.sub(PREFIX, '', fn1)))
+                print("getexact=", getexactconfigs)
+                print("getsloppy=", getsloppysubtraction)
+            continue
+
+
+        # double check if config is sloppy or exact
+        if DOAMA:
+            check = toadd in EXACT_CONFIGS
+            if getsloppysubtraction:
+                if not check:
+                    continue
+            elif getexactconfigs:
+                assert check, "found an exact config not in list:"+str(toadd)
+            else: # sloppy samples
+                if check:
+                    continue
+
         if toadd >= THERMNUM:  # filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
+    if getexactconfigs:
+        trajl = [str(traj)+'_exact' for traj in trajl]
     if MPIRANK == 0:
         print("Done getting trajectory list")
     return trajl
+
 
 def getbasl(fn1):
     """ok"""
@@ -426,6 +464,10 @@ def fold_time(outblk, base=''):
     else:
         return outblk
 
+def getFileName(traj):
+    """Get file name from trajectory"""
+    return PREFIX+str(traj)+'.'+EXTENSION
+    
 
 @PROFILE
 def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
@@ -444,11 +486,13 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         blk = np.zeros((len(trajl), LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
-        filekey = PREFIX+str(traj)+'.'+EXTENSION
+        filekey = getFileName(traj)
         if openlist is None:
             fn1 = h5py.File(filekey, 'r')
         else:
             fn1 = openlist[filekey]
+        traj = convertTraj(traj)
+        filekey = getFileName(traj)
         try:
             outarr = np.array(fn1['traj_'+str(traj)+base2])
         except:
@@ -487,6 +531,13 @@ def getmostblks(basl, trajl, openlist):
         print("Done getting most of the jackknife blocks.")
     return mostblks
 
+def convertTraj(traj):
+    """convert a string like '1540_exact'
+    to int, e.g. 1540
+    """
+    traj = str(traj)
+    return int(re.search("(\d)+", traj).group(0))
+
 
 @PROFILE
 def getbubbles(bubl, trajl, openlist=None):
@@ -496,11 +547,13 @@ def getbubbles(bubl, trajl, openlist=None):
         if BUBKEY and dsrc != BUBKEY:
             continue
         for traj in trajl:
-            filekey = PREFIX+str(traj)+'.'+EXTENSION
+            filekey = getFileName(traj)
             if openlist is None:
                 fn1 = h5py.File(filekey, 'r')
             else:
                 fn1 = openlist[filekey]
+            traj = convertTraj(traj)
+            filekey = getFileName(traj)
             keysrc = 'traj_' + str(traj) + '_' + dsrc
             assert(keysrc in fn1), "key = " + keysrc + \
                 " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
@@ -594,7 +647,12 @@ def getdiscon_name(dsrc_split, dsnk_split):
         sepval = -1
         discname = None
     else:
-        outfig = wd.comb_fig(dsrc, dsnk)
+        #print(dsrc,dsnk)
+        if 'type4' in dsnk:
+            sepval = -1
+            sepstr = ''
+        else:
+            outfig = wd.comb_fig(dsrc, dsnk)
         try:
             sepstr, sepval = wd.get_sep(dsrc, dsnk, outfig)
         except TypeError:
@@ -775,10 +833,10 @@ def getdisconwork(bubl):
     return nodebubl
 
 @PROFILE
-def main(fixn=True):
-    """Run this when making jackknife diagrams from raw hdf5 files"""
+def getData(getexactconfigs=False, getsloppysubtraction=False):
+    """Get jackknife blocks (after this we write them to disk)"""
     bubl = bublist()
-    trajl = trajlist()
+    trajl = trajlist(getexactconfigs, getsloppysubtraction)
     basl = baselist()
     numt = len(trajl)
     openlist = {}
@@ -803,9 +861,73 @@ def main(fixn=True):
     allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
+    return allblks, numt
+
+
+@PROFILE
+def doAMA(sloppyblks, exactblks, sloppysubtractionblks):
+    """do ama correction"""
+    if not DOAMA or not EXACT_CONFIGS:
+        retblks = sloppyblks
+    else:
+        retblks = {}
+        for blk in sloppyblks:
+
+            len_exact, Lte = exactblks[blk].shape
+            len_exact_check, Lte_check = sloppysubtractionblks[blk].shape
+            len_sloppy, Lts = sloppyblks[blk].shape
+
+            # do some checks
+            assert len_exact_check == len_exact, "subtraction term in correction \
+            has unequal config amount to exact:"+str(len_exact)+","+str(len_exact_check)
+            nexact = len(EXACT_CONFIGS)
+            assert len_exact_check == nexact, "subtraction term in correction \
+            has unequal config amount to global exact:"+str(nexact)+","+str(len_exact_check)
+            assert Lte == Lte_check, "subtraction term in correction\
+            has unequal time extent to exact:"+str(Lte)+","+str(Lte_check)
+            assert Lte == LT, "exact configs have unequal time extent \
+            to global time:"+str(Lte)+","+str(LT)
+            assert Lts == LT, "sloppy configs have unequal time extent \
+            to global time:"+str(Lts)+","+str(LT)
+
+            # compute correction
+            correction = exactblks[blk] - sloppysubtractionblks[blk]
+
+            # create return block (super-jackknife)
+            print("Creating super-jackknife block=", blk,
+                  "with", nexact, "exact configs and", len_sloppy, "sloppy configs")
+            retblks[blk] = np.zeros((len_exact+len_sloppy, LT), dtype=np.complex)
+
+            sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
+            correction_central_value  = np.mean(correction, axis=0)
+
+            exact = correction+sloppy_central_value
+            sloppy = sloppyblks[blk]+correction_central_value
+
+            retblks[blk][:len_exact] = exact
+            retblks[blk][len_exact:] = sloppy
+
+    return retblks
+
+
+@PROFILE
+def main(fixn=True):
+    """Run this when making jackknife diagrams from raw hdf5 files"""
+    #avg_irreps()
+    #sys.exit(0)
+    if not DOAMA:
+        allblks, numt = getData()
+    else:
+        sloppyblks, numt = getData(False, False)
+        exactblks, numt = getData(True, False)
+        sloppysubtractionblks, numt = getData(False, True)
+        allblks = doAMA(sloppyblks, exactblks, sloppysubtractionblks)
+    b = "FigureCv3_sep3_momsrc_100_momsnk000" # sanity check
+    if(MPIRANK==0): # write only needs one process, is fast
+        assert b in allblks, "uh oh"
     if(MPIRANK==0): # write only needs one process, is fast
         if WRITEBLOCK and not (
-                TESTKEY or TESTKEY2) and WRITEBLOCK[0] not in bubblks:
+                TESTKEY or TESTKEY2):
             for single_block in WRITEBLOCK:
                 try:
                     allblks[single_block] = fold_time(allblks[

@@ -37,9 +37,10 @@ def main(*args):
                     setname = k
                 break
             break
+        print('adding in dataset=', setname, "in file=", data, 'i=', i)
         if i == 1:
             avg = np.zeros(fn[setname].shape, dtype=np.complex128)
-        avg += np.array(fn[setname])
+        avg += np.asarray(fn[setname])
     print("multiplying by norm=", norm)
     avg *= norm
     name = str(input("output name?")) if not OUTNAME else OUTNAME
