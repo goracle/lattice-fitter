@@ -33,12 +33,12 @@ except NameError:
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
-FNDEF = PREFIX+'1530.'+EXTENSION
-GNDEF = PREFIX+'250.'+EXTENSION
-HNDEF = PREFIX+'410.'+EXTENSION
 FNDEF = PREFIX+'350.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'400.'+EXTENSION
+FNDEF = PREFIX+'1530.'+EXTENSION
+GNDEF = PREFIX+'250.'+EXTENSION
+HNDEF = PREFIX+'410.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64
 TSEP = 3
@@ -99,7 +99,7 @@ TSLICE = 0
 # ama correction
 DOAMA = False
 DOAMA = True
-EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
+EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 
 
 # Individual diagram's jackknife block to write

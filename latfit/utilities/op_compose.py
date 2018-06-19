@@ -6,7 +6,7 @@ import sys
 import re
 import numpy as np
 from sum_blks import sum_blks
-from write_discon import momtotal
+import write_discon as wd
 import read_file as rf
 
 
@@ -80,7 +80,7 @@ A_1PLUS_mom000 = [
     (1/sqrt(12), 'UUpipi', [[1, -1, 0], [-1, 1, 0]])
 ]
 
-A1z_mom111 = [
+A1_mom111 = [
     (1/sqrt(6), 'pipi', [[1, 0, 0], [0, 1, 1]]),
     (1/sqrt(6), 'pipi', [[0, 1, 1], [1, 0, 0]]),
     (1/sqrt(6), 'pipi', [[0, 1, 0], [1, 0, 1]]),
@@ -127,7 +127,7 @@ A1x_mom011 = [
     (0.5, 'U2pipi', [[1, 1, 0], [-1, 0, 1]]),
     (0.5, 'U2pipi', [[-1, 0, 1], [1, 1, 0]]),
     (0.5, 'U2pipi', [[1, 0, 1], [-1, 1, 0]]),
-    (0.5, 'U2pipi', [[-1, 1, 0], [1, 0, 1]])
+    (0.5, 'U2pipi', [[-1, 1, 0], [1, 0, 1]]),
     (0.5, 'U3pipi', [[0, -1, 1], [0, 2, 0]]),
     (0.5, 'U3pipi', [[0, 2, 0], [0, -1, 1]]),
     (0.5, 'U3pipi', [[0, 0, 2], [0, 1, -1]]),
@@ -198,12 +198,12 @@ A1z = [
     (1/sqrt(2), 'S_pipi', [[0, 0, 0], [0, 0, 1]]),
     (1/sqrt(2), 'S_pipi', [[0, 0, 1], [0, 0, 0]]),
     (1/sqrt(8), 'pipi', [[-1, 0, 1], [1, 0, 0]]),
-    (1/sqrt(8), 'pipi', [[0, -1, 1], [0, 1, 0]]),
-    (1/sqrt(8), 'pipi', [[1, 0, 1], [-1, 0, 0]]),
-    (1/sqrt(8), 'pipi', [[0, 1, 1],[0, -1, 0]]),
     (1/sqrt(8), 'pipi', [[1, 0, 0], [-1, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[0, -1, 1], [0, 1, 0]]),
     (1/sqrt(8), 'pipi', [[0, 1, 0], [0, -1, 1]]),
+    (1/sqrt(8), 'pipi', [[1, 0, 1], [-1, 0, 0]]),
     (1/sqrt(8), 'pipi', [[-1, 0, 0], [1, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[0, 1, 1],[0, -1, 0]]),
     (1/sqrt(8), 'pipi', [[0, -1, 0], [0, 1, 1]]),
     (1, 'sigma', [0, 0, 1])
 ]
@@ -212,47 +212,67 @@ A1z = [
 A1mz = [
     (0.5, 'S_pipi', [[0, 0, 0], [0, 0, -1]]),
     (0.5, 'S_pipi', [[0, 0, -1], [0, 0, 0]]),
-    (0.5, 'pipi', [[1, 0, 0], [-1, 0, -1]]),
-    (0.5, 'pipi', [[-1, 0, 0], [1, 0, -1]]),
-    (0.5, 'pipi', [[0, -1, 0], [0, 1, -1]]),
-    (0.5, 'pipi', [[0, -1, 0], [0, 1, -1]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, -1], [1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[1, 0, 0], [-1, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, -1, -1], [0, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 1, 0], [0, -1, -1]]),
+    (1/sqrt(8), 'pipi', [[1, 0, -1], [-1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, 0], [1, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, 1, -1],[0, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, -1, 0], [0, 1, -1]]),
     (1, 'sigma', [0, 0, -1])
 ]
 
 A1y = [
     (0.5, 'S_pipi', [[0, 0, 0], [0, 1, 0]]),
     (0.5, 'S_pipi', [[0, 1, 0], [0, 0, 0]]),
-    (0.5, 'pipi', [[1, 0, 0], [-1, 1, 0]]),
-    (0.5, 'pipi', [[-1, 0, 0], [1, 1, 0]]),
-    (0.5, 'pipi', [[0, 0, -1], [0, 1, 1]]),
-    (0.5, 'pipi', [[0, 0, 1], [0, 1, -1]]),
+    (1/sqrt(8), 'pipi', [[-1, 1, 0], [1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[1, 0, 0], [-1, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[1, 1, 0], [-1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, 0], [1, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 1, 1], [0, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, -1], [0, 1, 1]]),
+    (1/sqrt(8), 'pipi', [[0, 1, -1], [0, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, 1], [0, 1, -1]]),
     (1, 'sigma', [0, 1, 0])
 ]
 A1my = [
     (0.5, 'S_pipi', [[0, 0, 0], [0, -1, 0]]),
     (0.5, 'S_pipi', [[0, -1, 0], [0, 0, 0]]),
-    (0.5, 'pipi', [[1, 0, 0], [-1, -1, 0]]),
-    (0.5, 'pipi', [[-1, 0, 0], [1, -1, 0]]),
-    (0.5, 'pipi', [[0, 0, -1], [0, -1, 1]]),
-    (0.5, 'pipi', [[0, 0, 1], [0, -1, -1]]),
+    (1/sqrt(8), 'pipi', [[-1, -1, 0], [1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[1, 0, 0], [-1, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[1, -1, 0], [-1, 0, 0]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, 0], [1, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, -1, 1], [0, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, -1], [0, -1, 1]]),
+    (1/sqrt(8), 'pipi', [[0, -1, -1], [0, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, 1], [0, -1, -1]]),
     (1, 'sigma', [0, -1, 0])
 ]
 A1x = [
     (0.5, 'S_pipi', [[1, 0, 0], [0, 0, 0]]),
     (0.5, 'S_pipi', [[0, 0, 0], [1, 0, 0]]),
-    (0.5, 'pipi', [[1, -1, 0], [0, 1, 0]]),
-    (0.5, 'pipi', [[1, 1, 0], [0, -1, 0]]),
-    (0.5, 'pipi', [[1, 0, 1], [0, 0, -1]]),
-    (0.5, 'pipi', [[1, 0, -1], [0, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[1, -1, 0], [0, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 1, 0], [1, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, -1, 0], [1, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[1, 1, 0], [0, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 0, -1], [1, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[1, 0, 1], [0, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, 1], [1, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[1, 0, -1], [0, 0, 1]]),
     (1, 'sigma', [1, 0, 0])
 ]
 A1mx = [
     (0.5, 'S_pipi', [[-1, 0, 0], [0, 0, 0]]),
     (0.5, 'S_pipi', [[0, 0, 0], [-1, 0, 0]]),
-    (0.5, 'pipi', [[-1, -1, 0], [0, 1, 0]]),
-    (0.5, 'pipi', [[-1, 1, 0], [0, -1, 0]]),
-    (0.5, 'pipi', [[-1, 0, 1], [0, 0, -1]]),
-    (0.5, 'pipi', [[-1, 0, -1], [0, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[-1, -1, 0], [0, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 1, 0], [-1, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, -1, 0], [-1, 1, 0]]),
+    (1/sqrt(8), 'pipi', [[-1, 1, 0], [0, -1, 0]]),
+    (1/sqrt(8), 'pipi', [[0, 0, -1], [-1, 0, 1]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, 1], [0, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[0, 0, 1], [-1, 0, -1]]),
+    (1/sqrt(8), 'pipi', [[-1, 0, -1], [0, 0, 1]]),
     (1, 'sigma', [-1, 0, 0])
 ]
 
@@ -312,7 +332,7 @@ OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
           'T_1_3MINUS?pol=2': T_1_3MINUS,
           'T_1_2MINUS?pol=3': T_1_2MINUS,
           'A0_mom000': A0_mom000,
-          'A2': A2,
+          #'A2': A2,
           'A1x': A1x, 'A1mx': A1mx,
           'A1y': A1y, 'A1my': A1my,
           'A1z': A1z, 'A1mz': A1mz,
@@ -365,10 +385,18 @@ def op_list(stype='ascii'):
     projlist = {}
     for opa in OPLIST:
         coeffs_tuple = []
-        momchk = rf.mom(opa) if 'mom' in momchk else None
-        assert len(set(OPLIST[opa])) == len(OPLIST[opa]), "Duplicate operator found in "+str(opa)
-        for src in OPLIST[opa]:
-            for snk in OPLIST[opa]:
+        momchk = rf.mom(opa) if 'mom' in opa else None
+        for chkidx, src in enumerate(OPLIST[opa]):
+            for chkidx2, snk in enumerate(OPLIST[opa]):
+                if src[1] == snk[1]:
+                    dup_flag = True
+                    for pcheck, pcheck2 in zip(src[2], snk[2]):
+                        if isinstance(pcheck, int):
+                            dup_flag = pcheck == pcheck2
+                        elif rf.ptostr(pcheck) != rf.ptostr(pcheck2):
+                            dup_flag = False
+                    if dup_flag:
+                        assert chkidx == chkidx2, "Duplicate operator found in "+str(opa)+" "+str(src)+" "+str(snk)
                 assert cons_mom(src, snk, momchk), "operator does not conserve momentum "+str(opa)
                 part_str = partstr(src[1], snk[1])
                 coeff = src[0]*snk[0]
@@ -400,8 +428,8 @@ def op_list(stype='ascii'):
 
 def cons_mom(src, snk, momtotal=None):
     """Check for momentum conservation"""
-    psrc = momtotal(src[2])
-    psnk = momtotal(snk[2])
+    psrc = wd.momtotal(src[2])
+    psnk = wd.momtotal(snk[2])
     conssrcsnk = psrc[0] == psnk[0] and psrc[1] == psnk[1] and psrc[2] == psnk[2]
     if momtotal:
         check = momtotal[0] == psnk[0] and momtotal[1] == psnk[1] and momtotal[2] == psnk[2]
@@ -416,7 +444,7 @@ def main():
     l = op_list('hdf5')
     for i in l:
         print(i)
-    print(l['rhorho_T_1_1MINUS'])
+    print(l['rhorho_T_1_1MINUS?pol=1'])
 
 
 if __name__ == "__main__":
