@@ -263,6 +263,7 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
         print("File", outh5, "exists. Skipping.")
         return
     print("Writing", outh5, "with", len(blk), "trajectories.")
+    assert ocs and PRINT_COEFFS, "irrep/isospin projection turned off"
     if ocs and PRINT_COEFFS:
         print("Combined Isospin/Subduction coefficients for", outfile, ":")
         try:
@@ -382,6 +383,47 @@ def buberr(bubblks):
                 avgval, errval = ntup
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
+
+def checkCountofDiagrams(ocs):
+    """count how many diagrams go into irrep/iso projection
+    if it does not match the expected, abort
+    """
+    checks = opc.generateChecksums()
+    counter_checks = {}
+    isocount = -1
+    for irrop in checks:
+        counter_checks[irrop] = 0
+        for opa in ocs:
+            print("isospin checksumming op=", opa, "for correctness")
+            if not irrop in opa:
+                continue
+            if 'rho' in opa:
+                if 'pipi' in ocs[opa]:
+                    isocount = 2
+                else:
+                    isocount = 1
+            elif 'sigma' in opa:
+                isocount = 2
+            else:
+                assert 'pipi' in opa, "bad operator:"+str(ocs[opa])
+                isocount = 4 if 'I0' in opa else 2
+            try:
+                assert len(ocs[opa]) % isocount == 0, "bad isospin projection count."+str(ocs[opa])
+            except AssertionError:
+                new_length = len(ocs[opa])
+                for diag, coefficient in ocs[opa]:
+                    if 'FigureV' in diag:
+                        new_length -= 1
+                assert new_length != len(ocs[opa]), "isospin"+\
+                    " projection broken"+str(ocs[opa])
+                
+            assert new_length % isocount-1 == 0, "bad"+\
+                " isospin projection count."+str(ocs[opa])
+            counter_checks[irrop] += len(ocs[opa])/isocount
+        assert counter_checks[irrop] == checks[irrop], "bad checksum,"+\
+            " number of expected diagrams"+\
+            " does not match:"+str(checks[irrop])+" vs. "+str(
+                counter_checks[irrop])
 
 
 @PROFILE
