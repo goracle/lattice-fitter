@@ -2,12 +2,12 @@
 """Write jackknife blocks from h5py files"""
 import sys
 import time
+import math
 import os
 import glob
 import re
 import numpy as np
 from mpi4py import MPI
-import itertools
 import h5py
 import read_file as rf
 from sum_blks import isoproj
@@ -15,9 +15,7 @@ import op_compose as opc
 from op_compose import AVG_ROWS
 import write_discon as wd
 import aux_write as aux
-import math
 import avg_hdf5
-import glob
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -63,7 +61,7 @@ TSTEP = 8  # we only measure every TSTEP time slices to save on time
 # do subtraction in the old way
 OUTERSUB = False  # (True): <AB>-<A><B>.  New way (False): <A-<A>><B-<B>>
 JACKBUB = True  # keep true for correctness; false to debug incorrect results
-assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True," + \
+assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True, " + \
     "OUTERSUB = False, " + " debug:JACKBUB = False, OUTERSUB = False"
 # FOLD = True # average about the mirror point in time (True)
 FOLD = True
@@ -105,6 +103,7 @@ EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 101
 # Individual diagram's jackknife block to write
 
 def fill_write_block(fndef=FNDEF):
+    """compose list of names of the individual diagrams to write"""
     fn1 = h5py.File(fndef, 'r')
     retlist = []
     for i in fn1:
@@ -146,18 +145,18 @@ def getindices(tsep, nmomaux):
 def trajlist(getexactconfigs=False, getsloppysubtraction=False):
     """Get trajectory list from files of form
     <traj>.EXTENSION"""
-    assert getexactconfigs == False or getsloppysubtraction == False, "Must choose one or the other."
+    assert not getexactconfigs or not getsloppysubtraction, "Must choose one or the other."
     trajl = set()
     suffix = '_exact' if getexactconfigs else ''
     for fn1 in glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION):
 
         try:
             toadd = int(re.sub(suffix+'.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
-        
+
         except ValueError:
-            if not '_exact' in str(fn1) or getexactconfigs:
+            if '_exact' not in str(fn1) or getexactconfigs:
                 print("skipping:", re.sub(suffix+'.'+EXTENSION, '',
-                                            re.sub(PREFIX, '', fn1)))
+                                          re.sub(PREFIX, '', fn1)))
                 print("getexact=", getexactconfigs)
                 print("getsloppy=", getsloppysubtraction)
             continue
@@ -299,9 +298,9 @@ def overall_coeffs(iso, irr):
                     continue
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
-                    if rf.compare_pols(pols, pol_req) == False:
+                    if not rf.compare_pols(pols, pol_req):
                         continue
-                    if crossP(original_block):
+                    if cross_p(original_block):
                         continue
                     ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
@@ -310,7 +309,7 @@ def overall_coeffs(iso, irr):
         print("Done getting projection coefficients")
     return ocs
 
-def crossP(fname):
+def cross_p(fname):
     """Check if this is a pipi diagram with cross momenta (x+-x->y+-y)
     """
     mom = rf.mom(fname)
@@ -322,11 +321,9 @@ def crossP(fname):
                 if k != 0:
                     if i == 0 or not compare:
                         compare.add(j)
-                    else:
-                        if j not in compare:
-                            ret = True
+                    elif j not in compare:
+                        ret = True
     return ret
-        
 
 def strip_op(op1):
     """Strips off extra specifiers including polarizations."""
@@ -340,7 +337,7 @@ def get_polreq(op1):
     if len(spl) == 1:
         reqpol = None
     else:
-        polstrspl = spl[1].split(',')[0].split('=')
+        polstrspl = spl[1].split(', ')[0].split('=')
         if polstrspl[0] == 'pol':
             reqpol = int(polstrspl[1])
         else:
@@ -464,10 +461,10 @@ def fold_time(outblk, base=''):
     else:
         return outblk
 
-def getFileName(traj):
+def get_file_name(traj):
     """Get file name from trajectory"""
     return PREFIX+str(traj)+'.'+EXTENSION
-    
+
 
 @PROFILE
 def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
@@ -479,26 +476,25 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     if rowcols is not None:
         rows = rowcols[0]
         cols = rowcols[1]
-    base2 = '_'+base
     if avgtsrc:
         blk = np.zeros((len(trajl), LT), dtype=np.complex)
     else:
         blk = np.zeros((len(trajl), LT, LT), dtype=np.complex)
     skip = []
     for i, traj in enumerate(trajl):
-        filekey = getFileName(traj)
+        filekey = get_file_name(traj)
         if openlist is None:
             fn1 = h5py.File(filekey, 'r')
         else:
             fn1 = openlist[filekey]
-        traj = convertTraj(traj)
-        filekey = getFileName(traj)
+        traj = convert_traj(traj)
+        filekey = get_file_name(traj)
         try:
-            outarr = np.array(fn1['traj_'+str(traj)+base2])
+            outarr = np.array(fn1['traj_'+str(traj)+'_'+base])
         except:
-            c='traj_'+str(traj)+base2
-            print(c in fn1)
-            print(fn1[c])
+            namec = 'traj_'+str(traj)+'_'+base
+            print(namec in fn1)
+            print(fn1[namec])
             raise
     #    except KeyError:
     #        skip.append(i)
@@ -531,12 +527,12 @@ def getmostblks(basl, trajl, openlist):
         print("Done getting most of the jackknife blocks.")
     return mostblks
 
-def convertTraj(traj):
+def convert_traj(traj):
     """convert a string like '1540_exact'
     to int, e.g. 1540
     """
     traj = str(traj)
-    return int(re.search("(\d)+", traj).group(0))
+    return int(re.search(r"(\d)+", traj).group(0))
 
 
 @PROFILE
@@ -547,13 +543,13 @@ def getbubbles(bubl, trajl, openlist=None):
         if BUBKEY and dsrc != BUBKEY:
             continue
         for traj in trajl:
-            filekey = getFileName(traj)
+            filekey = get_file_name(traj)
             if openlist is None:
                 fn1 = h5py.File(filekey, 'r')
             else:
                 fn1 = openlist[filekey]
-            traj = convertTraj(traj)
-            filekey = getFileName(traj)
+            traj = convert_traj(traj)
+            filekey = get_file_name(traj)
             keysrc = 'traj_' + str(traj) + '_' + dsrc
             assert(keysrc in fn1), "key = " + keysrc + \
                 " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
@@ -647,7 +643,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
         sepval = -1
         discname = None
     else:
-        #print(dsrc,dsnk)
+        #print(dsrc, dsnk)
         if 'type4' in dsnk:
             sepval = -1
             sepstr = ''
@@ -813,7 +809,7 @@ def getwork(worklistin, mpirank=MPIRANK):
     offset = work*mpirank
     nodework = set(worklist[offset:offset+work])
     baselen = len(nodework)
-    if mpirank==0:
+    if mpirank == 0:
         nodework = nodework.union(set(worklist[work*MPISIZE:]))
         assert len(nodework) == backfill+baselen, "get work bug."
     return nodework
@@ -824,7 +820,7 @@ def getdisconwork(bubl):
     bubl = sorted(list(bubl))
     for src in bubl:
         for snk in bubl:
-            bublcomb.add((src,snk))
+            bublcomb.add((src, snk))
     nodebublcomb = getwork(list(bublcomb))
     nodebubl = set()
     for src, snk in nodebublcomb:
@@ -833,7 +829,7 @@ def getdisconwork(bubl):
     return nodebubl
 
 @PROFILE
-def getData(getexactconfigs=False, getsloppysubtraction=False):
+def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
     bubl = bublist()
     trajl = trajlist(getexactconfigs, getsloppysubtraction)
@@ -863,9 +859,35 @@ def getData(getexactconfigs=False, getsloppysubtraction=False):
     #    openlist[filekey].close()
     return allblks, numt
 
+def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
+    """Check block for consistency across sloppy and exact samples
+    return the consistency-checked block lengths
+    """
+    blk = blknametocheck
+    len_exact, lte = exactblks[blk].shape
+    len_exact_check, lte_check = sloppysubtractionblks[blk].shape
+    len_sloppy, lts = sloppyblks[blk].shape
+
+    # do some checks
+    assert len_exact_check == len_exact, "subtraction term in correction \
+    has unequal config amount to exact:"+str(len_exact)+", "+str(len_exact_check)
+    nexact = len(EXACT_CONFIGS)
+    assert len_exact_check == nexact, "subtraction term in correction \
+    has unequal config amount to global exact:"+str(nexact)+", "+str(len_exact_check)
+    assert lte == lte_check, "subtraction term in correction\
+    has unequal time extent to exact:"+str(lte)+", "+str(lte_check)
+    assert lte == LT, "exact configs have unequal time extent \
+    to global time:"+str(lte)+", "+str(LT)
+    assert lts == LT, "sloppy configs have unequal time extent \
+    to global time:"+str(lts)+", "+str(LT)
+
+    print("Creating super-jackknife block=", blk,
+          "with", nexact, "exact configs and", len_sloppy, "sloppy configs")
+    return len_sloppy, len_exact
+
 
 @PROFILE
-def doAMA(sloppyblks, exactblks, sloppysubtractionblks):
+def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
     """do ama correction"""
     if not DOAMA or not EXACT_CONFIGS:
         retblks = sloppyblks
@@ -873,33 +895,16 @@ def doAMA(sloppyblks, exactblks, sloppysubtractionblks):
         retblks = {}
         for blk in sloppyblks:
 
-            len_exact, Lte = exactblks[blk].shape
-            len_exact_check, Lte_check = sloppysubtractionblks[blk].shape
-            len_sloppy, Lts = sloppyblks[blk].shape
-
-            # do some checks
-            assert len_exact_check == len_exact, "subtraction term in correction \
-            has unequal config amount to exact:"+str(len_exact)+","+str(len_exact_check)
-            nexact = len(EXACT_CONFIGS)
-            assert len_exact_check == nexact, "subtraction term in correction \
-            has unequal config amount to global exact:"+str(nexact)+","+str(len_exact_check)
-            assert Lte == Lte_check, "subtraction term in correction\
-            has unequal time extent to exact:"+str(Lte)+","+str(Lte_check)
-            assert Lte == LT, "exact configs have unequal time extent \
-            to global time:"+str(Lte)+","+str(LT)
-            assert Lts == LT, "sloppy configs have unequal time extent \
-            to global time:"+str(Lts)+","+str(LT)
+            len_sloppy, len_exact = check_ama(blk, sloppyblks, exactblks, sloppysubtractionblks)
 
             # compute correction
             correction = exactblks[blk] - sloppysubtractionblks[blk]
 
             # create return block (super-jackknife)
-            print("Creating super-jackknife block=", blk,
-                  "with", nexact, "exact configs and", len_sloppy, "sloppy configs")
             retblks[blk] = np.zeros((len_exact+len_sloppy, LT), dtype=np.complex)
 
             sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
-            correction_central_value  = np.mean(correction, axis=0)
+            correction_central_value = np.mean(correction, axis=0)
 
             exact = correction+sloppy_central_value
             sloppy = sloppyblks[blk]+correction_central_value
@@ -916,16 +921,16 @@ def main(fixn=True):
     #avg_irreps()
     #sys.exit(0)
     if not DOAMA:
-        allblks, numt = getData()
+        allblks, numt = get_data()
     else:
-        sloppyblks, numt = getData(False, False)
-        exactblks, numt = getData(True, False)
-        sloppysubtractionblks, numt = getData(False, True)
-        allblks = doAMA(sloppyblks, exactblks, sloppysubtractionblks)
-    b = "FigureCv3_sep3_momsrc_100_momsnk000" # sanity check
-    if(MPIRANK==0): # write only needs one process, is fast
-        assert b in allblks, "uh oh"
-    if(MPIRANK==0): # write only needs one process, is fast
+        sloppyblks, numt = get_data(False, False)
+        exactblks, numt = get_data(True, False)
+        sloppysubtractionblks, numt = get_data(False, True)
+        allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
+    check_diag = "FigureCv3_sep3_momsrc_100_momsnk000" # sanity check
+    if MPIRANK == 0: # write only needs one process, is fast
+        assert check_diag in allblks, "check block not in allblks:"+str(check_diag)
+    if MPIRANK == 0: # write only needs one process, is fast
         if WRITEBLOCK and not (
                 TESTKEY or TESTKEY2):
             for single_block in WRITEBLOCK:
@@ -949,14 +954,14 @@ def main(fixn=True):
 
 def avg_irreps():
     """Average irreps"""
-    if(MPIRANK==0):
+    if MPIRANK == 0:
         for isostr in ('I0', 'I1', 'I2'):
             for irrep in AVG_ROWS:
                 op_list = set()
                 for example_row in AVG_ROWS[irrep]:
                     for op1 in glob.glob(isostr+'/'+'*'+example_row+'.jkdat'):
                         op_list.add(re.sub(example_row+'.jkdat',
-                                              '', re.sub(isostr+'/', '', op1)))
+                                           '', re.sub(isostr+'/', '', op1)))
                 for op1 in list(op_list):
                     avg_hdf5.OUTNAME = isostr+'/'+op1+irrep+'.jkdat'
                     avg_list = []
@@ -975,7 +980,6 @@ def printblk(basename, blk):
         print("Printing all time slices of", basename)
         print(blk)
 
-
 if __name__ == '__main__':
     FIXN = None
     if MPIRANK == 0:
@@ -989,8 +993,8 @@ if __name__ == '__main__':
                                         'certainly not', 'False']:
             sys.exit(1)
     FIXN = MPI.COMM_WORLD.bcast(FIXN, 0)
-    start = time.perf_counter()
+    START = time.perf_counter()
     main(FIXN)
-    end = time.perf_counter()
+    END = time.perf_counter()
     if MPIRANK == 0:
-        print("Total elapsed time =", end-start, "seconds")
+        print("Total elapsed time =", END-START, "seconds")

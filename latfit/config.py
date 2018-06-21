@@ -1,6 +1,7 @@
 """Config for lattice fitter."""
 import sys
 import re
+from math import sqrt, pi
 from collections import namedtuple
 from copy import copy
 import numpy as np
@@ -8,7 +9,6 @@ import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
-from math import sqrt, pi
 from latfit.utilities import read_file as rf
 
 # TYPE OF FIT
@@ -96,17 +96,18 @@ IRREP = 'A1z_'+re.sub('total', '', MOMSTR)
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 TSEP_VEC = [0]
-TSEP_VEC = [3, 0, 3,3]
+TSEP_VEC = [3, 0, 3, 3]
 TSEP_VEC = [3, 3]
 TSEP_VEC = [3]*DIM if GEVP else [0]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-FIT_EXCL = [[],[2,5,6, 7,8  ]]
-FIT_EXCL = [[  ],[],[]]
-FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
-FIT_EXCL = [[ ], [ 5,10,11,12, 13,14,15,16,17 ], [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
+FIT_EXCL = [[], [2, 5, 6, 7, 8]]
+FIT_EXCL = [[], [], []]
+FIT_EXCL = [[5], [5, 6], [5, 6], []]
+FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
+            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 
@@ -136,9 +137,10 @@ misc.MASS = PION_MASS/AINVERSE
 PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False if not GEVP else True
 DISP_ADD = (2*pi/L_BOX)**2*1
-DISP_ENERGIES = [misc.dispersive([0,0,0])+ misc.dispersive([0,0,1]), sqrt((2*misc.dispersive([0,0,1]))**2+DISP_ADD)]
-DISP_ENERGIES = [2*misc.dispersive([0,0,1]), 2*misc.dispersive([0,1,1])]
-DISP_ENERGIES = [2*misc.dispersive([0,0,1]), 2*misc.dispersive([0,0,0])]
+DISP_ENERGIES = [misc.dispersive([0, 0, 0])+ misc.dispersive([0, 0, 1]),
+                 sqrt((2*misc.dispersive([0, 0, 1]))**2+DISP_ADD)]
+DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]), 2*misc.dispersive([0, 1, 1])]
+DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]), 2*misc.dispersive([0, 0, 0])]
 
 # pickle, unpickle
 
@@ -165,7 +167,7 @@ RESCALE = 1.0
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5]
     if PIONRATIO:
-        START_PARAMS = [.05,0.0005]
+        START_PARAMS = [.05, 0.0005]
 else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
@@ -185,7 +187,12 @@ ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
 ELIM_JKCONF_LIST = [2, 3]
 ELIM_JKCONF_LIST = [4, 5, 6, 7]
 ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
-ELIM_JKCONF_LIST = [  0,   1,   2,   3,   4,   5,   6,   7,   8,  10,  12,  13,  15, 17,  19,  21,  23,  24,  39,  43,  45,  49,  52,  54,  57,  65, 75,  78,  80,  82,  84,  98, 100, 102, 104, 106, 114, 117, 119, 121, 123, 125, 127, 129, 131, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145]
+ELIM_JKCONF_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13, 15, 17,
+                    19, 21, 23, 24, 39, 43, 45, 49, 52, 54, 57, 65,
+                    75, 78, 80, 82, 84, 98, 100, 102, 104, 106, 114,
+                    117, 119, 121, 123, 125, 127, 129, 131, 133,
+                    134, 135, 136, 137, 138, 139, 140, 141, 142,
+                    143, 144, 145]
 ELIM_JKCONF_LIST = []
 
 #print(ELIM_JKCONF_LIST[36])
@@ -236,7 +243,6 @@ if MATRIX_SUBTRACTION:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+str(DELTA_T_MATRIX_SUBTRACTION)+' '
 elif True in ADD_CONST_VEC:
     TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
-    
 
 # title
 
@@ -335,7 +341,12 @@ GEVP_DEBUG = False
 # multiply both sides of the gevp matrix by norms
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
-NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11]]
+NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5),
+          1.0/10**3/10**5.5],
+         [1.0/10**3/10**2.5, 1.0/10**5,
+          1.0/10**2.5/10**5.5],
+         [1.0/10**3/10**5.5,
+          1.0/10**2.5/10**5.5, 1.0/10**11]]
 NORMS = [[1.0]*DIM]*DIM
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
@@ -387,7 +398,7 @@ for tsep in TSEP_VEC:
 LT = LT_VEC[0]
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if MATRIX_SUBTRACTION:
-    for i in range(len(ADD_CONST_VEC)):
+    for i, _ in enumerate(ADD_CONST_VEC):
         ADD_CONST_VEC[i] = MATRIX_SUBTRACTION
 ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
@@ -450,13 +461,15 @@ if EFF_MASS:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [RESCALE * FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
+                return [RESCALE * FITS.f['fit_func_1p'][
+                    ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """eff mass 3, fit func, rescaled
                 """
-                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
+                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](
+                    ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
     else:
         print("***ERROR***")
@@ -544,10 +557,14 @@ MULT = len(GEVP_DIRS) if GEVP else 1
 if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
 assert not(LOG and PIONRATIO), "Taking a log is improper when doing a pion ratio fit."
-assert len(LT_VEC) == MULT, "Must set time separation separately for each diagonal element of GEVP matrix"
-assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
-assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse function exists for pion ratio method."
-assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve not supported for pion ratio method."
+assert len(LT_VEC) == MULT, "Must set time separation separately for"+\
+    " each diagonal element of GEVP matrix"
+assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or"+\
+    " not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
+assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
+    " function exists for pion ratio method."
+assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
+" not supported for pion ratio method."
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back

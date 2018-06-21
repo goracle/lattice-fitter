@@ -43,8 +43,6 @@ from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
-from latfit.config import PICKLE
-from latfit.config import DELTA_E_AROUND_THE_WORLD
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -69,21 +67,8 @@ def mkplot(plotdata, input_f,
     # or set to one if not doing gevp (this is needed in several places)
     dimops = get_dimops(plotdata.cov, result_min, plotdata.coords)
 
-    xfit_check = get_xfit(dimops, plotdata.fitcoord) # determines if we left out a gevp dimension
-    todel = []
-    dimops_mod = dimops
-    result_min_mod = result_min
-    for i, j in enumerate(xfit_check):
-        if j == []:
-            dimops_mod -= 1
-            todel.append(i)
-    if FIT:
-        # we shifted the GEVP energy spectrum down
-        # to fix the leading order around the world term so shift it back
-        # result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
-        # delete the unwanted dimensions
-        result_min_mod.x = np.delete(result_min.x, todel)
 
+    dimops_mod, result_min_mod = modmissingdim(dimops, plotdata, result_min)
 
     # GET STRINGS
     title = get_title(input_f)
@@ -126,6 +111,27 @@ def mkplot(plotdata, input_f,
 
     return 0
 
+def modmissingdim(dimops, plotdata, result_min):
+    """Determine if we leave out the top state of the GEVP from fit
+    then return the modified fit dimension and truncated result
+    """
+    xfit_check = get_xfit(dimops, plotdata.fitcoord) # determines if we left out a gevp dimension
+    todel = []
+    dimops_mod = dimops
+    result_min_mod = result_min
+    for i, j in enumerate(xfit_check):
+        if j == []:
+            dimops_mod -= 1
+            todel.append(i)
+    if FIT:
+        # we shifted the GEVP energy spectrum down
+        # to fix the leading order around the world term so shift it back
+        # result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
+        # delete the unwanted dimensions
+        result_min_mod.x = np.delete(result_min.x, todel)
+    return dimops_mod, result_min_mod
+
+
 def plot_dispersive(dimops, xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
@@ -139,7 +145,7 @@ def plot_dispersive(dimops, xcoord):
 
 def get_prelim_errbars(result_min):
     """If the fit range is not identical to the plot range,
-    we are forced to use the traditional error bar method 
+    we are forced to use the traditional error bar method
     (although this case is already handled by this point in singlefit), i.e.
     the (jackknifed) average covariance matrix.
     Otherwise, defer to the user preference (from config).
@@ -298,18 +304,18 @@ def print_messages(result_min, param_err, param_chisq):
             for i in range(len(result_min.scattering_length)):
                 print("state["+str(i)+"]:")
                 print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-                    result_min.phase_shift[i], "+/-",
-                    result_min.phase_shift_err[i])
+                      result_min.phase_shift[i], "+/-",
+                      result_min.phase_shift_err[i])
                 print("I="+str(ISOSPIN)+" scattering length = ",
-                    result_min.scattering_length[i], "+/-",
-                    result_min.scattering_length_err[i])
+                      result_min.scattering_length[i], "+/-",
+                      result_min.scattering_length_err[i])
         else:
             print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-                result_min.phase_shift, "+/-",
-                result_min.phase_shift_err)
+                  result_min.phase_shift, "+/-",
+                  result_min.phase_shift_err)
             print("I="+str(ISOSPIN)+" scattering length = ",
-                result_min.scattering_length, "+/-",
-                result_min.scattering_length_err)
+                  result_min.scattering_length, "+/-",
+                  result_min.scattering_length_err)
 
 
 def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
@@ -333,22 +339,20 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
                 param_chisq.dof -= 1
     param_chisq.redchisq = result_min.fun/param_chisq.dof
     if JACKKNIFE_FIT:
-        redchisq_str = str(param_chisq.redchisq)
-        #redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
+        # redchisq_str = str(param_chisq.redchisq)
+        # redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
                 result_min.err_in_chisq/param_chisq.dof > 10
                 or result_min.err_in_chisq/param_chisq.dof < .1):
             param_chisq.redchisq_round_str = format_chisq_str(
-                param_chisq.redchisq,
-                result_min.err_in_chisq/param_chisq.dof, plus=False)
+                param_chisq.redchisq, plus=False)
         else:
             param_chisq.redchisq_round_str = format_chisq_str(
-                param_chisq.redchisq,
-                result_min.err_in_chisq/param_chisq.dof, plus=True)
+                param_chisq.redchisq, plus=True)
     return param_chisq
 
 
-def format_chisq_str(chisq, err, plus=False):
+def format_chisq_str(chisq, plus=False):
     """Format the chi^2/dof string for plot annotation, jackknife fit"""
     formstr = '{:0.'+str(int(PREC_DISP))+'e}'
     form_str_plus = '{:0.'+str(int(PREC_DISP)+1)+'e}'
@@ -409,7 +413,7 @@ def get_xfit(dimops, xcoord, step_size=None):
         step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
             len(xcoord)-1)
         xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                        step_size)
+                         step_size)
     else:
         xfit = np.zeros((dimops), dtype=object)
         for i in range(dimops):
@@ -484,7 +488,7 @@ if GEVP:
         # annotate plot with fitted energy
         nplots = len(param_err)+(len(DISP_ENERGIES) if PLOT_DISPERSIVE else 0)
         print('nplots=', nplots)
-        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),  shadow=True, ncol=nplots)
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
         #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)

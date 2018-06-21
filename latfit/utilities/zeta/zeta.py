@@ -4,14 +4,16 @@ import subprocess
 import inspect
 import os
 import math
-import numpy as np
 from math import sqrt
+import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, START_PARAMS, PTOTSQ, AINVERSE, ISOSPIN, MOMSTR
-from latfit.utilities import read_file as rf
 import matplotlib.pyplot as plt
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
+from latfit.config import AINVERSE, ISOSPIN, MOMSTR
+from latfit.utilities import read_file as rf
 
 class ZetaError(Exception):
+    """Define an error for generic phase shift calc failure"""
     def __init__(self, mismatch):
         Exception.__init__(self, mismatch)
 
@@ -56,19 +58,19 @@ if CALC_PHASE_SHIFT:
             print("Error in zeta: calc of phase shift error:")
             print(epipi)
             errstr = subprocess.Popen(arglist,
-                                   stdout=subprocess.PIPE).stdout.read()
+                                      stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
-        if(epipi*epipi/4-PION_MASS**2<0):
+        if epipi*epipi/4-PION_MASS**2 < 0:
             out = float(out)*1j
         else:
             out = complex(float(out))
             if ISOSPIN == 0:
                 if out.real < 0 and abs(out.real) > 90:
                     out = np.complex(out.real+
-                                    math.ceil(-out.real/180)*180, out.imag)
+                                     math.ceil(-1*out.real/180)*180, out.imag)
                 if out.real > 180:
                     out = np.complex(out.real-
-                                    math.floor(out.real/180)*180, out.imag)
+                                     math.floor(out.real/180)*180, out.imag)
         return out
 else:
     def zeta(_):
@@ -99,7 +101,7 @@ if CALC_PHASE_SHIFT:
             print("Error in pheno: calc of phase shift error:")
             print(epipi)
             errstr = subprocess.Popen(arglist,
-                                   stdout=subprocess.PIPE).stdout.read()
+                                      stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
         return float(out)
 
@@ -110,6 +112,7 @@ else:
         return
 
 def zeta_real(epipi):
+    """Gives nan's if zeta(E_pipi) is not real"""
     test = zeta(epipi)
     if test.imag != 0:
         retval = math.nan
@@ -119,8 +122,11 @@ def zeta_real(epipi):
 
 
 def plotcrosscurves(plot_both=False):
+    """Plots the cross curves of Luscher and Schenk (pheno)
+    the intersection points are predictions for lattice energies
+    """
     points = 1e3 # Number of points
-    xmin, xmax= 0, 1.1
+    xmin, xmax = 0, 1.1
     xlist = list(map(lambda x: float(xmax - xmin)*1.0*x/(points*1.0), list(np.arange(points+1))))
     #ylist_pheno_minus = list(map(lambda y: -pheno(y), xlist))
     #plt.plot(xlist, ylist_pheno_minus, label='pheno-')
@@ -130,8 +136,8 @@ def plotcrosscurves(plot_both=False):
     print('Isospin=', ISOSPIN)
     with PdfPages('SchenkVLuscherI'+str(ISOSPIN)+'.pdf') as pdf:
         if plot_both:
-            ylist_pheno_plus = list(map(lambda y: pheno(y), xlist))
-            ylist_zeta = list(map(lambda y: zeta(y), xlist))
+            ylist_pheno_plus = list(map(pheno, xlist))
+            ylist_zeta = list(map(zeta, xlist))
             plt.plot(xlist, ylist_pheno_plus, label='Schenk')
             plt.plot(xlist, ylist_zeta, label='Luscher')
         else:
@@ -143,7 +149,7 @@ def plotcrosscurves(plot_both=False):
                   str(ISOSPIN), **hfontt)
         plt.xlabel('Ea (Lattice Units, a^(-1)='+
                    str(AINVERSE)+' GeV)', **hfontl)
-        plt.ylabel('$\delta$ (degrees)', **hfontl)
+        plt.ylabel(r'$\delta$ (degrees)', **hfontl)
         plt.legend(loc='best')
         pdf.savefig()
         #plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),  shadow=True, ncol=nplots)

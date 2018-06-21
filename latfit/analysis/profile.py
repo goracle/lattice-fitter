@@ -4,7 +4,7 @@
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
-    def PROFILE(x):
+    def profile(fnx):
         """line profiler default."""
-        return x   # if it's not defined simply ignore the decorator.
+        return fnx   # if it's not defined simply ignore the decorator.
 # PROFILE = lambda x: x

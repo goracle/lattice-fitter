@@ -2,7 +2,6 @@
 import sys
 import os
 from collections import namedtuple
-from copy import deepcopy as copy
 import pickle
 import numpy as np
 from numpy import ma
@@ -162,10 +161,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
 
         # compute p-value jackknife uncertainty
-        result_min.pvalue, result_min.pvalue_err = JackMeanErr(result_min.pvalue)
+        result_min.pvalue, result_min.pvalue_err = jack_mean_err(result_min.pvalue)
 
         # compute the mean, error on the params
-        result_min.x, param_err = JackMeanErr(min_arr)
+        result_min.x, param_err = jack_mean_err(min_arr)
 
         # average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
@@ -173,46 +172,53 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
-            if not GEVP:
-                try:
-                    min_arr = min_arr[:,1]
-                except IndexError:
-                    try:
-                        min_arr = min_arr[:,0]
-                    except IndexError:
-                        raise
-
-            # get rid of configs were phase shift calculation failed
-            # (good for debug only)
-            result_min.phase_shift = np.delete(result_min.phase_shift,
-                                               prune_phase_shift_arr(
-                                                   result_min.phase_shift),
-                                               axis=0)
-
-            if len(result_min.phase_shift) > 0:
-
-                # calculate scattering length via energy, phase shift
-                result_min.scattering_length = -1.0*np.tan(
-                    result_min.phase_shift)/np.sqrt(
-                        (min_arr**2/4-PION_MASS**2).astype(complex))
-
-                # calc mean, err on phase shift and scattering length
-                result_min.phase_shift, result_min.phase_shift_err  = \
-                    JackMeanErr(result_min.phase_shift)
-                result_min.scattering_length, result_min.scattering_length_err = \
-                    JackMeanErr(result_min.scattering_length)
-
-            else:
-                result_min.phase_shift = None
+            min_arr, result_min = phase_shift_scatter_len_avg(min_arr, result_min)
 
         # compute mean, jackknife uncertainty of chi^2
-        result_min.fun, result_min.err_in_chisq = JackMeanErr(chisq_min_arr)
+        result_min.fun, result_min.err_in_chisq = jack_mean_err(chisq_min_arr)
 
         return result_min, param_err
 else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+
+def phase_shift_scatter_len_avg(min_arr, result_min):
+    """Average the phase shift results, calc scattering length"""
+    if not GEVP:
+        try:
+            min_arr = min_arr[:, 1]
+        except IndexError:
+            try:
+                min_arr = min_arr[:, 0]
+            except IndexError:
+                raise
+
+    # get rid of configs were phase shift calculation failed
+    # (good for debug only)
+    result_min.phase_shift = np.delete(result_min.phase_shift,
+                                       prune_phase_shift_arr(
+                                           result_min.phase_shift),
+                                       axis=0)
+
+    if result_min.phase_shift:
+
+        # calculate scattering length via energy, phase shift
+        result_min.scattering_length = -1.0*np.tan(
+            result_min.phase_shift)/np.sqrt(
+                (min_arr**2/4-PION_MASS**2).astype(complex))
+
+        # calc mean, err on phase shift and scattering length
+        result_min.phase_shift, result_min.phase_shift_err = \
+            jack_mean_err(result_min.phase_shift)
+        result_min.scattering_length, result_min.scattering_length_err = \
+            jack_mean_err(result_min.scattering_length)
+
+    else:
+        result_min.phase_shift = None
+    return result_min, min_arr
+
 
 def alloc_phase_shift(params):
     """Get an empty array for Nconfig phase shifts"""
@@ -224,7 +230,7 @@ def alloc_phase_shift(params):
     return ret
 
 
-def JackMeanErr(arr, sjcut=SUPERJACK_CUTOFF):
+def jack_mean_err(arr, sjcut=SUPERJACK_CUTOFF):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -264,23 +270,25 @@ def pickl(min_arr, result_min, chisq_min_arr):
         pickle.dump(result_min.phase_shift, open(unique_pickle_file("phase_shift"), "wb"))
         pickle.dump(chisq_min_arr, open(unique_pickle_file("chisq_min_arr"), "wb"))
     elif PICKLE == 'unpickle':
-        _, ri = unique_pickle_file("min_arr", True)
-        _, rj = unique_pickle_file("phase_shift", True)
-        _, rk = unique_pickle_file("chisq_min_arr", True)
-        for i in range(ri):
-            min_arr /= (ri+1)
-            min_arr += 1.0/(ri+1)*pickle.load(open("min_arr"+str(i)+".p", "rb"))
-        for j in range(rj):
-            result_min.phase_shift /= (rj+1)
-            result_min.phase_shift += 1.0/(rj+1)*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
-        for k in range(rk):
-            chisq_min_arr /= (rk+1)
-            chisq_min_arr += 1.0/(rk+1)*pickle.load(open("chisq_min_arr"+str(k)+".p", "rb"))
+        _, rangei = unique_pickle_file("min_arr", True)
+        _, rangej = unique_pickle_file("phase_shift", True)
+        _, rangek = unique_pickle_file("chisq_min_arr", True)
+        for i in range(rangei):
+            min_arr /= (rangei+1)
+            min_arr += 1.0/(rangei+1)*pickle.load(open("min_arr"+str(i)+".p", "rb"))
+        for j in range(rangej):
+            result_min.phase_shift /= (rangej+1)
+            result_min.phase_shift += 1.0/(
+                rangej+1)*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
+        for k in range(rangek):
+            chisq_min_arr /= (rangek+1)
+            chisq_min_arr += 1.0/(rangek+1)*pickle.load(open("chisq_min_arr"+str(k)+".p", "rb"))
     elif PICKLE is None:
         pass
     return min_arr, result_min, chisq_min_arr
 
 def unique_pickle_file(filestr, reti=False):
+    """Get a unique file string so we don't overwrite when pickling"""
     i = 0
     while os.path.exists(filestr+"%s.p" % i):
         if PICKLE == 'clean':
@@ -299,14 +307,14 @@ def prune_fit_range(covinv_jack, coords_jack):
     from fit range.  Thus, the contribution to chi^2 will be 0.
     """
     excl = FIT_EXCL
-    for i, xcoord in enumerate(coords_jack[:,0]):
-        for a in range(len(excl)):
-            for j in range(len(excl[a])):
-                if xcoord == excl[a][j]:
-                    assert covinv_jack[i,:,a,:].all() == 0, "Prune failed."
-                    assert covinv_jack[:,i,a,:].all() == 0, "Prune failed."
-                    assert covinv_jack[:,i,:,a].all() == 0, "Prune failed."
-                    assert covinv_jack[i,:,:,a].all() == 0, "Prune failed."
+    for i, xcoord in enumerate(coords_jack[:, 0]):
+        for opa, _ in enumerate(excl):
+            for j, _ in enumerate(excl[opa]):
+                if xcoord == excl[opa][j]:
+                    assert covinv_jack[i, :, opa, :].all() == 0, "Prune failed."
+                    assert covinv_jack[:, i, opa, :].all() == 0, "Prune failed."
+                    assert covinv_jack[:, i, :, opa].all() == 0, "Prune failed."
+                    assert covinv_jack[i, :, :, opa].all() == 0, "Prune failed."
     return covinv_jack
 
 def prune_phase_shift_arr(arr):
@@ -317,7 +325,7 @@ def prune_phase_shift_arr(arr):
     for i, phi in enumerate(arr):
         if np.isnan(np.sum(phi)):  # delete the config
             print("Bad phase shift in jackknife block # "+
-                    str(i)+", omitting.")
+                  str(i)+", omitting.")
             dellist.append(i)
             sys.exit(1) # remove this if debugging
     return dellist
@@ -476,34 +484,50 @@ def get_doublejk_data(params, coords_jack, reuse, config_num):
             cov_factor = getcovfactor(params, reuse, config_num, reuse_inv)
         covjack = get_covjack(cov_factor, params)
         covinv_jack_pruned, flag = prune_covjack(params, covjack,
-                                             coords_jack, flag)
+                                                 coords_jack, flag)
     covinv_jack = prune_fit_range(covinv_jack_pruned, coords_jack)
     return coords_jack, covinv_jack, jack_errorbars(covjack, params)
 
 def prune_covjack(params, covjack, coords_jack, flag):
     """Prune the covariance matrix based on config excluded time slices"""
     excl = []
-    time = len(params.time_range)
+    len_time = len(params.time_range)
     # convert x-coordinates to index basis
-    for i, xcoord in enumerate(coords_jack[:,0]):
-        for a in range(len(FIT_EXCL)):
-            for j in range(len(FIT_EXCL[a])):
-                if xcoord == FIT_EXCL[a][j]:
-                    excl.append(a*time+i)
-    # allocate space for matrix
-    dim = int(np.sqrt(np.prod(list(covjack.shape))))
-    matrix = np.zeros((dim, dim))
+    for i, xcoord in enumerate(coords_jack[:, 0]):
+        for opa, _ in enumerate(FIT_EXCL):
+            for j in range(len(FIT_EXCL[opa])):
+                if xcoord == FIT_EXCL[opa][j]:
+                    excl.append(opa*len_time+i)
     # rotate tensor basis to dimops, dimops, time, time
     # (or time, time if not GEVP)
     covjack = swap(covjack, len(covjack.shape)-1, 0)
-    # fill in matrix
+    # invert the pruned covariance matrix
+    marray, flag = invertmasked(params, len_time, excl, covjack)
+    covinv_jack = np.zeros(covjack.shape, dtype=float)
+    if params.dimops == 1:
+        covinv_jack = np.copy(marray.data)
+    else:
+        # fill in the pruned dimensions with 0's
+        for opa in range(params.dimops):
+            for opb in range(params.dimops):
+                covinv_jack[opa, opb, :, :] = marray.data[opa*len_time:(opa+1)*len_time,
+                                                          opb*len_time:(opb+1)*len_time]
+        # to put things back in time, time, dimops, dimops basis
+        covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
+        covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)
+    return covinv_jack, flag
+
+def invertmasked(params, len_time, excl, covjack):
+    """invert the covariance matrix with pruned operator basis and fit range"""
+    dim = int(np.sqrt(np.prod(list(covjack.shape))))
+    matrix = np.zeros((dim, dim))
     if params.dimops == 1:
         matrix = np.copy(covjack)
     else:
-        for a in range(params.dimops):
-            for b in range(params.dimops):
-                matrix[a*time:( a+1)*time,
-                        b*time:( b+1)*time] = covjack[a, b, :, :]
+        for opa in range(params.dimops):
+            for opb in range(params.dimops):
+                matrix[opa*len_time:(opa+1)*len_time,
+                       opb*len_time:(opb+1)*len_time] = covjack[opa, opb, :, :]
     mask = np.zeros(matrix.shape)
     mask[excl, :] = 1
     mask[:, excl] = 1
@@ -522,7 +546,6 @@ def prune_covjack(params, covjack, coords_jack, flag):
         if str(err) == 'Singular matrix':
             print("Covariance matrix is singular",
                   "in jackknife fit.")
-            print("Failing config_num=", config_num)
             print("Attempting to continue",
                   "fit with every other time slice",
                   "eliminated.")
@@ -532,18 +555,7 @@ def prune_covjack(params, covjack, coords_jack, flag):
         else:
             raise
     marray[marray.mask] = marray.fill_value
-    covinv_jack = np.zeros(covjack.shape, dtype=float)
-    if params.dimops == 1:
-        covinv_jack = np.copy(marray.data)
-    else:
-        for a in range(params.dimops):
-            for b in range(params.dimops):
-                covinv_jack[a, b, :, :] = marray.data[a*time:(a+1)*time,
-                                                      b*time:(b+1)*time]
-        # to put things back in time, time, dimops, dimops basis
-        covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
-        covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)
-    return covinv_jack, flag
+    return marray, flag
 
 
 def jack_errorbars(covjack, params):

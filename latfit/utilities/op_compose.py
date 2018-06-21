@@ -323,6 +323,13 @@ T_1_3MINUS = [
     (1, 'rho', [0, 0, 0])
 ]
 
+def generateChecksums():
+    """Generate a sum of expected diagrams for each operator"""
+    checks = {}
+    for opa in OPLIST:
+        checks[opa] = len(OPLIST[opa])**2
+    return checks
+
 # specify polarization info here
 OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
           'A1z_mom001': A1z_mom001,
@@ -404,6 +411,8 @@ def op_list(stype='ascii'):
                 dur = part_str+"_"+p_str
                 dur = re.sub('S_', '', dur)
                 dur = re.sub('UU', '', dur)
+                for i in range(10):
+                    dur = re.sub('U'+str(i), '', dur)
                 dur = re.sub('pipipipi', 'pipi', dur)
                 if stype == 'ascii':
                     dur = sepmod(dur, opa)
