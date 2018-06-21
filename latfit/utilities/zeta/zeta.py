@@ -28,7 +28,14 @@ if CALC_PHASE_SHIFT:
             except (IndexError, TypeError):
                 pass
         comp = np.array(rf.procmom(MOMSTR))
-        gamma = epipi/sqrt(epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
+        try:
+            gamma = epipi/sqrt(
+                epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
+        except ValueError:
+            print("zeta.py, bad gamma value for epipi=", epipi)
+            print("center of mass momentum=", comp)
+            print("Length of box=", L_BOX)
+            sys.exit(1)
         if gamma < 1:
             print("gamma < 1: gamma=", gamma, "Epipi=", epipi)
             sys.exit(1)

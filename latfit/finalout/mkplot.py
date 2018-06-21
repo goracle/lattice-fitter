@@ -80,7 +80,7 @@ def mkplot(plotdata, input_f,
     if FIT:
         # we shifted the GEVP energy spectrum down
         # to fix the leading order around the world term so shift it back
-        result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
+        # result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
         # delete the unwanted dimensions
         result_min_mod.x = np.delete(result_min.x, todel)
 

@@ -159,8 +159,12 @@ elif EFF_MASS_METHOD == 4:
             sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
         except:
-            assert times and times[0] in FIT_EXCL[index], "bad time/op"+\
-                "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
+            errstr = "bad time/op"+\
+                    "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
+            if FIT:
+                assert times and times[0] in FIT_EXCL[index], errstr
+            else:
+                print(errstr)
             print('operator index=', index)
             print("times=", times)
             sol = .1

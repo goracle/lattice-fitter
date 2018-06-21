@@ -22,6 +22,7 @@ from latfit.config import FIT_EXCL
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF
+from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -137,6 +138,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
+            result_min_jack.x = np.asarray(result_min_jack.x)+\
+                DELTA_E_AROUND_THE_WORLD
             min_arr[config_num] = result_min_jack.x
 
             # compute phase shift, if necessary

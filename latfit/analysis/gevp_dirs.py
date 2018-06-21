@@ -23,31 +23,18 @@ def hierarchy(index, dim, isospin, sigma):
     if isospin == 0 or isospin == 2:
         if index == 0:
             retstr = 'S_pipi'
-        elif index > 0:
-            if dim == 2:
-                if sigma:
-                    retstr = 'sigma'
-                else:
-                    retstr = 'pipi'
-            elif dim == 3:
-                if isospin == 0:
-                    if index == 1:
-                        retstr = 'sigma'
-                    else:
-                        retstr = 'pipi'
-                else:
-                    if index == 1:
-                        retstr = 'pipi'
-                    elif index == 2:
-                        retstr = 'UUpipi'
-            elif dim == 4:
-                assert isospin == 0, "4x4 I=2 not supported"
-                if index == 1:
-                    retstr = 'sigma'
-                elif index == 2:
-                    retstr = 'pipi'
-                elif index == 3:
-                    retstr = 'UUpipi'
+        if isospin == 2:
+            index += 1
+        elif index < 3:
+            if index == 1:
+                retstr = 'sigma'
+            elif index == 2:
+                retstr = 'pipi'
+        else:
+            if index == 3:
+                retstr = 'UUpipi'
+            else:
+                retstr = 'U'+str(index-2)+'pipi'
     else: # isospin = 1
         if index == 0:
             retstr = 'pipi'

@@ -1,5 +1,6 @@
 """Config for lattice fitter."""
 import sys
+import re
 from collections import namedtuple
 from copy import copy
 import numpy as np
@@ -19,8 +20,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # Jackknife fit?
 
@@ -72,25 +73,25 @@ USE_FIXED_MASS = True
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
 SUPERJACK_CUTOFF = 0
-SUPERJACK_CUTOFF = 10
+SUPERJACK_CUTOFF = 4
 
 # isospin value (convenience switch)
 ISOSPIN = 0
-DIM = 3
+DIM = 2
 # don't include the sigma in the gevp fits
 SIGMA = False
 SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal001'
 MOMSTR = 'momtotal000'
+MOMSTR = 'momtotal001'
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A1'
 IRREP = 'A_1PLUS'
+IRREP = 'A1z_'+re.sub('total', '', MOMSTR)
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
@@ -105,15 +106,15 @@ LT = 64
 FIT_EXCL = [[],[2,5,6, 7,8  ]]
 FIT_EXCL = [[  ],[],[]]
 FIT_EXCL = [[5  ], [ 5, 6], [5,6 ],[]]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[ ], [ 5,10,11,12, 13,14,15,16,17 ], [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False
 DELTA_T_MATRIX_SUBTRACTION = 2
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
@@ -216,11 +217,13 @@ if GEVP:
             TITLE_PREFIX = r'3x3 GEVP, I0, $\pi\pi, \sigma$, ' + MOMSTR + ' '
         else:
             TITLE_PREFIX = r'3x3 GEVP, I2, $\pi\pi$, ' + MOMSTR + ' '
-    elif DIM == 4:
+    else:
         if SIGMA and ISOSPIN == 0:
-            TITLE_PREFIX = r'4x4 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
+            TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
         else:
-            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi$, ' + MOMSTR + ' '
+            TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, $\pi\pi, ' + MOMSTR + ' '
 
 else:
     TITLE_PREFIX = '24c '
@@ -333,7 +336,7 @@ GEVP_DEBUG = False
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5), 1.0/10**3/10**5.5], [1.0/10**3/10**2.5, 1.0/10**5, 1.0/10**2.5/10**5.5], [1.0/10**3/10**5.5, 1.0/10**2.5/10**5.5, 1.0/10**11]]
-NORMS = [[1.0, 1.0, 1.0,1.0], [1.0, 1.0, 1.0,1.0], [1.0, 1.0, 1.0,1.0], [1.0,1.0,1.0,1.0]]
+NORMS = [[1.0]*DIM]*DIM
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
