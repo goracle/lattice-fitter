@@ -1,7 +1,7 @@
-"""Get the data block."""
+""""Get the data block."""
 import sys
 from collections import deque
-from linecache import getline
+import scipy
 import scipy.linalg
 import numpy as np
 import h5py
@@ -17,7 +17,7 @@ from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS, GEVP_DEBUG
 from latfit.config import BINNUM
 from latfit.config import STYPE
-from latfit.config import PIONRATIO, GEVP, ADD_CONST_VEC
+from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
 
 if MATRIX_SUBTRACTION and GEVP:
@@ -26,10 +26,10 @@ if MATRIX_SUBTRACTION and GEVP:
 if PIONRATIO:
     PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+('s' if i != 1 else '') for i in range(2)]
     PION = []
-    for i in PIONSTR:
-        print("using pion correlator:", i)
-        GN1 = h5py.File(i+'.jkdat', 'r')
-        PION.append(np.array(GN1[i]))
+    for istr in PIONSTR:
+        print("using pion correlator:", istr)
+        GN1 = h5py.File(istr+'.jkdat', 'r')
+        PION.append(np.array(GN1[istr]))
     PION = np.array(PION)
 
 #if STYPE == 'hdf5':
@@ -46,11 +46,10 @@ def getline_loc(filetup, num):
         sys.exit(1)
     return filetup[num-1]
 #else:
-if None:
-    def getline_loc(filetup, num):
+if 1 > 2:
+    def getline_loc_bad(filetup, num):
         """This function does get the line from the ascii file
         it is a simple wrapper for linecache.getline
-        
         proc_folder now turns this into a numpy array preemptively,
         so we don't need this function anymore
         (that code change makes things more uniform)
@@ -82,13 +81,13 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
                 getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
-                     overwrite_b=overb, check_finite=False)
+                                      overwrite_b=overb, check_finite=False)
     if print_evecs:
         print("start solve")
         print("lhs=", c_lhs)
         print("rhs=", c_rhs)
         for i, j in enumerate(eigvals):
-            print("eigval #",i,"=", j, "evec #", i, "=", evecs[:,i])
+            print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
@@ -132,14 +131,18 @@ if EFF_MASS:
             if GEVP_DEBUG:
                 print("config #=", num)
             try:
-                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1], print_evecs=True), reverse=True)
-                eigvals2 = sorted(get_eigvals(num, file_tup[2], file_tup[1]), reverse=True)
-                eigvals3 = sorted(get_eigvals(num, file_tup[3], file_tup[1]), reverse=True)
+                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1],
+                                             print_evecs=True), reverse=True)
+                eigvals2 = sorted(get_eigvals(num, file_tup[2],
+                                              file_tup[1]), reverse=True)
+                eigvals3 = sorted(get_eigvals(num, file_tup[3],
+                                              file_tup[1]), reverse=True)
                 eigvals4 = sorted(get_eigvals(num, file_tup[4], file_tup[1],
-                                           overb=True), reverse=True)
+                                              overb=True), reverse=True)
 
                 if PIONRATIO:
-                    div = np.array([np.real(PION[i][num][int(timeij)]**2-PION[i][num][int(timeij)+1]**2) for i in range(dimops)])/1e10
+                    div = np.array([np.real(PION[i][num][int(timeij)]**2-PION[i][num][int(
+                        timeij)+1]**2) for i in range(dimops)])/1e10
                     eigvals /= div
                     eigvals2 /= div
                     eigvals3 /= div
