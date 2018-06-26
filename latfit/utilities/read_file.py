@@ -46,6 +46,42 @@ def compare_pols(pol1, pol2):
         retval = all([int(i) == int(j) for i in pol1 for j in pol2])
     return retval
 
+def compare_momenta(fn1, fn2):
+    """Compare two different momenta
+    (in list form) for equality"""
+    return fn1[0] == fn2[0] and fn1[1] == fn2[1] and fn1[2] == fn2[2]
+
+def mom_prefix(fn1, suffix=None):
+    """Get everything preceding _mom in a string"""
+    split = fn1.split('_')
+    ret = ''
+    for substr in split:
+        if 'mom' in substr:
+            break
+        ret = ret + substr + '_'
+    if ret:
+        ret = ret[:-1]
+    suffix = mom_suffix(fn1, ret) if suffix is None else suffix
+    assert ret + '_' + suffix == fn1, "bug in mom_(pre)(suf)fix"
+    return ret
+
+def mom_suffix(fn1, prefix=None):
+    """Get everything proceding (and including) _mom in a string"""
+    split = fn1.split('_')
+    ret = ''
+    for i, substr in enumerate(split):
+        if 'mom' not in substr:
+            continue
+        split = split[i:]
+        break
+    for substr in split:
+        ret = ret + substr + '_'
+    if ret:
+        ret = ret[:-1]
+    prefix = mom_prefix(fn1, ret) if prefix is None else prefix
+    assert prefix + '_' + ret == fn1, "bug in mom_(pre)(suf)fix"
+    return ret
+
 def norm2(mom):
     """p[0]^2+p[1]^2"+p[2]^2"""
     return mom[0]**2+mom[1]**2+mom[2]**2
@@ -83,6 +119,9 @@ def checkp(filename):
     """
     return bool(re.search('_vecCheck_', filename))
 
+def kaonp(filename):
+    """check if a kaon correlator"""
+    return bool(re.search('kaon', filename))
 
 def vecp(filename):
     """is the diagram a vector
