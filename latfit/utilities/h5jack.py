@@ -2,12 +2,12 @@
 """Write jackknife blocks from h5py files"""
 import sys
 import time
-import math
 import os
 import glob
 import re
 import numpy as np
 from mpi4py import MPI
+import itertools
 import h5py
 import read_file as rf
 from sum_blks import isoproj
@@ -15,7 +15,9 @@ import op_compose as opc
 from op_compose import AVG_ROWS
 import write_discon as wd
 import aux_write as aux
+import math
 import avg_hdf5
+import glob
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -28,6 +30,9 @@ except NameError:
         return arg2
     PROFILE = profile
 
+# run a test on a 4^4 latice
+TEST44 = False
+TEST44 = True
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
@@ -37,9 +42,13 @@ HNDEF = PREFIX+'400.'+EXTENSION
 FNDEF = PREFIX+'1530.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'410.'+EXTENSION
+if TEST44:
+    FNDEF = PREFIX+'4541.'+EXTENSION
+    GNDEF = PREFIX+'4541.'+EXTENSION
+    HNDEF = PREFIX+'4541.'+EXTENSION
 # size of lattice in time, lattice units
-LT = 64
-TSEP = 3
+LT = 64 if not TEST44 else 4
+TSEP = 3 if not TEST44 else 1
 # format for files; don't change
 STYPE = 'hdf5'
 # precomputed indexing matrices; DON'T CHANGE
@@ -55,7 +64,8 @@ NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 
 # other config options
 THERMNUM = 0  # eliminate configs below this number to thermalize
-TSTEP = 8  # we only measure every TSTEP time slices to save on time
+THERMNUM = 0 if not TEST44 else 4540  # eliminate configs below this number to thermalize
+TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
@@ -95,9 +105,13 @@ TESTKEY2 = ''
 TSLICE = 0
 
 # ama correction
-DOAMA = False
 DOAMA = True
-EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
+DOAMA = False
+#EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
+EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
+EXACT_CONFIGS = [1010, 2410, 2430, 2470]
+
+assert JACKBUB, "not correct.  we need to jackknife the bubbles.  if debugging, comment out"
 
 
 # Individual diagram's jackknife block to write
@@ -152,7 +166,7 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
 
         try:
             toadd = int(re.sub(suffix+'.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
-
+        
         except ValueError:
             if '_exact' not in str(fn1) or getexactconfigs:
                 print("skipping:", re.sub(suffix+'.'+EXTENSION, '',
@@ -263,7 +277,7 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
         print("File", outh5, "exists. Skipping.")
         return
     print("Writing", outh5, "with", len(blk), "trajectories.")
-    assert ocs and PRINT_COEFFS, "irrep/isospin projection turned off"
+    assert PRINT_COEFFS, "not printing projection coefficients (bad logging practice)"
     if ocs and PRINT_COEFFS:
         print("Combined Isospin/Subduction coefficients for", outfile, ":")
         try:
@@ -325,6 +339,7 @@ def cross_p(fname):
                     elif j not in compare:
                         ret = True
     return ret
+        
 
 def strip_op(op1):
     """Strips off extra specifiers including polarizations."""
@@ -338,7 +353,7 @@ def get_polreq(op1):
     if len(spl) == 1:
         reqpol = None
     else:
-        polstrspl = spl[1].split(', ')[0].split('=')
+        polstrspl = spl[1].split(',')[0].split('=')
         if polstrspl[0] == 'pol':
             reqpol = int(polstrspl[1])
         else:
@@ -384,21 +399,49 @@ def buberr(bubblks):
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
 
-def checkCountofDiagrams(ocs):
+def check_match_oplist(ocs):
+    """A more stringent check:  Generate the momentum combinations for an operator
+    and see if all the diagrams contain these.
+    """
+    opcheck = opc.op_list('hdf5')
+    for irrop in opcheck: # e.g. 'pipisigma_A_1PLUS_mom000'
+        irrop_strip = strip_op(irrop)
+        print("Checking irrop=", irrop, "with complete diagram listing")
+        for opa in ocs: # e.g. 'I0/pipisigma_A_1PLUS_mom000'
+            if irrop_strip != opa.split('/')[1]:
+                continue
+            print("checking momentum combinations of", opa, "with", irrop)
+            figlist = set()
+            momlist = set()
+            diaglist = [tup[0] for tup in ocs[opa]]
+            for diag, coeff in ocs[opa]:
+                figlist.add(rf.mom_prefix(diag))
+            for diag, coeff in opcheck[irrop]:
+                momlist.add(rf.mom_suffix(diag))
+            for prefix, suffix in itertools.product(figlist, momlist):
+                checkstr = prefix + '_' + suffix
+                assert checkstr in diaglist, "Missing momentum combination:"+\
+                    str(checkstr)+" in op="+str(opa)+"="+str(ocs[opa])+" figlist="+\
+                    str(figlist)+" momlist="+str(momlist)
+
+
+def check_count_of_diagrams(ocs, isospin_str='I0'):
     """count how many diagrams go into irrep/iso projection
     if it does not match the expected, abort
     """
-    checks = opc.generateChecksums()
+    checks = opc.generateChecksums(isospin_str[-1])
+    print("checks for I=", isospin_str[-1], "=", checks)
     counter_checks = {}
     isocount = -1
-    for irrop in checks:
+    for irrop in checks: # e.g. 'A_1PLUS_mom000'
+        print("irrep checksumming op=", irrop, "for correctness")
         counter_checks[irrop] = 0
-        for opa in ocs:
-            print("isospin checksumming op=", opa, "for correctness")
-            if not irrop in opa:
+        for opa in ocs: # e.g. 'I0/pipisigma_A_1PLUS_mom000'
+            if not irrop == getopstr(opa) or isospin_str not in opa:
                 continue
+            print("isospin checksumming op=", opa, "for correctness")
             if 'rho' in opa:
-                if 'pipi' in ocs[opa]:
+                if 'pipi' in opa:
                     isocount = 2
                 else:
                     isocount = 1
@@ -407,24 +450,33 @@ def checkCountofDiagrams(ocs):
             else:
                 assert 'pipi' in opa, "bad operator:"+str(ocs[opa])
                 isocount = 4 if 'I0' in opa else 2
-            try:
-                assert len(ocs[opa]) % isocount == 0, "bad isospin projection count."+str(ocs[opa])
-            except AssertionError:
-                new_length = len(ocs[opa])
-                for diag, coefficient in ocs[opa]:
-                    if 'FigureV' in diag:
-                        new_length -= 1
-                assert new_length != len(ocs[opa]), "isospin"+\
-                    " projection broken"+str(ocs[opa])
-                
-            assert new_length % isocount-1 == 0, "bad"+\
-                " isospin projection count."+str(ocs[opa])
+            assert len(ocs[opa]) % isocount == 0, "bad isospin projection count."+str(ocs[opa])+\
+                " in "+str(opa)
+            print("isocount=", isocount, "number of diagrams in op=", len(ocs[opa]))
             counter_checks[irrop] += len(ocs[opa])/isocount
+            print("divided by isocount=", len(ocs[opa])/isocount)
         assert counter_checks[irrop] == checks[irrop], "bad checksum,"+\
             " number of expected diagrams"+\
             " does not match:"+str(checks[irrop])+" vs. "+str(
-                counter_checks[irrop])
+                counter_checks[irrop])+" "+str(irrop)
 
+def getopstr(opstr):
+    """I0/pipisigma_A_1PLUS_mom000->
+    A_1PLUS_mom000
+    """
+    split = opstr.split('_')[1:]
+    for i, sub in enumerate(split):
+        if 'pipi' in sub or 'sigma' in sub or 'rho' in sub:
+            continue
+        else:
+            split = split[i:]
+            break
+    ret = ''
+    for sub in split:
+        ret = ret+sub+'_'
+    ret = ret[:-1]
+    return ret
+    
 
 @PROFILE
 def h5sum_blks(allblks, ocs, outblk_shape):
@@ -506,7 +558,7 @@ def fold_time(outblk, base=''):
 def get_file_name(traj):
     """Get file name from trajectory"""
     return PREFIX+str(traj)+'.'+EXTENSION
-
+    
 
 @PROFILE
 def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
@@ -599,7 +651,11 @@ def getbubbles(bubl, trajl, openlist=None):
                 pdiag = fn1[keysrc].attrs['mom']
             except KeyError:
                 pdiag = rf.mom(keysrc)
-            ptot = rf.ptostr(wd.momtotal(pdiag))
+            try:
+                ptot = rf.ptostr(wd.momtotal(pdiag))
+            except:
+                print(pdiag, keysrc, filekey)
+                sys.exit(1)
             savekey = dsrc+"@"+ptot
             if TAKEREAL and ptot == '000':
                 toapp = np.array(fn1[keysrc]).real
@@ -685,7 +741,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
         sepval = -1
         discname = None
     else:
-        #print(dsrc, dsnk)
+        # print(dsrc, dsnk)
         if 'type4' in dsnk:
             sepval = -1
             sepstr = ''
@@ -928,6 +984,7 @@ def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
     return len_sloppy, len_exact
 
 
+
 @PROFILE
 def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
     """do ama correction"""
@@ -969,9 +1026,9 @@ def main(fixn=True):
         exactblks, numt = get_data(True, False)
         sloppysubtractionblks, numt = get_data(False, True)
         allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
-    check_diag = "FigureCv3_sep3_momsrc_100_momsnk000" # sanity check
+    check_diag = "FigureCv3_sep"+str(TSEP)+"_momsrc_100_momsnk000" # sanity check
     if MPIRANK == 0: # write only needs one process, is fast
-        assert check_diag in allblks, "check block not in allblks:"+str(check_diag)
+        assert check_diag in allblks, "sanity check not passing, missing:"+str(check_diag)
     if MPIRANK == 0: # write only needs one process, is fast
         if WRITEBLOCK and not (
                 TESTKEY or TESTKEY2):
@@ -988,6 +1045,11 @@ def main(fixn=True):
         ocs = overall_coeffs(
             isoproj(fixn, 0, dlist=list(
                 allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+        # do a checksum to make sure we have all the diagrams we need
+        check_count_of_diagrams(ocs, "I0")
+        check_count_of_diagrams(ocs, "I2")
+        check_count_of_diagrams(ocs, "I1")
+        check_match_oplist(ocs)
         if TESTKEY:
             buberr(allblks)
             sys.exit(0)
@@ -1021,6 +1083,7 @@ def printblk(basename, blk):
     else:
         print("Printing all time slices of", basename)
         print(blk)
+
 
 if __name__ == '__main__':
     FIXN = None
