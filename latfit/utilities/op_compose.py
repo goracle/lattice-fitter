@@ -65,7 +65,7 @@ A_1PLUS_mom000 = [
     (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
     (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]]),
     (1, 'sigma', [0, 0, 0]),
-    (1, 'rho', [0, 0, 0]),
+    # (1, 'rho', [0, 0, 0]),
     (1/sqrt(12), 'UUpipi', [[0, 1, 1], [0, -1, -1]]),
     (1/sqrt(12), 'UUpipi', [[0, -1, -1], [0, 1, 1]]),
     (1/sqrt(12), 'UUpipi', [[1, 0, 1], [-1, 0, -1]]),
@@ -323,11 +323,18 @@ T_1_3MINUS = [
     (1, 'rho', [0, 0, 0])
 ]
 
-def generateChecksums():
+def generateChecksums(isospin):
     """Generate a sum of expected diagrams for each operator"""
+    isospin = int(isospin)
     checks = {}
-    for opa in OPLIST:
-        checks[opa] = len(OPLIST[opa])**2
+    for oplist in OPLIST:
+        newl = len(OPLIST[oplist])
+        for coeff, opa, mom in OPLIST[oplist]:
+            if 'sigma' in opa and isospin != 0:
+                newl -= 1
+            elif 'rho' in opa and isospin != 1:
+                newl -= 1
+        checks[oplist] = newl**2
     return checks
 
 # specify polarization info here
@@ -335,13 +342,15 @@ OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
           'A1z_mom001': A1z_mom001,
           'A1x_mom011': A1x_mom011,
           'A1_mom111': A1_mom111,
-          'T_1_1MINUS?pol=1': T_1_1MINUS,
-          'T_1_3MINUS?pol=2': T_1_3MINUS,
-          'T_1_2MINUS?pol=3': T_1_2MINUS,
+          # 'T_1_1MINUS?pol=1': T_1_1MINUS,
+          # 'T_1_3MINUS?pol=2': T_1_3MINUS,
+          # 'T_1_2MINUS?pol=3': T_1_2MINUS,
           'A0_mom000': A0_mom000,
-          #'A2': A2,
-          'A1x': A1x, 'A1mx': A1mx,
-          'A1y': A1y, 'A1my': A1my,
+          # 'A2': A2,
+          # 'A1x': A1x,
+          # 'A1mx': A1mx,
+          # 'A1y': A1y,
+          # 'A1my': A1my,
           'A1z': A1z, 'A1mz': A1mz,
 }
 
@@ -453,7 +462,10 @@ def main():
     l = op_list('hdf5')
     for i in l:
         print(i)
-    print(l['rhorho_T_1_1MINUS?pol=1'])
+        #print(l[i])
+
+    print(l['pipisigma_A_1PLUS_mom000'])
+    # print(l['rhorho_T_1_1MINUS?pol=1'])
 
 
 if __name__ == "__main__":
