@@ -112,8 +112,11 @@ def isospin_coeff(filen, iso):
     """Get isospin coefficient"""
     norm = 1.0
     vecp = rf.vecp(filen)
+    kaonp = rf.kaonp(filen)
     name = rf.figure(filen)
-    if iso == 0:
+    if kaonp:
+        norm = 0.0
+    elif iso == 0:
         norm = iso0(vecp, name)
     elif iso == 1:
         norm = iso1(vecp, name)
@@ -256,7 +259,7 @@ def get_norm(loop, dur, fixn):
         norm = None
     else:
         norm1 = isospin_coeff(dur, loop.iso)
-        if not norm1:
+        if not norm1 or norm1 == 0:
             norm = None
         elif fixn:
             norm2 = norm_fix(dur)
