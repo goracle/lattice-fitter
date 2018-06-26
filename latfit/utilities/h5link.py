@@ -2,6 +2,7 @@
 """Link a single config's hdf5 files into
 one hdf5 file for the whole config"""
 import sys
+import re
 import os
 import re
 import glob
@@ -39,7 +40,8 @@ def main():
             try:
                 gn1 = h5py.File(file2, 'r')
             except OSError:
-                print("file=", file2)
+                print("hdf5 linker error")
+                print("problem file=", file2)
                 sys.exit(1)
             datal = []
             try:
@@ -53,12 +55,17 @@ def main():
                 raise
             gn1.close()
             for data in datal:
-                if data not in fn1:
+                #if '4542' in data:
+                #    data_ln = re.sub('4541', '4540', data)
+                #else:
+                data_ln = data
+                if data_ln not in fn1:
                     try:
-                        fn1[data] = h5py.ExternalLink(file2, data)
+                        fn1[data_ln] = h5py.ExternalLink(file2, data)
                     except ValueError:
                         print("Error.  link file, orig file, dataset name:")
                         print(file1, file2, data)
+                        print("link name:", data_ln)
                         sys.exit(1)
             print("Done linking", file2, file1)
         fn1.close()
