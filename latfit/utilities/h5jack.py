@@ -313,7 +313,11 @@ def overall_coeffs(iso, irr):
                     continue
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
-                    if not rf.compare_pols(pols, pol_req):
+                    pol_comparison = rf.compare_pols(pols, pol_req)
+                    # pol_comparison is false if the polarizations are different
+                    # otherwise it is None if there is no polarization
+                    # either in pols or pol_req
+                    if pol_comparison is not None and not pol_comparison:
                         continue
                     if cross_p(original_block):
                         continue
