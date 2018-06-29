@@ -7,7 +7,7 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
-from latfit.config import TRHS
+# from latfit.config import TRHS
 
 class FitFunctions:
     """Default fit functions."""
@@ -65,7 +65,7 @@ TSTEP = 1
 PION_MASS = 0
 PIONRATIO = False
 USE_FIXED_MASS = True
-
+TRHS = None
 
 class FitFuncAdd:
     """Exponential fit functions with additive constant"""

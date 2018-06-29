@@ -20,8 +20,8 @@ NO_PLOT = False
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # Jackknife fit?
 
@@ -73,32 +73,32 @@ USE_FIXED_MASS = True
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
 SUPERJACK_CUTOFF = 0
-SUPERJACK_CUTOFF = 4
+SUPERJACK_CUTOFF = 10
 
 # isospin value (convenience switch)
 ISOSPIN = 0
-DIM = 2
+DIM = 3
 # don't include the sigma in the gevp fits
 SIGMA = False
 SIGMA = True
 # non-zero center of mass
 MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal000'
 MOMSTR = 'momtotal001'
+MOMSTR = 'momtotal000'
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A_1PLUS'
 IRREP = 'A1z_'+re.sub('total', '', MOMSTR)
+IRREP = 'A_1PLUS'
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
 TSEP_VEC = [0]
-TSEP_VEC = [3, 0, 3, 3]
 TSEP_VEC = [3, 3]
 TSEP_VEC = [3]*DIM if GEVP else [0]
+TSEP_VEC = [3, 0, 3]
 LT = 64
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
@@ -106,16 +106,16 @@ LT = 64
 FIT_EXCL = [[], [2, 5, 6, 7, 8]]
 FIT_EXCL = [[], [], []]
 FIT_EXCL = [[5], [5, 6], [5, 6], []]
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False
+MATRIX_SUBTRACTION = True
 DELTA_T_MATRIX_SUBTRACTION = 2
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
@@ -140,7 +140,10 @@ DISP_ADD = (2*pi/L_BOX)**2*1
 DISP_ENERGIES = [misc.dispersive([0, 0, 0])+ misc.dispersive([0, 0, 1]),
                  sqrt((2*misc.dispersive([0, 0, 1]))**2+DISP_ADD)]
 DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]), 2*misc.dispersive([0, 1, 1])]
-DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]), 2*misc.dispersive([0, 0, 0])]
+DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]),
+                 2*misc.dispersive([0, 0, 0]),
+                 2*misc.dispersive([0, 1, 1]),
+]
 
 # pickle, unpickle
 
@@ -414,7 +417,7 @@ UP.c = C
 UP.tstep = TSTEP if not GEVP else DELTA_T_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
-UP.lt = LT
+UP.lent = LT
 FITS.select(UP)
 
 # END DO NOT MODIFY

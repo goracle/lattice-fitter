@@ -1,6 +1,7 @@
 """Fit under a jackknife"""
 import sys
 import os
+import numbers
 from collections import namedtuple
 import pickle
 import numpy as np
@@ -172,7 +173,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
-            min_arr, result_min = phase_shift_scatter_len_avg(min_arr, result_min)
+
+            min_arr, result_min.phase_shift, \
+                result_min.phase_shift_err, \
+                result_min.scattering_length, \
+                result_min.scattering_length_err = phase_shift_scatter_len_avg(min_arr,
+                                                                               result_min.phase_shift)
 
         # compute mean, jackknife uncertainty of chi^2
         result_min.fun, result_min.err_in_chisq = jack_mean_err(chisq_min_arr)
@@ -184,7 +190,7 @@ else:
     sys.exit(1)
 
 
-def phase_shift_scatter_len_avg(min_arr, result_min):
+def phase_shift_scatter_len_avg(min_arr, phase_shift):
     """Average the phase shift results, calc scattering length"""
     if not GEVP:
         try:
@@ -197,27 +203,30 @@ def phase_shift_scatter_len_avg(min_arr, result_min):
 
     # get rid of configs were phase shift calculation failed
     # (good for debug only)
-    result_min.phase_shift = np.delete(result_min.phase_shift,
-                                       prune_phase_shift_arr(
-                                           result_min.phase_shift),
-                                       axis=0)
+    phase_shift = np.delete(phase_shift,
+                            prune_phase_shift_arr(
+                                phase_shift),
+                            axis=0)
 
-    if result_min.phase_shift:
+    if len(phase_shift) > 0:
 
         # calculate scattering length via energy, phase shift
-        result_min.scattering_length = -1.0*np.tan(
-            result_min.phase_shift)/np.sqrt(
+        scattering_length = -1.0*np.tan(
+            phase_shift)/np.sqrt(
                 (min_arr**2/4-PION_MASS**2).astype(complex))
 
         # calc mean, err on phase shift and scattering length
-        result_min.phase_shift, result_min.phase_shift_err = \
-            jack_mean_err(result_min.phase_shift)
-        result_min.scattering_length, result_min.scattering_length_err = \
-            jack_mean_err(result_min.scattering_length)
+        phase_shift, phase_shift_err = \
+            jack_mean_err(phase_shift)
+        scattering_length, scattering_length_err = \
+            jack_mean_err(scattering_length)
 
     else:
-        result_min.phase_shift = None
-    return result_min, min_arr
+        phase_shift = None
+        phase_shift_err = None
+        scattering_length = None
+        scattering_length_err = None
+    return min_arr, phase_shift, phase_shift_err, scattering_length, scattering_length_err
 
 
 def alloc_phase_shift(params):
@@ -248,7 +257,6 @@ def jack_mean_err(arr, sjcut=SUPERJACK_CUTOFF):
             (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))**2, axis=0))
     else:
         errexact = 0
-    print('errexact=', errexact)
     errsloppy = np.sqrt(sloppy_prefactor*np.sum(
         (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))**2, axis=0))
 
@@ -258,6 +266,10 @@ def jack_mean_err(arr, sjcut=SUPERJACK_CUTOFF):
 
     # calculate the mean
     mean = np.mean(arr, axis=0)
+    if isinstance(mean, numbers.Number):
+        mean = float(mean)
+    if isinstance(err, numbers.Number):
+        err = float(err)
 
     return mean, err
 
