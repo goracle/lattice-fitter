@@ -930,6 +930,25 @@ def getdisconwork(bubl):
         nodebubl.add(snk)
     return nodebubl
 
+def find_unused_c(ocs, allkeys, auxkeys):
+    """Find unused C diagrams not needed in projection
+    """
+    allkeys = set(allkeys)
+    auxkeys = set(auxkeys)
+    used = set()
+    for opa in ocs:
+        for diag, _ in ocs[opa]:
+            if 'FigureC_' in diag:
+                used.add(diag)
+    allfigc = set()
+    for diag in allkeys:
+        if 'FigureC_' in diag and diag not in auxkeys:
+            allfigc.add(diag)
+    print('len=', len(allfigc))
+    print('len2=', len(used))
+    unused = allfigc.difference(used)
+    return unused
+
 @PROFILE
 def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
@@ -959,7 +978,7 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
-    return allblks, numt
+    return allblks, numt, auxblks
 
 def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
     """Check block for consistency across sloppy and exact samples
@@ -1024,7 +1043,7 @@ def main(fixn=True):
     #avg_irreps()
     #sys.exit(0)
     if not DOAMA:
-        allblks, numt = get_data()
+        allblks, numt, auxblks = get_data()
     else:
         sloppyblks, numt = get_data(False, False)
         exactblks, numt = get_data(True, False)
@@ -1050,10 +1069,17 @@ def main(fixn=True):
             isoproj(fixn, 0, dlist=list(
                 allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
         # do a checksum to make sure we have all the diagrams we need
+        for i in ocs:
+            print(i)
         check_count_of_diagrams(ocs, "I0")
         check_count_of_diagrams(ocs, "I2")
         check_count_of_diagrams(ocs, "I1")
         check_match_oplist(ocs)
+        unused = find_unused_c(ocs, allblks.keys() | set(), auxblks.keys() | set())
+        for useless in sorted(list(unused)):
+            print("unused diagram:", useless)
+        print("length of unused=", len(unused))
+        assert len(unused) == 0, "Unused diagrams exist."
         if TESTKEY:
             buberr(allblks)
             sys.exit(0)
