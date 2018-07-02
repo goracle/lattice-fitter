@@ -330,6 +330,37 @@ A2 = [
     (1/sqrt(12), 'UUpipi', [[1, -1, 0], [0, 0, 0]])
 ]
 
+def write_mom_comb():
+    """Write the momentum combination vml
+    (list of allowed two particle momenta)"""
+    twoplist = {}
+    for irrep in OPLIST:
+        for _, _, mom_comb in OPLIST[irrep]:
+            if len(mom_comb) == 2: # skip the sigma
+                twoplist[str(mom_comb)] = mom_comb
+    begin = 'Array moms[2] = {\nArray moms[0] = {\nArray p[3] = {\n'
+    middle = '}\n}\nArray moms[1] = {\nArray p[3] = {\n'
+    end = '}\n'*4
+    with open('mom_comb.vml', 'a') as fn1:
+        fn1.write('class allowedCombP mom_comb = {\n')
+        fn1.write('Array momcomb['+str(len(twoplist))+'] = {\n')
+        for i, comb in enumerate(sorted(twoplist)):
+            fn1.write('Array momcomb['+str(i)+'] = {\n')
+            fn1.write(begin)
+            fn1.write(ptonewlinelist(twoplist[comb][0]))
+            fn1.write(middle)
+            fn1.write(ptonewlinelist(twoplist[comb][1]))
+            fn1.write(end)
+        fn1.write('}\n}')
+
+def ptonewlinelist(mom):
+   """make mom into a new line separated momentum string
+   """ 
+   return 'int p[0] = '+str(mom[0])+'\nint p[1] = '+\
+       str(mom[1])+'\nint p[2] = '+str(mom[2])+'\n'
+
+
+
 
 # A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]
 
