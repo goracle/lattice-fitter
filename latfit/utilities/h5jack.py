@@ -930,16 +930,54 @@ def getdisconwork(bubl):
         nodebubl.add(snk)
     return nodebubl
 
+def check_inner_outer(ocs, allkeys, auxkeys):
+    """Check to make sure the inner pion has energy >= outer pion
+    """
+    allkeys = set(allkeys)
+    auxkeys = set(auxkeys)
+    for opa in ocs:
+            for diag, _ in ocs[opa]:
+                if 'FigureR_' in diag:
+                    mom = rf.mom(diag)
+                    norm0 = rf.norm2(mom[0])
+                    norm1 = rf.norm2(mom[1])
+                    assert norm0 >= norm1, "Inner"+\
+                        " particle momentum should be >= outer particle"+\
+                        " momentum (source). :"+str(diag)
+                    mom = np.array(mom)
+                    mom3 = mom[0]+mom[1]-mom[2]
+                    norm2 = rf.norm2(mom[2])
+                    norm3 = rf.norm2(mom3)
+                    assert norm2 >= norm3, "Inner"+\
+                        " particle momentum should be >= outer particle"+\
+                        " momentum (sink). :"+str(diag)
+                    assert diag in allkeys, "Missing figure R"+\
+                        " from allkeys:"+str(diag)
+                    if diag in auxkeys:
+                        assert norm0 == norm1, "Inner particle momentum"+\
+                            " should be >= outer particle momentum"+\
+                            " (source). :"+str(diag)
+                        assert norm2 == norm3, "Inner particle momentum"+\
+                            " should be >= outer particle momentum"+\
+                            " (sink). :"+str(diag)
+
 def find_unused_c(ocs, allkeys, auxkeys):
     """Find unused C diagrams not needed in projection
     """
     allkeys = set(allkeys)
     auxkeys = set(auxkeys)
     used = set()
-    for opa in ocs:
-        for diag, _ in ocs[opa]:
-            if 'FigureC_' in diag:
-                used.add(diag)
+    try:
+        for opa in ocs:
+            for diag, _ in ocs[opa]:
+                if 'FigureC_' in diag:
+                    used.add(diag)
+                    assert diag in allkeys, "Missing FigureC"+\
+                        " from allkeys:"+str(diag)
+    except AssertionError:
+        print("missing Figure C's found.  Aborting.")
+        sys.exit(1)
+    print("number of used FigureC diagrams in projected set:", len(used))
     allfigc = set()
     for diag in allkeys:
         if 'FigureC_' in diag and diag not in auxkeys:
@@ -1023,7 +1061,8 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
             correction = exactblks[blk] - sloppysubtractionblks[blk]
 
             # create return block (super-jackknife)
-            retblks[blk] = np.zeros((len_exact+len_sloppy, LT), dtype=np.complex)
+            retblks[blk] = np.zeros((len_exact+len_sloppy, LT),
+                                    dtype=np.complex)
 
             sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
             correction_central_value = np.mean(correction, axis=0)
@@ -1075,7 +1114,10 @@ def main(fixn=True):
         check_count_of_diagrams(ocs, "I2")
         check_count_of_diagrams(ocs, "I1")
         check_match_oplist(ocs)
-        unused = find_unused_c(ocs, allblks.keys() | set(), auxblks.keys() | set())
+        check_inner_outer(
+            ocs, allblks.keys() | set(), auxblks.keys() | set())
+        unused = find_unused_c(
+            ocs, allblks.keys() | set(), auxblks.keys() | set())
         for useless in sorted(list(unused)):
             print("unused diagram:", useless)
         print("length of unused=", len(unused))
@@ -1092,8 +1134,10 @@ def avg_irreps():
         for isostr in ('I0', 'I1', 'I2'):
             for irrep in AVG_ROWS:
                 op_list = set()
+                # extract the complete operator list from all the irrep rows
                 for example_row in AVG_ROWS[irrep]:
-                    for op1 in glob.glob(isostr+'/'+'*'+example_row+'.jkdat'):
+                    for op1 in glob.glob(isostr+'/'+'*'+example_row+\
+                                         '.jkdat'):
                         op_list.add(re.sub(example_row+'.jkdat',
                                            '', re.sub(isostr+'/', '', op1)))
                 for op1 in list(op_list):

@@ -31,12 +31,16 @@ def momstr(psrc, psnk):
         pstr = None
     if vertices == 4:
         pstr = 'mom1src'+rf.ptostr(
-            psrc[0])+'_mom2src'+rf.ptostr(
-                psrc[1])+'_mom1snk'+rf.ptostr(psnk[0])
+            #psrc[0])+'_mom2src'+rf.ptostr(
+            #    psrc[1])+'_mom1snk'+rf.ptostr(psnk[0])
+            psrc[1])+'_mom2src'+rf.ptostr(
+                psrc[0])+'_mom1snk'+rf.ptostr(psnk[1])
     elif vertices == 3 and pipi == 'src':
-        pstr = 'momsrc'+rf.ptostr(psrc[0])+'_momsnk'+rf.ptostr(psnk)
+        #pstr = 'momsrc'+rf.ptostr(psrc[0])+'_momsnk'+rf.ptostr(psnk)
+        pstr = 'momsrc'+rf.ptostr(psrc[1])+'_momsnk'+rf.ptostr(psnk)
     elif vertices == 3 and pipi == 'snk':
-        pstr = 'momsrc'+rf.ptostr(psrc)+'_momsnk'+rf.ptostr(psnk[0])
+        #pstr = 'momsrc'+rf.ptostr(psrc)+'_momsnk'+rf.ptostr(psnk[0])
+        pstr = 'momsrc'+rf.ptostr(psrc)+'_momsnk'+rf.ptostr(psnk[1])
     elif vertices == 2:
         if psrc[0] != psnk[0] or psrc[1] != psnk[1] or psrc[2] != psnk[2]:
             pstr = None
