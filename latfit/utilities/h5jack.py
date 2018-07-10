@@ -33,6 +33,10 @@ except NameError:
 # run a test on a 4^4 latice
 TEST44 = False
 TEST44 = True
+# exclude all diagrams derived from aux symmetry
+NOAUX = False
+NOAUX = True
+
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
@@ -898,7 +902,7 @@ def aux_jack(basl, trajl, numt, openlist):
         auxblks[outfn] = dojackknife(blk) *(-1.0 if rf.vecp(base) and 'FigureT' in base else 1.0)
     if MPIRANK == 0:
         print("Done getting the auxiliary jackknife blocks.")
-    return auxblks
+    return auxblks if not NOAUX else {}
 
 def gatherdicts(gatherblks, root=0):
     """Gather blocks from other sub processes."""
@@ -1019,6 +1023,10 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
     auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
     mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
+
+    if NOAUX:
+        assert not auxblks, "Error in NOAUX option.  Non-empty"+\
+            " dictionary found of length="+str(len(auxblks))
 
     if MPIRANK == 0:
         check_aux_consistency(auxblks, mostblks)
