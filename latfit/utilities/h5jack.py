@@ -263,8 +263,11 @@ def bublist(fn1=None):
 def dojackknife(blk):
     """Apply jackknife to block with shape = (L_traj, L_time)"""
     out = np.zeros(blk.shape, dtype=np.complex)
-    for i, _ in enumerate(blk):
-        np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
+    if TEST44:
+        out = blk
+    else:
+        for i, _ in enumerate(blk):
+            np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
     return out
 
 
@@ -813,8 +816,10 @@ def dobubjack(bubbles, sub):
                                         excl, axis=0)-sub[srckey][excl]
                         snk = conjbub(np.delete(
                             bubbles[snkkey], excl, axis=0)-sub[snkkey][excl])
+                        # test 44 is over a single config, so this won't be correct,
+                        # but it avoids an error message.
                         outcome = np.tensordot(src, snk, axes=(0, 0))[
-                            ROWS, cols]/(len(src)*1.0)
+                            ROWS, cols]/(len(src)*1.0 if not TEST44 else 1.0)
                         # mean is over tsrc
                         # len(src) division is average over configs
                         # (except for excluded one)
@@ -889,7 +894,8 @@ def aux_jack(basl, trajl, numt, openlist):
         np.mean(TSTEP*getgenconblk(base, trajl, openlist=openlist,
                                    avgtsrc=False, rowcols=[rows, cols]),
                 axis=1, out=blk)
-        auxblks[outfn] = dojackknife(blk)
+        # now do the jackknife.  apply -1 coefficient if doing aux to a vector T (ccw/cw switch in mirror)
+        auxblks[outfn] = dojackknife(blk) *(-1.0 if rf.vecp(base) and 'FigureT' in base else 1.0)
     if MPIRANK == 0:
         print("Done getting the auxiliary jackknife blocks.")
     return auxblks
@@ -1014,12 +1020,34 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
     mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
 
+    if MPIRANK == 0:
+        check_aux_consistency(auxblks, mostblks)
+
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
     allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
     return allblks, numt, auxblks
+
+def check_aux_consistency(auxblks, mostblks):
+    """Check consistency of blocks derived via
+    aux symmetry with those from production run."""
+    count = 0
+    if MPIRANK == 0:
+        for blk in auxblks:
+            if blk in mostblks:
+                count += 1
+                print("unused auxiliary symmetry on diagram:", blk, "total unused=", count)
+                try:
+                    assert np.allclose(auxblks[blk], mostblks[blk])
+                except AssertionError:
+                    print("Auxiliary symmetry failure of diagram:"+str(blk))
+                    if TEST44:
+                        print("aux:", auxblks[blk])
+                        print("prod:", mostblks[blk])
+                    sys.exit(1)
+                            
 
 def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
     """Check block for consistency across sloppy and exact samples

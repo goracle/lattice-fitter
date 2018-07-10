@@ -73,11 +73,21 @@ def aux_filen(filename, stype='ascii'):
                 print("symmetric Momenta; skipping")
             outfile = None
     elif nmom == 2:
-        psrc1 = pret[0]
-        psnk = pret[1]
-        psrc2 = psnk-psrc1
-        plist[0] = psnk
-        plist[1] = psrc2
+        if 'pol_snk' in outfile or 'scalar_' in outfile:
+            psrc1 = pret[0]
+            psnk = pret[1]
+            psrc2 = psnk-psrc1
+            plist[0] = psnk # new source (-1)
+            plist[1] = psrc2 # new sink (-1)
+        elif 'pol_src' in outfile or 'scalarR_' in outfile:
+            psrc = pret[0]
+            psnk1 = pret[1]
+            psnk2 = psrc-psnk1
+            plist[1] = psrc # new sink (-1)
+            plist[0] = psnk2 # new source (-1)
+        else:
+            print("bad filename to apply aux to:", filename)
+            raise
         outfile = outfile.replace("pol_snk", "pol_SOURCE")
         outfile = outfile.replace("pol_src", "pol_SINK")
         outfile = outfile.replace("pol_SOURCE", "pol_src")
