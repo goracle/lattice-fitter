@@ -967,6 +967,7 @@ def find_unused_c(ocs, allkeys, auxkeys):
     allkeys = set(allkeys)
     auxkeys = set(auxkeys)
     used = set()
+    fn1 = open('figClist.txt', 'w')
     try:
         for opa in ocs:
             for diag, _ in ocs[opa]:
@@ -974,9 +975,11 @@ def find_unused_c(ocs, allkeys, auxkeys):
                     used.add(diag)
                     assert diag in allkeys, "Missing FigureC"+\
                         " from allkeys:"+str(diag)
+                    fn1.write(diag+'\n')
     except AssertionError:
         print("missing Figure C's found.  Aborting.")
         sys.exit(1)
+    fn1.close()
     print("number of used FigureC diagrams in projected set:", len(used))
     allfigc = set()
     for diag in allkeys:

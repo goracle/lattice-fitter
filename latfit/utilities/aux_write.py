@@ -82,7 +82,9 @@ def aux_filen(filename, stype='ascii'):
         outfile = outfile.replace("pol_src", "pol_SINK")
         outfile = outfile.replace("pol_SOURCE", "pol_src")
         outfile = outfile.replace("pol_SINK", "pol_snk")
-        outfile = outfile.replace("scalar_", "scalarR_")
+        outfile = outfile.replace("scalar_", "scalarRR_")
+        outfile = outfile.replace("scalarR_", "scalar_")
+        outfile = outfile.replace("scalarRR_", "scalarR_")
         if outfile == filename:
             if stype == 'ascii':
                 print("T aux diagram already exists. Skipping.")
