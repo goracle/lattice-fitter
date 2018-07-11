@@ -947,7 +947,7 @@ def check_inner_outer(ocs, allkeys, auxkeys):
     auxkeys = set(auxkeys)
     for opa in ocs:
             for diag, _ in ocs[opa]:
-                if 'FigureR_' in diag:
+                if 'FigureC_' in diag:
                     mom = rf.mom(diag)
                     norm0 = rf.norm2(mom[0])
                     norm1 = rf.norm2(mom[1])
@@ -961,7 +961,7 @@ def check_inner_outer(ocs, allkeys, auxkeys):
                     assert norm2 >= norm3, "Inner"+\
                         " particle momentum should be >= outer particle"+\
                         " momentum (sink). :"+str(diag)
-                    assert diag in allkeys, "Missing figure R"+\
+                    assert diag in allkeys, "Missing figure C"+\
                         " from allkeys:"+str(diag)
                     if diag in auxkeys:
                         assert norm0 == norm1, "Inner particle momentum"+\
@@ -971,29 +971,30 @@ def check_inner_outer(ocs, allkeys, auxkeys):
                             " should be >= outer particle momentum"+\
                             " (sink). :"+str(diag)
 
-def find_unused_c(ocs, allkeys, auxkeys):
-    """Find unused C diagrams not needed in projection
+def find_unused(ocs, allkeys, auxkeys, fig=None):
+    """Find unused diagrams not needed in projection
     """
+    fig = 'FigureC' if fig is None else str(fig)
     allkeys = set(allkeys)
     auxkeys = set(auxkeys)
     used = set()
-    fn1 = open('figClist.txt', 'w')
+    fn1 = open(fig+'list.txt', 'w')
     try:
         for opa in ocs:
             for diag, _ in ocs[opa]:
-                if 'FigureC_' in diag:
+                if fig in diag:
                     used.add(diag)
-                    assert diag in allkeys, "Missing FigureC"+\
+                    assert diag in allkeys, "Missing "+fig+\
                         " from allkeys:"+str(diag)
                     fn1.write(diag+'\n')
     except AssertionError:
-        print("missing Figure C's found.  Aborting.")
+        print("missing "+fig+"'s found.  Aborting.")
         sys.exit(1)
     fn1.close()
-    print("number of used FigureC diagrams in projected set:", len(used))
+    print("number of used "+fig+" diagrams in projected set:", len(used))
     allfigc = set()
     for diag in allkeys:
-        if 'FigureC_' in diag and diag not in auxkeys:
+        if fig in diag and diag not in auxkeys:
             allfigc.add(diag)
     print('len=', len(allfigc))
     print('len2=', len(used))
@@ -1046,7 +1047,8 @@ def check_aux_consistency(auxblks, mostblks):
         for blk in auxblks:
             if blk in mostblks:
                 count += 1
-                print("unused auxiliary symmetry on diagram:", blk, "total unused=", count)
+                print("unused auxiliary symmetry on diagram:",
+                      blk, "total unused=", count)
                 try:
                     assert np.allclose(auxblks[blk], mostblks[blk])
                 except AssertionError:
@@ -1155,8 +1157,13 @@ def main(fixn=True):
         check_match_oplist(ocs)
         check_inner_outer(
             ocs, allblks.keys() | set(), auxblks.keys() | set())
-        unused = find_unused_c(
-            ocs, allblks.keys() | set(), auxblks.keys() | set())
+        unused = set()
+        for fig in ['FigureR' 'FigureC' 'FigureD',
+                    # 'FigureV', 'FigureCv3', 'FigureCv3R',
+                    'FigureBub2', 'FigureT']:
+            unused = find_unused(
+                ocs, allblks.keys() | set(),
+                auxblks.keys() | set(), fig=fig).union(unused)
         for useless in sorted(list(unused)):
             print("unused diagram:", useless)
         print("length of unused=", len(unused))
