@@ -33,6 +33,12 @@ except NameError:
 # run a test on a 4^4 latice
 TEST44 = False
 TEST44 = True
+
+# run a test on a 24c x 64 lattice
+TEST24C = False
+TEST24C = True
+TEST44 = True if TEST24C else TEST44
+
 # exclude all diagrams derived from aux symmetry
 NOAUX = False
 NOAUX = True
@@ -50,9 +56,15 @@ if TEST44:
     FNDEF = PREFIX+'4541.'+EXTENSION
     GNDEF = PREFIX+'4541.'+EXTENSION
     HNDEF = PREFIX+'4541.'+EXTENSION
+if TEST24C:
+    FNDEF = PREFIX+'2460.'+EXTENSION
+    GNDEF = PREFIX+'2460.'+EXTENSION
+    HNDEF = PREFIX+'2460.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64 if not TEST44 else 4
+LT = LT if not TEST24C else 64
 TSEP = 3 if not TEST44 else 1
+TSEP = TSEP if not TEST24C else 3
 # format for files; don't change
 STYPE = 'hdf5'
 # precomputed indexing matrices; DON'T CHANGE
@@ -69,7 +81,9 @@ NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 # other config options
 THERMNUM = 0  # eliminate configs below this number to thermalize
 THERMNUM = 0 if not TEST44 else 4540  # eliminate configs below this number to thermalize
+THERMNUM = THERMNUM if not TEST24C else 0
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
+TSTEP = TSTEP if not TEST24C else 8
 
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
