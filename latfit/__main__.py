@@ -24,6 +24,9 @@ import numpy as np
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
 from latfit.config import FIT
+from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import GEVP
+
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
 from latfit.extract.errcheck.xlim_err import fitrange_err
@@ -58,6 +61,13 @@ class Logger(object):
 sys.stdout = Logger()
 sys.stderr = Logger()
 
+def xmin_mat_sub(xmin, xstep=1):
+    ret = xmin
+    if GEVP:
+        if xmin < DELTA_T_MATRIX_SUBTRACTION:
+            ret = DELTA_T_MATRIX_SUBTRACTION + xstep
+    return ret
+
 
 def setup_logger():
     """Setup the logger"""
@@ -91,9 +101,10 @@ def main():
     # error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
     xmin, xmax = xlim_err(options.xmin, options.xmax)
+    xstep = xstep_err(options.xstep, input_f)
+    xmin = xmin_mat_sub(xmin, xstep=xstep)
     fitrange = fitrange_err(options, xmin, xmax)
     print("fit range = ", fitrange)
-    xstep = xstep_err(options.xstep, input_f)
     latfit.config.TSTEP = xstep
     plotdata.fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
