@@ -31,12 +31,12 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = False
 TEST44 = True
+TEST44 = False
 
 # run a test on a 24c x 64 lattice
-TEST24C = False
 TEST24C = True
+TEST24C = False
 TEST44 = True if TEST24C else TEST44
 
 # exclude all diagrams derived from aux symmetry
@@ -46,12 +46,12 @@ NOAUX = True
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
 EXTENSION = 'hdf5'
+FNDEF = PREFIX+'250.'+EXTENSION
+GNDEF = PREFIX+'250.'+EXTENSION
+HNDEF = PREFIX+'250.'+EXTENSION
 FNDEF = PREFIX+'350.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'400.'+EXTENSION
-FNDEF = PREFIX+'1530.'+EXTENSION
-GNDEF = PREFIX+'250.'+EXTENSION
-HNDEF = PREFIX+'410.'+EXTENSION
 if TEST44:
     FNDEF = PREFIX+'4541.'+EXTENSION
     GNDEF = PREFIX+'4541.'+EXTENSION
@@ -82,6 +82,7 @@ NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 THERMNUM = 0  # eliminate configs below this number to thermalize
 THERMNUM = 0 if not TEST44 else 4540  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
+assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
 
@@ -128,6 +129,9 @@ DOAMA = False
 #EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
+
+assert not TEST44, "test option on"
+assert not TEST24C, "test option on"
 
 assert JACKBUB, "not correct.  we need to jackknife the bubbles.  if debugging, comment out"
 
@@ -209,6 +213,8 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
         if toadd >= THERMNUM:  # filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
+    if not TEST44 and not TEST24C:
+        assert len(trajl)>1, "Len of trajectory list="+str(trajl)
     if getexactconfigs:
         trajl = [str(traj)+'_exact' for traj in trajl]
     if MPIRANK == 0:
@@ -517,6 +523,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
         for base, coeff in ocs[opa]:
             if ntchk is None:
                 ntchk = allblks[base].shape[0]
+                print('ntchk=', ntchk)
                 outblk = np.zeros((ntchk, outblk_shape[1]), dtype=np.complex)
                 if ntchk != outblk.shape[0]:
                     print("Warning:", opa,
@@ -1146,6 +1153,7 @@ def main(fixn=True):
     check_diag = "FigureCv3_sep"+str(TSEP)+"_momsrc_100_momsnk000" # sanity check
     if MPIRANK == 0: # write only needs one process, is fast
         assert check_diag in allblks, "sanity check not passing, missing:"+str(check_diag)
+        print('check_diag shape=', allblks[check_diag].shape)
     if MPIRANK == 0: # write only needs one process, is fast
         if WRITEBLOCK and not (
                 TESTKEY or TESTKEY2):
