@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = True
 TEST44 = False
+TEST44 = True
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
@@ -53,9 +53,9 @@ FNDEF = PREFIX+'350.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'400.'+EXTENSION
 if TEST44:
-    FNDEF = PREFIX+'4541.'+EXTENSION
-    GNDEF = PREFIX+'4541.'+EXTENSION
-    HNDEF = PREFIX+'4541.'+EXTENSION
+    FNDEF = PREFIX+'4540.'+EXTENSION
+    GNDEF = PREFIX+'4540.'+EXTENSION
+    HNDEF = PREFIX+'4540.'+EXTENSION
 if TEST24C:
     FNDEF = PREFIX+'2460.'+EXTENSION
     GNDEF = PREFIX+'2460.'+EXTENSION
@@ -80,9 +80,9 @@ NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 
 # other config options
 THERMNUM = 0  # eliminate configs below this number to thermalize
-THERMNUM = 0 if not TEST44 else 4540  # eliminate configs below this number to thermalize
+THERMNUM = 0 if not TEST44 else 4539  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
-assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
+#assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
 
@@ -130,8 +130,8 @@ DOAMA = False
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
 
-assert not TEST44, "test option on"
-assert not TEST24C, "test option on"
+#assert not TEST44, "test option on"
+#assert not TEST24C, "test option on"
 
 assert JACKBUB, "not correct.  we need to jackknife the bubbles.  if debugging, comment out"
 
@@ -1071,7 +1071,7 @@ def check_aux_consistency(auxblks, mostblks):
                 print("unused auxiliary symmetry on diagram:",
                       blk, "total unused=", count)
                 try:
-                    assert np.allclose(auxblks[blk], mostblks[blk])
+                    assert np.allclose(auxblks[blk], mostblks[blk], rtol=1e-08)
                 except AssertionError:
                     print("Auxiliary symmetry failure of diagram:"+str(blk))
                     if TEST44:
