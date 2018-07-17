@@ -48,6 +48,11 @@ def momstr(psrc, psnk):
             pstr = 'mom'+rf.ptostr(psrc)
     return pstr
 
+# A_1PLUS_mom000 dim = 5
+# A1_mom1 dim = 4
+# A1_mom11 dim = 5
+# A1_mom111 dim = 3
+
 
 A_1PLUS_mom000 = [
     (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]]),
@@ -548,7 +553,43 @@ def ptonewlinelist(mom):
    return 'int p[0] = '+str(mom[0])+'\nint p[1] = '+\
        str(mom[1])+'\nint p[2] = '+str(mom[2])+'\n'
 
+def free_energies(irrep, pionmass, lbox):
+    """return a list of free energies."""
+    retlist = []
+    if irrep in AVG_ROWS:
+        for irr in AVG_ROWS[irrep]:
+            irrep = irr
+            break
+    opprev = ''
+    for _, opa, mom in OPLIST[irrep]:
+        if opa == opprev:
+            continue
+        if len(mom) != 2:
+            continue
+        opprev = opa
+        energy = 0
+        for pin in mom:
+            # print(pionmass, pin, lbox)
+            energy += np.sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
+        retlist.append(energy)
+    return sorted(retlist)
 
+def get_comp_str(irrep):
+    """Get center of mass momentum of an irrep, return as a string for latfit"""
+    retlist = []
+    if irrep in AVG_ROWS:
+        for irr in AVG_ROWS[irrep]:
+            irrep = irr
+            break
+    opprev = ''
+    momtotal = np.array([0, 0, 0])
+    for _, _, mom in OPLIST[irrep]:
+        if len(mom) != 2:
+            continue
+        for pin in mom:
+            momtotal += np.array(pin)
+        break
+    return 'mom'+rf.ptostr(momtotal)
 
 
 # A_1PLUS_sigma = [(1, 'sigma', [0, 0, 0])]

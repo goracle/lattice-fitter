@@ -10,6 +10,7 @@ from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
 from latfit.utilities import read_file as rf
+from latfit.utilities import op_compose as opc
 
 # TYPE OF FIT
 
@@ -51,8 +52,8 @@ GEVP = True
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
 
 # METHODS/PARAMS
 
@@ -72,54 +73,8 @@ USE_FIXED_MASS = True
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 10
-
-# isospin value (convenience switch)
-ISOSPIN = 0
-DIM = 3
-# don't include the sigma in the gevp fits
-SIGMA = False
-SIGMA = True
-# non-zero center of mass
-MOMSTR = 'perm momtotal001'
-MOMSTR = 'momtotal001'
-MOMSTR = 'momtotal000'
-# group irrep
-IRREP = 'T_1_2MINUS'
-IRREP = 'T_1_MINUS'
-IRREP = 'T_1_3MINUS'
-IRREP = 'T_1_MINUS'
-IRREP = 'A1z_'+re.sub('total', '', MOMSTR)
-IRREP = 'A_1PLUS'
-
-# time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
-
-TSEP_VEC = [0]
-TSEP_VEC = [3, 3]
-TSEP_VEC = [3]*DIM if GEVP else [0]
-TSEP_VEC = [3, 0, 3]
-LT = 64
-
-# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
-
-FIT_EXCL = [[], [2, 5, 6, 7, 8]]
-FIT_EXCL = [[], [], []]
-FIT_EXCL = [[5], [5, 6], [5, 6], []]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
-            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-
-
-
-# additive constant, due to around-the-world effect
-# do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
-MATRIX_SUBTRACTION = True
-DELTA_T_MATRIX_SUBTRACTION = 2
-# do the subtraction at the level of the eigenvalues
-ADD_CONST_VEC = [True]*DIM if GEVP else [False]
-ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+SUPERJACK_CUTOFF = 0
 
 
 
@@ -133,17 +88,57 @@ CALC_PHASE_SHIFT = True
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 
-# dispersive lines
-PLOT_DISPERSIVE = True
-PLOT_DISPERSIVE = False if not GEVP else True
-DISP_ADD = (2*pi/L_BOX)**2*1
-DISP_ENERGIES = [misc.dispersive([0, 0, 0])+ misc.dispersive([0, 0, 1]),
-                 sqrt((2*misc.dispersive([0, 0, 1]))**2+DISP_ADD)]
-DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]), 2*misc.dispersive([0, 1, 1])]
-DISP_ENERGIES = [2*misc.dispersive([0, 0, 1]),
-                 2*misc.dispersive([0, 0, 0]),
-                 2*misc.dispersive([0, 1, 1]),
-]
+# isospin value, (0,1,2 supported)
+ISOSPIN = 2
+
+# group irrep
+IRREP = 'T_1_2MINUS'
+IRREP = 'T_1_MINUS'
+IRREP = 'T_1_3MINUS'
+IRREP = 'T_1_MINUS'
+IRREP = 'A1_mom111'
+IRREP = 'A_1PLUS_mom000'
+# non-zero center of mass
+MOMSTR = opc.get_comp_str(IRREP)
+
+# automatically generate free energies
+# (einstein dispersion relation sqrt(m^2+p^2))
+DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) 
+# manual, e.g.
+# DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
+
+# don't include the sigma in the gevp fits
+SIGMA = True if ISOSPIN == 0 else False
+DIM = len(DISP_ENERGIES) + (1 if SIGMA else 0) # no need to change
+
+# time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
+
+TSEP_VEC = [0]
+TSEP_VEC = [3, 3]
+TSEP_VEC = [3, 0, 3]
+TSEP_VEC = [3]*DIM if GEVP else [0]
+LT = 64
+
+# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
+
+FIT_EXCL = [[], [2, 5, 6, 7, 8]]
+FIT_EXCL = [[], [], []]
+FIT_EXCL = [[5], [5, 6], [5, 6], []]
+FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
+            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+
+
+
+# additive constant, due to around-the-world effect
+# do the subtraction at the level of the GEVP matrix
+MATRIX_SUBTRACTION = False
+MATRIX_SUBTRACTION = True
+DELTA_T_MATRIX_SUBTRACTION = 3
+# do the subtraction at the level of the eigenvalues
+ADD_CONST_VEC = [True]*DIM if GEVP else [False]
+ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+
 
 # pickle, unpickle
 
@@ -185,17 +180,6 @@ else:
 # Simply set this to a list of ints indexing the configs,
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-ELIM_JKCONF_LIST = [18, 24, 11, 21, 28, 32, 12,
-                    45, 26, 28, 33, 35, 40, 41, 43, 50]
-ELIM_JKCONF_LIST = [2, 3]
-ELIM_JKCONF_LIST = [4, 5, 6, 7]
-ELIM_JKCONF_LIST = [6, 7, 8, 9, 10, 11]
-ELIM_JKCONF_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13, 15, 17,
-                    19, 21, 23, 24, 39, 43, 45, 49, 52, 54, 57, 65,
-                    75, 78, 80, 82, 84, 98, 100, 102, 104, 106, 114,
-                    117, 119, 121, 123, 125, 127, 129, 131, 133,
-                    134, 135, 136, 137, 138, 139, 140, 141, 142,
-                    143, 144, 145]
 ELIM_JKCONF_LIST = []
 
 #print(ELIM_JKCONF_LIST[36])
@@ -271,6 +255,10 @@ else:
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = False
 BOX_PLOT = True
+
+# dispersive lines
+PLOT_DISPERSIVE = True
+PLOT_DISPERSIVE = False if not GEVP else True
 
 # precision to display, number of decimal places
 
