@@ -47,6 +47,7 @@ import latfit.config
 
 rcParams.update({'figure.autolayout': True})
 
+NUM_CONFIGS = -1
 
 def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
@@ -199,7 +200,11 @@ def get_title(input_f):
             title = input_f
     else:
         title = TITLE
-    title = latfit.config.TITLE_PREFIX+title
+    pretitle = latfit.config.TITLE_PREFIX+str(NUM_CONFIGS)+' configs '
+    if len(pretitle) > 50:
+        title = ''
+        pretitle = pretitle[:-1]
+    title = pretitle+title
     title = re.sub('_', ' ', title)
     if STYPE == 'hdf5':
         title = re.sub('.jkdat', '', title)

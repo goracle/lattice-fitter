@@ -24,6 +24,7 @@ from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
+import latfit.finalout.mkplot
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -160,6 +161,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # pickle/unpickle the jackknifed arrays
         min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
+
+        # for title printing
+        latfit.finalout.mkplot.NUM_CONFIGS = len(min_arr)
 
         # compute p-value jackknife uncertainty
         result_min.pvalue, result_min.pvalue_err = jack_mean_err(result_min.pvalue)
