@@ -152,7 +152,7 @@ if EFF_MASS:
                         eigvals2[i] -= eigvals3[i]*j
             except ImaginaryEigenvalue:
                 #print(num, file_tup)
-                print(num, timeij)
+                print('config_num:', num, 'time:', timeij)
                 sys.exit(1)
             retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op],
