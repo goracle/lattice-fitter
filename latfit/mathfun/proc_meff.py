@@ -167,7 +167,7 @@ elif EFF_MASS_METHOD == 4:
                 print(errstr)
             print('operator index=', index)
             print("times=", times)
-            sol = .1
+            sol = 0
         index = 0 if index is None else index
         try:
             if ORIGL > 1:
