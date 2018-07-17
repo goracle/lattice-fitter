@@ -492,6 +492,7 @@ def get_doublejk_data(params, coords_jack, reuse, config_num):
             if len(coords_jack) == 1:
                 print("Continuation failed.")
                 sys.exit(1)
+            assert None, "Not supported."
             coords_jack = coords_jack[1::2]
             cov_factor = np.delete(
                 getcovfactor(params, reuse, config_num, reuse_inv),
