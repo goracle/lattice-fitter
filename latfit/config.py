@@ -14,26 +14,27 @@ from latfit.utilities import op_compose as opc
 
 # TYPE OF FIT
 
-# plot anything at all?
-
-NO_PLOT = True
-NO_PLOT = False
-
 # Do a fit at all?
 
 FIT = False
 FIT = True
 
-# Jackknife fit?
+# solve the generalized eigenvalue problem (GEVP)
 
-JACKKNIFE_FIT = 'FROZEN'
-JACKKNIFE_FIT = 'SINGLE'
-JACKKNIFE_FIT = 'DOUBLE'
+GEVP = False
+GEVP = True
+
+# T0 behavior for GEVP (t/2 or t-1)
+
+T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
+T0 = 'TMINUS1' if I == 2 else 'ROUND'
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
+EFF_MASS = True if GEVP else EFF_MASS
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
 # (good for when additive const = 0, but noiser than 3 and 4)
@@ -45,48 +46,12 @@ EFF_MASS = True
 
 EFF_MASS_METHOD = 4
 
-# solve the generalized eigenvalue problem (GEVP)
-
-GEVP = False
-GEVP = True
-
-# T0 behavior for GEVP (t/2 or t-1)
-
-T0 = 'ROUND' # ceil(t/2)
-T0 = 'TMINUS1' # t-1
-
 # METHODS/PARAMS
-
-# Uncorrelated fit? True or False
-
-UNCORR = True
-UNCORR = False
-
-# Pion ratio?  Put single pion correlators in the denominator
-# of the eff mass equation to get better statistics.
-PIONRATIO = True
-PIONRATIO = False
-
-# use fixed pion mass in ratio fits?
-USE_FIXED_MASS = False
-USE_FIXED_MASS = True
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
 SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
-
-
-
-# calculate the I=0 phase shift?
-
-L_BOX = 24
-AINVERSE = 1.015
-PION_MASS = 0.13975*AINVERSE
-CALC_PHASE_SHIFT = False
-CALC_PHASE_SHIFT = True
-misc.BOX_LENGTH = L_BOX
-misc.MASS = PION_MASS/AINVERSE
 
 # isospin value, (0,1,2 supported)
 ISOSPIN = 2
@@ -101,9 +66,14 @@ IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
-# automatically generate free energies
+# automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
-DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) 
+L_BOX = 24
+AINVERSE = 1.015
+PION_MASS = 0.13975*AINVERSE
+misc.BOX_LENGTH = L_BOX
+misc.MASS = PION_MASS/AINVERSE
+DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
 
@@ -119,17 +89,6 @@ TSEP_VEC = [3, 0, 3]
 TSEP_VEC = [3]*DIM if GEVP else [0]
 LT = 64
 
-# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
-
-FIT_EXCL = [[], [2, 5, 6, 7, 8]]
-FIT_EXCL = [[], [], []]
-FIT_EXCL = [[5], [5, 6], [5, 6], []]
-FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
-            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-
-
-
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = False
@@ -139,19 +98,28 @@ DELTA_T_MATRIX_SUBTRACTION = 3
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 
+# exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-# pickle, unpickle
+FIT_EXCL = [[], [2, 5, 6, 7, 8]]
+FIT_EXCL = [[], [], []]
+FIT_EXCL = [[5], [5, 6], [5, 6], []]
+FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
+            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
-PICKLE = 'clean'
-PICKLE = 'unpickle'
-PICKLE = 'pickle'
-PICKLE = None
+# eliminate problematic configs.
+# Simply set this to a list of ints indexing the configs,
+# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-# Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
+ELIM_JKCONF_LIST = []
 
-LOG = False
-LOG = True
-LOG = False if PIONRATIO else LOG
+# dynamic binning of configs.  BINNUM is number of configs per bin.
+BINNUM = 1
+
+# print raw gevp info (for debugging source construction)
+
+GEVP_DEBUG = True
+GEVP_DEBUG = False
 
 # stringent tolerance for minimizer?  true = stringent
 MINTOL = False
@@ -176,48 +144,56 @@ else:
 
 # modify the configs used and bin
 
-# eliminate problematic configs.
-# Simply set this to a list of ints indexing the configs,
-# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
+# Uncorrelated fit? True or False
 
-ELIM_JKCONF_LIST = []
+UNCORR = True
+UNCORR = False
 
-#print(ELIM_JKCONF_LIST[36])
-#sys.exit(0)
-#ELIM_JKCONF_LIST = ELIM_JKCONF_LIST[37:]
+# Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
-# dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
+LOG = False
+LOG = True
+LOG = False if PIONRATIO else LOG
+
+# Jackknife fit? (keep double for correctness, others not supported)
+
+JACKKNIFE_FIT = 'FROZEN'
+JACKKNIFE_FIT = 'SINGLE'
+JACKKNIFE_FIT = 'DOUBLE'
+
+# Pion ratio?  Put single pion correlators in the denominator
+# of the eff mass equation to get better statistics.
+PIONRATIO = True
+PIONRATIO = False
+
+# use fixed pion mass in ratio fits?
+USE_FIXED_MASS = False
+USE_FIXED_MASS = True
+
+# pickle, unpickle
+
+PICKLE = 'clean'
+PICKLE = 'unpickle'
+PICKLE = 'pickle'
+PICKLE = None
 
 # DISPLAY PARAMETERS
 # no title given takes the current working directory as the title
 
 # title prefix
 if GEVP:
-    if DIM == 2:
-        if ISOSPIN == 0:
-            if SIGMA:
-                TITLE_PREFIX = r'$\pi\pi, \sigma$, I0, ' + MOMSTR + ' '
-            else:
-                TITLE_PREFIX = r'$\pi\pi$, I0, ' + MOMSTR + ' '
-        elif ISOSPIN == 2:
-            TITLE_PREFIX = r'$\pi\pi$, I2, ' + MOMSTR + ' '
-        elif ISOSPIN == 1:
-            TITLE_PREFIX = r'$\pi\pi, \rho$ I1, ' + MOMSTR + ' '
-    elif DIM == 3:
-        if SIGMA and ISOSPIN == 0:
-            TITLE_PREFIX = r'3x3 GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
-        elif ISOSPIN == 0:
-            TITLE_PREFIX = r'3x3 GEVP, I0, $\pi\pi, \sigma$, ' + MOMSTR + ' '
-        else:
-            TITLE_PREFIX = r'3x3 GEVP, I2, $\pi\pi$, ' + MOMSTR + ' '
+    if SIGMA and ISOSPIN == 0:
+        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+            r' GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
+    elif ISOSPIN == 2:
+        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+            r' GEVP, I2, $\pi\pi$, ' + MOMSTR + ' '
+    elif ISOSPIN == 1:
+        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+            r' GEVP, I1, $\pi\pi,~\rho$ ' + MOMSTR + ' '
     else:
-        if SIGMA and ISOSPIN == 0:
-            TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-                r' GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
-        else:
-            TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-                r' GEVP, $\pi\pi, ' + MOMSTR + ' '
+        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
+            r' GEVP, $\pi\pi$, ' + MOMSTR + ' '
 
 else:
     TITLE_PREFIX = '24c '
@@ -251,6 +227,10 @@ if EFF_MASS:
         YLABEL = r'$am_{eff}(t)$'
 else:
     YLABEL = 'C(t)'
+
+# calculate the I=0 phase shift?
+CALC_PHASE_SHIFT = False
+CALC_PHASE_SHIFT = True
 
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = False
@@ -322,10 +302,10 @@ JACKKNIFE = 'YES'
 PRINT_CORR = True
 PRINT_CORR = False
 
-# print raw gevp info (for debugging source construction)
+# plot anything at all?
 
-GEVP_DEBUG = True
-GEVP_DEBUG = False
+NO_PLOT = True
+NO_PLOT = False
 
 # -------BEGIN POSSIBLY OBSOLETE------#
 
@@ -572,3 +552,4 @@ print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
 assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
     " only with eff mass method 4"
+assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting methods no longer supported."
