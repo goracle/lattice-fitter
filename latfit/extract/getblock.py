@@ -109,6 +109,16 @@ class ImaginaryEigenvalue(Exception):
         self.expression = expression
         self.message = message
 
+class XmaxError(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, problemx=None, message=''):
+        print("***ERROR***")
+        print('xmax likely too large, decreasing')
+        super(XmaxError, self).__init__(message)
+        self.problemx = problemx
+        self.message = message
+
+
 
 if EFF_MASS:
     def getblock_gevp(file_tup, timeij=None):
@@ -153,7 +163,7 @@ if EFF_MASS:
             except ImaginaryEigenvalue:
                 #print(num, file_tup)
                 print('config_num:', num, 'time:', timeij)
-                sys.exit(1)
+                raise XmaxError(problemx=timeij)
             retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op],
                  eigvals4[op]), index=op, time_arr=timeij)

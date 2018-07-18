@@ -36,6 +36,7 @@ from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
+from latfit.extract.getblock import XmaxError
 import latfit.config
 
 
@@ -112,14 +113,20 @@ def main():
     update_num_configs()
 
     if trials == -1:
+        try:
+            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+        except XmaxError as err:
+            xmax = err.problemx-xstep
+            fitrange = fitrange_err(options, xmin, xmax)
+            print("new fit range = ", fitrange)
+            plotdata.fitcoord = fit_coord(fitrange, xstep)
+            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
         if FIT:
-            result_min, param_err, plotdata.coords, plotdata.cov = \
-                singlefit(input_f, fitrange, xmin, xmax, xstep)
+            result_min, param_err, plotdata.coords, plotdata.cov = retsingle
             printerr(result_min.x, param_err)
             mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
-            plotdata.coords, plotdata.cov = singlefit(input_f, fitrange,
-                                                      xmin, xmax, xstep)
+            plotdata.coords, plotdata.cov = retsingle
             mkplot(plotdata, input_f)
     else:
         list_fit_params = []
