@@ -20,12 +20,13 @@ import subprocess as sp
 from warnings import warn
 import time
 import numpy as np
+import h5py
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
-from latfit.config import GEVP
+from latfit.config import GEVP, FIT, STYPE
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -108,6 +109,7 @@ def main():
     latfit.config.TSTEP = xstep
     plotdata.fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
+    update_num_configs()
 
     if trials == -1:
         if FIT:
@@ -132,6 +134,17 @@ def main():
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
+def update_num_configs():
+    """Update the number of configs in the case that FIT is False.
+    """
+    if not FIT and GEVP and STYPE == 'hdf5':
+        fn1 = h5py.File(latfit.config.GEVP_DIRS[0][0], 'r')
+        for i in fn1:
+            for j in fn1[i]:
+                latfit.finalout.mkplot.NUM_CONFIGS = np.array(
+                    fn1[i+'/'+j]).shape[0]
+                break
+            break
 
 def fit_coord(fitrange, xstep):
     """Get xcoord to plot fit function."""

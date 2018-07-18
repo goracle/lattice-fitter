@@ -16,19 +16,13 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
 GEVP = False
 GEVP = True
-
-# T0 behavior for GEVP (t/2 or t-1)
-
-T0 = 'ROUND' # ceil(t/2)
-T0 = 'TMINUS1' # t-1
-T0 = 'TMINUS1' if I == 2 else 'ROUND'
 
 # Plot Effective Mass? True or False
 
@@ -61,7 +55,7 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A1_mom111'
+IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -129,6 +123,21 @@ MINTOL = True
 RESCALE = 1e12
 RESCALE = 1.0
 
+# T0 behavior for GEVP (t/2 or t-1)
+
+T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
+T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
+
+# Pion ratio?  Put single pion correlators in the denominator
+# of the eff mass equation to get better statistics.
+PIONRATIO = True
+PIONRATIO = False
+
+# use fixed pion mass in ratio fits?
+USE_FIXED_MASS = False
+USE_FIXED_MASS = True
+
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5]
@@ -160,15 +169,6 @@ LOG = False if PIONRATIO else LOG
 JACKKNIFE_FIT = 'FROZEN'
 JACKKNIFE_FIT = 'SINGLE'
 JACKKNIFE_FIT = 'DOUBLE'
-
-# Pion ratio?  Put single pion correlators in the denominator
-# of the eff mass equation to get better statistics.
-PIONRATIO = True
-PIONRATIO = False
-
-# use fixed pion mass in ratio fits?
-USE_FIXED_MASS = False
-USE_FIXED_MASS = True
 
 # pickle, unpickle
 

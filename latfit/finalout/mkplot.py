@@ -13,6 +13,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from scipy import stats
+import h5py
 
 from latfit.config import fit_func
 from latfit.config import FINE
@@ -43,15 +44,27 @@ from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
+from latfit.config import FIT
+from latfit.config import DELTA_E_AROUND_THE_WORLD
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
 
 NUM_CONFIGS = -1
 
+def update_result_min_nofit(plotdata):
+    """Update the result with around the world shift in energy
+    associated with non-zero center of mass momentum
+    """
+    for i, _ in enumerate(plotdata.coords):
+        plotdata.coords[i] += DELTA_E_AROUND_THE_WORLD
+    return plotdata
+
 def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
+
+    plotdata = update_result_min_nofit(plotdata)
 
     # GET COORDS
     error2 = get_prelim_errbars(result_min)
