@@ -57,7 +57,7 @@ def update_result_min_nofit(plotdata):
     associated with non-zero center of mass momentum
     """
     for i, _ in enumerate(plotdata.coords):
-        plotdata.coords[i] += DELTA_E_AROUND_THE_WORLD
+        plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
     return plotdata
 
 def mkplot(plotdata, input_f,
