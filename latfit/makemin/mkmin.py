@@ -13,6 +13,7 @@ from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import MINTOL
 from latfit.config import GEVP
+import latfit.config
 
 
 def mkmin(covinv, coords):
@@ -44,7 +45,7 @@ def mkmin(covinv, coords):
     else:
         start_params = START_PARAMS
     if METHOD not in set(['L-BFGS-B']):
-        if MINTOL:
+        if latfit.config.MINTOL:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
                                method=METHOD, options={'disp': True,
                                                        'maxiter': 10000,
@@ -53,9 +54,9 @@ def mkmin(covinv, coords):
                                                        'fatol': 0.00000001})
         else:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD, options={'disp': True,
-                                                       'maxiter': 10000,
-                                                       'maxfev': 10000})
+                               method=METHOD, options={'disp': True})
+                                                       #'maxiter': 10000,
+                                                       #'maxfev': 10000})
         # method = 'BFGS'
         # method = 'L-BFGS-B'
         # bounds = BINDS
@@ -74,9 +75,16 @@ def mkmin(covinv, coords):
     # print "chi^2 minimized check = ", chi_sq(res_min.x, covinv, coords)
     # print covinv
     if res_min.fun < 0:
-        print("***ERROR***")
-        print("Chi^2 minimizer failed. Chi^2 found to be less than zero.")
-        sys.exit(1)
+        raise NegChisq
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return res_min
+
+class NegChisq(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, problemx=None, message=''):
+        print("***ERROR***")
+        print("Chi^2 minimizer failed. Chi^2 found to be less than zero.")
+        super(NegChisq, self).__init__(message)
+        self.problemx = problemx
+        self.message = message

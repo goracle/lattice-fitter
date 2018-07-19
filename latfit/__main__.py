@@ -16,6 +16,7 @@ from collections import namedtuple
 import os
 from math import sqrt
 import sys
+from itertools import combinations, chain, product
 import subprocess as sp
 from warnings import warn
 import time
@@ -36,7 +37,12 @@ from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
+from latfit.makemin.mkmin import NegChisq
 from latfit.extract.getblock import XmaxError
+from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
+from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
+from latfit.config import GEVP_DIRS
+from latfit.config import FIT_EXCL as EXCL_ORIG
 import latfit.config
 
 
@@ -120,8 +126,46 @@ def main():
             fitrange = fitrange_err(options, xmin, xmax)
             print("new fit range = ", fitrange)
             plotdata.fitcoord = fit_coord(fitrange, xstep)
-            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+            skip = True
         if FIT:
+            chisq_arr = []
+            if not skip:
+                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
+                chisq_arr = [(result_min.fun, latfit.config.FIT_EXCL)]
+            posexcl = [powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep)) for i in range(len(latfit.config.FIT_EXCL))]
+            prod = product(*posexcl)
+            lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
+            lenprod = 2**(len(GEVP_DIRS)*lenfit)
+            for i, excl in enumerate(prod):
+                excl = augment_excl([[i for i in j] for j in excl])
+                if not dof_check(lenfit, len(GEVP_DIRS), excl):
+                    print("dof < 1 for excluded times:", excl, "Skipping:", str(i)+"/"+str(lenprod))
+                    continue
+                latfit.config.FIT_EXCL = excl
+                print("Trying fit with excluded times:",
+                      latfit.config.FIT_EXCL, "fit:", str(i)+"/"+str(lenprod))
+                try:
+                    retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+                except (NegChisq, RelGammaError, np.linalg.linalg.LinAlgError,
+                        DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                    print("fit failed for this selection excluded points=", excl)
+                    continue
+                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
+                printerr(result_min.x, param_err)
+                try:
+                    result = (result_min.fun/result_min.dof, excl)
+                except ZeroDivisionError:
+                    print("infinite chisq/dof. fit excl:", excl)
+                    continue
+                print("chisq/dof, fit excl:", result, "dof=", result_min.dof)
+                if result[0] >= 1: # don't overfit
+                    chisq_arr.append(result)
+            assert chisq_arr, "No fits succeeded.  Change fit range manually."
+            for i in chisq_arr:
+                print(i)
+            latfit.config.FIT_EXCL =  min_excl(chisq_arr)
+            latfit.config.MINTOL =  True
+            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
             result_min, param_err, plotdata.coords, plotdata.cov = retsingle
             printerr(result_min.x, param_err)
             mkplot(plotdata, input_f, result_min, param_err, fitrange)
@@ -140,6 +184,32 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
+def min_excl(chisq_arr):
+    minres = sorted(chisq_arr, key=lambda row: row[0])[0]
+    print("min chisq/dof=", minres[0])
+    print("best times to exclude:", minres[1])
+    return minres[1]
+
+def augment_excl(excl):
+    for num, (i, j) in enumerate(zip(excl, EXCL_ORIG)):
+        excl[num] = sorted(list(set(j).union(set(i))))
+    return excl
+
+def dof_check(lenfit, dimops, excl):
+    dof = (lenfit-1)*dimops
+    ret = True
+    for i in excl:
+        for j in i:
+            dof -= 1
+    if dof < 1:
+        ret = False
+    return ret
+
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 def update_num_configs():
     """Update the number of configs in the case that FIT is False.

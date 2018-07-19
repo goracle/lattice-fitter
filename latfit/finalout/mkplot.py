@@ -45,7 +45,7 @@ from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
 from latfit.config import FIT
-from latfit.config import DELTA_E_AROUND_THE_WORLD
+from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -56,6 +56,8 @@ def update_result_min_nofit(plotdata):
     """Update the result with around the world shift in energy
     associated with non-zero center of mass momentum
     """
+    assert MATRIX_SUBTRACTION, "addition of delta E makes sense only if"+\
+        " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):
         plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
     return plotdata
@@ -138,11 +140,10 @@ def modmissingdim(dimops, plotdata, result_min):
             dimops_mod -= 1
             todel.append(i)
     if FIT:
-        # we shifted the GEVP energy spectrum down
-        # to fix the leading order around the world term so shift it back
-        # result_min.x = np.asarray(result_min.x)+DELTA_E_AROUND_THE_WORLD
         # delete the unwanted dimensions
-        result_min_mod.x = np.delete(result_min.x, todel)
+        for idx in todel:
+            #result_min_mod.x = np.delete(result_min.x, todel)
+            result_min_mod.x[idx] = np.nan
     return dimops_mod, result_min_mod
 
 
@@ -349,7 +350,7 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
-    for k, i in enumerate(FIT_EXCL):
+    for k, i in enumerate(latfit.config.FIT_EXCL):
         if k >= len(result_min.x): # if we leave off a gevp dimension
             break
         for j in i:
@@ -421,6 +422,8 @@ def plot_fit(xcoord, result_min, dimops):
             fit_func(xfit[curve_num][i], result_min.x)[curve_num] if dimops > 1 else
             fit_func(xfit[i], result_min.x)
             for i in range(len(xfit[curve_num] if dimops > 1 else xfit))])
+        if np.nan in yfit:
+            continue
         # only plot fit function if minimizer result makes sense
         # if result_min.status == 0:
         plt.plot(xfit[curve_num] if dimops > 1 else xfit, yfit)
@@ -437,15 +440,18 @@ def get_xfit(dimops, xcoord, step_size=None):
         for i in range(dimops):
             xfit[i] = np.array(xcoord)
             todel = []
+            badcoord = []
             for j, coord in enumerate(xcoord):
-                if coord in FIT_EXCL[i]:
+                if coord in latfit.config.FIT_EXCL[i]:
                     todel.append(j)
+                    badcoord.append(coord)
             xfit[i] = np.delete(xfit[i], todel)
             step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
                 len(xfit[i])-1) if step_size is None else step_size
+            step_size = 1.0 if np.isnan(step_size) else step_size
             try:
                 xfit[i] = list(np.arange(xfit[i][0], xfit[i][len(xfit[i])-1]+step_size, step_size))
-            except IndexError:
+            except IndexError: # here in case nothing is to be plot
                 xfit[i] = []
     return xfit
 
@@ -460,6 +466,8 @@ if GEVP:
         xfit = get_xfit(dimops, xcoord, 1)
         xfit = [xfit] if dimops == 1 else xfit
         for i in range(dimops):
+            if np.isnan(result_min.x[i]):
+                continue
             try:
                 axvar.add_patch((
                     plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,

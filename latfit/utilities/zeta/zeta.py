@@ -17,6 +17,16 @@ class ZetaError(Exception):
     def __init__(self, mismatch):
         Exception.__init__(self, mismatch)
 
+class RelGammaError(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, gamma=None, epipi=None, message=''):
+        print("***ERROR***")
+        print("gamma < 1: gamma=", gamma, "Epipi=", epipi)
+        super(RelGammaError, self).__init__(message)
+        self.gamma = gamma
+        self.epipi = epipi
+        self.message = message
+
 if CALC_PHASE_SHIFT:
     def zeta(epipi):
         """Calculate the I=0 scattering phase shift given the pipi energy
@@ -39,8 +49,7 @@ if CALC_PHASE_SHIFT:
             print("Length of box=", L_BOX)
             sys.exit(1)
         if gamma < 1:
-            print("gamma < 1: gamma=", gamma, "Epipi=", epipi)
-            sys.exit(1)
+            raise RelGammaError(gamma=gamma, epipi=epipi)
         epipi = epipi*AINVERSE/gamma
 
         #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct
@@ -63,7 +72,11 @@ if CALC_PHASE_SHIFT:
         if epipi*epipi/4-PION_MASS**2 < 0:
             out = float(out)*1j
         else:
-            out = complex(float(out))
+            try:
+                out = complex(float(out))
+            except ValueError:
+                print("unable to convert phase shift to number")
+                raise ZetaError("bad number conversion")
             if ISOSPIN == 0:
                 if out.real < 0 and abs(out.real) > 90:
                     out = np.complex(out.real+

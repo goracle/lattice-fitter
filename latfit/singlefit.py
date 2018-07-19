@@ -30,7 +30,9 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     inputexists(input_f)
 
     # process the file(s)
-    coords_full, cov_full, reuse = extract(input_f, xmin, xmax, xstep)
+    if singlefit.reuse is None:
+        singlefit.coords_full, singlefit.cov_full, singlefit.reuse = extract(input_f, xmin, xmax, xstep)
+    coords_full, cov_full, reuse = singlefit.coords_full, singlefit.cov_full, singlefit.reuse
 
     # Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs',
@@ -93,7 +95,9 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
         return result_min, param_err, coords_full, cov_full
     else:
         return coords, cov
-
+singlefit.reuse = None
+singlefit.coords_full = None
+singlefit.cov_full = None
 
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
     """Get the starting and ending indices

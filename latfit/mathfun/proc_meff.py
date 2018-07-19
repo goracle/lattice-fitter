@@ -24,7 +24,7 @@ from latfit.config import PIONRATIO
 from latfit.config import RESCALE
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import MINTOL, METHOD, BINDS
-from latfit.config import ORIGL, DIM, FIT_EXCL
+from latfit.config import ORIGL, DIM
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 # from latfit.analysis.profile import PROFILE
 import latfit.config
@@ -162,12 +162,12 @@ elif EFF_MASS_METHOD == 4:
             errstr = "bad time/op"+\
                     "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
             if FIT:
-                assert times and times[0] in FIT_EXCL[index], errstr
+                assert times and times[0] in latfit.config.FIT_EXCL[index], errstr
             else:
                 print(errstr)
             print('operator index=', index)
             print("times=", times)
-            sol = 0
+            sol = np.nan
         index = 0 if index is None else index
         try:
             if ORIGL > 1:

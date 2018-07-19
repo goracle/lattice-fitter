@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -48,15 +48,15 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -116,8 +116,8 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # stringent tolerance for minimizer?  true = stringent
-MINTOL = False
 MINTOL = True
+MINTOL = False
 
 # rescale the fit function by factor RESCALE
 RESCALE = 1e12
@@ -367,6 +367,7 @@ LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
+assert MATRIX_SUBTRACTION or not GEVP, "Must subtract around the world constant at GEVP level"
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if MATRIX_SUBTRACTION:
     for i, _ in enumerate(ADD_CONST_VEC):

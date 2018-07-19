@@ -18,13 +18,13 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP
 from latfit.config import UNCORR
-from latfit.config import FIT_EXCL
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
+import latfit.config
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -93,9 +93,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute degrees of freedom
         result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
         for i in coords[:, 0]:
-            for j in FIT_EXCL:
+            for j in latfit.config.FIT_EXCL:
                 if i in j:
                     result_min.dof -= 1
+        if result_min.dof < 1:
+            raise DOFNonPos(dof=result_min.dof)
 
         # alloc storage
         # one fit for every jackknife block (N fits for N configs)
@@ -139,8 +141,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
+
+            # we shifted the GEVP energy spectrum down
+            # to fix the leading order around the world term so shift it back
+
             result_min_jack.x = np.asarray(result_min_jack.x)+\
                 DELTA_E_AROUND_THE_WORLD
+
+            # store the result
             min_arr[config_num] = result_min_jack.x
 
             # compute phase shift, if necessary
@@ -156,6 +164,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             print("config", config_num, ":", result_min_jack.x,
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num])
+
+            if result_min_jack.fun/result_min.dof > 5:
+                raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
 
         # average results, compute jackknife uncertainties
 
@@ -322,7 +333,7 @@ def prune_fit_range(covinv_jack, coords_jack):
     """Zero out parts of the inverse covariance matrix to exclude items
     from fit range.  Thus, the contribution to chi^2 will be 0.
     """
-    excl = FIT_EXCL
+    excl = latfit.config.FIT_EXCL
     for i, xcoord in enumerate(coords_jack[:, 0]):
         for opa, _ in enumerate(excl):
             for j, _ in enumerate(excl[opa]):
@@ -343,7 +354,7 @@ def prune_phase_shift_arr(arr):
             print("Bad phase shift in jackknife block # "+
                   str(i)+", omitting.")
             dellist.append(i)
-            sys.exit(1) # remove this if debugging
+            raise ZetaError("bad phase shift (nan)") # remove this if debugging
     return dellist
 
 def phase_shift_jk(params, epipi_arr):
@@ -511,9 +522,9 @@ def prune_covjack(params, covjack, coords_jack, flag):
     len_time = len(params.time_range)
     # convert x-coordinates to index basis
     for i, xcoord in enumerate(coords_jack[:, 0]):
-        for opa, _ in enumerate(FIT_EXCL):
-            for j in range(len(FIT_EXCL[opa])):
-                if xcoord == FIT_EXCL[opa][j]:
+        for opa, _ in enumerate(latfit.config.FIT_EXCL):
+            for j in range(len(latfit.config.FIT_EXCL[opa])):
+                if xcoord == latfit.config.FIT_EXCL[opa][j]:
                     excl.append(opa*len_time+i)
     # rotate tensor basis to dimops, dimops, time, time
     # (or time, time if not GEVP)
@@ -568,7 +579,8 @@ def invertmasked(params, len_time, excl, covjack):
                   "eliminated.")
             print("Plotted error bars should be " +
                   "considered suspect.")
-            flag = 1
+            raise np.linalg.linalg.LinAlgError
+            # flag = 1 # old way of handling error
         else:
             raise
     marray[marray.mask] = marray.fill_value
@@ -594,6 +606,24 @@ def jack_errorbars(covjack, params):
         print("shape =", covjack.shape)
         sys.exit(1)
     return error_bars
+
+class DOFNonPos(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, dof=None, message=''):
+        print("***ERROR***")
+        print("dof < 1: dof=", dof)
+        super(DOFNonPos, self).__init__(message)
+        self.dof = dof
+        self.message = message
+
+class BadChisqJackknife(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, chisq=None, message=''):
+        print("***ERROR***")
+        print("chisq/dof > 5 chisq=", chisq)
+        super(BadChisqJackknife, self).__init__(message)
+        self.dof = chisq
+        self.message = message
 
 
 if JACKKNIFE_FIT == 'SINGLE':
