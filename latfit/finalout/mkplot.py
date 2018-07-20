@@ -30,7 +30,6 @@ from latfit.config import EFF_MASS
 from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
-from latfit.config import FIT_EXCL
 from latfit.config import NO_PLOT
 from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
@@ -93,7 +92,7 @@ def mkplot(plotdata, input_f,
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(plotdata.coords, dimops_mod, plotdata.fitcoord,
+        param_chisq = get_param_chisq(plotdata.coords, dimops, plotdata.fitcoord,
                                       result_min_mod, fitrange)
         print_messages(result_min_mod, param_err, param_chisq)
 
@@ -112,12 +111,12 @@ def mkplot(plotdata, input_f,
 
         if FIT:
             # plot fit function
-            plot_fit(plotdata.fitcoord, result_min_mod, dimops_mod)
+            plot_fit(plotdata.fitcoord, result_min_mod, dimops)
 
             # tolerance box plot
             if EFF_MASS and BOX_PLOT:
                 plot_box(plotdata.fitcoord, result_min_mod, param_err,
-                         dimops_mod)
+                         dimops)
 
             annotate(dimops_mod, result_min_mod, param_err,
                      param_chisq, plotdata.coords)
