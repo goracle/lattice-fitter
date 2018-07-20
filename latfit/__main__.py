@@ -136,10 +136,13 @@ def main():
         if FIT:
             # store different excluded, and the avg chisq/dof
             chisq_arr = []
-            if not skip:
-                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
-                chisq_arr = [(result_min.fun, latfit.config.FIT_EXCL)]
-            posexcl = [powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep)) for i in range(len(latfit.config.FIT_EXCL))]
+
+            # generate all possible points excluded from fit range
+            posexcl = [
+                powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
+                for i in range(len(latfit.config.FIT_EXCL))
+            ]
+            sampler = list(posexcl[0])
             prod = product(*posexcl)
 
             # 2^n = cardinality of power set
@@ -164,8 +167,7 @@ def main():
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
-                        excl = [np.random.choice(sampler,
-                                                 p=probs)
+                        excl = [np.random.choice(sampler)
                                 for _ in range(len(latfit.config.FIT_EXCL))]
                 if len(checked) == lenprod:
                     print("all indices checked, exiting.")
