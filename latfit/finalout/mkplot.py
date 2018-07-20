@@ -357,6 +357,8 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
+    print("param_chisq.dof=", param_chisq.dof)
+    print("FIT_EXCL=", latfit.config.FIT_EXCL)
     for k, i in enumerate(latfit.config.FIT_EXCL):
         if k >= len(result_min.x): # if we leave off a gevp dimension
             break
