@@ -134,15 +134,49 @@ def main():
                 DOFNonPos, BadChisqJackknife, ZetaError) as _:
             pass
         if FIT:
+            # store different excluded, and the avg chisq/dof
             chisq_arr = []
             if not skip:
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 chisq_arr = [(result_min.fun, latfit.config.FIT_EXCL)]
             posexcl = [powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep)) for i in range(len(latfit.config.FIT_EXCL))]
             prod = product(*posexcl)
+
+            # 2^n = cardinality of power set
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             lenprod = 2**(len(GEVP_DIRS)*lenfit)
-            for i, excl in enumerate(prod):
+            if lenprod < 1000: # fit range is small, use brute force
+                prod = list(prod)
+
+            # go in a random order if lenprod is small,
+            # so store checked indicies
+            checked = set()
+            idx = -1
+            while True:
+
+                idx += 1
+                # small fit range
+                if isinstance(prod, list):
+                    if idx in checked:
+                        continue
+                    excl = prod[idx]
+                else: # large fit range, try to get lucky
+                    if idx == 0:
+                        excl = latfit.config.FIT_EXCL
+                    else:
+                        excl = [np.random.choice(sampler,
+                                                 p=probs)
+                                for _ in range(len(latfit.config.FIT_EXCL))]
+                if len(checked) == lenprod:
+                    print("all indices checked, exiting.")
+                    break
+                checked.add(idx)
+
+                # each fit curve should be to more than one data point
+                if max([len(i) for i in excl]) == fitrange[1]-fitrange[0]:
+                    continue
+
+                # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
                 if not dof_check(lenfit, len(GEVP_DIRS), excl):
                     print("dof < 1 for excluded times:", excl, "Skipping:", str(i)+"/"+str(lenprod))
