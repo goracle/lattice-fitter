@@ -17,9 +17,11 @@ import os
 from math import sqrt
 import sys
 from itertools import combinations, chain, product
+from random import randint
 import subprocess as sp
 from warnings import warn
 import time
+import random
 import numpy as np
 import h5py
 
@@ -119,14 +121,18 @@ def main():
     update_num_configs()
 
     if trials == -1:
+        # try an initial plot, shrink the xmax if it's too big
         try:
-            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+            _ = singlefit(input_f, fitrange, xmin, xmax, xstep)
         except XmaxError as err:
             xmax = err.problemx-xstep
             fitrange = fitrange_err(options, xmin, xmax)
             print("new fit range = ", fitrange)
             plotdata.fitcoord = fit_coord(fitrange, xstep)
-            skip = True
+        except (NegChisq, RelGammaError,
+                np.linalg.linalg.LinAlgError,
+                DOFNonPos, BadChisqJackknife, ZetaError) as _:
+            pass
         if FIT:
             chisq_arr = []
             if not skip:
