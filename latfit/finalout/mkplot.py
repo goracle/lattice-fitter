@@ -321,14 +321,20 @@ def print_messages(result_min, param_err, param_chisq):
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
         if GEVP:
+            print("I="+str(ISOSPIN)+" phase shift(in degrees) = ")
+            energy = 1000*AINVERSE*np.array(result_min.x)
+            err_energy = 1000*AINVERSE*np.array(param_err)
             for i in range(len(result_min.scattering_length)):
-                print("state["+str(i)+"]:")
-                print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-                      result_min.phase_shift[i], "+/-",
-                      result_min.phase_shift_err[i])
-                print("I="+str(ISOSPIN)+" scattering length = ",
-                      result_min.scattering_length[i], "+/-",
-                      result_min.scattering_length_err[i])
+                shift = result_min.phase_shift[i]
+                shift = np.real(shift) if np.isreal(shift) else shift
+                err = result_min.phase_shift_err[i]
+                err = np.real(err) if np.isreal(err) else err
+                print(energy[i], "MeV :",  shift, "+/-", err, "Err Energy=", err_energy[i])
+            for i in range(len(result_min.scattering_length)):
+                if i == 0: # scattering length only meaningful as p->0
+                    print("I="+str(ISOSPIN)+" scattering length = ",
+                          result_min.scattering_length[i], "+/-",
+                          result_min.scattering_length_err[i])
         else:
             print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
                   result_min.phase_shift, "+/-",
