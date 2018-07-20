@@ -150,9 +150,11 @@ def plot_dispersive(dimops, xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
         estring = trunc_prec(energy)
+        """
         plt.annotate(
             "Dispersive energy["+str(i)+"] = "+estring,
             xy=(0.05, 0.90-(i+dimops)*.05), xycoords='axes fraction')
+        """
         plt.plot(xcoord, list([energy])*len(xcoord),
                  label='Dispersive('+str(i)+')')
     plt.legend(loc='lower left')
