@@ -437,7 +437,7 @@ def plot_fit(xcoord, result_min, dimops):
         # if result_min.status == 0:
         plt.plot(xfit[curve_num] if dimops > 1 else xfit, yfit)
 
-def get_xfit(dimops, xcoord, step_size=None):
+def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
     """Return the abscissa for the plot of the fit function."""
     if dimops == 1:
         step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
@@ -455,37 +455,46 @@ def get_xfit(dimops, xcoord, step_size=None):
                     todel.append(j)
                     badcoord.append(coord)
             xfit[i] = np.delete(xfit[i], todel)
-            step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
-                len(xfit[i])-1) if step_size is None else step_size
-            step_size = 1.0 if np.isnan(step_size) else step_size
-            try:
-                xfit[i] = list(np.arange(xfit[i][0], xfit[i][len(xfit[i])-1]+step_size, step_size))
-            except IndexError: # here in case nothing is to be plot
-                xfit[i] = []
+            if not box_plot:
+                step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
+                    len(xfit[i])-1) if step_size is None else step_size
+                step_size = 1.0 if np.isnan(step_size) else step_size
+                try:
+                    xfit[i] = list(np.arange(xfit[i][0],
+                                            xfit[i][len(xfit[i])-1]+step_size,
+                                            step_size))
+                except IndexError: # here in case nothing is to be plot
+                    xfit[i] = []
     return xfit
 
 
 if GEVP:
     def plot_box(xcoord, result_min, param_err, dimops):
         """plot tolerance box around straight line fit for effective mass
+        assumes xstep = 1
         """
         axvar = plt.gca()
         # gca, gcf = getcurrentaxes getcurrentfigure
         fig = plt.gcf()
-        xfit = get_xfit(dimops, xcoord, 1)
+        xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
         xfit = [xfit] if dimops == 1 else xfit
         for i in range(dimops):
             if np.isnan(result_min.x[i]):
                 continue
             try:
-                axvar.add_patch((
-                    plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                        (xfit[i][0]-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                        xfit[i][len(xfit[i])-1]-xfit[i][0]+1,  # width
-                        2*param_err[i],  # height
-                        fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
-                        # transform=fig.transFigure
-                    )))
+                continuous = len(np.arange(xfit[i][0], xfit[i][1]+1)) == len(xfit[i])
+                for start in xfit[i]:
+                    delw = xfit[i][len(xfit[i])-1]-xfit[i][0] if continuous else 0
+                    axvar.add_patch((
+                        plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
+                            (start-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                            1+delw,  # width
+                            2*param_err[i],  # height
+                            fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
+                            # transform=fig.transFigure
+                        )))
+                    if continuous:
+                        break
             except IndexError:
                 pass
 else:
