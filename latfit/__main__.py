@@ -174,12 +174,16 @@ def main():
                     break
                 checked.add(idx)
 
-                # each fit curve should be to more than one data point
-                if max([len(i) for i in excl]) == fitrange[1]-fitrange[0]:
-                    continue
-
                 # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
+
+                # each fit curve should be to more than one data point
+                if fitrange[1]-fitrange[0] in [len(i) for i in excl]:
+                    continue
+
+                # each energy should be included
+                if max([len(i) for i in excl]) == fitrange[1]-fitrange[0]+1:
+                    continue
 
                 # dof check
                 if not dof_check(lenfit, len(GEVP_DIRS), excl):
