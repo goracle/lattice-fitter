@@ -54,9 +54,10 @@ def mkmin(covinv, coords):
                                                        'fatol': 0.00000001})
         else:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD, options={'disp': True})
-                                                       #'maxiter': 10000,
-                                                       #'maxfev': 10000})
+                               method=METHOD)
+        # options={'disp': True})
+        #'maxiter': 10000,
+        #'maxfev': 10000})
         # method = 'BFGS'
         # method = 'L-BFGS-B'
         # bounds = BINDS
