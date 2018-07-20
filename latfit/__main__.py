@@ -180,38 +180,68 @@ def main():
 
                 # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
+
+                # dof check
                 if not dof_check(lenfit, len(GEVP_DIRS), excl):
-                    print("dof < 1 for excluded times:", excl, "Skipping:", str(i)+"/"+str(lenprod))
+                    print("dof < 1 for excluded times:", excl,
+                          "\nSkipping:", str(idx)+"/"+str(lenprod))
                     continue
+
+                # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
+
+                # do fit
                 print("Trying fit with excluded times:",
-                      latfit.config.FIT_EXCL, "fit:", str(i)+"/"+str(lenprod))
+                      latfit.config.FIT_EXCL, "fit:",
+                      str(idx)+"/"+str(lenprod))
                 try:
-                    retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
-                except (NegChisq, RelGammaError, np.linalg.linalg.LinAlgError,
+                    retsingle = singlefit(input_f,
+                                          fitrange, xmin, xmax, xstep)
+                except (NegChisq, RelGammaError,
+                        np.linalg.linalg.LinAlgError,
                         DOFNonPos, BadChisqJackknife, ZetaError) as _:
-                    print("fit failed for this selection excluded points=", excl)
+                    # skip on any error
+                    print("fit failed for this selection excluded points=",
+                          excl)
                     continue
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
+
+                # calculate resulting red. chisq
                 try:
                     result = (result_min.fun/result_min.dof, excl)
                 except ZeroDivisionError:
                     print("infinite chisq/dof. fit excl:", excl)
                     continue
                 print("chisq/dof, fit excl:", result, "dof=", result_min.dof)
+
+                # store result
                 if result[0] >= 1: # don't overfit
                     chisq_arr.append(result)
+                else:
+                    continue
+
+                if result_min.pvalue > 0.3:
+                    print("Fit is good enough.  Stopping search.")
+                    break
+                
             assert chisq_arr, "No fits succeeded.  Change fit range manually."
+
+            print("Fit results:  red. chisq, excl")
             for i in chisq_arr:
                 print(i)
+
+            # do the best fit again, with good stopping condition
             latfit.config.FIT_EXCL =  min_excl(chisq_arr)
             latfit.config.MINTOL =  True
             retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
             result_min, param_err, plotdata.coords, plotdata.cov = retsingle
             printerr(result_min.x, param_err)
+
+            # plot the result
             mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
+            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
             plotdata.coords, plotdata.cov = retsingle
             mkplot(plotdata, input_f)
     else:
@@ -228,17 +258,20 @@ def main():
     warn("END STDERR OUTPUT")
 
 def min_excl(chisq_arr):
+    """Find the minimum reduced chisq from all the fits considered"""
     minres = sorted(chisq_arr, key=lambda row: row[0])[0]
     print("min chisq/dof=", minres[0])
     print("best times to exclude:", minres[1])
     return minres[1]
 
 def augment_excl(excl):
+    """If the user has specified excluded indices add these to the list."""
     for num, (i, j) in enumerate(zip(excl, EXCL_ORIG)):
         excl[num] = sorted(list(set(j).union(set(i))))
     return excl
 
 def dof_check(lenfit, dimops, excl):
+    """Check the degrees of freedom.  If < 1, cause a skip"""
     dof = (lenfit-1)*dimops
     ret = True
     for i in excl:
