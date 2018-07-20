@@ -40,8 +40,10 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     params = get_fit_params(cov_full, reuse, xmin, fitrange, xstep)
 
     # correct covariance matrix for jackknife factor
-    cov_full *= params.prefactor
-
+    if singlefit.sent is None:
+        cov_full *= params.prefactor
+        singlefit.sent = object()
+    
     # debug branch
     if PRINT_CORR:
         print(coords_full)
@@ -98,6 +100,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 singlefit.reuse = None
 singlefit.coords_full = None
 singlefit.cov_full = None
+singlefit.sent = None
 
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
     """Get the starting and ending indices
