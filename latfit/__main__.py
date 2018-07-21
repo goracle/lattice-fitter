@@ -100,6 +100,31 @@ def setup_logger():
     os.chdir(cwd)
 
 
+def filter_sparse(sampler, fitrange, xstep=1):
+    """Find the items in the power set which do not generate
+    arithmetic sequences in the fitrange powerset (sampler)
+    """
+    frange = np.arange(fitrange[0], fitrange[1], xstep)
+    retsampler = []
+    for excl in sampler:
+        excl = list(excl)
+        fdel = list(filter(lambda a: a not in excl, frange))
+        if len(fdel) < 2:
+            continue
+        start = fdel[0]
+        incr = fdel[1]-fdel[0]
+        skip = False
+        for i, time in enumerate(fdel):
+            if i == 0:
+                continue
+            if fdel[i-1] + incr != time:
+                skip = True
+        if skip:
+            continue
+        retsampler.append(excl)
+    return retsampler
+
+
 def main():
     """Main for latfit"""
     setup_logger()
@@ -142,12 +167,12 @@ def main():
                 powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
                 for i in range(len(latfit.config.FIT_EXCL))
             ]
-            sampler = list(posexcl[0])
+            sampler = filter_sparse(list(posexcl[0]), fitrange, xstep)
             prod = product(*posexcl)
 
             # 2^n = cardinality of power set
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
-            lenprod = 2**(len(GEVP_DIRS)*lenfit)
+            lenprod = len(sampler)**(len(GEVP_DIRS))
             if lenprod < 1000: # fit range is small, use brute force
                 prod = list(prod)
 

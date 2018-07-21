@@ -59,6 +59,7 @@ IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
+PSTR_TITLE = rf.norm2(rf.procmom(MOMSTR))
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -199,9 +200,10 @@ else:
     TITLE_PREFIX = '24c '
 
 if SUPERJACK_CUTOFF:
-    TITLE_PREFIX = TITLE_PREFIX + 'exact '
+    pass
+    # TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
-    TITLE_PREFIX = TITLE_PREFIX + 'sloppy '
+    TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
 if MATRIX_SUBTRACTION:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+str(DELTA_T_MATRIX_SUBTRACTION)+' '
 elif True in ADD_CONST_VEC:
