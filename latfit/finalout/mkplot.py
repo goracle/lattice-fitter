@@ -220,7 +220,7 @@ def get_title(input_f):
         title = ''
         pretitle = pretitle[:-1]
     title = pretitle+title
-    title = re.sub('_', ' ', title)
+    title = re.sub(r'_(?!{)', ' ', title) # don't get rid of latex subscripts
     if STYPE == 'hdf5':
         title = re.sub('.jkdat', '', title)
     return title

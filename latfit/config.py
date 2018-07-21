@@ -59,7 +59,6 @@ IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
-PSTR_TITLE = rf.norm2(rf.procmom(MOMSTR))
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -182,19 +181,23 @@ PICKLE = None
 # no title given takes the current working directory as the title
 
 # title prefix
+
+# p_cm = 001, no need to modify 
+PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))
+
 if GEVP:
     if SIGMA and ISOSPIN == 0:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, $\pi\pi, \sigma$, ' + MOMSTR + ' '
+            r' GEVP, $\pi\pi, \sigma$, ' + PSTR_TITLE + ' '
     elif ISOSPIN == 2:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I2, $\pi\pi$, ' + MOMSTR + ' '
+            r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
     elif ISOSPIN == 1:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I1, $\pi\pi,~\rho$ ' + MOMSTR + ' '
+            r' GEVP, I1, $\pi\pi,~\rho$ ' + PSTR_TITLE + ' '
     else:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, $\pi\pi$, ' + MOMSTR + ' '
+            r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
 
 else:
     TITLE_PREFIX = '24c '

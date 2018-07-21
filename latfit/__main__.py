@@ -170,7 +170,7 @@ def main():
             sampler = filter_sparse(list(posexcl[0]), fitrange, xstep)
             prod = product(*posexcl)
 
-            # 2^n = cardinality of power set
+            # length of possibilities is useful to know
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             lenprod = len(sampler)**(len(GEVP_DIRS))
             if lenprod < 1000: # fit range is small, use brute force
