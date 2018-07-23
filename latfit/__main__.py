@@ -24,6 +24,7 @@ import time
 import random
 import numpy as np
 import h5py
+from mpi4py import MPI
 
 from latfit.singlefit import singlefit
 from latfit.config import JACKKNIFE, FIT_EXCL
@@ -47,6 +48,8 @@ from latfit.config import GEVP_DIRS
 from latfit.config import FIT_EXCL as EXCL_ORIG
 import latfit.config
 
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
 
 class Logger(object):
     """log output from fit"""
@@ -190,22 +193,33 @@ def main():
                         skip_loop = True
 
             while True and not skip_loop:
-                if len(checked) == lenprod:
-                    print("all indices checked, exiting.")
+
+                if len(checked) == lenprod or idx == 5000:
+                    print("a reasonably large set of indices"+\
+                          " has been checked, exiting."+\
+                          " (number of fit ranges checked:"+str(idx+1)+")")
                     break
                 idx += 1
+
+                # parallelize loop
+                if idx % MPISIZE != MPIRANK:
+                    continue
+
                 # small fit range
+                key = None
                 if not random_fit:
-                    if idx in checked:
-                        continue
                     excl = prod[idx]
+                    key = idx
                 else: # large fit range, try to get lucky
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
                         excl = [np.random.choice(sampler)
                                 for _ in range(len(latfit.config.FIT_EXCL))]
-                checked.add(idx)
+                    key = str(excl)
+                if key in checked:
+                    continue
+                checked.add(key)
 
                 # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
@@ -261,24 +275,32 @@ def main():
                 if result_min.pvalue > 0.3 and random_fit:
                     print("Fit is good enough.  Stopping search.")
                     break
+                print("p-value = ", result_min.pvalue)
                 
             if not skip_loop:
-                assert chisq_arr, "No fits succeeded."+\
-                    "  Change fit range manually."
 
-                print("Fit results:  red. chisq, excl")
-                for i in chisq_arr:
-                    print(i)
+                chisq_arr = MPI.COMM_WORLD.gather(chisq_arr, 0)
 
-                # do the best fit again, with good stopping condition
-                latfit.config.FIT_EXCL =  min_excl(chisq_arr)
-            latfit.config.MINTOL =  True
-            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
-            result_min, param_err, plotdata.coords, plotdata.cov = retsingle
-            printerr(result_min.x, param_err)
+            if MPIRANK == 0:
+                if not skip_loop:
 
-            # plot the result
-            mkplot(plotdata, input_f, result_min, param_err, fitrange)
+                    chisq_arr = [x for b in chisq_arr for x in b]
+                    assert chisq_arr, "No fits succeeded."+\
+                        "  Change fit range manually."
+
+                    print("Fit results:  red. chisq, excl")
+                    for i in chisq_arr:
+                        print(i)
+
+                    # do the best fit again, with good stopping condition
+                    latfit.config.FIT_EXCL =  min_excl(chisq_arr)
+                latfit.config.MINTOL =  True
+                retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
+                printerr(result_min.x, param_err)
+
+                # plot the result
+                mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
             retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
             plotdata.coords, plotdata.cov = retsingle
