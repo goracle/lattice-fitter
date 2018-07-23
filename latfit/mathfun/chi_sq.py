@@ -1,12 +1,28 @@
 """Calculates chi^2"""
 import sys
 from numpy import dot
+from math import exp
 import numpy as np
 
-from latfit.config import fit_func
-from latfit.config import GEVP
+from latfit.config import fit_func as fitstart
+from latfit.config import GEVP, DELTA_T_MATRIX_SUBTRACTION, START_PARAMS
+
+LEN = len(START_PARAMS)
 
 if GEVP:
+    if GEVP:
+        def fit_func(ctime, trial_params):
+            return fitstart(ctime, trial_params)
+
+    if not GEVP:
+        def fit_func(ctime, trial_params):
+            """Add an exponential to each dimension
+            to estimate systematic error
+            """
+            start = fitstart(ctime, trial_params)
+            return [i+exp(-j*(ctime-DELTA_T_MATRIX_SUBTRACTION))
+                    for i,j in zip(start, trial_params[LEN:])]
+
     def chi_sq(trial_params, covinv, coords):
         """Compute chi^2 given a set of trial parameters,
         the inverse covariance matrix, and the x-y coordinates to fit.

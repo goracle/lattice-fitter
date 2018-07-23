@@ -12,7 +12,7 @@ from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import MINTOL
-from latfit.config import GEVP
+from latfit.config import GEVP, ORIGL
 import latfit.config
 
 
@@ -43,7 +43,7 @@ def mkmin(covinv, coords):
             print("Attempting to continue with manual entry.")
             start_params = START_PARAMS
     else:
-        start_params = START_PARAMS
+        start_params = START_PARAMS+len(START_PARAMS)*[0.5]
     if METHOD not in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
@@ -77,6 +77,10 @@ def mkmin(covinv, coords):
     # print covinv
     if res_min.fun < 0:
         raise NegChisq
+    else:
+        sys_err = res_min.x[len(START_PARAMS):]
+        res_min.x = res_min.x[:len(START_PARAMS)]
+        print("systematic error energies =", sys_err)
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return res_min

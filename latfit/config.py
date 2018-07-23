@@ -100,6 +100,7 @@ FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [[10.0, 11.0], [8.0, 11.0], [10.0, 11.0], [8.0, 11.0]]
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
@@ -419,19 +420,19 @@ if EFF_MASS:
             def prefit_func(_, trial_params):
                 """eff mass method 1, fit func, single const fit
                 """
-                return trial_params
+                return trial_params[:MULT]
         else:
             if len(START_PARAMS) == 1:
                 def prefit_func(_, trial_params):
                     """eff mass method 1, fit func, single const fit
                     """
-                    return RESCALE*trial_params
+                    return RESCALE*trial_params[:MULT]
             else:
                 def prefit_func(_, trial_params):
                     """eff mass method 1, fit func, single const fit
                     """
                     return [RESCALE*trial_param for
-                            trial_param in trial_params]
+                            trial_param in trial_params[:MULT]]
 
     elif EFF_MASS_METHOD == 3:
         if RESCALE != 1.0:
