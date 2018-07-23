@@ -154,6 +154,11 @@ def main():
             _ = singlefit(input_f, fitrange, xmin, xmax, xstep)
         except XmaxError as err:
             xmax = err.problemx-xstep
+            print("xmin, new xmax =", xmin, xmax)
+            if fitrange[1] > xmax:
+                print("***ERROR***")
+                print("fit range beyond xmax:", fitrange)
+                sys.exit(1)
             fitrange = fitrange_err(options, xmin, xmax)
             print("new fit range = ", fitrange)
             plotdata.fitcoord = fit_coord(fitrange, xstep)
@@ -179,6 +184,8 @@ def main():
             if lenprod < 5000: # fit range is small, use brute force
                 random_fit = False
                 prod = list(prod)
+                assert len(prod) == lenprod, "powerset length mismatch"+\
+                    " vs. expected length."
 
             # go in a random order if lenprod is small,
             # so store checked indicies
@@ -192,14 +199,16 @@ def main():
                     if len(excl) > 0:
                         skip_loop = True
 
-            while True and not skip_loop:
+            for idx in range(lenprod):
+
+                if skip_loop:
+                    break
 
                 if len(checked) == lenprod or idx == 5000:
                     print("a reasonably large set of indices"+\
                           " has been checked, exiting."+\
                           " (number of fit ranges checked:"+str(idx+1)+")")
                     break
-                idx += 1
 
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
