@@ -104,7 +104,7 @@ def filter_sparse(sampler, fitrange, xstep=1):
     """Find the items in the power set which do not generate
     arithmetic sequences in the fitrange powerset (sampler)
     """
-    frange = np.arange(fitrange[0], fitrange[1], xstep)
+    frange = np.arange(fitrange[0], fitrange[1]+1, xstep)
     retsampler = []
     for excl in sampler:
         excl = list(excl)
@@ -163,17 +163,16 @@ def main():
             chisq_arr = []
 
             # generate all possible points excluded from fit range
-            posexcl = [
-                powerset(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
-                for i in range(len(latfit.config.FIT_EXCL))
-            ]
-            sampler = filter_sparse(list(posexcl[0]), fitrange, xstep)
+            posexcl = powerset(
+                np.arange(fitrange[0], fitrange[1]+xstep, xstep))
+            sampler = filter_sparse(posexcl, fitrange, xstep)
+            posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
             prod = product(*posexcl)
 
             # length of possibilities is useful to know
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             lenprod = len(sampler)**(len(GEVP_DIRS))
-            if lenprod < 1000: # fit range is small, use brute force
+            if lenprod < 5000: # fit range is small, use brute force
                 prod = list(prod)
 
             # go in a random order if lenprod is small,
@@ -187,7 +186,6 @@ def main():
                 if isinstance(prod, list):
                     if idx in checked:
                         continue
-                    print(prod)
                     excl = prod[idx]
                 else: # large fit range, try to get lucky
                     if idx == 0:
