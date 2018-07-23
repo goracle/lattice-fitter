@@ -226,7 +226,7 @@ def main():
                 try:
                     retsingle = singlefit(input_f,
                                           fitrange, xmin, xmax, xstep)
-                except (NegChisq, RelGammaError,
+                except (NegChisq, RelGammaError, OverflowError,
                         np.linalg.linalg.LinAlgError,
                         DOFNonPos, BadChisqJackknife, ZetaError) as _:
                     # skip on any error
