@@ -187,6 +187,7 @@ def main():
                 if isinstance(prod, list):
                     if idx in checked:
                         continue
+                    print(prod)
                     excl = prod[idx]
                 else: # large fit range, try to get lucky
                     if idx == 0:
