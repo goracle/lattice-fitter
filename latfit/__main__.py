@@ -26,7 +26,7 @@ import numpy as np
 import h5py
 
 from latfit.singlefit import singlefit
-from latfit.config import JACKKNIFE
+from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
@@ -172,18 +172,30 @@ def main():
             # length of possibilities is useful to know
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             lenprod = len(sampler)**(len(GEVP_DIRS))
+            random_fit = True
             if lenprod < 5000: # fit range is small, use brute force
+                random_fit = False
                 prod = list(prod)
 
             # go in a random order if lenprod is small,
             # so store checked indicies
             checked = set()
             idx = -1
-            while True:
 
+            # assume that manual spec. overrides brute force search
+            skip_loop = False
+            if not random_fit:
+                for excl in FIT_EXCL:
+                    if len(excl) > 0:
+                        skip_loop = True
+
+            while True and not skip_loop:
+                if len(checked) == lenprod:
+                    print("all indices checked, exiting.")
+                    break
                 idx += 1
                 # small fit range
-                if isinstance(prod, list):
+                if not random_fit:
                     if idx in checked:
                         continue
                     excl = prod[idx]
@@ -193,9 +205,6 @@ def main():
                     else:
                         excl = [np.random.choice(sampler)
                                 for _ in range(len(latfit.config.FIT_EXCL))]
-                if len(checked) == lenprod:
-                    print("all indices checked, exiting.")
-                    break
                 checked.add(idx)
 
                 # add user info
@@ -249,18 +258,20 @@ def main():
                 else:
                     continue
 
-                if result_min.pvalue > 0.3:
+                if result_min.pvalue > 0.3 and random_fit:
                     print("Fit is good enough.  Stopping search.")
                     break
                 
-            assert chisq_arr, "No fits succeeded.  Change fit range manually."
+            if not skip_loop:
+                assert chisq_arr, "No fits succeeded."+\
+                    "  Change fit range manually."
 
-            print("Fit results:  red. chisq, excl")
-            for i in chisq_arr:
-                print(i)
+                print("Fit results:  red. chisq, excl")
+                for i in chisq_arr:
+                    print(i)
 
-            # do the best fit again, with good stopping condition
-            latfit.config.FIT_EXCL =  min_excl(chisq_arr)
+                # do the best fit again, with good stopping condition
+                latfit.config.FIT_EXCL =  min_excl(chisq_arr)
             latfit.config.MINTOL =  True
             retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
             result_min, param_err, plotdata.coords, plotdata.cov = retsingle
