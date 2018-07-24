@@ -32,7 +32,6 @@ if CALC_PHASE_SHIFT:
         """Calculate the I=0 scattering phase shift given the pipi energy
         for that channel.
         """
-        L_BOX /= AINVERSE
         try:
             epipi = epipi[1]
         except (IndexError, TypeError):
@@ -52,10 +51,10 @@ if CALC_PHASE_SHIFT:
         if gamma < 1:
             raise RelGammaError(gamma=gamma, epipi=epipi)
         epipi = epipi*AINVERSE/gamma
-
-        #epipi = math.sqrt(epipi**2-(2*np.pi/L_BOX)**2*PTOTSQ) //not correct
+        lbox = L_BOX/AINVERSE
+        #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
-        arglist = [binpath, str(epipi), str(PION_MASS), str(L_BOX),
+        arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma)]
         try:
             out = subprocess.check_output(arglist)
