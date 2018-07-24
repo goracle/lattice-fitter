@@ -8,7 +8,7 @@ from math import sqrt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, AINVERSE
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR
 from latfit.utilities import read_file as rf
 
@@ -32,6 +32,7 @@ if CALC_PHASE_SHIFT:
         """Calculate the I=0 scattering phase shift given the pipi energy
         for that channel.
         """
+        L_BOX /= AINVERSE
         try:
             epipi = epipi[1]
         except (IndexError, TypeError):
