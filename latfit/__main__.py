@@ -112,7 +112,7 @@ def filter_sparse(sampler, fitrange, xstep=1):
     for excl in sampler:
         excl = list(excl)
         fdel = list(filter(lambda a: a not in excl, frange))
-        if len(fdel) < 2:
+        if len(fdel) < 3:
             continue
         start = fdel[0]
         incr = fdel[1]-fdel[0]
@@ -155,7 +155,7 @@ def main():
         except XmaxError as err:
             xmax = err.problemx-xstep
             print("xmin, new xmax =", xmin, xmax)
-            if fitrange[1] > xmax:
+            if fitrange[1] > xmax and FIT:
                 print("***ERROR***")
                 print("fit range beyond xmax:", fitrange)
                 sys.exit(1)
@@ -311,9 +311,10 @@ def main():
                 # plot the result
                 mkplot(plotdata, input_f, result_min, param_err, fitrange)
         else:
-            retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
-            plotdata.coords, plotdata.cov = retsingle
-            mkplot(plotdata, input_f)
+            if MPIRANK == 0:
+                retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+                plotdata.coords, plotdata.cov = retsingle
+                mkplot(plotdata, input_f)
     else:
         list_fit_params = []
         for ctime in range(trials):
