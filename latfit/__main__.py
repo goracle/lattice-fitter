@@ -310,9 +310,11 @@ def main():
 
                 # need better criterion here, maybe just have it be user defined patience level?
                 # how long should the fit run before giving up?
-                if result_min.pvalue > 0.3 and random_fit:
+                if result[0] < 0.0035 and random_fit:
                     print("Fit is good enough.  Stopping search.")
                     break
+                else:
+                    print("min error so far:", result[0])
                 print("p-value = ", result_min.pvalue)
                 
             if not skip_loop:
