@@ -55,10 +55,15 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
+
+# how many loop iterations until we start using random samples
+MAX_BRUTE_FORCE = 5000
+# average relative error to attempt to achieve
+FITSTOP = 0.0035
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
