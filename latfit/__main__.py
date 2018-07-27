@@ -27,6 +27,8 @@ import h5py
 from mpi4py import MPI
 
 from latfit.singlefit import singlefit
+import latfit.singlefit
+import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
@@ -38,13 +40,13 @@ from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.proc_folder import proc_folder
-from latfit.finalout.printerr import printerr
+from latfit.finalout.printerr import printerr, avg_relerr
 from latfit.finalout.mkplot import mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
-from latfit.config import GEVP_DIRS
+from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG
 import latfit.config
 
@@ -168,7 +170,7 @@ def main():
             pass
         if FIT:
             # store different excluded, and the avg chisq/dof
-            chisq_arr = []
+            min_arr = []
 
             # generate all possible points excluded from fit range
             posexcl = powerset(
@@ -179,7 +181,7 @@ def main():
 
             # length of possibilities is useful to know
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
-            lenprod = len(sampler)**(len(GEVP_DIRS))
+            lenprod = len(sampler)**(MULT)
             random_fit = True
             if lenprod < 5000: # fit range is small, use brute force
                 random_fit = False
@@ -187,8 +189,33 @@ def main():
                 assert len(prod) == lenprod, "powerset length mismatch"+\
                     " vs. expected length."
 
-            # go in a random order if lenprod is small,
-            # so store checked indicies
+            # now guess as to which time slices look the worst to fit
+            # try the better ones first
+            try:
+                retsingle = singlefit(input_f,
+                                        fitrange, xmin, xmax, xstep)
+            except (NegChisq, RelGammaError, OverflowError,
+                    np.linalg.linalg.LinAlgError,
+                    DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                print("Test fit failed, but in an acceptable way. Continuing.")
+            plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
+            tsorted = []
+            for i in range(MULT):
+                coords = np.array([j[i] for j in plotdata.coords[:,1]])
+                times = np.array(list(plotdata.coords[:,0]))
+                tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
+            samp_mult = []
+            if random_fit:
+                # go in a random order if lenprod is small (biased by how likely fit will succeed),
+                for i in range(MULT):
+                    probs, sampi = sortfit.sample_norms(sampler, tsorted[i])
+                    samp_mult.append([probs, sampi])
+            else:
+                for i in range(MULT):
+                    sampi = sortfit.sortcombinations(sampler, tsorted[i])
+                    samp_mult.append(sampi)
+
+            # store checked indicies
             checked = set()
             idx = -1
 
@@ -223,8 +250,8 @@ def main():
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
-                        excl = [np.random.choice(sampler)
-                                for _ in range(len(latfit.config.FIT_EXCL))]
+                        excl = [np.random.choice(samp_mult[i][0], p=samp_mult[i][1])
+                                for i in range(len(latfit.config.FIT_EXCL))]
                     key = str(excl)
                 if key in checked:
                     continue
@@ -242,7 +269,7 @@ def main():
                     continue
 
                 # dof check
-                if not dof_check(lenfit, len(GEVP_DIRS), excl):
+                if not dof_check(lenfit, len(START_PARAMS), excl):
                     print("dof < 1 for excluded times:", excl,
                           "\nSkipping:", str(idx)+"/"+str(lenprod))
                     continue
@@ -267,20 +294,22 @@ def main():
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
 
-                # calculate resulting red. chisq
-                try:
-                    result = (result_min.fun/result_min.dof, excl)
-                except ZeroDivisionError:
-                    print("infinite chisq/dof. fit excl:", excl)
+                # reject model at 10% level
+                if result_min.pvalue < .1:
                     continue
-                print("chisq/dof, fit excl:", result, "dof=", result_min.dof)
+
+                # calculate average relative error (to be minimized)
+                result = (avg_relerr(result_min, param_err), excl)
+                print("avg relative error, fit excl:", result, "dof=", result_min.dof)
 
                 # store result
-                if result[0] >= 1: # don't overfit
-                    chisq_arr.append(result)
+                if result_min.fun/result_min.dof >= 1: # don't overfit
+                    min_arr.append(result)
                 else:
                     continue
 
+                # need better criterion here, maybe just have it be user defined patience level?
+                # how long should the fit run before giving up?
                 if result_min.pvalue > 0.3 and random_fit:
                     print("Fit is good enough.  Stopping search.")
                     break
@@ -288,21 +317,21 @@ def main():
                 
             if not skip_loop:
 
-                chisq_arr = MPI.COMM_WORLD.gather(chisq_arr, 0)
+                min_arr = MPI.COMM_WORLD.gather(min_arr, 0)
 
             if MPIRANK == 0:
                 if not skip_loop:
 
-                    chisq_arr = [x for b in chisq_arr for x in b]
-                    assert chisq_arr, "No fits succeeded."+\
-                        "  Change fit range manually."
+                    min_arr = [x for b in min_arr for x in b]
+                    assert min_arr, "No fits succeeded."+\
+                        "  Change fit range manually:"+str(min_arr)
 
                     print("Fit results:  red. chisq, excl")
-                    for i in chisq_arr:
+                    for i in min_arr:
                         print(i)
 
                     # do the best fit again, with good stopping condition
-                    latfit.config.FIT_EXCL =  min_excl(chisq_arr)
+                    latfit.config.FIT_EXCL =  min_excl(min_arr)
                 latfit.config.MINTOL =  True
                 retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
@@ -328,9 +357,11 @@ def main():
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
-def min_excl(chisq_arr):
+
+# obsolete, we should simply pick the model with the smallest errors and an adequate chi^2
+def min_excl(min_arr):
     """Find the minimum reduced chisq from all the fits considered"""
-    minres = sorted(chisq_arr, key=lambda row: row[0])[0]
+    minres = sorted(min_arr, key=lambda row: row[0])[0]
     print("min chisq/dof=", minres[0])
     print("best times to exclude:", minres[1])
     return minres[1]
