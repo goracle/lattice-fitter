@@ -209,11 +209,13 @@ def main():
             if random_fit:
                 # go in a random order if lenprod is small (biased by how likely fit will succeed),
                 for i in range(MULT):
-                    probs, sampi = sortfit.sample_norms(sampler, tsorted[i])
+                    probs, sampi = sortfit.sample_norms(
+                        sampler, tsorted[i], lenfit)
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
-                    sampi = sortfit.sortcombinations(sampler, tsorted[i])
+                    sampi = sortfit.sortcombinations(
+                        sampler, tsorted[i], lenfit)
                     samp_mult.append(sampi)
 
             # store checked indicies
