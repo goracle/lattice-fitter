@@ -33,7 +33,7 @@ from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
-from latfit.config import MAX_BRUTE_FORCE, FITSTOP
+from latfit.config import MAX_ITER, FITSTOP
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -184,7 +184,7 @@ def main():
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             lenprod = len(sampler)**(MULT)
             random_fit = True
-            if lenprod < MAX_BRUTE_FORCE: # fit range is small, use brute force
+            if lenprod < MAX_ITER: # fit range is small, use brute force
                 random_fit = False
                 prod = list(prod)
                 assert len(prod) == lenprod, "powerset length mismatch"+\
@@ -232,7 +232,7 @@ def main():
                 if skip_loop:
                     break
 
-                if len(checked) == lenprod or idx == MAX_BRUTE_FORCE:
+                if len(checked) == lenprod or idx == MAX_ITER:
                     print("a reasonably large set of indices"+\
                           " has been checked, exiting."+\
                           " (number of fit ranges checked:"+str(idx+1)+")")

@@ -61,7 +61,7 @@ IRREP = 'A1_mom11'
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_BRUTE_FORCE = 5000
+MAX_ITER = 5000
 # average relative error to attempt to achieve
 FITSTOP = 0.0035
 
