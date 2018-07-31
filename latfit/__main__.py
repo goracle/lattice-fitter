@@ -33,7 +33,7 @@ from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
-from latfit.config import MAX_ITER, FITSTOP
+from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -211,6 +211,7 @@ def main():
                 for i in range(MULT):
                     probs, sampi = sortfit.sample_norms(
                         sampler, tsorted[i], lenfit)
+                    probs = probs if BIASED_SPEEDUP else None
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
@@ -222,12 +223,17 @@ def main():
             checked = set()
             idx = -1
 
+            # running error on parameter error
+            errarr = []
+
             # assume that manual spec. overrides brute force search
             skip_loop = False
             if not random_fit:
                 for excl in FIT_EXCL:
                     if len(excl) > 0:
                         skip_loop = True
+            if MULT == 1:
+                skip_loop = True
 
             for idx in range(lenprod):
 
@@ -297,13 +303,18 @@ def main():
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
 
+                print("p-value = ", result_min.pvalue)
+
                 # reject model at 10% level
                 if result_min.pvalue < .1:
+                    print("Not storing result because p-value"+\
+                          " is below rejection threshold")
                     continue
 
                 # calculate average relative error (to be minimized)
-                result = (avg_relerr(result_min, param_err), excl)
-                print("avg relative error, fit excl:", result, "dof=", result_min.dof)
+                # result = (avg_relerr(result_min, param_err), excl)
+                # print("avg relative error, fit excl:", result, "dof=", result_min.dof)
+                result = [list(result_min.x), list(param_err), list(excl)]
 
                 # store result
                 if result_min.fun/result_min.dof >= 1: # don't overfit
@@ -311,14 +322,25 @@ def main():
                 else:
                     continue
 
-                # need better criterion here, maybe just have it be user defined patience level?
-                # how long should the fit run before giving up?
-                if result[0] < FITSTOP and random_fit:
-                    print("Fit is good enough.  Stopping search.")
+                errarr.append(param_err)
+                curr_err, avg_curr_err = errerr(errarr)
+                print("average statistical error on parameters", avg_curr_err)
+                stop = max(curr_err)/avg_curr_err[np.argmax(curr_err)]
+                if stop < FITSTOP:
+                    print("Estimate for parameter error has stabilized, exiting loop")
                     break
                 else:
-                    print("min error so far:", result[0])
-                print("p-value = ", result_min.pvalue)
+                    print("Current error on error =", curr_err,
+                          "number of error estimates:", len(errarr))
+
+                # need better criterion here, maybe just have it be user defined patience level?
+                # how long should the fit run before giving up?
+                # if result[0] < FITSTOP and random_fit:
+                    # print("Fit is good enough.  Stopping search.")
+                    # break
+                # else:
+                   # print("min error so far:", result[0])
+
                 
             if not skip_loop:
 
@@ -327,6 +349,7 @@ def main():
             if MPIRANK == 0:
                 if not skip_loop:
 
+                    # collapse the array structure introduced by mpi
                     min_arr = [x for b in min_arr for x in b]
                     assert min_arr, "No fits succeeded."+\
                         "  Change fit range manually:"+str(min_arr)
@@ -335,12 +358,20 @@ def main():
                     for i in min_arr:
                         print(i)
 
+                    result_min.x = np.mean([i[0] for i in min_arr], axis=0)
+                    param_err = np.mean([i[1] for i in min_arr], axis=0)
+
                     # do the best fit again, with good stopping condition
-                    latfit.config.FIT_EXCL =  min_excl(min_arr)
+                    # latfit.config.FIT_EXCL =  min_excl(min_arr)
+                    latfit.config.FIT_EXCL = closest_fit_to_avg(result_min.x, min_arr)
+
                 latfit.config.MINTOL =  True
                 retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
-                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
-                printerr(result_min.x, param_err)
+                result_min_close, param_err_close, plotdata.coords, plotdata.cov = retsingle
+                printerr(result_min_close.x, param_err_close)
+
+                if skip_loop:
+                    result_min, param_err = result_min_close, param_err_close
 
                 # plot the result
                 mkplot(plotdata, input_f, result_min, param_err, fitrange)
@@ -362,6 +393,34 @@ def main():
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
+
+def closest_fit_to_avg(result_min_avg, min_arr):
+    """Find closest fit to average fit
+    (find the most common fit range)
+    """
+    minmax = np.nan
+    ret_excl = []
+    for i, fit in enumerate(min_arr):
+        minmax_i = max(abs(fit[0]-result_min_avg))
+        if i == 0:
+            minmax = minmax_i
+        else:
+            minmax = min(minmax_i, minmax)
+            if minmax == minmax_i:
+                ret_excl = fit[2]
+    return ret_excl
+
+
+def errerr(param_err_arr):
+    """Find the error on the parameter error."""
+    err = np.zeros(param_err_arr[0].shape)
+    avgerr = np.zeros(param_err_arr[0].shape)
+    param_err_arr = np.asarray(param_err_arr)
+    for i in range(len(err)):
+        err[i] = np.std(param_err_arr[:, i], ddof=1)/np.sqrt(len(err))/np.sqrt(MPISIZE)
+        avgerr[i] = np.mean(param_err_arr[:, i])
+    return err, avgerr
+    
 
 # obsolete, we should simply pick the model with the smallest errors and an adequate chi^2
 def min_excl(min_arr):

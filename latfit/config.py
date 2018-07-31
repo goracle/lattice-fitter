@@ -62,8 +62,14 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 5000
-# average relative error to attempt to achieve
-FITSTOP = 0.0035
+# average relative error on the parameter errors to attempt to achieve
+# if achieved, exit the fit loop
+FITSTOP = 0.01
+# If set to True, speed up the fit loop by looking at models
+# which resemble non-interacting (dispersive) energies first
+# this biases the results, so turn off if doing a final fit
+BIASED_SPEEDUP = False
+BIASED_SPEEDUP = True
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
