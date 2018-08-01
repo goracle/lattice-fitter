@@ -80,7 +80,7 @@ NOSUB = False  # don't do any subtraction if true; set false if doing GEVP
 
 # other config options
 THERMNUM = 0  # eliminate configs below this number to thermalize
-THERMNUM = 0 if not TEST44 else 4539  # eliminate configs below this number to thermalize
+THERMNUM = THERMNUM if not TEST44 else 4539  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
 #assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
@@ -218,7 +218,7 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
     if getexactconfigs:
         trajl = [str(traj)+'_exact' for traj in trajl]
     if MPIRANK == 0:
-        print("Done getting trajectory list")
+        print("Done getting trajectory list, len=", len(trajl))
     return trajl
 
 
@@ -524,6 +524,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
             if ntchk is None:
                 ntchk = allblks[base].shape[0]
                 print('ntchk=', ntchk)
+                printt = False
                 outblk = np.zeros((ntchk, outblk_shape[1]), dtype=np.complex)
                 if ntchk != outblk.shape[0]:
                     print("Warning:", opa,
@@ -544,6 +545,16 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                     print("does not match:", ntchk)
                     flag = 1
                     break
+            if base == 'FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110' or base == 'FigureC_sep3_mom1src000_mom2src000_mom1snk000':
+                temp = fold_time(allblks[base])
+                print(base)
+                print(allblks[base].shape)
+                print(allblks[base])
+                printt = True
+                for i, row in enumerate(temp):
+                    print('traj=', i)
+                    for j in row:
+                        print(j)
             try:
                 outblk += coeff*allblks[base]
             except ValueError:
@@ -558,6 +569,16 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 print("This is a programming error!  Please fix!")
                 flag = 1
                 break
+        if printt:
+            temp = fold_time(outblk)
+            print("outblk=", opa)
+            print(temp.shape)
+            print(temp)
+            printt = True
+            for i, row in enumerate(temp):
+                print('traj=', i)
+                for j in row:
+                    print(j)
         if flag == 0:
             h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
     if MPIRANK == 0:
@@ -590,7 +611,7 @@ def fold_time(outblk, base=''):
 def get_file_name(traj):
     """Get file name from trajectory"""
     return PREFIX+str(traj)+'.'+EXTENSION
-    
+
 
 @PROFILE
 def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
@@ -1042,20 +1063,30 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     #disconnected work
     nodebubl = getdisconwork(bubl)
 
-    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
-    auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
-    mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
-
-    if NOAUX:
-        assert not auxblks, "Error in NOAUX option.  Non-empty"+\
-            " dictionary found of length="+str(len(auxblks))
+    if not NOAUX:
+        auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
+    else:
+        auxblks = {}
 
     if MPIRANK == 0:
+        if NOAUX:
+            assert not auxblks, "Error in NOAUX option.  Non-empty"+\
+                " dictionary found of length="+str(len(auxblks))
+        else:
+            assert auxblks, "Error in NOAUX option.  empty"+\
+                " dictionary found"
+
+    mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
+
+    if TEST44:
         check_aux_consistency(auxblks, mostblks)
+
+    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
 
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
-    allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
+    # allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
+    allblks = {**mostblks, **auxblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
     return allblks, numt, auxblks
@@ -1064,6 +1095,7 @@ def check_aux_consistency(auxblks, mostblks):
     """Check consistency of blocks derived via
     aux symmetry with those from production run."""
     count = 0
+    exitthis = False
     if MPIRANK == 0:
         for blk in auxblks:
             if blk in mostblks:
@@ -1071,13 +1103,17 @@ def check_aux_consistency(auxblks, mostblks):
                 print("unused auxiliary symmetry on diagram:",
                       blk, "total unused=", count)
                 try:
-                    assert np.allclose(auxblks[blk], mostblks[blk], rtol=1e-08)
+                    assert np.allclose(
+                        fold_time(auxblks[blk]), fold_time(mostblks[blk]), rtol=1e-08)
                 except AssertionError:
                     print("Auxiliary symmetry failure of diagram:"+str(blk))
-                    if TEST44:
-                        print("aux:", auxblks[blk])
-                        print("prod:", mostblks[blk])
-                    sys.exit(1)
+                    print(fold_time(auxblks[blk]))
+                    print('break')
+                    print(fold_time(mostblks[blk]))
+                    exitthis = True
+    exitthis = MPI.COMM_WORLD.bcast(exitthis, 0)
+    if exitthis:
+        sys.exit(1)
                             
 
 def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
