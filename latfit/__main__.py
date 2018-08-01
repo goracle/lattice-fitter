@@ -24,6 +24,7 @@ import time
 import random
 import numpy as np
 import h5py
+import re
 from mpi4py import MPI
 
 from latfit.singlefit import singlefit
@@ -34,6 +35,7 @@ from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
 from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP
+from latfit.jackknife_fit import ResultMin
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -172,6 +174,7 @@ def main():
         if FIT:
             # store different excluded, and the avg chisq/dof
             min_arr = []
+            overfit_arr = [] # allow overfits if no usual fits succeed
 
             # generate all possible points excluded from fit range
             posexcl = powerset(
@@ -314,12 +317,13 @@ def main():
                 # calculate average relative error (to be minimized)
                 # result = (avg_relerr(result_min, param_err), excl)
                 # print("avg relative error, fit excl:", result, "dof=", result_min.dof)
-                result = [list(result_min.x), list(param_err), list(excl)]
+                result = [result_min, list(param_err), list(excl)]
 
                 # store result
                 if result_min.fun/result_min.dof >= 1: # don't overfit
                     min_arr.append(result)
                 else:
+                    overfit_arr.append(result)
                     continue
 
                 errarr.append(param_err)
@@ -345,29 +349,62 @@ def main():
             if not skip_loop:
 
                 min_arr = MPI.COMM_WORLD.gather(min_arr, 0)
+                overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
 
             if MPIRANK == 0:
                 if not skip_loop:
 
                     # collapse the array structure introduced by mpi
                     min_arr = [x for b in min_arr for x in b]
-                    assert min_arr, "No fits succeeded."+\
-                        "  Change fit range manually:"+str(min_arr)
+                    overfit_arr = [x for b in overfit_arr for x in b]
+                    try:
+                        assert min_arr, "No fits succeeded."+\
+                            "  Change fit range manually:"+str(min_arr)
+                    except AssertionError:
+                        min_arr = overfit_arr
 
                     print("Fit results:  red. chisq, excl")
                     for i in min_arr:
                         print(i)
 
-                    result_min.x = np.mean([i[0] for i in min_arr], axis=0)
-                    param_err = np.mean([i[1] for i in min_arr], axis=0)
+                    result_min = {}
+                    for name in min_arr[0][0].__dict__:
+                        if min_arr[0][0].__dict__[name] is None:
+                            print("name=", name, "is None, skipping")
+                            continue
+                        if 'err' in name:
+                            avgname = re.sub('_err', '', name) if name != 'chisq_err' else 'fun'
+                            result_min[name] = np.sqrt(np.mean([
+                                getattr(i[0], avgname)**2 for i in min_arr], axis=0))
+                        else:
+                            result_min[name] = np.mean([
+                                getattr(i[0], name) for i in min_arr], axis=0)
+                    # result_min.x = np.mean(
+                    # [i[0].x for i in min_arr], axis=0)
+                    param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
+                    # param_err = np.std([getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL =  min_excl(min_arr)
-                    latfit.config.FIT_EXCL = closest_fit_to_avg(result_min.x, min_arr)
+                    for i, result in enumerate(min_arr):
+                        min_arr[i][0] = result[0].x
+                    latfit.config.FIT_EXCL = closest_fit_to_avg(
+                        result_min['x'], min_arr)
 
                 latfit.config.MINTOL =  True
                 retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
                 result_min_close, param_err_close, plotdata.coords, plotdata.cov = retsingle
+
+                # use the representative fit's goodness of fit in final print
+
+                result_min['fun'] = result_min_close.fun
+                result_min['chisq_err'] = result_min_close.chisq_err
+                result_min['dof'] = result_min_close.dof
+                result_min['pvalue'] = result_min_close.pvalue
+                result_min['pvalue_err'] = result_min_close.pvalue_err
+
+                result_min = convert_to_namedtuple(result_min)
+
                 printerr(result_min_close.x, param_err_close)
 
                 if skip_loop:
@@ -392,6 +429,9 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
+def convert_to_namedtuple(dictionary):
+    return namedtuple('min', dictionary.keys())(**dictionary)
 
 
 def closest_fit_to_avg(result_min_avg, min_arr):

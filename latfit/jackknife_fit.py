@@ -26,6 +26,29 @@ from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
 
+
+MIN = namedtuple('min',
+                 ['x', 'fun', 'status',
+                  'pvalue', 'pvalue_err' 'chisq_err',
+                  'error_bars', 'dof', 'phase_shift',
+                  'phase_shift_err', 'scattering_length',
+                  'scattering_length_err'])
+
+class ResultMin:
+    def __init__(self):
+        self.x = None
+        self.fun = None
+        self.status = None
+        self.pvalue = None
+        self.pvalue_err = None
+        self.chisq_err = None
+        self.error_bars = None
+        self.dof = None
+        self.phase_shift = None
+        self.phase_shift_err = None
+        self.scattering_length = None
+        self.scattering_length_err = None
+
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
         """Fit under a frozen (single) jackknife.
@@ -36,7 +59,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         """
         assert 0, "not currently supported"
         result_min = namedtuple(
-            'min', ['x', 'fun', 'status', 'err_in_chisq', 'dof'])
+            'min', ['x', 'fun', 'status', 'chisq_err', 'dof'])
         result_min.status = 0
         result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
         # one fit for every jackknife block (N fits for N configs)
@@ -62,7 +85,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         param_err = np.sqrt(params.prefactor*np.sum(
             (min_arr-result_min.x)**2, 0))
         result_min.fun = np.mean(chisq_min_arr)
-        result_min.err_in_chisq = np.sqrt(params.prefactor*np.sum(
+        result_min.chisq_err = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
 
@@ -80,12 +103,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             pass
 
         # storage for results
-        result_min = namedtuple('min',
-                                ['x', 'fun', 'status',
-                                 'pvalue', 'pvalue_err' 'err_in_chisq',
-                                 'error_bars', 'dof', 'phase_shift',
-                                 'phase_shift_err', 'scattering_length',
-                                 'scattering_length_err'])
+        result_min = ResultMin()
 
         # no errors gives us 0 status
         result_min.status = 0
@@ -196,7 +214,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                                                                result_min.phase_shift)
 
         # compute mean, jackknife uncertainty of chi^2
-        result_min.fun, result_min.err_in_chisq = jack_mean_err(chisq_min_arr)
+        result_min.fun, result_min.chisq_err = jack_mean_err(chisq_min_arr)
 
         return result_min, param_err
 else:

@@ -315,7 +315,7 @@ def print_messages(result_min, param_err, param_chisq):
                                                    separator=', '))
     chisq_str = str(result_min.fun)
     if JACKKNIFE_FIT:
-        chisq_str += '+/-'+str(result_min.err_in_chisq)
+        chisq_str += '+/-'+str(result_min.chisq_err)
     print("chi^2 minimized = ", chisq_str)
     print("degrees of freedom = ", param_chisq.dof)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
@@ -378,10 +378,10 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     param_chisq.redchisq = result_min.fun/param_chisq.dof
     if JACKKNIFE_FIT:
         # redchisq_str = str(param_chisq.redchisq)
-        # redchisq_str += '+/-'+str(result_min.err_in_chisq/param_chisq.dof)
+        # redchisq_str += '+/-'+str(result_min.chisq_err/param_chisq.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
-                result_min.err_in_chisq/param_chisq.dof > 10
-                or result_min.err_in_chisq/param_chisq.dof < .1):
+                result_min.chisq_err/param_chisq.dof > 10
+                or result_min.chisq_err/param_chisq.dof < .1):
             param_chisq.redchisq_round_str = format_chisq_str(
                 param_chisq.redchisq, plus=False)
         else:
