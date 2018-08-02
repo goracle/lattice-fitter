@@ -35,7 +35,7 @@ from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
 from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP
-from latfit.jackknife_fit import ResultMin
+from latfit.jackknife_fit import ResultMin, jack_mean_err
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -365,17 +365,23 @@ def main():
 
                     print("Fit results:  red. chisq, excl")
                     for i in min_arr:
-                        print(i)
+                        print(i[1:])
 
                     result_min = {}
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
                             print("name=", name, "is None, skipping")
                             continue
-                        if 'err' in name:
-                            avgname = re.sub('_err', '', name) if name != 'chisq_err' else 'fun'
-                            result_min[name] = np.sqrt(np.mean([
-                                getattr(i[0], avgname)**2 for i in min_arr], axis=0))
+                        if '_err' in name:
+                            avgname = re.sub('_err', '_arr', name)
+                            print("finding error in", avgname, "which has shape=", min_arr[0][0].__dict__[avgname].shape)
+                            assert min_arr[0][0].__dict__[avgname] is not None,\
+                                "Bad name substitution:"+str(avgname)
+                            result_min[name] = np.sqrt(np.sum([
+                                jack_mean_err(getattr(i[0], avgname), getattr(j[0], avgname))[1]**2
+                                for i in min_arr for j in min_arr], axis=0))/len(min_arr)
+                        elif '_arr' in name:
+                            continue
                         else:
                             result_min[name] = np.mean([
                                 getattr(i[0], name) for i in min_arr], axis=0)

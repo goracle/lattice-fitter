@@ -37,17 +37,22 @@ MIN = namedtuple('min',
 class ResultMin:
     def __init__(self):
         self.x = None
+        self.x_arr = None
         self.fun = None
         self.status = None
         self.pvalue = None
         self.pvalue_err = None
+        self.pvalue_arr = None
         self.chisq_err = None
+        self.chisq_arr = None
         self.error_bars = None
         self.dof = None
         self.phase_shift = None
         self.phase_shift_err = None
         self.scattering_length = None
+        self.scattering_length_arr = None
         self.scattering_length_err = None
+        self.phase_shift_arr = None
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -191,10 +196,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # pickle/unpickle the jackknifed arrays
         min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
 
+        # store arrays for fit range averaging
+        result_min.x_arr = np.array(min_arr)
+
         # for title printing
         latfit.finalout.mkplot.NUM_CONFIGS = len(min_arr)
 
         # compute p-value jackknife uncertainty
+        result_min.pvalue_arr = np.array(result_min.pvalue)
         result_min.pvalue, result_min.pvalue_err = jack_mean_err(result_min.pvalue)
 
         # compute the mean, error on the params
@@ -206,14 +215,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
+            phase_shift_data, scattering_length_data = phase_shift_scatter_len_avg(
+                min_arr, result_min.phase_shift)
 
-            min_arr, result_min.phase_shift, \
-                result_min.phase_shift_err, \
-                result_min.scattering_length, \
-                result_min.scattering_length_err = phase_shift_scatter_len_avg(min_arr,
-                                                                               result_min.phase_shift)
+            result_min =  unpack_min_data(
+                result_min, phase_shift_data, scattering_length_data)
 
         # compute mean, jackknife uncertainty of chi^2
+        result_min.chisq_arr = np.array(chisq_min_arr) # remove this redundancy
         result_min.fun, result_min.chisq_err = jack_mean_err(chisq_min_arr)
 
         return result_min, param_err
@@ -221,6 +230,17 @@ else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+
+def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
+    """Unpack the returned results of phase_shift_scatter_len_avg"""
+    result_min.phase_shift,\
+        result_min.phase_shift_err,\
+        result_min.phase_shift_arr = phase_shift_data
+    result_min.scattering_length,\
+        result_min.scattering_length_err,\
+        result_min.scattering_length_arr = scattering_length_data
+    return result_min
 
 
 def phase_shift_scatter_len_avg(min_arr, phase_shift):
@@ -248,6 +268,9 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift):
             phase_shift)/np.sqrt(
                 (min_arr**2/4-PION_MASS**2).astype(complex))
 
+        scattering_length_arr = np.array(scattering_length)
+        phase_shift_arr = np.array(phase_shift)
+
         # calc mean, err on phase shift and scattering length
         phase_shift, phase_shift_err = \
             jack_mean_err(phase_shift)
@@ -259,7 +282,9 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift):
         phase_shift_err = None
         scattering_length = None
         scattering_length_err = None
-    return min_arr, phase_shift, phase_shift_err, scattering_length, scattering_length_err
+    phase_shift_data = (phase_shift, phase_shift_err, phase_shift_arr)
+    scattering_length_data = (scattering_length, scattering_length_err, scattering_length_arr)
+    return phase_shift_data, scattering_length_data
 
 
 def alloc_phase_shift(params):
@@ -272,13 +297,14 @@ def alloc_phase_shift(params):
     return ret
 
 
-def jack_mean_err(arr, sjcut=SUPERJACK_CUTOFF):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
     """
     len_total = len(arr)
     len_sloppy = len_total-sjcut
+    arr2 = arr if arr2 is None else arr2
 
     # get jackknife correction prefactors
     exact_prefactor = (sjcut-1)/sjcut if sjcut else 0
@@ -287,15 +313,18 @@ def jack_mean_err(arr, sjcut=SUPERJACK_CUTOFF):
     # calculate error on exact and sloppy
     if sjcut:
         errexact = np.sqrt(exact_prefactor*np.sum(
-            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))**2, axis=0))
+            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))*(arr2[:sjcut]-np.mean(arr2[:sjcut], axis=0)),
+            axis=0))
     else:
         errexact = 0
     errsloppy = np.sqrt(sloppy_prefactor*np.sum(
-        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))**2, axis=0))
+        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
+        axis=0))
 
     # add errors in quadrature (assumes errors are small,
     # decorrelated, linear approx)
     err = np.sqrt(errsloppy**2+errexact**2)/2
+    assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean
     mean = np.mean(arr, axis=0)

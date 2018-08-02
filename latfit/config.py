@@ -56,7 +56,7 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom1'
+IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -556,6 +556,7 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back
+MINTOL = True if not BIASED_SPEEDUP else MINTOL
 FITS.select(UP)
 if PIONRATIO:
     FITS.test()
