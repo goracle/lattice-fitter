@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -55,9 +55,9 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_mom11'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -97,8 +97,8 @@ LT = 64
 
 # print raw gevp info (for debugging source construction)
 
-GEVP_DEBUG = False
 GEVP_DEBUG = True
+GEVP_DEBUG = False
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -139,9 +139,9 @@ RESCALE = 1.0
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
-T0 = 'TMINUS1' if ISOSPIN == 0 else 'ROUND'
+T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
+T0 = 'ROUND' # ceil(t/2)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.

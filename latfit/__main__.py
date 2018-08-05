@@ -395,10 +395,9 @@ def main():
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL =  min_excl(min_arr)
-                    for i, result in enumerate(min_arr):
-                        min_arr[i][0] = result[0].x
                     latfit.config.FIT_EXCL = closest_fit_to_avg(
                         result_min['x'], min_arr)
+                    print("fit excluded points (indices):", latfit.config.FIT_EXCL)
 
                 latfit.config.MINTOL =  True
                 retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
@@ -450,9 +449,10 @@ def closest_fit_to_avg(result_min_avg, min_arr):
     minmax = np.nan
     ret_excl = []
     for i, fit in enumerate(min_arr):
-        minmax_i = max(abs(fit[0]-result_min_avg))
+        minmax_i = max(abs(fit[0].x-result_min_avg))
         if i == 0:
             minmax = minmax_i
+            ret_excl = fit[2]
         else:
             minmax = min(minmax_i, minmax)
             if minmax == minmax_i:
