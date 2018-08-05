@@ -77,8 +77,6 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
     c_rhs = np.zeros((dimops, dimops), dtype=float)
     for opa in range(dimops):
         for opb in range(dimops):
-            if opb != opa:
-                continue
             c_lhs[opa][opb] = proc_line(
                 getline_loc(file_tup_lhs[opa][opb], num+1),
                 file_tup_lhs[opa][opb])*NORMS[opa][opb]
