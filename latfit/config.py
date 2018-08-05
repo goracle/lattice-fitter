@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -56,8 +56,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -69,8 +69,13 @@ FITSTOP = 0.01
 # If set to True, speed up the fit loop by looking at models
 # which resemble non-interacting (dispersive) energies first
 # this biases the results, so turn off if doing a final fit
-BIASED_SPEEDUP = False
 BIASED_SPEEDUP = True
+BIASED_SPEEDUP = False
+# MAX_RESULTS is the max number of usable fit ranges to average over
+# (useful for random fitting; the fitter will otherwise take a long time)
+# set this to np.inf to turn off
+MAX_RESULTS = np.inf
+MAX_RESULTS = 15
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -563,7 +568,7 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back
-MINTOL = True if not BIASED_SPEEDUP else MINTOL
+# MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
 FITS.select(UP)
 if PIONRATIO:
     FITS.test()

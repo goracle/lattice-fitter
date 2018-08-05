@@ -34,7 +34,7 @@ from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
-from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP
+from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.jackknife_fit import ResultMin, jack_mean_err
 import latfit.extract.getblock
 
@@ -246,7 +246,9 @@ def main():
                 if skip_loop:
                     break
 
-                if len(checked) == lenprod or idx == MAX_ITER:
+                if len(checked) == lenprod or idx == MAX_ITER or len(
+                        min_arr) > MAX_RESULTS/MPISIZE or len(
+                            overfit_arr) > MAX_RESULTS/MPISIZE and len(min_arr) == 0:
                     print("a reasonably large set of indices"+\
                           " has been checked, exiting."+\
                           " (number of fit ranges checked:"+str(idx+1)+")")
@@ -265,7 +267,7 @@ def main():
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
-                        excl = [np.random.choice(samp_mult[i][0], p=samp_mult[i][1])
+                        excl = [np.random.choice(samp_mult[i][1], p=samp_mult[i][0])
                                 for i in range(len(latfit.config.FIT_EXCL))]
                     key = str(excl)
                 if key in checked:
@@ -314,7 +316,9 @@ def main():
                 # reject model at 10% level
                 if result_min.pvalue < .1:
                     print("Not storing result because p-value"+\
-                          " is below rejection threshold")
+                          " is below rejection threshold. number"+\
+                          " of non-overfit results so far =", len(min_arr))
+                    print("number of overfit results =", len(overfit_arr))
                     continue
 
                 # calculate average relative error (to be minimized)
@@ -413,6 +417,7 @@ def main():
 
                 result_min = convert_to_namedtuple(result_min)
 
+                print("closest representative fit result (lattice units):")
                 printerr(result_min_close.x, param_err_close)
 
                 if skip_loop:

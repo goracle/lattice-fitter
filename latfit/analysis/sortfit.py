@@ -58,4 +58,4 @@ def sample_norms(sampler, tsorted, lenfit):
     #for i, j in zip(samp, probs):
     #    print(i, j)
     #sys.exit(0)
-    return samp, probs
+    return probs, samp
