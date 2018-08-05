@@ -56,6 +56,7 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1x_mom011'
 IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -94,13 +95,20 @@ TSEP_VEC = [3, 0, 3]
 TSEP_VEC = [3]*DIM if GEVP else [0]
 LT = 64
 
+# print raw gevp info (for debugging source construction)
+
+GEVP_DEBUG = False
+GEVP_DEBUG = True
+
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
-DELTA_T_MATRIX_SUBTRACTION = 3
+MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
+DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
+ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
@@ -121,11 +129,6 @@ ELIM_JKCONF_LIST = []
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
-# print raw gevp info (for debugging source construction)
-
-GEVP_DEBUG = True
-GEVP_DEBUG = False
-
 # stringent tolerance for minimizer?  true = stringent
 MINTOL = True
 MINTOL = False
@@ -138,7 +141,7 @@ RESCALE = 1.0
 
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
-T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
+T0 = 'TMINUS1' if ISOSPIN == 0 else 'ROUND'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -383,7 +386,11 @@ LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
-assert MATRIX_SUBTRACTION or not GEVP, "Must subtract around the world constant at GEVP level"
+if not GEVP_DEBUG:
+    assert MATRIX_SUBTRACTION or not GEVP,\
+        "Must subtract around the world constant at GEVP level"
+else:
+    MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if MATRIX_SUBTRACTION:
     for i, _ in enumerate(ADD_CONST_VEC):
@@ -399,7 +406,7 @@ UP.add_const = ADD_CONST
 UP.log = LOG
 UP.c = C
 # make global tstep equal to delta t so fit functions below will be setup correctly
-UP.tstep = TSTEP if not GEVP else DELTA_T_MATRIX_SUBTRACTION
+UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
 UP.lent = LT

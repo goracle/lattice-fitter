@@ -10,6 +10,7 @@ from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
+from latfit.jackknife_fit import jack_mean_err
 
 from latfit.config import EFF_MASS
 from latfit.config import GEVP
@@ -22,6 +23,8 @@ from latfit.config import MATRIX_SUBTRACTION
 
 if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
+
+XMAX = 999
 
 if PIONRATIO:
     PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+('s' if i != 1 else '') for i in range(2)]
@@ -74,6 +77,8 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
     c_rhs = np.zeros((dimops, dimops), dtype=float)
     for opa in range(dimops):
         for opb in range(dimops):
+            if opb != opa:
+                continue
             c_lhs[opa][opb] = proc_line(
                 getline_loc(file_tup_lhs[opa][opb], num+1),
                 file_tup_lhs[opa][opb])*NORMS[opa][opb]
@@ -137,6 +142,7 @@ if EFF_MASS:
             num_configs = len(file_tup[0][0][0])
         if GEVP_DEBUG:
             print("Getting block for time slice=", timeij)
+        check_variance = []
         for num in range(num_configs):
             if GEVP_DEBUG:
                 print("config #=", num)
@@ -151,7 +157,8 @@ if EFF_MASS:
                                               overb=True), reverse=True)
 
                 if PIONRATIO:
-                    div = np.array([np.real(PION[i][num][int(timeij)]**2-PION[i][num][int(
+                    div = np.array([np.real(
+                        PION[i][num][int(timeij)]**2-PION[i][num][int(
                         timeij)+1]**2) for i in range(dimops)])/1e10
                     eigvals /= div
                     eigvals2 /= div
@@ -164,10 +171,16 @@ if EFF_MASS:
                 #print(num, file_tup)
                 print('config_num:', num, 'time:', timeij)
                 raise XmaxError(problemx=timeij)
+            check_variance.append(eigvals)
             retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op],
                  eigvals4[op]), index=op, time_arr=timeij)
                                     for op in range(dimops)]))
+        if GEVP_DEBUG:
+            print("time, avg evals, variance of evals:",
+                  timeij, jack_mean_err(np.array(check_variance)))
+            if timeij == 10:
+                sys.exit(0)
         return retblk
 
 else:

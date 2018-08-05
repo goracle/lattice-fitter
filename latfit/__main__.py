@@ -36,6 +36,7 @@ from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import GEVP, FIT, STYPE
 from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP
 from latfit.jackknife_fit import ResultMin, jack_mean_err
+import latfit.extract.getblock
 
 from latfit.procargs import procargs
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -81,7 +82,7 @@ sys.stderr = Logger()
 
 def xmin_mat_sub(xmin, xstep=1):
     ret = xmin
-    if GEVP:
+    if GEVP and MATRIX_SUBTRACTION:
         if xmin < DELTA_T_MATRIX_SUBTRACTION:
             ret = DELTA_T_MATRIX_SUBTRACTION + xstep
     return ret
@@ -144,6 +145,7 @@ def main():
     # error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
     xmin, xmax = xlim_err(options.xmin, options.xmax)
+    latfit.extract.getblock.XMAX = xmax
     xstep = xstep_err(options.xstep, input_f)
     xmin = xmin_mat_sub(xmin, xstep=xstep)
     fitrange = fitrange_err(options, xmin, xmax)
@@ -159,6 +161,7 @@ def main():
             _ = singlefit(input_f, fitrange, xmin, xmax, xstep)
         except XmaxError as err:
             xmax = err.problemx-xstep
+            latfit.extract.getblock.XMAX = xmax
             print("xmin, new xmax =", xmin, xmax)
             if fitrange[1] > xmax and FIT:
                 print("***ERROR***")
