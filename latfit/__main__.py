@@ -247,8 +247,8 @@ def main():
                     break
 
                 if len(checked) == lenprod or idx == MAX_ITER or len(
-                        min_arr) > MAX_RESULTS/MPISIZE or len(
-                            overfit_arr) > MAX_RESULTS/MPISIZE and len(min_arr) == 0:
+                        min_arr) > MAX_RESULTS/MPISIZE and random_fit or len(
+                            overfit_arr) > MAX_RESULTS/MPISIZE and random_fit and len(min_arr) == 0:
                     print("a reasonably large set of indices"+\
                           " has been checked, exiting."+\
                           " (number of fit ranges checked:"+str(idx+1)+")")

@@ -57,12 +57,12 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom11'
+IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 5000
+MAX_ITER = 100
 # average relative error on the parameter errors to attempt to achieve
 # if achieved, exit the fit loop
 FITSTOP = 0.01
@@ -583,3 +583,4 @@ print("Assuming slowest around the world term particle is stationary.  Emin=",
 assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
     " only with eff mass method 4"
 assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting methods no longer supported."
+assert NUM_PENCILS == 0, "this feature is less tested, use at your own risk (safest to have NUM_PENCILS==0)"

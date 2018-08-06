@@ -97,10 +97,10 @@ def matsub(files, sub, dt1):
     """Do the around the world subtraction"""
     subterm = {}
     for timeidx in sub:
-        sub[timeidx] = np.asarray(sub[timeidx])
+        sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))
         sub[timeidx] *= math.exp(DELTA_E_AROUND_THE_WORLD*timeidx)
     for timeidx in files:
-        files[timeidx] = np.asarray(files[timeidx])
+        files[timeidx] = copy.deepcopy(np.asarray(files[timeidx]))
         files[timeidx] *= math.exp(DELTA_E_AROUND_THE_WORLD*timeidx)
     for timeidx in files:
         subidx = max(timeidx-dt1, 0)
