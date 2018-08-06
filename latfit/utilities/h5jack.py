@@ -44,8 +44,8 @@ NOAUX = True
 NOAUX = False
 # aux testing, overwrite the production set with aux diagrams
 # also, don't exit on finding aux pairs in the base dataset
-AUX_TESTING = False
 AUX_TESTING = True
+AUX_TESTING = False
 
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
