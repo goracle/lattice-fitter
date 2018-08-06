@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = False
 TEST44 = True
+TEST44 = False
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
@@ -40,8 +40,12 @@ TEST24C = False
 TEST44 = True if TEST24C else TEST44
 
 # exclude all diagrams derived from aux symmetry
-NOAUX = False
 NOAUX = True
+NOAUX = False
+# aux testing, overwrite the production set with aux diagrams
+# also, don't exit on finding aux pairs in the base dataset
+AUX_TESTING = False
+AUX_TESTING = True
 
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
@@ -49,9 +53,9 @@ EXTENSION = 'hdf5'
 FNDEF = PREFIX+'250.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'250.'+EXTENSION
-FNDEF = PREFIX+'350.'+EXTENSION
-GNDEF = PREFIX+'250.'+EXTENSION
-HNDEF = PREFIX+'400.'+EXTENSION
+FNDEF = PREFIX+'1000.'+EXTENSION
+GNDEF = PREFIX+'1010.'+EXTENSION
+HNDEF = PREFIX+'1030.'+EXTENSION
 if TEST44:
     FNDEF = PREFIX+'4540.'+EXTENSION
     GNDEF = PREFIX+'4540.'+EXTENSION
@@ -580,6 +584,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 for j in row:
                     print(j)
         if flag == 0:
+            pass
             h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
     if MPIRANK == 0:
         print("Done writing summed blocks.")
@@ -922,6 +927,13 @@ def aux_jack(basl, trajl, numt, openlist):
     for base in basl:
         # get aux diagram name
         outfn = aux.aux_filen(base, stype='hdf5')
+        if base in auxblks:
+            if AUX_TESTING:
+                continue
+            else:
+                print("aux pair found in data set (redundancy)")
+                print("pair =", base, outfn)
+                sys.exit(1)
         if not outfn:
             continue
         if TESTKEY and TESTKEY != outfn:
@@ -1085,8 +1097,11 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
 
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
-    # allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
-    allblks = {**mostblks, **auxblks, **bubblks}  # for non-gparity
+
+    if AUX_TESTING:
+        allblks = {**mostblks, **auxblks, **bubblks}  # for non-gparity
+    else:
+        allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
     return allblks, numt, auxblks
@@ -1272,7 +1287,7 @@ if __name__ == '__main__':
         FIXN = FIXN in ['true', '1', 't', 'y',
                         'yes', 'yeah', 'yup', 'certainly', 'True']
         if not FIXN and FIXNSTR not in ['false', '0', 'f', 'n',
-                                        'no', 'nope',
+                                        'no', 'nope', 'nah',
                                         'certainly not', 'False']:
             sys.exit(1)
     FIXN = MPI.COMM_WORLD.bcast(FIXN, 0)
