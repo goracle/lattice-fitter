@@ -56,6 +56,7 @@ def update_result_min_nofit(plotdata):
     """Update the result with around the world shift in energy
     associated with non-zero center of mass momentum
     """
+    return plotdata
     assert MATRIX_SUBTRACTION, "addition of delta E makes sense only if"+\
         " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):

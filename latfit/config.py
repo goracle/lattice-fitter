@@ -16,18 +16,18 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
 EFF_MASS = True if GEVP else EFF_MASS
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
@@ -56,8 +56,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -577,7 +577,8 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
+#DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive([0,0,1])+misc.dispersive([0,0,0])
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
 assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
