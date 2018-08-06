@@ -26,8 +26,8 @@ GEVP = True
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = True
 EFF_MASS = False
+EFF_MASS = True
 EFF_MASS = True if GEVP else EFF_MASS
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
