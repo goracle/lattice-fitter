@@ -11,8 +11,8 @@ def mixCoeffs(type4, mix4, trajl, fidx):
     alpha = {}
 
     # for reference
-    shapeT4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
-    shapeM4 = (ltraj, 2, LT_CHECK, LT_CHECK)
+    # shapeT4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
+    # shapeM4 = (ltraj, 2, LT_CHECK, LT_CHECK)
 
     for momdiag in type4: # for plausibly different type4's
 

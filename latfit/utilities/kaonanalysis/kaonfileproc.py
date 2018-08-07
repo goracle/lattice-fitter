@@ -3,6 +3,7 @@
 from h5jack import LT as LT_CHECK
 import projectkop
 import kaonpostproc as kpp
+import kaondecompose
 
 print("Imported kaonfileproc with LT=", LT_CHECK)
 

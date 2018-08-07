@@ -4,19 +4,21 @@ import import kaonfileproc as kfp
 import kaonpostproc as kpp
 import h5jack
 import kaonprojop
+from kaonanalysis import LT_CHECK
 
-def vacSubtractMix4(mix4dict, sinkbubbles, sinksub, trajl):
+def vacSubtractMix4(mix4dict, sinkbubbles, trajl):
     """Vacuum subtract type4"""
 
     sinksub = bubsub(sinkbubbles)
-    
+    ltraj = len(trajl)
+
     # jackknife type 4
 
     aftersub = {}
     for momdiag in mix4dict:
         momdiag = momdiag+'@000' # for backwards compatibility, means key@ptotal, ptotal=000 since Kaon is at rest
         aftersub[momdiag] = np.zeros((ltraj, 2, LT_CHECK), dtype=np.complex)
-        for fidx in range(2):
+        for fidx in range(2): # loop over gamma structure in the mix diagram (g5, unit)
             for tdis in range(LT_CHECK):
                 temp_dict = {}
                 temp_dict[momdiag] = type4dict[mom_diag][:, fidx, tdis, :]
@@ -35,8 +37,16 @@ def vacSubtractMix4(mix4dict, sinkbubbles, sinksub, trajl):
         
 
 
-def vacSubtractType4(type4dict, sinkbubbles, sinksub, trajl, otype):
+def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
     """Vacuum subtract type4"""
+
+    # for reference
+    # shapeType4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
+    # shapeMix4 = (ltraj, 2, LT_CHECK, LT_CHECK)
+
+    # to do, loop over tsep_kpi
+
+    sinksub = bubsub(sinkbubbles)
 
     aftersub = {}
     for momdiag in type4dict:
@@ -70,5 +80,3 @@ def vacSubtractType4(type4dict, sinkbubbles, sinksub, trajl, otype):
                     kpp.QOP_sigma[str(i)][keyirr][num] += kaonprojop.QiprojSigmaType4(aftersub[momdiag], i, 'I0')
                 else:
                     assert None, "bad otype"
-
-

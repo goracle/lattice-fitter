@@ -60,8 +60,6 @@ def analyze():
 
     sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'])
     pipibubbles = h5jack.getbubbles(diags['pipibubbles'])
-    pipisub = bubsub(pipibubbles)
-    sigmasub = bubsub(sigmabubbles)
 
     # zeros the output
     for i in range(10):
@@ -76,40 +74,50 @@ def analyze():
     kfp.procSigmatype23(diags['type2sigma'], trajl, 'type2sigma')
     kfp.procSigmatype23(diags['type3sigma'], trajl, 'type3sigma')
 
-    # get type4 diagrams
-    diags['type4_unsummed'] = kfp.proctype4(diags['type4'], trajl, False) # don't sum 
+    # form single jackknife blocks of the operators, which should be only projected types 1,2,3
+    jackknifeOPS()
+
+    # get the disconnected k->x pieces
+    diags = get_kdiscon_fromfile(diags, trajl)
+
+    # get mix coefficients from tK summed type4/2 and tK summed mix4
+    alpha_kpipi = kaonmix.mixCoeffs(diags['type4_summed'], diags['mix4_summed'], trajl, 0)
+    alpha_kpi = kaonmix.mixCoeffs(diags['type4_summed'], diags['mix4_summed'], trajl, 1) # useful for chipt study
+
+    # do the mix4 vacuum subtraction, bubble composition, tK time averaging, jackknifing
+    mix4to_pipi = kaonvac.vacSubtractMix4(diags['mix4_unsummed'], pipibubbles, trajl)
+    mix4to_sigma = kaonvac.vacSubtractMix4(diags['mix4_unsummed'], sigmabubbles, trajl)
+
+    # do vacuum subtraction, jackknife, project resulting type 4 onto operators
+    kaonvac.vacSubtractType4(diags['type4_unsummed'], pipibubbles, trajl, 'pipi')
+    kaonvac.vacSubtractType4(diags['type4_unsummed'], sigmabubbles, trajl, 'sigma')
+
+    # do mix subtraction
+    kaonmix.mixSubtract(alpha_ktopipi, diags['mix3'], mix4to_pipi, 'pipi')
+    kaonmix.mixSubtract(alpha_ktopipi, diags['mix3'], mix4to_sigma, 'pipi')
+
+    # write the results
+    kpp.writeOut()
+
+def get_kdiscon_fromfile(diags, trajl):
+    """Get the mix4 and disconnected type4 diagrams from file"""
+    # get type4 k->op piece (call it type4/2) from file
+    diags['type4_unsummed'] = kfp.proctype4(diags['type4'], trajl, False)
     diags['type4_summed'] = kfp.proctype4(diags['type4'], trajl, True)
 
-    # get mix diagrams
+    # get mix diagrams from file
     diags['mix3'] = kfp.proctype123(diags['mix3'], trajl, 'mix3') # avg over Tk
     diags['mix3sigma'] = kfp.proctype123(diags['mix3sigma'], trajl, 'mix3') # avg over Tk
     diags['mix4_unsummed'] = kfp.procmix(diags['mix4'], trajl, 'mix4', False)
     diags['mix4_summed'] = kfp.procmix(diags['mix4'], trajl, 'mix4', True)
-
-
-    # get mix coefficients
-    alpha_kpipi = kaonmix.mixCoeffs(diags['type4_summed'], diags['mix4_summed'], trajl, 0)
-    alpha_kpi = kaonmix.mixCoeffs(diags['type4_summed'], diags['mix4_summed'], trajl, 1)
-
-    # do vacuum subtraction
-    vacSubtractType4(diags['type4'], pipibubbles, pipisub, trajl, 'pipi')
-    vacSubtractType4(diags['type4'], sigmabubbles, sigmasub, trajl, 'sigma')
-    vacSubtractType4(diags['type4_unsummed'], diags['pipibubbles'], trajl)
-    vacSubtractType4(diags['type4_sigma_unsummed'], diags['sigmabubbles'], trajl)
-
-    # do mix subtraction
-    jackknifeOPS()
-    kaonmix.mixSubtract(alpha_ktopipi, diags['mix3'], mix4tox, 'pipi')
-
-    # write the results
-    kpp.writeOut()
+    return diags
 
 
 def jackknifeOPS():
     """Jackknife operators."""
     OPS = [kpp.QOPI0, kpp.QOPI2, kpp.QOP_sigma]
     for opa in OPS:
-        for i in np.arange(1, 11):
+        for i in np.arange(1, 11): # loop over operators
             for key in opa[str(i)]:
                 if opa == kpp.QOPI0:
                     kpp.QOPI0[str(i)][key] = h5jack.dojackknife(opa[str(i)][key])
