@@ -803,6 +803,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
         if 'type4' in dsnk:
             sepval = -1
             sepstr = ''
+            outfig = None
         else:
             outfig = wd.comb_fig(dsrc, dsnk)
         try:
@@ -811,6 +812,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
             sepval = -1
             sepstr = ''
         discname = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
+        discname = outfig if 'type4' in outfig else discname
     if discname == TESTKEY:
         print(dsrc, dsnk, sepval)
     return discname, sepval
