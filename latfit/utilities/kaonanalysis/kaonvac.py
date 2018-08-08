@@ -15,13 +15,17 @@ def vacSubtractMix4(mix4dict, sinkbubbles, trajl):
     # jackknife type 4
 
     aftersub = {}
+    for time in range(LT_CHECK):
+        aftersub[subkey] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
     for momdiag in mix4dict:
-        momdiag = momdiag+'@000' # for backwards compatibility, means key@ptotal, ptotal=000 since Kaon is at rest
         aftersub[momdiag] = np.zeros((ltraj, 2, LT_CHECK), dtype=np.complex)
         for fidx in range(2): # loop over gamma structure in the mix diagram (g5, unit)
             for tdis in range(LT_CHECK):
+
+                # get src bubbles
+                momdiagc = momdiag+'@000' # for backwards compatibility, means key@ptotal, ptotal=000 since Kaon is at rest
                 temp_dict = {}
-                temp_dict[momdiag] = type4dict[mom_diag][:, fidx, tdis, :]
+                temp_dict[momdiagc] = type4dict[mom_diag][:, fidx, tdis, :]
                 srcsub = h5jack.bubsub(temp_dict)
 
                 # dict of averaged bubbles, to subtract
@@ -31,7 +35,10 @@ def vacSubtractMix4(mix4dict, sinkbubbles, trajl):
                 bubbles = {**temp_dict, **pipibubs}
 
                 # do the vac subtraction, avg over tk
-                aftersub[momdiag][:, fidx, tdis] = h5jack.dobubjack(bubbles, subdict)
+                bubblk = h5jack.dobubjack(bubbles, subdict)[momdiag]
+                for tsep_kpi in range(LT_CHECK):
+                    subkey = momdiag+"_deltat_"+str(tsep_kpi)
+                    aftersub[subkey][:, fidx, tdis] = bubblk[:, tsep_kpi]
 
     return aftersub
         
@@ -49,14 +56,16 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
     sinksub = bubsub(sinkbubbles)
 
     aftersub = {}
+    for time in range(LT_CHECK):
+        aftersub[subkey] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
     for momdiag in type4dict:
-        momdiag = momdiag+'@000' # for backwards compatibility, means key@ptotal, ptotal=000 since Kaon is at rest
-        aftersub[momdiag] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
         for conidx in range(8):
             for gcombidx in range(4):
                 for tdis in range(LT_CHECK):
+
                     temp_dict = {}
-                    temp_dict[momdiag] = type4dict[mom_diag][:, conidx, gcombidx, tdis, :]
+                    momdiagc = momdiag+'@000' # for backwards compatibility, means key@ptotal, ptotal=000 since Kaon is at rest
+                    temp_dict[momdiagc] = type4dict[momdiag][:, conidx, gcombidx, tdis, :]
                     srcsub = h5jack.bubsub(temp_dict)
 
                     # dict of averaged bubbles, to subtract
@@ -66,7 +75,12 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
                     bubbles = {**temp_dict, **pipibubs}
 
                     # do the vac subtraction, avg over tk
-                    aftersub[momdiag][:, conidx, gcombidx, tdis] = dobubjack(bubbles, subdict)
+                    bubblk = dobubjack(bubbles, subdict)[momdiag]
+
+                    # now, use the result to create type4 diagrams with defined tsep_kpi
+                    for tsep_kpi in range(LT_CHECK):
+                        subkey = momdiag+"_deltat_"+str(tsep_kpi)
+                        aftersub[subkey][:, conidx, gcombidx, tdis] = bubblk[:, tsep_kpi]
 
     # project finally onto the operators
 
