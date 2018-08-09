@@ -56,8 +56,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
+IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -111,6 +111,7 @@ MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
 ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
@@ -144,9 +145,9 @@ RESCALE = 1.0
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'TMINUS1' # t-1
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -227,7 +228,9 @@ if SUPERJACK_CUTOFF:
 else:
     TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
 if MATRIX_SUBTRACTION:
-    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+str(DELTA_T_MATRIX_SUBTRACTION)+' '
+    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
+        str(DELTA_T_MATRIX_SUBTRACTION)+','+\
+        str(DELTA_T2_MATRIX_SUBTRACTION)+' '
 elif True in ADD_CONST_VEC:
     TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
 
@@ -412,6 +415,7 @@ UP.log = LOG
 UP.c = C
 # make global tstep equal to delta t so fit functions below will be setup correctly
 UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
+UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
 UP.lent = LT
@@ -578,8 +582,14 @@ if EFF_MASS:
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
+DELTA_E2_AROUND_THE_WORLD = 0 if GEVP else 0
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0]) if GEVP else 0
+DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
+print("2nd order around the world term, delta E=",
+      DELTA_E2_AROUND_THE_WORLD)
 assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
     " only with eff mass method 4"
 assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting methods no longer supported."

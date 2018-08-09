@@ -46,6 +46,7 @@ from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
 from latfit.config import FIT
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -60,6 +61,8 @@ def update_result_min_nofit(plotdata):
         " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):
         plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
+        if DELTA_E2_AROUND_THE_WORLD is not None:
+            plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
     return plotdata
 
 def mkplot(plotdata, input_f,

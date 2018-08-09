@@ -12,7 +12,9 @@ from latfit.extract.proc_folder import proc_folder
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
 from latfit.config import GEVP, T0
-from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION, DELTA_E_AROUND_THE_WORLD
+from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION, DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
+from latfit.config import DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
+from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 
 
 if EFF_MASS:
@@ -57,7 +59,11 @@ def getfiles_gevp(time, time2, xstep):
     files = {}
     sub = {}
     dt1 = DELTA_T_MATRIX_SUBTRACTION*xstep
+    dt2 = DELTA_T2_MATRIX_SUBTRACTION*xstep
     extra_lhs_times, extra_rhs_time = getExtraTimes(time, time2, dt1, xstep)
+    extra_lhs_times2, extra_rhs_time2 = getExtraTimes(time, time2, dt2, xstep)
+    extra_lhs_times = [*extra_lhs_times, *extra_lhs_times2]
+    extra_rhs_times = [extra_rhs_time, extra_rhs_time2]
     if NUM_PENCILS < 1:
         files[time] = gevp_getfiles_onetime(time)
         files[time2] = gevp_getfiles_onetime(time2)
@@ -66,7 +72,7 @@ def getfiles_gevp(time, time2, xstep):
             files[time+2*xstep] = gevp_getfiles_onetime(time+2*xstep)
             files[time+3*xstep] = gevp_getfiles_onetime(time+3*xstep)
         if MATRIX_SUBTRACTION:
-            for timeidx in [*extra_lhs_times, extra_rhs_time]:
+            for timeidx in [*extra_lhs_times, *extra_rhs_times]:
                 if timeidx not in files:
                     sub[timeidx] = gevp_getfiles_onetime(timeidx)
     else:
@@ -80,11 +86,14 @@ def getfiles_gevp(time, time2, xstep):
             for timeidx in extra_lhs_times:
                 if timeidx not in files:
                     sub[timeidx] = pencil_shift_lhs(timeidx)
-            if extra_rhs_time not in files:
-                sub[time3] = pencil_shift_rhs(extra_rhs_time)
+            for timeidx in extra_rhs_times:
+                if timeidx not in files:
+                    sub[timeidx] = pencil_shift_rhs(timeidx)
 
     # do matrix subtraction to eliminate leading order around the world term
     files = matsub(files, sub, dt1) if MATRIX_SUBTRACTION else files
+    files = matsub(files, sub, dt2, 'Two') if MATRIX_SUBTRACTION and\
+        DELTA_E2_AROUND_THE_WORLD is not None else files
 
     if EFF_MASS:
         ret = (files[time], files[time2], files[time+xstep],
@@ -93,15 +102,16 @@ def getfiles_gevp(time, time2, xstep):
         ret = (files[time], files[time2])
     return ret
 
-def matsub(files, sub, dt1):
+def matsub(files, sub, dt1, dt12='One'):
     """Do the around the world subtraction"""
     subterm = {}
+    delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else DELTA_E2_AROUND_THE_WORLD
     for timeidx in sub:
         sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))
-        sub[timeidx] *= math.exp(DELTA_E_AROUND_THE_WORLD*timeidx)
+        sub[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
         files[timeidx] = copy.deepcopy(np.asarray(files[timeidx]))
-        files[timeidx] *= math.exp(DELTA_E_AROUND_THE_WORLD*timeidx)
+        files[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
         subidx = max(timeidx-dt1, 0)
         subterm[timeidx] = files[subidx] if subidx in files else sub[subidx]

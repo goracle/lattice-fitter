@@ -22,6 +22,7 @@ from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF
 from latfit.config import DELTA_E_AROUND_THE_WORLD
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
@@ -169,7 +170,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # to fix the leading order around the world term so shift it back
 
             result_min_jack.x = np.asarray(result_min_jack.x)+\
-                DELTA_E_AROUND_THE_WORLD
+                DELTA_E_AROUND_THE_WORLD+(
+                    DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
+                    is not None else 0)
 
             # store the result
             min_arr[config_num] = result_min_jack.x

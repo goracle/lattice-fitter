@@ -26,6 +26,8 @@ from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import MINTOL, METHOD, BINDS
 from latfit.config import ORIGL, DIM
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -128,12 +130,12 @@ elif EFF_MASS_METHOD == 4:
                                       corrs[2], None)
         return proc_meff4(corrs, index, files, times)
 
-    def make_eff_mass_tomin(ini, add_const_bool, tstep):
+    def make_eff_mass_tomin(ini, add_const_bool, tstep_arr):
         def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
             return (FITS.f['fit_func_1p'][add_const_bool](
-                ctime, [energy], LT_VEC[ini], tstep)-sol)**2
+                ctime, [energy], LT_VEC[ini], tstep_arr)-sol)**2
         return eff_mass_tomin
 
     EFF_MASS_TOMIN = []
@@ -142,7 +144,9 @@ elif EFF_MASS_METHOD == 4:
         if MATRIX_SUBTRACTION and GEVP:
             j = 1
             tstep = -DELTA_T_MATRIX_SUBTRACTION
-        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, tstep))
+            tstep2 = -DELTA_T2_MATRIX_SUBTRACTION if\
+                DELTA_E2_AROUND_THE_WORLD is not None else None
+        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this

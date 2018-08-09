@@ -33,6 +33,7 @@ import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, FIT, STYPE
 from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.jackknife_fit import ResultMin, jack_mean_err
@@ -82,9 +83,12 @@ sys.stderr = Logger()
 
 def xmin_mat_sub(xmin, xstep=1):
     ret = xmin
+    delta = DELTA_T_MATRIX_SUBTRACTION
+    if DELTA_E2_AROUND_THE_WORLD is not None:
+        delta += DELTA_T2_MATRIX_SUBTRACTION
     if GEVP and MATRIX_SUBTRACTION:
-        if xmin < DELTA_T_MATRIX_SUBTRACTION:
-            ret = DELTA_T_MATRIX_SUBTRACTION + xstep
+        if xmin < delta:
+            ret = delta + xstep
     return ret
 
 
