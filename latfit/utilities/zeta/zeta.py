@@ -47,7 +47,7 @@ if CALC_PHASE_SHIFT:
             print("zeta.py, bad gamma value for epipi=", epipi)
             print("center of mass momentum=", comp)
             print("Length of box=", L_BOX)
-            raise ZetaError("bad gamma")
+            raise ZetaError("bad gamma, epipi = "+str(epipi))
         if gamma < 1:
             raise RelGammaError(gamma=gamma, epipi=epipi)
         epipi = epipi*AINVERSE/gamma
