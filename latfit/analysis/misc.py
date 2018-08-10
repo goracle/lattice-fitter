@@ -10,8 +10,6 @@ def norm2(mom):
 
 def dispersive(momentum, mass=None, box_length=None):
     """get the dispersive analysis energy == sqrt(m^2+p^2)"""
-    if mass is None:
-        mass = MASS
-    if box_length is None:
-        box_length = BOX_LENGTH
-    return sqrt((mass)**2+(2*pi/box_length)**2*norm2(momentum))
+    mass = MASS if mass is None else mass
+    box_length = BOX_LENGTH if box_length is None else box_length
+    return sqrt((mass)**2+(2*pi/box_length)**2*norm2(momentum)) # two pions so double the mass
