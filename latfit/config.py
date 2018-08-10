@@ -105,6 +105,7 @@ LT = 64
 GEVP_DEBUG = True
 GEVP_DEBUG = False
 
+
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = False
@@ -116,6 +117,13 @@ DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 ADD_CONST_VEC = [True]*DIM if GEVP else [False]
 ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+# second order around the world delta energy (E(k_max)-E(k_min)),
+# set to None if only subtracting for first order or if all orders are constant
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
+DELTA_E2_AROUND_THE_WORLD = 0
+DELTA_E2_AROUND_THE_WORLD = None
+# DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
+DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -227,10 +235,13 @@ if SUPERJACK_CUTOFF:
     # TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
     TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
-if MATRIX_SUBTRACTION:
+if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
         str(DELTA_T_MATRIX_SUBTRACTION)+','+\
         str(DELTA_T2_MATRIX_SUBTRACTION)+' '
+elif MATRIX_SUBTRACTION:
+    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
+        str(DELTA_T_MATRIX_SUBTRACTION)+' '
 elif True in ADD_CONST_VEC:
     TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
 
@@ -582,10 +593,8 @@ if EFF_MASS:
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
-DELTA_E2_AROUND_THE_WORLD = 0 if GEVP else 0
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0]) if GEVP else 0
-DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
 print("2nd order around the world term, delta E=",
