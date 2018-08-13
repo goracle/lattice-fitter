@@ -56,8 +56,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
