@@ -4,6 +4,7 @@
 #include <iostream>
 #include <gsl/gsl_vector.h>
 #include "luscherzeta.h"
+#include <math.h>
 
 int main(int argc, char* argv[])
 {
@@ -35,10 +36,15 @@ int main(int argc, char* argv[])
   //printf("calculating phase shift with E_pipi=%e, m_pi=%e, L_box=%e\n", E_pipi, m_pi, L_box);
 
   double arg = E_pipi*E_pipi/4 - m_pi*m_pi;
+  double x = cosh(E_pipi/2)-cosh(m_pi);
+  //double arg = acos(1-x);
+  //double arg = sqrt(3)*acos(1-x/3);
+  //printf("arg=%e, x=%e\n", arg, x);
   //if(arg < 0){printf("E_pipi*E_pipi/4 - m_pi*m_pi<0\n"); exit(-1);}
   bool imag_q = arg < 0;
   if(arg<0) arg = -arg;
   double p_pipi = sqrt( arg );
+  //double p_pipi = arg ;
   double q_pipi = L_box * p_pipi /( 2 * M_PI ); //M_PI = pi
 
   assert(gamma>=1.0);
@@ -48,6 +54,7 @@ int main(int argc, char* argv[])
   //printf("boost=%d, %d, %d\n", (int)boost[0], (int)boost[1], (int)boost[2]);
 
   LuscherZeta zeta;
+  //zeta.setMaximumVectorMagnitude(10);
   zeta.setBoost(boost, gamma); //periodic BC's
 
   double phi = zeta.calcPhi(q_pipi, imag_q)*180/M_PI;

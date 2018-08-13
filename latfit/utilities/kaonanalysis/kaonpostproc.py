@@ -9,9 +9,11 @@ QOP_sigma = {} # sigma operator dictionary
 for i in range(10):
     QOP_sigma[str(i)] = {} # momentum dictionary
 
+# structure is
+# [<>]
+
 
 def writeOut():
     """Write the result to file"""
-    assert None, "Not implemented yet."
-    QOPI0[str(i)]
+    
 
