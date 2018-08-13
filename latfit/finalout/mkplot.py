@@ -342,7 +342,8 @@ def print_messages(result_min, param_err, param_chisq):
                 shift = np.real(shift) if np.isreal(shift) else shift
                 err = result_min.phase_shift_err[i]
                 err = np.real(err) if np.isreal(err) else err
-                print(root_s[i], "MeV :",  shift, "+/-", err, "Err Energy=", err_energy[i])
+                print(root_s[i], "MeV :", "+/-", err_energy[i],
+                      "phase shift:", shift, "+/-", err)
             for i in range(len(result_min.scattering_length)):
                 if i == 0: # scattering length only meaningful as p->0
                     print("I="+str(ISOSPIN)+" scattering length = ",
