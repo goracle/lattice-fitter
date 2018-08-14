@@ -40,8 +40,8 @@ TEST24C = False
 TEST44 = True if TEST24C else TEST44
 
 # exclude all diagrams derived from aux symmetry
-NOAUX = True
 NOAUX = False
+NOAUX = True
 # aux testing, overwrite the production set with aux diagrams
 # also, don't exit on finding aux pairs in the base dataset
 AUX_TESTING = True
@@ -89,6 +89,9 @@ THERMNUM = THERMNUM if not TEST24C else 0
 #assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
+# max time distance between (inner) particles
+TDIS_MAX = -1
+TDIS_MAX = 16
 
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
@@ -226,15 +229,17 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
     return trajl
 
 
+@PROFILE
 def getbasl(fn1):
-    """ok"""
+    """Get base list from selected file"""
     basl = set()
     for dat in fn1:
-        try:
-            basen = fn1[dat].attrs['basename']
-        except KeyError:
-            basen = rf.basename(dat)
-        if len(fn1[dat].shape) == 2 and basen:
+        #try:
+        #    basen = fn1[dat].attrs['basename']
+        #except KeyError:
+        basen = rf.basename(dat)
+        if 'Vdis' not in basen and 'bubble' not in basen:
+            #if len(fn1[dat].shape) == 2 and basen:
             basl.add(basen)
     return basl
 
@@ -259,15 +264,17 @@ def baselist(fn1=None):
         print("Done getting baselist")
     return basl
 
+@PROFILE
 def getbubl(fn1):
-    """ok"""
+    """Get bubble list from selected file"""
     bubl = set()
     for dat in fn1:
-        try:
-            basen = fn1[dat].attrs['basename']
-        except KeyError:
-            basen = rf.basename(dat)
-        if len(fn1[dat].shape) == 1 and basen:
+        #try:
+        #    basen = fn1[dat].attrs['basename']
+        #except KeyError:
+        basen = rf.basename(dat)
+        if 'Vdis' in basen or 'bubble' in basen:
+            #if len(fn1[dat].shape) == 1 and basen:
             bubl.add(basen)
     return bubl
 
@@ -324,6 +331,7 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
         print("done writing jackknife blocks: ", outh5)
 
 
+@PROFILE
 def overall_coeffs(iso, irr):
     """Get overall projection coefficients from iso (isopsin coefficients)
     irr (irrep projection)
@@ -359,21 +367,22 @@ def overall_coeffs(iso, irr):
         print("Done getting projection coefficients")
     return ocs
 
+# obsolete
 def cross_p(fname):
     """Check if this is a pipi diagram with cross momenta (x+-x->y+-y)
     """
     mom = rf.mom(fname)
     compare = set()
     ret = False
-    if rf.nmom_arr(mom) == 3 and FILTER_OUT_CROSS_MOMENTA:
-        for i, momex in enumerate(mom):
-            for j, k in enumerate(momex):
-                if k != 0:
-                    if i == 0 or not compare:
-                        compare.add(j)
-                    elif j not in compare:
-                        ret = True
     return ret
+    #if rf.nmom_arr(mom) == 3 and FILTER_OUT_CROSS_MOMENTA:
+    #    for i, momex in enumerate(mom):
+    #        for j, k in enumerate(momex):
+    #            if k != 0:
+    #                if i == 0 or not compare:
+    #                    compare.add(j)
+    #                elif j not in compare:
+    #                    ret = True
         
 
 def strip_op(op1):
@@ -396,6 +405,7 @@ def get_polreq(op1):
     return reqpol
 
 
+@PROFILE
 def jackknife_err(blk):
     """Get jackknife error from block with shape=(L_traj, L_time)"""
     len_t = len(blk)
@@ -405,6 +415,7 @@ def jackknife_err(blk):
     return avg, err
 
 
+@PROFILE
 def formnum(num):
     """Format complex number in scientific notation"""
     real = '%.8e' % num.real
@@ -419,6 +430,7 @@ def formnum(num):
         return real+plm+imag+'j'
 
 
+@PROFILE
 def buberr(bubblks):
     """Show the result of different options for bubble subtraction"""
     for key in bubblks:
@@ -434,6 +446,7 @@ def buberr(bubblks):
                 print('t='+str(i)+' avg:', formnum(avgval),
                       'err:', formnum(errval))
 
+@PROFILE
 def check_match_oplist(ocs):
     """A more stringent check:  Generate the momentum combinations for an operator
     and see if all the diagrams contain these.
@@ -642,12 +655,15 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         traj = convert_traj(traj)
         filekey = get_file_name(traj)
         try:
-            outarr = np.array(fn1['traj_'+str(traj)+'_'+base])
+            outarr = np.asarray(fn1['traj_'+str(traj)+'_'+base][:, TDIS_MAX+1])
         except:
             namec = 'traj_'+str(traj)+'_'+base
             print(namec in fn1)
             print(fn1[namec])
             raise
+        outtemp = np.zeros((LT, LT), dtype=np.complex)
+        outtemp[:, TDIS_MAX+1] = outarr
+        outarr = outtemp
     #    except KeyError:
     #        skip.append(i)
     #        continue
@@ -705,10 +721,10 @@ def getbubbles(bubl, trajl, openlist=None):
             keysrc = 'traj_' + str(traj) + '_' + dsrc
             assert(keysrc in fn1), "key = " + keysrc + \
                 " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
-            try:
-                pdiag = fn1[keysrc].attrs['mom']
-            except KeyError:
-                pdiag = rf.mom(keysrc)
+            #try:
+            #    pdiag = fn1[keysrc].attrs['mom']
+            #except KeyError:
+            pdiag = rf.mom(keysrc)
             try:
                 ptot = rf.ptostr(wd.momtotal(pdiag))
             except:
@@ -834,8 +850,6 @@ def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
         bubbles = getbubbles(bubl, trajl, openlist=openlist)
     if sub is None:
         sub = bubsub(bubbles)
-    if MPIRANK == 0:
-        print("Done composing disconnected diagrams.")
     return dobubjack(bubbles, sub)
 
 @PROFILE
@@ -900,6 +914,8 @@ def dobubjack(bubbles, sub):
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])
                 testkey2(outkey, out[outkey], 2)
+    if MPIRANK == 0:
+        print("Done composing disconnected diagrams.")
     return out
 
 
@@ -960,6 +976,7 @@ def aux_jack(basl, trajl, numt, openlist):
         print("Done getting the auxiliary jackknife blocks.")
     return auxblks if not NOAUX else {}
 
+@PROFILE
 def gatherdicts(gatherblks, root=0):
     """Gather blocks from other sub processes."""
     gatherblks = MPI.COMM_WORLD.gather(gatherblks, root)
@@ -969,6 +986,7 @@ def gatherdicts(gatherblks, root=0):
             retdict.update(blkdict)
     return retdict
 
+@PROFILE
 def getwork(worklistin, mpirank=MPIRANK):
     """Split work over processes."""
     worklist = sorted(list(worklistin))
@@ -982,6 +1000,7 @@ def getwork(worklistin, mpirank=MPIRANK):
         assert len(nodework) == backfill+baselen, "get work bug."
     return nodework
 
+@PROFILE
 def getdisconwork(bubl):
     """Get bubble combinations to compose for this rank"""
     bublcomb = set()
@@ -996,6 +1015,7 @@ def getdisconwork(bubl):
         nodebubl.add(snk)
     return nodebubl
 
+@PROFILE
 def check_inner_outer(ocs, allkeys, auxkeys):
     """Check to make sure the inner pion has energy >= outer pion
     """
@@ -1027,6 +1047,7 @@ def check_inner_outer(ocs, allkeys, auxkeys):
                             " should be >= outer particle momentum"+\
                             " (sink). :"+str(diag)
 
+@PROFILE
 def find_unused(ocs, allkeys, auxkeys, fig=None):
     """Find unused diagrams not needed in projection
     """
@@ -1065,6 +1086,7 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     basl = baselist()
     numt = len(trajl)
     openlist = {}
+    # this speeds things up but h5py appears to be broken here (gives an error)
     #for traj in trajl:
     #    print("processing traj =", traj, "into memory.")
     #    filekey = PREFIX+str(traj)+'.'+EXTENSION
@@ -1078,7 +1100,10 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     nodebubl = getdisconwork(bubl)
 
     if not NOAUX:
+        ttime = -time.perf_counter()
         auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
+        ttime += time.perf_counter()
+        print("time to get aux blocks:", ttime, "seconds")
     else:
         auxblks = {}
 
@@ -1090,12 +1115,18 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
             assert auxblks, "Error in NOAUX option.  empty"+\
                 " dictionary found"
 
+    ttime = -time.perf_counter()
     mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
+    ttime += time.perf_counter()
+    print("time to get most blocks:", ttime, "seconds")
 
     if TEST44:
         check_aux_consistency(auxblks, mostblks)
 
+    ttime = -time.perf_counter()
     bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
+    ttime += time.perf_counter()
+    print("time to get disconnected blocks:", ttime, "seconds")
 
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
@@ -1108,6 +1139,7 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     #    openlist[filekey].close()
     return allblks, numt, auxblks
 
+@PROFILE
 def check_aux_consistency(auxblks, mostblks):
     """Check consistency of blocks derived via
     aux symmetry with those from production run."""
@@ -1133,6 +1165,7 @@ def check_aux_consistency(auxblks, mostblks):
         sys.exit(1)
                             
 
+@PROFILE
 def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
     """Check block for consistency across sloppy and exact samples
     return the consistency-checked block lengths
@@ -1196,6 +1229,7 @@ def main(fixn=True):
     """Run this when making jackknife diagrams from raw hdf5 files"""
     #avg_irreps()
     #sys.exit(0)
+    print('start of main.')
     if not DOAMA:
         allblks, numt, auxblks = get_data()
     else:
@@ -1249,6 +1283,7 @@ def main(fixn=True):
         h5sum_blks(allblks, ocs, (numt, LT))
         avg_irreps()
 
+@PROFILE
 def avg_irreps():
     """Average irreps"""
     if MPIRANK == 0:
@@ -1283,8 +1318,9 @@ def printblk(basename, blk):
 if __name__ == '__main__':
     FIXN = None
     if MPIRANK == 0:
-        FIXN = input("Need fix norms before summing? True/False?")
+        # FIXN = input("Need fix norms before summing? True/False?")
         # FIXN = 'False'
+        FIXN = '0'
         FIXNSTR = FIXN
         FIXN = FIXN in ['true', '1', 't', 'y',
                         'yes', 'yeah', 'yup', 'certainly', 'True']
@@ -1292,7 +1328,8 @@ if __name__ == '__main__':
                                         'no', 'nope', 'nah',
                                         'certainly not', 'False']:
             sys.exit(1)
-    FIXN = MPI.COMM_WORLD.bcast(FIXN, 0)
+    # FIXN = MPI.COMM_WORLD.bcast(FIXN, 0)
+    FIXN = False
     START = time.perf_counter()
     main(FIXN)
     END = time.perf_counter()
