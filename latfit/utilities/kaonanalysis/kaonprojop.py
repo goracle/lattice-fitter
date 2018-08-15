@@ -245,10 +245,10 @@ def QiprojType4(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            g_tdis = piecies[(0+idxplus, g, tdis)]
-            gp_tdis = piecies[(2+idxplus, g, tdis)]
-            G_tdis = piecies[(4+idxplus, g, tdis)]
-            Gp_tdis = piecies[(6+idxplus, g, tdis)]
+            g_tdis = piecies[0+idxplus, g, tdis]
+            gp_tdis = piecies[2+idxplus, g, tdis]
+            G_tdis = piecies[4+idxplus, g, tdis]
+            Gp_tdis = piecies[6+idxplus, g, tdis]
             if i in [1, 2]:
 
                 if isostr == 'I0': # g * -3/sqrt(3) 

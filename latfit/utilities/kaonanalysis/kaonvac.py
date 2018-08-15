@@ -32,7 +32,7 @@ def vacSubtractMix4(mix4dict, sinkbubbles, trajl):
                 subdict = {**srcsub, **sinksub}
 
                 # dict of uncomposed bubbles
-                bubbles = {**temp_dict, **pipibubs}
+                bubbles = {**temp_dict, **sinkbubbles}
 
                 # do the vac subtraction, avg over tk
                 bubblk = h5jack.dobubjack(bubbles, subdict)[momdiag]
@@ -72,7 +72,7 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
                     subdict = {**srcsub, **sinksub}
 
                     # dict of uncomposed bubbles
-                    bubbles = {**temp_dict, **pipibubs}
+                    bubbles = {**temp_dict, **sinkbubbles}
 
                     # do the vac subtraction, avg over tk
                     bubblk = dobubjack(bubbles, subdict)[momdiag]
@@ -89,8 +89,8 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
             keyirr = kfp.genKey(momdiag)
             for i in np.arange(1, 11):
                 if otype == 'pipi':
-                    kpp.QOPI0[str(i)][keyirr][num] += kaonprojop.QiprojType4(aftersub[momdiag], i, 'I0')
+                    kpp.QOPI0[str(i)][keyirr][num] += kaonprojop.QiprojType4(aftersub[momdiag][num], i, 'I0')
                 elif otype == 'sigma':
-                    kpp.QOP_sigma[str(i)][keyirr][num] += kaonprojop.QiprojSigmaType4(aftersub[momdiag], i, 'I0')
+                    kpp.QOP_sigma[str(i)][keyirr][num] += kaonprojop.QiprojSigmaType4(aftersub[momdiag][num], i, 'I0')
                 else:
                     assert None, "bad otype"

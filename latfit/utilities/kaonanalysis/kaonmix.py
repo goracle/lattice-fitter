@@ -40,8 +40,8 @@ def mixSubtract(alpha, mix3, mix4tox, otype):
 
     assert jackknifeOPS.complete, "Operators need to be jackknifed before mix subtraction."
 
-    mix3 = Isospin0ProjMix3(mix3)
-    mix4tox = Isospin0ProjMix4(mix4tox)
+    # mix3 = Isospin0ProjMix3(mix3) # useless
+    # mix4tox = Isospin0ProjMix4(mix4tox) # useless
 
     # shape == key, ltraj, fidx, tdis
 
