@@ -46,6 +46,11 @@ def compare_pols(pol1, pol2):
         retval = all([int(i) == int(j) for i in pol1 for j in pol2])
     return retval
 
+def momrelnorm(mom1, mom2):
+    """Find the norm of the relative momentum"""
+    ret = np.array(mom1)-np.array(mom2)
+    return np.sqrt(np.dot(ret, ret))
+
 def compare_momenta(fn1, fn2):
     """Compare two different momenta
     (in list form) for equality"""
