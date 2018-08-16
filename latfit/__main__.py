@@ -212,6 +212,8 @@ def main():
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
+                if MULT == 1:
+                    break
                 coords = np.array([j[i] for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
                 tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
@@ -225,6 +227,8 @@ def main():
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
+                    if MULT == 1:
+                        break
                     sampi = sortfit.sortcombinations(
                         sampler, tsorted[i], lenfit)
                     samp_mult.append(sampi)
@@ -363,6 +367,7 @@ def main():
                 overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
 
             if MPIRANK == 0:
+                result_min = {}
                 if not skip_loop:
 
                     # collapse the array structure introduced by mpi
@@ -378,7 +383,6 @@ def main():
                     for i in min_arr:
                         print(i[1:])
 
-                    result_min = {}
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
                             print("name=", name, "is None, skipping")
