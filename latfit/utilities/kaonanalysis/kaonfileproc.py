@@ -11,6 +11,8 @@ def genKey(momdiag):
     """Get operator output key"""
     kpitsep = deltat(momdiag)
     mom = rf.mom(momdiag)
+    if len(mom) == 2:
+        mom = mom[1]
     keyirr = str(np.dot(mom, mom))+'@'+str(kpitsep)
     return keyirr
 
