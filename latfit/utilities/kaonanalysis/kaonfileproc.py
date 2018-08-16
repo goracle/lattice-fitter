@@ -1,7 +1,7 @@
 """Process kaon files"""
 
-from h5jack import LT as LT_CHECK
-import projectkop
+from latfit.utilities.h5jack import LT as LT_CHECK
+import kaonprojop
 import kaonpostproc as kpp
 import kaondecompose
 
@@ -43,12 +43,15 @@ def procSigmaType23(type23, trajl, otype):
 
             ret = None
             for i in np.arange(1, 11):
-                elif otype == 'type2':
+                if otype == 'type2':
                     kpp.QOP_sigma[str(i)][keyirr][num] +=  projectkop.QiprojSigmaType2(t1arr, i, 'I0')
                     kpp.QOP_sigma[str(i)][keyirr][num] +=  projectkop.QiprojSigmaType2(t1arr, i, 'I2')
                 elif otype == 'type3':
                     kpp.QOP_sigma[str(i)][keyirr][num] +=  projectkop.QiprojSigmaType3(t1arr, i, 'I0')
                     kpp.QOP_sigma[str(i)][keyirr][num] +=  projectkop.QiprojSigmaType3(t1arr, i, 'I2')
+                else:
+                    print("bad type given for sigma diagram:", otype)
+                    raise
     return ret
 
 def proctype123(type123, trajl, otype):

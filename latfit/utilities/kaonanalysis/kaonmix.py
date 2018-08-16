@@ -16,7 +16,7 @@ def mixCoeffs(type4, mix4, trajl, fidx):
 
     for momdiag in type4: # for plausibly different type4's
 
-        alpha[momdiag] = defaultdict(lambda: np.zeros(trajl, LT_CHECK), dtype=np.complex), alpha[momdiag])
+        alpha[momdiag] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex), alpha[momdiag])
 
         for i in np.arange(1, 11): # assumes we've averaged over tk for type4 and mix4
 

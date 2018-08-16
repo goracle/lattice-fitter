@@ -1,6 +1,6 @@
 """Container for operator projection (isospin coefficients)"""
 
-from h5jack import LT as LT_CHECK
+from latfit.utilities.h5jack import LT as LT_CHECK
 print("Imported projectkop with LT=", LT_CHECK)
 
 def QiprojType1(pieces, i, isostr):
@@ -33,7 +33,7 @@ def QiprojType1(pieces, i, isostr):
                     ret[tdis] += (f_tdis+2*fp_tdis) * 2.0/(-math.sqrt(3))
 
                 elif isostr == 'I2': # 2*Q1 = [-f + f'] * 4/sqrt(6)
-                    ret[tdis] += (-f_tdis+fp_tdis) * 4.0/(math.sqrt(6)))
+                    ret[tdis] += (-f_tdis+fp_tdis) * 4.0/(math.sqrt(6))
 
             elif i in [7, 8, 9, 10]: # ew penguin
 
@@ -43,7 +43,7 @@ def QiprojType1(pieces, i, isostr):
                 elif isostr == 'I2': # 3/2 Q1 (e_d+e_u) = [-f + f'] * 1.0 / sqrt(6)
                     ret[tdis] += (-f_tdis+fp_tdis) * 1.0/(math.sqrt(6))
 
-            ret[tdis] * = gfac # spin sign
+            ret[tdis] *= gfac # spin sign
 
     return ret
 def getGfac(i):
@@ -151,7 +151,7 @@ def QiprojSigmaType3(pieces, i, isostr):
                 # 3/2 [ Q1 (e_d+e_u) - e_d*Q1' +(I-I') * e_s * 1/sqrt(2) ] = [ i +i' - I + I' ] * 1/(2*sqrt(2))
                 ret[tdis] += (i_tdis+ip_tdis-I_tdis+Ip_tdis) * 1.0/(math.sqrt(2))
 
-            ret[tdis] * = gfac # spin sign
+            ret[tdis] *= gfac # spin sign
     return ret
 
 
@@ -232,7 +232,7 @@ def QiprojType3(pieces, i, isostr):
                 elif isostr == 'I2': # 3/2 Q1 (e_d+e_u) = [i] * 0
                     ret[tdis] += 0
 
-            ret[tdis] * = gfac # spin sign
+            ret[tdis] *= gfac # spin sign
     return ret
 
 

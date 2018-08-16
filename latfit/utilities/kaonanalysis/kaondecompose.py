@@ -1,7 +1,7 @@
 """Decompose kaon results container and mix containers
 from 1d arrays to multi-dimensional"""
 
-from h5jack import LT as LT_CHECK
+from latfit.utilities.h5jack import LT as LT_CHECK
 print("Imported kaondecompose with LT=", LT_CHECK)
 
 def decomposeMix(mixarr, avgTk=False):
@@ -20,11 +20,10 @@ def decomposeMix(mixarr, avgTk=False):
                         ret[(fidx, tdis)] = mixarr[idx]
                     else:
                         ret[(fidx, tdis)] += mixarr[idx]
-                    else:
-                        ret[(fidx, tdis, timek)] = mixarr[idx]
-                    idx_prev = idx
-                if avgTk:
-                    ret[(fidx, tdis, timek)] /= LT_CHECK
+                    ret[(fidx, tdis)] /= LT_CHECK
+                else:
+                    ret[(fidx, tdis, timek)] = mixarr[idx]
+                idx_prev = idx
     return ret
 
 def mapMix(fidx, tdis, timek):

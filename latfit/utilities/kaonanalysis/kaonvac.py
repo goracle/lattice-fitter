@@ -1,8 +1,8 @@
 """Vacuum subtract disconnected k->x diagrams."""
 
-import import kaonfileproc as kfp
+import kaonfileproc as kfp
 import kaonpostproc as kpp
-import h5jack
+import latfit.utilities.h5jack
 import kaonprojop
 from kaonanalysis import LT_CHECK
 

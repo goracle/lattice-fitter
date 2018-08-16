@@ -1,4 +1,5 @@
 """Storage for post processed operators.  After these are filled we write to disk"""
+import numpy as np
 import h5py
 
 QOPI0 = {} # operator dictionary

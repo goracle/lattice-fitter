@@ -9,7 +9,7 @@ import read_file as rf
 import math
 from collections import defaultdict
 from mpi4py import MPI
-import h5jack
+from latfit.utilities import h5jack
 
 import kaondecompose # decompose the results, stored as 1d arrays, into multi-dimensional arrays
 import kaonfileproc as kfp # process kaon files
@@ -17,8 +17,8 @@ import kaonpostproc as kpp # global container for results
 import kaonmix # do mix subtraction
 import kaonvac # vacuum subtraction
 
-TSTEP12 = 8
-LT_CHECK = 64
+TSTEP12 = 2
+LT_CHECK = 4
 assert h5jack.LT == LT_CHECK, "Time extents do not match"
 # the key structure is different, key doesn't end with @momentum string, e.g. @000
 assert not h5jack.STILLSUB , "Vacuum subtraction not backwards compatible with this option"
@@ -152,6 +152,7 @@ jackknifeOPS.complete = False
 
 def main():
     """do program"""
+    analyze()
 
 
 if __name__ == '__main__':

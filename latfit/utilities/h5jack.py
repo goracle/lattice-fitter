@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = True
 TEST44 = False
+TEST44 = True
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
