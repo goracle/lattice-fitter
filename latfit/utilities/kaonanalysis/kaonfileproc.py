@@ -1,5 +1,6 @@
 """Process kaon files"""
 
+from collections import defaultdict
 from latfit.utilities.h5jack import LT as LT_CHECK
 import kaonprojop
 import kaonpostproc as kpp
@@ -52,7 +53,6 @@ def procSigmaType23(type23, trajl, otype):
                 else:
                     print("bad type given for sigma diagram:", otype)
                     raise
-    return ret
 
 def proctype123(type123, trajl, otype):
     """Process type 1 diagrams into Q_i pieces"""
@@ -83,14 +83,15 @@ def proctype123(type123, trajl, otype):
                 elif otype == 'type3':
                     kpp.QOPI0[str(i)][keyirr][num] +=  projectkop.QiprojType3(t1arr, i, 'I0')
                     kpp.QOPI2[str(i)][keyirr][num] +=  projectkop.QiprojType3(t1arr, i, 'I2')
-                elif otype == 'mix3':
-                    ret = projectkop.QiprojType3(t1arr, i, 'I0')
-    return ret
+                else:
+                    print("bad otype =", otype)
+                    raise
 
 def proctype4(type4, trajl, avgtk=False):
     """Process type 4"""
     ltraj = len(trajl)
     shape = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
+    type4dict = {}
     type4dict = defaultdict(lambda: np.zeros(shape, dtype=np.complex), type4dict)
     for num, traj in enumerate(trajl):
         for momdiag in type4:
@@ -104,10 +105,11 @@ def proctype4(type4, trajl, avgtk=False):
 
     return type4dict
 
-def procmix(mix, trajl, tkavg=False):
+def procmix4(mix, trajl, tkavg=False):
     """processes the mix4 diagrams"""
     ltraj = len(trajl)
     shape = (ltraj, 2, LT_CHECK, LT_CHECK)
+    mixdict = {}
     mixdict = defaultdict(lambda: np.zeros(shape, dtype=np.complex), mixdict)
     for num, traj in enumerate(trajl):
         for momdiag in mix:

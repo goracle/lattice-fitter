@@ -48,31 +48,38 @@ def analyze():
     for filt in purefilterlist:
         diags[filt] = filterDiags(filt, diags_unfiltered)
     diags['mix4'] = filterDiags('mix4', diags['type4'])
+    assert diags['mix4'], "Mix 4 diagrams missing."
     diags['mix3'] = filterDiags('mix3', diags['type3'])
+    assert diags['mix3'], "Mix 3 diagrams missing."
     diags['mix3sigma'] = filterDiags('sigma', diags['mix3'])
+    assert diags['mix3sigma'], "Mix 3 sigma diagrams missing."
     diags['mix3'] = filterOutSigma(diags['mix3'])
     diags['pipibubbles'] = filterDiags('Vdis', diags_unfiltered)
     diags['sigmabubbles'] = filterDiags('scalar-bubble', diags_unfiltered)
-    diags['type2sigma'] = filterDiags('sigma' in diags['type2'])
+    diags['type2sigma'] = filterDiags('sigma', diags['type2'])
     diags['type2'] = filterOutSigma(diags['type2'])
-    diags['type3simga'] = filterDiags('sigma', diags['type3'])
+    diags['type3sigma'] = filterDiags('sigma', diags['type3'])
     diags['type3'] = filterOutSigma(diags['type3'])
 
-    sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'])
-    pipibubbles = h5jack.getbubbles(diags['pipibubbles'])
+    sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'], trajl)
+    pipibubbles = h5jack.getbubbles(diags['pipibubbles'], trajl)
 
-    # zeros the output
-    for i in range(10):
+    # zeros the output to be safe
+    for i in np.arange(1, 11):
         for keyirr in kpp.QOPI0[str(i)]: # max momentum is 2
-            kpp.QOPI0[str(i)][keyirr] = np.zeros((len(trajl), LT_CHECK), dtype=np.complex)
-            kpp.QOPI2[str(i)][keyirr] = np.zeros((len(trajl), LT_CHECK), dtype=np.complex)
+            kpp.QOPI0[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
+                                                    kpp.QOPI0[str(i)])
+            kpp.QOPI2[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
+                                                    kpp.QOPI2[str(i)])
+            kpp.QOP_sigma[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
+                                                        kpp.QOP_sigma[str(i)])
 
     # add type 1,2,3 to the output
     kfp.proctype123(diags['type1'], trajl, 'type1')
     kfp.proctype123(diags['type2'], trajl, 'type2')
     kfp.proctype123(diags['type3'], trajl, 'type3')
-    kfp.procSigmatype23(diags['type2sigma'], trajl, 'type2sigma')
-    kfp.procSigmatype23(diags['type3sigma'], trajl, 'type3sigma')
+    kfp.procSigmaType23(diags['type2sigma'], trajl, 'type2sigma')
+    kfp.procSigmaType23(diags['type3sigma'], trajl, 'type3sigma')
 
     # form single jackknife blocks of the operators, which should be only projected types 1,2,3
     jackknifeOPS()
@@ -93,8 +100,9 @@ def analyze():
     kaonvac.vacSubtractType4(diags['type4_unsummed'], sigmabubbles, trajl, 'sigma')
 
     # do mix subtraction
-    kaonmix.mixSubtract(alpha_ktopipi, diags['mix3'], mix4to_pipi, 'pipi')
-    kaonmix.mixSubtract(alpha_ktopipi, diags['mix3'], mix4to_sigma, 'pipi')
+    assert jackknifeOPS.complete, "Operators need to be jackknifed before mix subtraction."
+    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi')
+    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi')
 
     # write the results
     kpp.writeOut()
@@ -108,8 +116,8 @@ def get_kdiscon_fromfile(diags, trajl):
     # get mix diagrams from file
     diags['mix3'] = kfp.proctype123(diags['mix3'], trajl, 'mix3') # avg over Tk
     diags['mix3sigma'] = kfp.proctype123(diags['mix3sigma'], trajl, 'mix3') # avg over Tk
-    diags['mix4_unsummed'] = kfp.procmix(diags['mix4'], trajl, 'mix4', False)
-    diags['mix4_summed'] = kfp.procmix(diags['mix4'], trajl, 'mix4', True)
+    diags['mix4_unsummed'] = kfp.procmix4(diags['mix4'], trajl, False)
+    diags['mix4_summed'] = kfp.procmix4(diags['mix4'], trajl, True)
     return diags
 
 

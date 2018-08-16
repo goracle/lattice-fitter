@@ -3,20 +3,21 @@
 import kaonfileproc as kfp
 import kaonpostproc as kpp
 import latfit.utilities.h5jack
+from latfit.utilities.h5jack import LT as LT_CHECK
 import kaonprojop
-from kaonanalysis import LT_CHECK
+import numpy as np
 
 def vacSubtractMix4(mix4dict, sinkbubbles, trajl):
     """Vacuum subtract type4"""
 
-    sinksub = bubsub(sinkbubbles)
+    sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
     ltraj = len(trajl)
 
     # jackknife type 4
 
     aftersub = {}
-    for time in range(LT_CHECK):
-        aftersub[subkey] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
+    #for time in range(LT_CHECK):
+    #    aftersub[subkey] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
     for momdiag in mix4dict:
         aftersub[momdiag] = np.zeros((ltraj, 2, LT_CHECK), dtype=np.complex)
         for fidx in range(2): # loop over gamma structure in the mix diagram (g5, unit)
@@ -53,11 +54,9 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
 
     # to do, loop over tsep_kpi
 
-    sinksub = bubsub(sinkbubbles)
+    sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
 
     aftersub = {}
-    for time in range(LT_CHECK):
-        aftersub[subkey] = np.zeros((ltraj, 8, 4, LT_CHECK), dtype=np.complex)
     for momdiag in type4dict:
         for conidx in range(8):
             for gcombidx in range(4):
@@ -80,6 +79,7 @@ def vacSubtractType4(type4dict, sinkbubbles, trajl, otype):
                     # now, use the result to create type4 diagrams with defined tsep_kpi
                     for tsep_kpi in range(LT_CHECK):
                         subkey = momdiag+"_deltat_"+str(tsep_kpi)
+                        aftersub[subkey] = np.zeros((len(trajl), 8, 4, LT_CHECK), dtype=np.complex)
                         aftersub[subkey][:, conidx, gcombidx, tdis] = bubblk[:, tsep_kpi]
 
     # project finally onto the operators

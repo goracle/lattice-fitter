@@ -1,7 +1,9 @@
 """Does the kaon mix3/4 uv divergence subtraction"""
 
+import numpy as np
 import kaonpostproc as kpp
 import kaonfileproc as kfp
+import kaonanalysis
 
 def mixCoeffs(type4, mix4, trajl, fidx):
     """Extract the jackknifed alpha_i
@@ -37,8 +39,6 @@ def mixCoeffs(type4, mix4, trajl, fidx):
 
 def mixSubtract(alpha, mix3, mix4tox, otype):
     """Subtract mix diagrams, assumes we've jackknifed the operators"""
-
-    assert jackknifeOPS.complete, "Operators need to be jackknifed before mix subtraction."
 
     # mix3 = Isospin0ProjMix3(mix3) # useless
     # mix4tox = Isospin0ProjMix4(mix4tox) # useless
