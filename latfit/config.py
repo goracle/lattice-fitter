@@ -16,18 +16,18 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # Plot Effective Mass? True or False
 
-EFF_MASS = False
 EFF_MASS = True
+EFF_MASS = False
 EFF_MASS = True if GEVP else EFF_MASS
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
@@ -87,6 +87,8 @@ misc.MASS = PION_MASS/AINVERSE
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
+#print(misc.dispersive([0,1,1]))
+#sys.exit(0)
 
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
@@ -175,7 +177,7 @@ else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
-        START_PARAMS = [1.18203895, 0.046978036e-01]
+        START_PARAMS = [8.18203895e6, 4.6978036e-01]
 
 
 
@@ -269,6 +271,7 @@ else:
 # calculate the I=0 phase shift?
 CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
+CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = False
@@ -430,6 +433,7 @@ UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
 UP.lent = LT
+UP.gevp = GEVP
 FITS.select(UP)
 
 # END DO NOT MODIFY
@@ -523,24 +527,24 @@ else:
                 if PIONRATIO:
                     def prefit_func(ctime, trial_params):
                         """Pion ratio"""
-                        return RESCALE*FITS[
+                        return RESCALE*FITS.f[
                             'pion_ratio'](ctime, trial_params)
                 else:
                     def prefit_func(ctime, trial_params):
                         """Rescaled exp fit function."""
-                        return RESCALE*FITS[
+                        return RESCALE*FITS.f[
                             'fit_func_exp'](ctime, trial_params)
             else:
                 if PIONRATIO:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
                         exponential fit function."""
-                        return FITS['pion_ratio'](ctime, trial_params)
+                        return FITS.f['pion_ratio'](ctime, trial_params)
                 else:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
                         exponential fit function."""
-                        return FITS['fit_func_exp'](ctime, trial_params)
+                        return FITS._select['fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
