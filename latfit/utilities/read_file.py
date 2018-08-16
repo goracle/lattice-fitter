@@ -209,7 +209,7 @@ def getmomstr(filename):
     return pstr
 
 
-def mom(filename):
+def mom(filename, printerr=True):
     """returns momentum of filename in the form of an int array
     """
     kmat = re.search(r'mom1((_?\d+){3})', filename)
@@ -223,8 +223,9 @@ def mom(filename):
     elif nmat:
         pret = procmom(nmat.group(1))
     else:
-        print("Error: bad filename= '"+str(
-            filename)+"' no momenta found.  Attempting to continue.")
+        if printerr:
+            print("Error: bad filename= '"+str(
+                filename)+"' no momenta found.  Attempting to continue.")
         pret = None
     return pret
 

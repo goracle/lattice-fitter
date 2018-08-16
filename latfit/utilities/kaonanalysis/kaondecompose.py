@@ -37,22 +37,23 @@ def decompose(array, ncontract, avgTk=False, tstep=1):
     """
     ret = {}
     idx_prev = -1
-    for condix in range(ncontract):
-        for gcombidx in range(4):
-            for tdis in range(LT_CHECK):
-                for timek in range(LT_CHECK):
-                    idx = mapres(condix, gcombidx, tdis, timek, ncontract)
-                    assert idx == idx_prev+1, "Index is running too fast."
+    for timek in range(LT_CHECK):
+        for tdis in range(LT_CHECK):
+            for gcombidx in range(4):
+                for conidx in range(ncontract):
+                    idx = mapres(conidx, gcombidx, tdis, timek, ncontract)
+                    assert idx == idx_prev+1,\
+                        "Index is running too fast:"+str(
+                            idx)+","+str(idx_prev)
                     if avgTk:
                         if timek == 0:
-                            ret[(condix, gcombidx, tdis)] = array[idx]
+                            ret[(conidx, gcombidx, tdis)] = array[idx]
                         else:
                             ret[(conidx, gcombidx, tdis)] += array[idx]
+                        ret[(conidx, gcombidx, tdis)] /= LT_CHECK/tstep
                     else:
-                        ret[(condix, gcombidx, tdis, timek)] = array[idx]
+                        ret[(conidx, gcombidx, tdis, timek)] = array[idx]
                     idx_prev = idx
-                if avgTk:
-                    ret[(conidx, gcombidx, tdis)] /= LT_CHECK/tstep
     return ret
 
 def mapres(conidx, gcombidx, tdis, timek, ncontract):

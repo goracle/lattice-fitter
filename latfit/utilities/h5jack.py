@@ -273,7 +273,7 @@ def getbubl(fn1):
         #    basen = fn1[dat].attrs['basename']
         #except KeyError:
         basen = rf.basename(dat)
-        if 'Vdis' in basen or 'bubble' in basen:
+        if 'Vdis' in basen or 'bubble' in basen or 'type' in basen:
             #if len(fn1[dat].shape) == 1 and basen:
             bubl.add(basen)
     return bubl

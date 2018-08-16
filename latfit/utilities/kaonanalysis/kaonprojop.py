@@ -1,5 +1,7 @@
 """Container for operator projection (isospin coefficients)"""
 
+import math
+import numpy as np
 from latfit.utilities.h5jack import LT as LT_CHECK
 print("Imported projectkop with LT=", LT_CHECK)
 
@@ -17,8 +19,8 @@ def QiprojType1(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for gcombidx, gfac in enumerate(gfactor):
-            f_tdis = piecies[(0+idxplus, gcombidx, tdis)] # f
-            fp_tdis = piecies[(2+idxplus, gcombidx, tdis)] # f'
+            f_tdis = pieces[(0+idxplus, gcombidx, tdis)] # f
+            fp_tdis = pieces[(2+idxplus, gcombidx, tdis)] # f'
             if i in [1, 2]:
 
                 if isostr == 'I0': #  [ f+2f' ] *(-1)/sqrt(3) 
@@ -63,8 +65,8 @@ def QiprojType2(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            h_tdis = piecies[(0+idxplus, g, tdis)]
-            hp_tdis = piecies[(2+idxplus, g, tdis)]
+            h_tdis = pieces[(0+idxplus, g, tdis)]
+            hp_tdis = pieces[(2+idxplus, g, tdis)]
             if i in [1, 2]:
 
                 if isostr == 'I0': # 3/sqrt(3) * h
@@ -102,8 +104,8 @@ def QiprojSigmaType2(pieces, i):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            h_tdis = piecies[(0+idxplus, g, tdis)]
-            hp_tdis = piecies[(2+idxplus, g, tdis)]
+            h_tdis = pieces[(0+idxplus, g, tdis)]
+            hp_tdis = pieces[(2+idxplus, g, tdis)]
             if i in [1, 2]:
 
                 # 1/sqrt(2) * h
@@ -131,10 +133,10 @@ def QiprojSigmaType3(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            i_tdis = piecies[(0+idxplus, g, tdis)] # i
-            ip_tdis = piecies[(2+idxplus, g, tdis)] # i'
-            I_tdis = piecies[(4+idxplus, g, tdis)] # I
-            ip_tdis = piecies[(6+idxplus, g, tdis)] # I'
+            i_tdis = pieces[(0+idxplus, g, tdis)] # i
+            ip_tdis = pieces[(2+idxplus, g, tdis)] # i'
+            I_tdis = pieces[(4+idxplus, g, tdis)] # I
+            ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
 
             if i in [1, 2]:
 
@@ -168,11 +170,11 @@ def Isospin0ProjMix3(mix3, opposite=False):
     for momdiag in mix3:
         pieces = mix3[momdiag]
         if opposite:
-            ret[momdiag][1, :] = piecies[1,:] * (-3.0/math.sqrt(3))
-            ret[momdiag][0, :] = piecies[0,:] * (-1.0/math.sqrt(2))
+            ret[momdiag][1, :] = pieces[1,:] * (-3.0/math.sqrt(3))
+            ret[momdiag][0, :] = pieces[0,:] * (-1.0/math.sqrt(2))
         else:
-            ret[momdiag][0, :] = piecies[0,:] * (-3.0/math.sqrt(3))
-            ret[momdiag][1, :] = piecies[1,:] * (-1.0/math.sqrt(2))
+            ret[momdiag][0, :] = pieces[0,:] * (-3.0/math.sqrt(3))
+            ret[momdiag][1, :] = pieces[1,:] * (-1.0/math.sqrt(2))
     return ret
 
 def Isospin0ProjMix4(mix4, opposite=False):
@@ -188,11 +190,11 @@ def Isospin0ProjMix4(mix4, opposite=False):
     for momdiag in mix4:
         pieces = mix4[momdiag]
         if opposite:
-            ret[momdiag][1, :] = piecies[1,:] * (3.0/math.sqrt(3))
-            ret[momdiag][0, :] = piecies[0,:] * (2.0/math.sqrt(2))
+            ret[momdiag][1, :] = pieces[1,:] * (3.0/math.sqrt(3))
+            ret[momdiag][0, :] = pieces[0,:] * (2.0/math.sqrt(2))
         else:
-            ret[momdiag][0, :] = piecies[0,:] * (3.0/math.sqrt(3))
-            ret[momdiag][1, :] = piecies[1,:] * (2.0/math.sqrt(2))
+            ret[momdiag][0, :] = pieces[0,:] * (3.0/math.sqrt(3))
+            ret[momdiag][1, :] = pieces[1,:] * (2.0/math.sqrt(2))
     return ret
 
 
@@ -203,10 +205,10 @@ def QiprojType3(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            i_tdis = piecies[(0+idxplus, g, tdis)] # i
-            ip_tdis = piecies[(2+idxplus, g, tdis)] # i'
-            I_tdis = piecies[(4+idxplus, g, tdis)] # I
-            ip_tdis = piecies[(6+idxplus, g, tdis)] # I'
+            i_tdis = pieces[(0+idxplus, g, tdis)] # i
+            ip_tdis = pieces[(2+idxplus, g, tdis)] # i'
+            I_tdis = pieces[(4+idxplus, g, tdis)] # I
+            ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
 
             if i in [1, 2]:
 
@@ -245,10 +247,10 @@ def QiprojType4(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            g_tdis = piecies[0+idxplus, g, tdis]
-            gp_tdis = piecies[2+idxplus, g, tdis]
-            G_tdis = piecies[4+idxplus, g, tdis]
-            Gp_tdis = piecies[6+idxplus, g, tdis]
+            g_tdis = pieces[0+idxplus, g, tdis]
+            gp_tdis = pieces[2+idxplus, g, tdis]
+            G_tdis = pieces[4+idxplus, g, tdis]
+            Gp_tdis = pieces[6+idxplus, g, tdis]
             if i in [1, 2]:
 
                 if isostr == 'I0': # g * -3/sqrt(3) 
@@ -283,10 +285,10 @@ def QiprojSigmaType4(pieces, i, isostr):
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
     for tdis in range(LT_CHECK): # tdis distance to op
         for g, gfac in enumerate(gfactor):
-            g_tdis = piecies[(0+idxplus, g, tdis)]
-            gp_tdis = piecies[(2+idxplus, g, tdis)]
-            G_tdis = piecies[(4+idxplus, g, tdis)]
-            Gp_tdis = piecies[(6+idxplus, g, tdis)]
+            g_tdis = pieces[(0+idxplus, g, tdis)]
+            gp_tdis = pieces[(2+idxplus, g, tdis)]
+            G_tdis = pieces[(4+idxplus, g, tdis)]
+            Gp_tdis = pieces[(6+idxplus, g, tdis)]
             if i in [1, 2]:
 
                 # g * -2/sqrt(2) 

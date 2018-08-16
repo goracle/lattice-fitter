@@ -47,32 +47,52 @@ def analyze():
     purefilterlist = ['type1', 'type2', 'type3', 'type4']
     for filt in purefilterlist:
         diags[filt] = filterDiags(filt, diags_unfiltered)
+        assert diags[filt], str(filt)+" diagrams missing from base set."
+
     diags['mix4'] = filterDiags('mix4', diags['type4'])
-    assert diags['mix4'], "Mix 4 diagrams missing."
+    assert diags['mix4'], "Mix 4 diagrams missing from base set."
+
     diags['mix3'] = filterDiags('mix3', diags['type3'])
     assert diags['mix3'], "Mix 3 diagrams missing."
+
     diags['mix3sigma'] = filterDiags('sigma', diags['mix3'])
     assert diags['mix3sigma'], "Mix 3 sigma diagrams missing."
+
     diags['mix3'] = filterOutSigma(diags['mix3'])
+    assert diags['mix3'], "Mix 3 diagrams missing."
+
     diags['pipibubbles'] = filterDiags('Vdis', diags_unfiltered)
+    assert diags['pipibubbles'], "pipi bubbles missing."
+
     diags['sigmabubbles'] = filterDiags('scalar-bubble', diags_unfiltered)
+    assert diags['sigmabubbles'], "sigma bubbles missing."
+
     diags['type2sigma'] = filterDiags('sigma', diags['type2'])
+    assert diags['type2sigma'], "type 2 sigma missing."
+
     diags['type2'] = filterOutSigma(diags['type2'])
+    assert diags['type2'], "type 2 missing."
+
     diags['type3sigma'] = filterDiags('sigma', diags['type3'])
+    assert diags['type3sigma'], "type 3 sigma missing."
+
     diags['type3'] = filterOutSigma(diags['type3'])
+    assert diags['type2'], "type 3 missing."
 
     sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'], trajl)
     pipibubbles = h5jack.getbubbles(diags['pipibubbles'], trajl)
 
     # zeros the output to be safe
     for i in np.arange(1, 11):
-        for keyirr in kpp.QOPI0[str(i)]: # max momentum is 2
-            kpp.QOPI0[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
-                                                    kpp.QOPI0[str(i)])
-            kpp.QOPI2[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
-                                                    kpp.QOPI2[str(i)])
-            kpp.QOP_sigma[str(i)][keyirr] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex),
-                                                        kpp.QOP_sigma[str(i)])
+
+        kpp.QOPI0[str(i)] = defaultdict(lambda: np.zeros(
+            (len(trajl), LT_CHECK), dtype=np.complex))
+
+        kpp.QOPI2[str(i)] = defaultdict(lambda: np.zeros(
+            (len(trajl), LT_CHECK), dtype=np.complex))
+
+        kpp.QOP_sigma[str(i)] = defaultdict(lambda: np.zeros(
+            (len(trajl), LT_CHECK), dtype=np.complex))
 
     # add type 1,2,3 to the output
     kfp.proctype123(diags['type1'], trajl, 'type1')
