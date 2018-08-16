@@ -69,7 +69,8 @@ def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
 
-    plotdata = update_result_min_nofit(plotdata)
+    if GEVP:
+        plotdata = update_result_min_nofit(plotdata)
 
     # GET COORDS
     error2 = get_prelim_errbars(result_min)
