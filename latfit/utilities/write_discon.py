@@ -16,7 +16,7 @@ import combine as cb
 
 def comb_fig(dsrc, dsnk):
     """Get combined figure name from bubble figure names."""
-    figsrc = rf.figure(dsrc)
+    figsrc = rf.figure(dsrc) if 'type' not in  dsrc and 'mix' not in dsrc else dsrc
     figsnk = rf.figure(dsnk)
     if figsrc == 'scalar-bubble' and figsnk == 'scalar-bubble':
         retval = 'Bub2'
@@ -28,6 +28,8 @@ def comb_fig(dsrc, dsnk):
         retval = 'V'
     elif 'type4' in figsrc and figsnk == 'Vdis':
         retval = 'type4'
+    elif 'type4' in figsrc and figsnk == 'scalar-bubble':
+        retval = 'type4sigma'
     else:
         print("***ERROR***")
         print("write_discon:comb_fig: naming error:", figsrc, figsnk)
