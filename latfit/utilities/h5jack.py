@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = False
 TEST44 = True
+TEST44 = False
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
@@ -90,8 +90,9 @@ THERMNUM = THERMNUM if not TEST24C else 0
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
 # max time distance between (inner) particles
-TDIS_MAX = -1
+TDIS_MAX = 64
 TDIS_MAX = 16
+
 
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
@@ -162,6 +163,10 @@ def fill_write_block(fndef=FNDEF):
 WRITEBLOCK = []
 WRITEBLOCK = ['pioncorrChk_mom000']
 WRITEBLOCK = fill_write_block(FNDEF)
+# only write the single particle correlators
+WRITE_INDIVIDUAL = False
+WRITE_INDIVIDUAL = True
+TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 
 # debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -655,14 +660,15 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         traj = convert_traj(traj)
         filekey = get_file_name(traj)
         try:
-            outarr = np.asarray(fn1['traj_'+str(traj)+'_'+base][:, TDIS_MAX+1])
+            outarr = np.asarray(fn1['traj_'+str(
+                traj)+'_'+base][:, :TDIS_MAX+1])
         except:
             namec = 'traj_'+str(traj)+'_'+base
             print(namec in fn1)
             print(fn1[namec])
             raise
         outtemp = np.zeros((LT, LT), dtype=np.complex)
-        outtemp[:, TDIS_MAX+1] = outarr
+        outtemp[:, :TDIS_MAX+1] = outarr
         outarr = outtemp
     #    except KeyError:
     #        skip.append(i)
@@ -1082,8 +1088,15 @@ def find_unused(ocs, allkeys, auxkeys, fig=None):
 def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
     bubl = bublist()
+    bubl = set() if WRITE_INDIVIDUAL else bubl
     trajl = trajlist(getexactconfigs, getsloppysubtraction)
     basl = baselist()
+    if WRITE_INDIVIDUAL:
+        basl_new = set()
+        for base in basl:
+            if base in WRITEBLOCK:
+                basl_new.add(base)
+        basl = basl_new
     numt = len(trajl)
     openlist = {}
     # this speeds things up but h5py appears to be broken here (gives an error)
@@ -1238,6 +1251,7 @@ def main(fixn=True):
         sloppysubtractionblks, numt = get_data(False, True)
         allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
     check_diag = "FigureCv3_sep"+str(TSEP)+"_momsrc_100_momsnk000" # sanity check
+    check_diag = WRITEBLOCK[0] if WRITE_INDIVIDUAL else check_diag
     if MPIRANK == 0: # write only needs one process, is fast
         assert check_diag in allblks, "sanity check not passing, missing:"+str(check_diag)
         print('check_diag shape=', allblks[check_diag].shape)
@@ -1253,35 +1267,36 @@ def main(fixn=True):
                     continue
                 h5write_blk(allblks[single_block],
                             single_block, extension='.jkdat', ocs=None)
-        # allblks = {**mostblks, **bubblks} # for gparity
-        ocs = overall_coeffs(
-            isoproj(fixn, 0, dlist=list(
-                allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
-        # do a checksum to make sure we have all the diagrams we need
-        for i in ocs:
-            print(i)
-        check_count_of_diagrams(ocs, "I0")
-        check_count_of_diagrams(ocs, "I2")
-        check_count_of_diagrams(ocs, "I1")
-        check_match_oplist(ocs)
-        check_inner_outer(
-            ocs, allblks.keys() | set(), auxblks.keys() | set())
-        unused = set()
-        for fig in ['FigureR' 'FigureC' 'FigureD',
-                    # 'FigureV', 'FigureCv3', 'FigureCv3R',
-                    'FigureBub2', 'FigureT']:
-            unused = find_unused(
-                ocs, allblks.keys() | set(),
-                auxblks.keys() | set(), fig=fig).union(unused)
-        for useless in sorted(list(unused)):
-            print("unused diagram:", useless)
-        print("length of unused=", len(unused))
-        assert len(unused) == 0, "Unused diagrams exist."
-        if TESTKEY:
-            buberr(allblks)
-            sys.exit(0)
-        h5sum_blks(allblks, ocs, (numt, LT))
-        avg_irreps()
+        if not WRITE_INDIVIDUAL:
+            # allblks = {**mostblks, **bubblks} # for gparity
+            ocs = overall_coeffs(
+                isoproj(fixn, 0, dlist=list(
+                    allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+            # do a checksum to make sure we have all the diagrams we need
+            for i in ocs:
+                print(i)
+            check_count_of_diagrams(ocs, "I0")
+            check_count_of_diagrams(ocs, "I2")
+            check_count_of_diagrams(ocs, "I1")
+            check_match_oplist(ocs)
+            check_inner_outer(
+                ocs, allblks.keys() | set(), auxblks.keys() | set())
+            unused = set()
+            for fig in ['FigureR' 'FigureC' 'FigureD',
+                        # 'FigureV', 'FigureCv3', 'FigureCv3R',
+                        'FigureBub2', 'FigureT']:
+                unused = find_unused(
+                    ocs, allblks.keys() | set(),
+                    auxblks.keys() | set(), fig=fig).union(unused)
+            for useless in sorted(list(unused)):
+                print("unused diagram:", useless)
+            print("length of unused=", len(unused))
+            assert len(unused) == 0, "Unused diagrams exist."
+            if TESTKEY:
+                buberr(allblks)
+                sys.exit(0)
+            h5sum_blks(allblks, ocs, (numt, LT))
+            avg_irreps()
 
 @PROFILE
 def avg_irreps():
