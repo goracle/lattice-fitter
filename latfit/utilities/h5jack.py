@@ -813,6 +813,7 @@ def getdiscon_name(dsrc_split, dsnk_split):
     ptot = rf.procmom(dsrc_split[1])
     ptot2 = rf.procmom(dsnk_split[1])
     dsrc = dsrc_split[0]
+    dsrc = re.sub('type4', 'type4_mom'+rf.ptostr(ptot), dsrc)
     dsnk = dsnk_split[0]
     if not (ptot[0] == -1*ptot2[0] and
             ptot[1] == -1*ptot2[1] and
@@ -833,8 +834,10 @@ def getdiscon_name(dsrc_split, dsnk_split):
         except TypeError:
             sepval = -1
             sepstr = ''
-        discname = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc), rf.mom(dsnk))
-        discname = outfig if 'type4' in outfig else discname
+        discname = None
+        if outfig is not None:
+            discname = "Figure"+outfig+sepstr+wd.dismom(rf.mom(dsrc),
+                                                        rf.mom(dsnk))
     if discname == TESTKEY:
         print(dsrc, dsnk, sepval)
     return discname, sepval
