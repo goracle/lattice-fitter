@@ -161,7 +161,7 @@ elif EFF_MASS_METHOD == 4:
         This is the conventional effective mass formula.
         """
         try:
-            sol = FITS.f['ratio'](corrs, times) if index is None else FITS.f[
+            sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
         except:
             errstr = "bad time/op"+\
