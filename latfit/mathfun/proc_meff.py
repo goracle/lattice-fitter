@@ -141,6 +141,7 @@ elif EFF_MASS_METHOD == 4:
     EFF_MASS_TOMIN = []
     for i, j in enumerate(ADD_CONST_VEC):
         tstep = None
+        tstep2 = None
         if MATRIX_SUBTRACTION and GEVP:
             j = 1
             tstep = -DELTA_T_MATRIX_SUBTRACTION
