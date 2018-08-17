@@ -98,7 +98,6 @@ def QiprojType2(pieces, i, isostr):
 
 def QiprojSigmaType2(pieces, i):
     """Project the type2 sigma onto operator Qi"""
-    assert False, "not written yet."
     ret = np.zeros((LT_CHECK), dtype=np.complex)
     gfactor = getGfac(i)
     idxplus = (1 + i) % 2 # switch between color diagonal and mixed
@@ -126,7 +125,7 @@ def QiprojSigmaType2(pieces, i):
 
 
 
-def QiprojSigmaType3(pieces, i, isostr):
+def QiprojSigmaType3(pieces, i):
     """Project onto Q_i (k->sigma), type3"""
     ret = np.zeros((LT_CHECK), dtype=np.complex)
     gfactor = getGfac(i)
@@ -136,7 +135,7 @@ def QiprojSigmaType3(pieces, i, isostr):
             i_tdis = pieces[(0+idxplus, g, tdis)] # i
             ip_tdis = pieces[(2+idxplus, g, tdis)] # i'
             I_tdis = pieces[(4+idxplus, g, tdis)] # I
-            ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
+            Ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
 
             if i in [1, 2]:
 
@@ -208,7 +207,7 @@ def QiprojType3(pieces, i, isostr):
             i_tdis = pieces[(0+idxplus, g, tdis)] # i
             ip_tdis = pieces[(2+idxplus, g, tdis)] # i'
             I_tdis = pieces[(4+idxplus, g, tdis)] # I
-            ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
+            Ip_tdis = pieces[(6+idxplus, g, tdis)] # I'
 
             if i in [1, 2]:
 
@@ -278,7 +277,7 @@ def QiprojType4(pieces, i, isostr):
             ret[tdis] *= gfac
     return ret
 
-def QiprojSigmaType4(pieces, i, isostr):
+def QiprojSigmaType4(pieces, i):
     """Project onto Q_i (k->sigma), type4"""
     ret = np.zeros((LT_CHECK), dtype=np.complex)
     gfactor = getGfac(i)
