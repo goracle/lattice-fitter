@@ -238,8 +238,7 @@ def QiprojType3(pieces, i, isostr):
 
 
 
-
-def QiprojType4(pieces, i, isostr):
+def QiprojType4(pieces, i):
     """Project onto Q_i (k->pipi), type4"""
     ret = np.zeros((LT_CHECK), dtype=np.complex)
     gfactor = getGfac(i)
@@ -252,27 +251,18 @@ def QiprojType4(pieces, i, isostr):
             Gp_tdis = pieces[6+idxplus, g, tdis]
             if i in [1, 2]:
 
-                if isostr == 'I0': # g * -3/sqrt(3) 
-                    ret[tdis] +=  g_tdis * (-3.0)/(math.sqrt(3))
-
-                elif isostr == 'I2': # g * 0
-                    ret[tdis] += 0
+                # g * -3/sqrt(3) 
+                ret[tdis] +=  g_tdis * (-3.0)/(math.sqrt(3))
 
             elif i in [3, 4]: 
 
-                if isostr == 'I0': # -6 g /sqrt(3) + 3 g'/sqrt(3) - 3G/sqrt(3) + 3G'/sqrt(3) = [ -2g+g'-G+G' ] * 3/sqrt(3)  
-                    ret[tdis] += ( -2*g_tdis + gp_tdis - G_tdis + Gp_tdis) * 3.0/math.sqrt(3)
-
-                elif isostr == 'I2': # 2*Q1 = 2*0*h
-                    ret[tdis] += 0
+                # -6 g /sqrt(3) + 3 g'/sqrt(3) - 3G/sqrt(3) + 3G'/sqrt(3) = [ -2g+g'-G+G' ] * 3/sqrt(3)  
+                ret[tdis] += ( -2*g_tdis + gp_tdis - G_tdis + Gp_tdis) * 3.0/math.sqrt(3)
 
             elif i in [7, 8, 9, 10]: # ew penguin
 
-                if isostr == 'I0': # 3/2 [ Q1 (e_d+e_u) - (G-G') * e_s * 3/sqrt(3)+ g'* e_d * 3/sqrt(3) ] = [ -g-g' + G-G'  ] 3/(2*sqrt(3))
-                    ret[tdis] += (-g_tdis-gp_tdis+G_tdis-Gp_tdis) * 3.0/2.0/math.sqrt(3)
-
-                elif isostr == 'I2': # 3/2 Q1 (e_d+e_u) = 0 g
-                    ret[tdis] +=  0
+                # 3/2 [ Q1 (e_d+e_u) - (G-G') * e_s * 3/sqrt(3)+ g'* e_d * 3/sqrt(3) ] = [ -g-g' + G-G'  ] 3/(2*sqrt(3))
+                ret[tdis] += (-g_tdis-gp_tdis+G_tdis-Gp_tdis) * 3.0/2.0/math.sqrt(3)
 
             ret[tdis] *= gfac
     return ret

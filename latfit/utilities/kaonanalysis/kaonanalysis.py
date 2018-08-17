@@ -123,9 +123,9 @@ def analyze():
     # do the mix4 vacuum subtraction, bubble composition,
     # tK time averaging, jackknifing
     mix4to_pipi = kaonvac.vacSubtractMix4(diags['mix4_unsummed'],
-                                          pipibubbles, trajl)
+                                          pipibubbles, trajl, 'pipi')
     mix4to_sigma = kaonvac.vacSubtractMix4(diags['mix4_unsummed'],
-                                           sigmabubbles, trajl)
+                                           sigmabubbles, trajl, 'sigma')
 
     # do vacuum subtraction, jackknife,
     # project resulting type 4 onto operators
@@ -137,8 +137,8 @@ def analyze():
     # do mix subtraction
     assert jackknifeOPS.complete, "Operators need to be jackknifed"+\
         " before mix subtraction."
-    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi')
-    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi')
+    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi', len(trajl))
+    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi', len(trajl))
 
     # write the results
     kpp.writeOut()

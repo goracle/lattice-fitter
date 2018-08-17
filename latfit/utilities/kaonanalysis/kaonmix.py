@@ -1,9 +1,14 @@
 """Does the kaon mix3/4 uv divergence subtraction"""
 
+import sys
+from collections import defaultdict
 import numpy as np
 import kaonpostproc as kpp
 import kaonfileproc as kfp
 import kaonanalysis
+import kaonprojop
+from latfit.utilities.h5jack import LT as LT_CHECK
+from latfit.utilities.h5jack import dojackknife
 
 def mixCoeffs(type4, mix4, trajl, fidx):
     """Extract the jackknifed alpha_i
@@ -16,28 +21,27 @@ def mixCoeffs(type4, mix4, trajl, fidx):
     # shapeT4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
     # shapeM4 = (ltraj, 2, LT_CHECK, LT_CHECK)
 
-    for momdiag in type4: # for plausibly different type4's
+    alpha = defaultdict(lambda: np.zeros((ltraj, LT_CHECK), dtype=np.complex))
 
-        alpha[momdiag] = defaultdict(lambda: np.zeros((trajl, LT_CHECK), dtype=np.complex), alpha[momdiag])
+    for i in np.arange(1, 11): # assumes we've averaged over tk for type4 and mix4
 
-        for i in np.arange(1, 11): # assumes we've averaged over tk for type4 and mix4
+        # project onto Qi
+        projtemp = np.zeros((ltraj, LT_CHECK), dtype=np.complex)
+        for num, traj in enumerate(trajl):
+            projtemp[num] = kaonprojop.QiprojType4(
+                type4[num], i)
 
-            # project onto Qi
-            projtemp = np.zeros((trajl, LT_CHECK), dtype=np.complex)
-            for num, traj in enumerate(trajl):
-                projtemp[num] = kaonprojop.QiprojType4(type4[momdiag][num], i, 'I0')
+        # jackknife the results
+        projtemp = dojackknife(projtemp)
+        jackmix = dojackknife(mix4[:, fidx, :])
 
-            # jackknife the results
-            projtemp = dojackknife(projtemp)
-            jackmix = dojackknife(mix4[momdiag][fidx])
-
-            for num, traj in enumerate(trajl):
-                alpha[momdiag][str(i)][num] = projtemp[num]/jackmix[num]
+        for num, traj in enumerate(trajl):
+            alpha[str(i)][num] = projtemp[num]/jackmix[num]
     return alpha
 
 
 
-def mixSubtract(alpha, mix3, mix4tox, otype):
+def mixSubtract(alpha, mix3, mix4tox, otype, ltraj):
     """Subtract mix diagrams, assumes we've jackknifed the operators"""
 
     # mix3 = Isospin0ProjMix3(mix3) # useless
@@ -49,15 +53,19 @@ def mixSubtract(alpha, mix3, mix4tox, otype):
 
         if otype == 'sigma':
             for momdiag in mix3:
-                kpp.QOP_sigma[str(i)][kfp.genKey(momdiag)] -= alpha[momdiag][str(i)]*mix3[momdiag][:, 0, :] # 0 for pseudoscalar vertex
+                assert mix3[momdiag].shape == (ltraj, 2, LT_CHECK), "bad mix3 shape"
+                kpp.QOP_sigma[str(i)][kfp.genKey(momdiag)] -= alpha[str(i)]*mix3[momdiag][:, 0, :] # 0 for pseudoscalar vertex
             for momdiag in mix4tox:
-                kpp.QOP_sigma[str(i)][kfp.genKey(momdiag)] -= alpha[momdiag][str(i)]*mix4tox[momdiag][:, 0, :]
+                assert mix4tox[momdiag].shape == (ltraj, 2, LT_CHECK), "bad mix4 shape"
+                kpp.QOP_sigma[str(i)][kfp.genKey(momdiag)] -= alpha[str(i)]*mix4tox[momdiag][:, 0, :]
 
         elif otype == 'pipi':
             for momdiag in mix3:
-                kpp.QOPI0[str(i)][kfp.genKey(momdiag)] -= alpha[momdiag][str(i)]*mix3[momdiag][:, 0, :] # 0 for pseudoscalar vertex
+                assert mix3[momdiag].shape == (ltraj, 2, LT_CHECK), "bad mix3 shape"
+                kpp.QOPI0[str(i)][kfp.genKey(momdiag)] -= alpha[str(i)]*mix3[momdiag][:, 0, :] # 0 for pseudoscalar vertex
             for momdiag in mix4tox:
-                kpp.QOPI0[str(i)][kfp.genKey(momdiag)] -= alpha[momdiag][str(i)]*mix4tox[momdiag][:, 0, :]
+                assert mix4tox[momdiag].shape == (ltraj, 2, LT_CHECK), "bad mix4 shape"
+                kpp.QOPI0[str(i)][kfp.genKey(momdiag)] -= alpha[str(i)]*mix4tox[momdiag][:, 0, :]
 
         else:
             assert None, "k->pi not written yet"

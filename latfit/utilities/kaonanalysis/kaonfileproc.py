@@ -30,9 +30,9 @@ def genKey(momdiag):
 
 def deltat(momdiag):
     """find k-pi tsep"""
-    mat = re.search('deltat_(\d)', momdiag)
+    mat = re.search(r'(.*?)deltat_(\d)', momdiag)
     assert mat, "bad diagram name : "+str(momdiag)
-    return int(mat.group(1))
+    return int(mat.group(2))
 
 
 def procSigmaType23(type23, trajl, otype):
@@ -63,6 +63,7 @@ def procSigmaType23(type23, trajl, otype):
 
             ret = None
             for i in np.arange(1, 11):
+                assert str(i) in kpp.QOP_sigma, "Missing Q:"+str(i)
                 if otype == 'type2':
                     kpp.QOP_sigma[str(i)][keyirr][num] +=\
                         kaonprojop.QiprojSigmaType2(t1arr, i)
@@ -80,7 +81,7 @@ def proctype123(type123, trajl, otype):
     type12 = False if '3' in otype else True
     ncontract = 4 if type12 else 8
     ltraj = len(trajl)
-    ret = []
+    ret = defaultdict(lambda: np.zeros((len(trajl), 2, LT_CHECK), dtype=np.complex))
     for num, traj in enumerate(trajl):
         trajstr = 'traj_'+str(traj)
         fn1 = h5py.File(trajstr+'.hdf5', 'r')
@@ -96,7 +97,8 @@ def proctype123(type123, trajl, otype):
             # decompose into pieces,
             # optionally average over tK, type3 has tstep1
             if 'mix' in momdiag:
-                t1arr = kaondecompose.decompose_mix(t1arr, avgTk=True)
+                t1arr = kaondecompose.decompose_mix(t1arr,
+                                                    avgTk=True)
             else:
                 t1arr = kaondecompose.decompose(t1arr,
                                                 ncontract, avgTk=True,
@@ -107,6 +109,8 @@ def proctype123(type123, trajl, otype):
             # so do the projection now onto A1
             keyirr = genKey(momdiag)
             for i in np.arange(1, 11):
+                assert str(i) in kpp.QOPI0, "Missing Q:"+str(i)
+                assert str(i) in kpp.QOPI2, "Missing Q:"+str(i)
                 if otype == 'type1':
                     kpp.QOPI0[str(i)][keyirr][num] +=\
                         kaonprojop.QiprojType1(t1arr, i, 'I0')
@@ -128,10 +132,10 @@ def proctype123(type123, trajl, otype):
                     kpp.QOPI2[str(i)][keyirr][num] +=\
                         kaonprojop.QiprojType3(t1arr, i, 'I2')
                 elif 'mix' in momdiag:
-                    ret.append(t1arr)
+                    ret[momdiag][num] = t1arr
                 else:
                     assert None, "bad otype = "+str(otype)
-    return np.asarray(ret)
+    return ret
 
 def proctype4(type4, trajl, avgTk=False):
     """Process type 4"""
@@ -140,41 +144,35 @@ def proctype4(type4, trajl, avgTk=False):
         shape = (ltraj, 8, 4, LT_CHECK)
     else:
         shape = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
-    type4dict = {}
-    type4dict = defaultdict(lambda: np.zeros(
-        shape, dtype=np.complex), type4dict)
+    type4 = np.zeros(shape, dtype=np.complex)
     for num, traj in enumerate(trajl):
         trajstr = 'traj_'+str(traj)
         fn1 = h5py.File(trajstr+'.hdf5', 'r')
-        for momdiag in type4:
+        t1arr = np.asarray(fn1[trajstr+'_type4'])
 
-            t1arr = np.asarray(fn1[trajstr+'_'+momdiag])
+        # decompose into pieces, optionally average over tK, tstep=1
+        type4[num] = kaondecompose.decompose(t1arr, 8, avgTk, 1)
 
-            # decompose into pieces, optionally average over tK, tstep=1
-            type4dict[momdiag][num] = kaondecompose.decompose(
-                t1arr, 8, avgTk, 1)
+    return type4
 
-    return type4dict
-
-def procmix4(mix, trajl, tKavg=False):
+def procmix4(mix, trajl, avgTk=False):
     """processes the mix4 diagrams"""
     ltraj = len(trajl)
-    shape = (ltraj, 2, LT_CHECK, LT_CHECK)
+    shape = (ltraj, 2, LT_CHECK, LT_CHECK) if not avgTk else (
+        ltraj, 2, LT_CHECK)
     ret = np.zeros(shape, dtype=np.complex)
     for num, traj in enumerate(trajl):
         trajstr = 'traj_'+str(traj)
         fn1 = h5py.File(trajstr+'.hdf5', 'r')
         for momdiag in mix:
-
+            print(momdiag)
             t1arr = np.asarray(fn1[trajstr+'_'+momdiag])
 
             # do some checks
             checkarr(t1arr, False, True)
-            assert shape[1:] == (2, LT_CHECK,
-                                 LT_CHECK), "Bad shape for type 4"
 
             # decompose into pieces, optionally average over tk, tstep=1
-            ret[num] = kaondecompose.decompose_mix(t1arr, tKavg)
+            ret[num] = kaondecompose.decompose_mix(t1arr, avgTk)
 
     return ret
 

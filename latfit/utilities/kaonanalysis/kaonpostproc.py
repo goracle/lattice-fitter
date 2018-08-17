@@ -17,10 +17,11 @@ def writeOut():
     keyarr = []
     for i in np.arange(1, 11):
         for keyirr in QOPI0[str(i)]:
-            keyarr.append(int(keyirr))
-            assert keyirr in QOPI0[str(i)], "tsep = "+keyirr+\
+            momrel, kpitsep = keyirr.split('@')
+            keyarr.append(keyirr)
+            assert keyirr in QOPI0[str(i)], "tsep = "+kpitsep+\
                 " not in Q_"+str(i)+", I=0"
-            assert keyirr in QOPI2[str(i)], "tsep = "+keyirr+\
+            assert keyirr in QOPI2[str(i)], "tsep = "+kpitsep+\
                 " not in Q_"+str(i)+", I=2"
     for key in keyarr:
         momrel, kpitsep = key.split('@')

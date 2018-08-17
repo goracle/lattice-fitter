@@ -9,7 +9,9 @@ def decompose_mix(mixarr, avgTk=False):
     """Decompose mix array into pieces indexed by
     (fidx, tdis, timek)
     """
-    ret = {}
+    ret = np.zeros((
+        2, LT_CHECK, LT_CHECK), np.complex) if not avgTk else np.zeros((
+            2, LT_CHECK), np.complex)
     idx_prev = -1
     for timek in range(LT_CHECK):
         for tdis in range(LT_CHECK):
@@ -19,12 +21,12 @@ def decompose_mix(mixarr, avgTk=False):
                     str(idx)+","+str(idx_prev)
                 if avgTk:
                     if timek == 0:
-                        ret[(fidx, tdis)] = mixarr[idx]
+                        ret[fidx, tdis] = mixarr[idx]
                     else:
-                        ret[(fidx, tdis)] += mixarr[idx]
-                    ret[(fidx, tdis)] /= LT_CHECK
+                        ret[fidx, tdis] += mixarr[idx]
+                    ret[fidx, tdis] /= LT_CHECK
                 else:
-                    ret[(fidx, tdis, timek)] = mixarr[idx]
+                    ret[fidx, tdis, timek] = mixarr[idx]
                 idx_prev = idx
     return ret
 
