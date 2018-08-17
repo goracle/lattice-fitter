@@ -1,6 +1,6 @@
 """Library of fit functions to use"""
 
-# import sys
+import sys
 from math import log, cosh, sinh, tanh
 from numbers import Number
 import numpy as np
@@ -68,6 +68,7 @@ PION_MASS = 0
 PIONRATIO = False
 USE_FIXED_MASS = True
 TRHS = None
+GEVP = False
 
 class FitFuncAdd:
     """Exponential fit functions with additive constant"""
@@ -81,6 +82,7 @@ class FitFuncAdd:
         self._tstep2 = TSTEP2
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
+        self._gevp = GEVP
 
     def update(self, upd):
         """Update class params"""
@@ -91,6 +93,7 @@ class FitFuncAdd:
         self._tstep2 = upd.tstep2
         self._pionmass = upd.pionmass
         self._pionratio = upd.pionratio
+        self._gevp = upd.gevp
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -179,10 +182,12 @@ class FitFuncAdd:
                      exp(-trial_params[0]*(lent-(ctime+i*tstep+j*tstep2)))
                      for j in range(2) for i in range(2)]
         corrs_num[2:] = [0, 0] if tstep2 is None else [*corrs_num[2:]]
+        corrs_num[2:] = [0, 0] if not self._gevp else corrs_num[2:]
         corrs_denom = [exp(-trial_params[0]*(ctime+1+i*tstep+j*tstep2)) +
                        exp(-trial_params[0]*(lent-(ctime+1+i*tstep+j*tstep2)))
                        for j in range(2) for i in range(2)]
         corrs_denom[2:] = [0, 0] if tstep2 is None else [*corrs_denom[2:]]
+        corrs_denom[2:] = [0, 0] if not self._gevp else corrs_denom[2:]
         corrs = [*corrs_num, *corrs_denom]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
@@ -235,16 +240,18 @@ class FitFunc:
         self._tstep2 = TSTEP2
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
+        self._gevp = GEVP
 
     def update(self, upd):
         """Update the class components"""
         self._log = upd.log
-        self._lent = upd.lt
+        self._lent = upd.lent
         self._c = upd.c
         self._tstep = upd.tstep
         self._tstep2 = upd.tstep2
         self._pionmass = upd.pionmass
         self._pionratio = upd.pionratio
+        self._gevp = upd.gevp
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
