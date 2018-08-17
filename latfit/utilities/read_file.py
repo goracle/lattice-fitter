@@ -142,6 +142,7 @@ def figure(filename):
     kmat = re.search('Figure_(.*?)$', filename)
     mat = re.search('Figure(.*?)_', filename)
     nmat = re.search('Figure_(.*?)_', filename)
+    omat = re.search('type(.*?)', filename)
     if nmat:  # don't reverse m and n order, helps for some reason
         fign = nmat.group(1)
     elif mat:
@@ -150,9 +151,10 @@ def figure(filename):
         fign = lmat.group(1)
     elif kmat:
         fign = kmat.group(1)
-    # just a two point single particle correlator
-    elif hmat:
+    elif hmat: # just a two point single particle correlator
         fign = hmat.group(0)
+    elif omat:
+        fign = omat.group(0)
     else:
         warnings.warn("Warning: bad filename, no figure name: "+filename)
         fign = None
