@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = True
 TEST44 = False
+TEST44 = True
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
@@ -862,9 +862,10 @@ def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
     return dobubjack(bubbles, sub)
 
 @PROFILE
-def dobubjack(bubbles, sub):
+def dobubjack(bubbles, sub, skipVBub2=False):
     """Now that we have the bubbles,
     compose the diagrams, jackknife
+    skipVBub2 if FigureV and FigureBub2 are not needed
     """
     out = {}
     for srckey in bubbles:
@@ -872,6 +873,9 @@ def dobubjack(bubbles, sub):
         dsrc_split = srckey.split("@")
         for snkkey in bubbles:
             outkey, sepval = getdiscon_name(dsrc_split, snkkey.split("@"))
+            if skipVBub2 and outkey and (
+                    'Bub2' in outkey or 'FigureV' in outkey):
+                continue
             if sepval < 0 or not check_key(outkey) or outkey is None:
                 continue
             cols = np.roll(COLS, -sepval, axis=1)
