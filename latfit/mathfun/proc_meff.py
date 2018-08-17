@@ -152,7 +152,7 @@ elif EFF_MASS_METHOD == 4:
         """Minimize this
         (find a root) to solve a sliding window problem."""
         raise #not supported anymore
-        return FITS['fit_func_1p'](ctime, [energy])-sol
+        return FITS.f['fit_func_1p'](ctime, [energy])-sol
 
     def proc_meff4(corrs, index, _, times=(None)):
         """numerically solve a function with one free parameter
@@ -160,7 +160,7 @@ elif EFF_MASS_METHOD == 4:
         This is the conventional effective mass formula.
         """
         try:
-            sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
+            sol = FITS.f['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
         except:
             errstr = "bad time/op"+\
