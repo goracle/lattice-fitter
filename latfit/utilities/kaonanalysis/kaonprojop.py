@@ -29,7 +29,7 @@ def QiprojType1(pieces, i, isostr):
                 elif isostr == 'I2': # [ -f+f' ] * 2/sqrt(6) 
                     ret[tdis] += (-f_tdis+fp_tdis) * 2.0/(math.sqrt(6))
 
-            elif i in [3, 4]: 
+            elif i in [3, 4, 5, 6]: 
 
                 if isostr == 'I0': # -4/sqrt(3) f' - 2/sqrt(3) f = [ f+2f' ] * (-2) /sqrt(3)
                     ret[tdis] += (f_tdis+2*fp_tdis) * 2.0/(-math.sqrt(3))
@@ -75,7 +75,7 @@ def QiprojType2(pieces, i, isostr):
                 elif isostr == 'I2': # 0*h
                     ret[tdis] += 0
 
-            elif i in [3, 4]: 
+            elif i in [3, 4, 5, 6]: 
 
                 if isostr == 'I0': # 6/sqrt(3) * h - 3/sqrt(3) h' = [ 2h-h' ] * 3/sqrt(3)
                     ret[tdis] += (2*h_tdis-hp_tdis) * 3.0/(math.sqrt(3))
@@ -110,7 +110,7 @@ def QiprojSigmaType2(pieces, i):
                 # 1/sqrt(2) * h
                 ret[tdis] += h_tdis* 1.0/(math.sqrt(2))
 
-            elif i in [3, 4]: 
+            elif i in [3, 4, 5, 6]: 
 
                 # 2Q1-Q1' = [ 2h-h' ] * 1/sqrt(2)
                 ret[tdis] += (2*h_tdis-hp_tdis) * 1.0/(math.sqrt(2))
@@ -142,7 +142,7 @@ def QiprojSigmaType3(pieces, i):
                 #  [ i ] *(1)/sqrt(2)
                 ret[tdis] += (i_tdis) * (1.0)/(math.sqrt(2))
 
-            elif i in [3, 4]:
+            elif i in [3, 4, 5, 6]: 
 
                 # 2Q1-Q1' + (I-I')*1/sqrt(2) = [ 2i-i'+I-I' ] * 1/sqrt(2)
                 ret[tdis] += (2*i_tdis-ip_tdis+I_tdis-Ip_tdis) * 1.0/(math.sqrt(2))
@@ -217,7 +217,7 @@ def QiprojType3(pieces, i, isostr):
                 elif isostr == 'I2': # [ i ] * 0 
                     ret[tdis] += 0
 
-            elif i in [3, 4]:
+            elif i in [3, 4, 5, 6]: 
 
                 if isostr == 'I0': # [2i - i' + I - I'] * 3/sqrt(3)
                     ret[tdis] += (2*i_tdis-ip_tdis+I_tdis-Ip_tdis) * 3.0/(math.sqrt(3))
@@ -254,7 +254,7 @@ def QiprojType4(pieces, i):
                 # g * -3/sqrt(3) 
                 ret[tdis] +=  g_tdis * (-3.0)/(math.sqrt(3))
 
-            elif i in [3, 4]: 
+            elif i in [3, 4, 5, 6]: 
 
                 # -6 g /sqrt(3) + 3 g'/sqrt(3) - 3G/sqrt(3) + 3G'/sqrt(3) = [ -2g+g'-G+G' ] * 3/sqrt(3)  
                 ret[tdis] += ( -2*g_tdis + gp_tdis - G_tdis + Gp_tdis) * 3.0/math.sqrt(3)
@@ -283,7 +283,7 @@ def QiprojSigmaType4(pieces, i):
                 # g * -2/sqrt(2) 
                 ret[tdis] +=  g_tdis * (-2.0)/(math.sqrt(2))
 
-            elif i in [3, 4]: 
+            elif i in [3, 4, 5, 6]: 
 
                 # 2Q1-Q1'-(G-G')*2/sqrt(2) = [ -2g+g'-G+G' ] * 2/sqrt(2)  
                 ret[tdis] += ( -2*g_tdis + gp_tdis - G_tdis + Gp_tdis) * 2.0/math.sqrt(2)

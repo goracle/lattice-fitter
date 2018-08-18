@@ -159,10 +159,9 @@ def get_kdiscon_fromfile(diags, trajl):
 
 def jackknifeOPS():
     """Jackknife operators."""
-    OPS = [kpp.QOPI0, kpp.QOPI2, kpp.QOP_sigma]
     for i in np.arange(1, 11): # loop over operators
         keylist = []
-        for key in kpp.QOPI0:
+        for key in kpp.QOPI0[str(i)]:
             kpp.QOPI0[str(i)][key] = h5jack.dojackknife(
                 kpp.QOPI0[str(i)][key])
             kpp.QOPI2[str(i)][key] = h5jack.dojackknife(

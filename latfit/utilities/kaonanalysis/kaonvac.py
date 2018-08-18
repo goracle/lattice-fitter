@@ -67,10 +67,8 @@ def vacSubtractType4(type4, sinkbubbles, trajl, otype):
     sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
 
     aftersub = {}
-    #for conidx in range(8):
-    for conidx in range(1):
-        #for gcombidx in range(4):
-        for gcombidx in range(1):
+    for conidx in range(8):
+        for gcombidx in range(4):
             for tdis in range(LT_CHECK):
 
                 temp_dict = {}
