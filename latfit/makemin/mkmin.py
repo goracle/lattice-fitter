@@ -2,6 +2,7 @@
 import sys
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
+import numpy as np
 
 from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
@@ -21,6 +22,7 @@ def mkmin(covinv, coords):
     Return minimized result.
     """
     if AUTO_FIT:
+        assert None, "unsupported"
         if GEVP:
             print("untested, unsupported.")
             sys.exit(0)
