@@ -170,7 +170,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # to fix the leading order around the world term so shift it back
 
             result_min_jack.x = np.asarray(result_min_jack.x)+\
-                DELTA_E_AROUND_THE_WORLD+(
+                (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
                     DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
                     is not None else 0)
 
