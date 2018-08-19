@@ -45,7 +45,7 @@ def mkmin(covinv, coords):
             print("Attempting to continue with manual entry.")
             start_params = START_PARAMS
     else:
-        start_params = START_PARAMS
+        start_params = [*START_PARAMS, *START_PARAMS, *START_PARAMS]
     if METHOD not in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
@@ -81,6 +81,12 @@ def mkmin(covinv, coords):
         raise NegChisq
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
+    return prune_res_min(res_min)
+
+def prune_res_min(res_min):
+    """Get rid of systematic error information"""
+    print([res_min.x[len(START_PARAMS):][2*i+1] for i in range(len(START_PARAMS))])
+    res_min.x = np.array(res_min.x)[:len(START_PARAMS)]
     return res_min
 
 class NegChisq(Exception):
