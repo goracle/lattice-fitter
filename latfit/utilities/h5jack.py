@@ -31,8 +31,8 @@ except NameError:
     PROFILE = profile
 
 # run a test on a 4^4 latice
-TEST44 = False
 TEST44 = True
+TEST44 = False
 
 # run a test on a 24c x 64 lattice
 TEST24C = True
@@ -164,8 +164,8 @@ WRITEBLOCK = []
 WRITEBLOCK = ['pioncorrChk_mom000']
 WRITEBLOCK = fill_write_block(FNDEF)
 # only write the single particle correlators
-WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
+WRITE_INDIVIDUAL = False
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 
 # debug rows/columns slicing
@@ -651,6 +651,7 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     else:
         blk = np.zeros((len(trajl), LT, LT), dtype=np.complex)
     skip = []
+    outarr = np.zeros((LT, LT), dtype=np.complex)
     for i, traj in enumerate(trajl):
         filekey = get_file_name(traj)
         if openlist is None:
@@ -660,16 +661,16 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         traj = convert_traj(traj)
         filekey = get_file_name(traj)
         try:
-            outarr = np.asarray(fn1['traj_'+str(
-                traj)+'_'+base][:, :TDIS_MAX+1])
+            fn1['traj_'+str(traj)+'_'+base].read_direct(outarr, np.s_[:, :TDIS_MAX+1], np.s_[:, :TDIS_MAX+1])
+            #outarr = np.array(fn1['traj_'+str(traj)+'_'+base][:, :TDIS_MAX+1])
         except:
             namec = 'traj_'+str(traj)+'_'+base
             print(namec in fn1)
             print(fn1[namec])
             raise
-        outtemp = np.zeros((LT, LT), dtype=np.complex)
-        outtemp[:, :TDIS_MAX+1] = outarr
-        outarr = outtemp
+        #outtemp = np.zeros((LT, LT), dtype=np.complex)
+        #outtemp[:, :TDIS_MAX+1] = outarr
+        #outarr = outtemp
     #    except KeyError:
     #        skip.append(i)
     #        continue
@@ -695,7 +696,6 @@ def getmostblks(basl, trajl, openlist):
             print("Printing non-averaged-over-tsrc data")
             printblk(TESTKEY2, blk)
             print("beginning of traj list = ", trajl[0], trajl[1], trajl[2])
-            # sys.exit(0)
         mostblks[base] = dojackknife(blk)
     if MPIRANK == 0:
         print("Done getting most of the jackknife blocks.")
@@ -953,7 +953,13 @@ def testkey2(outkey, outcome, flag, excl=-1):
 
 @PROFILE
 def aux_jack(basl, trajl, numt, openlist):
-    """Get the aux diagram blocks"""
+    """Get the aux diagram blocks
+    There is a known redundancy with getmostblks:
+    a given base may be read, then read again to apply aux.
+    This should be eliminated and can save time,
+    and could be considered for future improvements
+    if a factor of two is needed at the analysis stage.
+    """
     auxblks = {}
     for base in basl:
         # get aux diagram name
@@ -990,13 +996,29 @@ def aux_jack(basl, trajl, numt, openlist):
     return auxblks if not NOAUX else {}
 
 @PROFILE
+def split_dict_equally(input_dict, chunks=2):
+    "Splits dict by keys. Returns a list of dictionaries."
+    # prep with empty dicts
+    return_list = [{} for _ in range(chunks)]
+    idx = 0
+    for k,v in input_dict.items():
+        return_list[idx][k] = v
+        if idx < chunks-1:  # indexes start at 0
+            idx += 1
+        else:
+            idx = 0
+    return return_list
+
+@PROFILE
 def gatherdicts(gatherblks, root=0):
     """Gather blocks from other sub processes."""
-    gatherblks = MPI.COMM_WORLD.gather(gatherblks, root)
     retdict = {}
-    if MPIRANK == root:
-        for blkdict in gatherblks:
-            retdict.update(blkdict)
+    gatherblks = split_dict_equally(gatherblks, chunks=20)
+    for dblk in gatherblks:
+        dblk = MPI.COMM_WORLD.gather(dblk, root)
+        if MPIRANK == root:
+            for blkdict in dblk:
+                retdict.update(blkdict)
     return retdict
 
 @PROFILE
@@ -1136,6 +1158,11 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
                 " dictionary found"
 
     ttime = -time.perf_counter()
+    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
+    ttime += time.perf_counter()
+    print("time to get disconnected blocks:", ttime, "seconds")
+
+    ttime = -time.perf_counter()
     mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
     ttime += time.perf_counter()
     print("time to get most blocks:", ttime, "seconds")
@@ -1143,10 +1170,6 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     if TEST44:
         check_aux_consistency(auxblks, mostblks)
 
-    ttime = -time.perf_counter()
-    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
-    ttime += time.perf_counter()
-    print("time to get disconnected blocks:", ttime, "seconds")
 
     # do things in this order to overwrite already composed
     # disconnected diagrams (next line)
@@ -1248,7 +1271,6 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
 def main(fixn=True):
     """Run this when making jackknife diagrams from raw hdf5 files"""
     #avg_irreps()
-    #sys.exit(0)
     print('start of main.')
     if not DOAMA:
         allblks, numt, auxblks = get_data()
