@@ -243,8 +243,6 @@ def get_file_string(title, dimops):
     title_safe = re.sub(r', ', ' ', title_safe)
     title_safe = re.sub(r'vec{p} {CM}=', 'mom', title_safe)
 
-    print('here2', title_safe)
-
     if JACKKNIFE_FIT == 'DOUBLE':
         jk_str = '_2xjk'
     elif JACKKNIFE_FIT == 'FROZEN':
