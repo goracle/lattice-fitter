@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -60,8 +60,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
+IRREP = 'A1_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -600,8 +600,8 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
 DELTA_E_AROUND_THE_WORLD = 0.39446479912497034-0.13975
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
