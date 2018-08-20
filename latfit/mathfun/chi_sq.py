@@ -5,15 +5,22 @@ from math import exp
 import numpy as np
 
 from latfit.config import fit_func
-from latfit.config import GEVP, START_PARAMS
+from latfit.config import GEVP, START_PARAMS, SYSTEMATIC_EST
 
-def fit_func_systematic(ctime, trial_params):
-    """ansatz to estimate systematic errors"""
-    return [fit_func(ctime, trial_params[:len(START_PARAMS)])[i]+
-            trial_params[len(START_PARAMS)+2*i]*exp(-(
-                trial_params[len(START_PARAMS)+(2*i+1)]-trial_params[i]*0)*ctime)
-            for i in range(len(START_PARAMS))
-    ]
+if SYSTEMATIC_EST:
+
+    def fit_func_systematic(ctime, trial_params):
+        """ansatz to estimate systematic errors"""
+        return [fit_func(ctime, trial_params[:len(START_PARAMS)])[i]+
+                trial_params[len(START_PARAMS)+2*i]*exp(-(
+                    trial_params[len(START_PARAMS)+(2*i+1)]-trial_params[i]*0)*ctime)
+                for i in range(len(START_PARAMS))
+        ]
+
+else:
+    def fit_func_systematic(ctime, trial_params):
+        """blank copy of fit func"""
+        return fit_func(ctime, trial_params) 
 
 if GEVP:
     def chi_sq(trial_params, covinv, coords):

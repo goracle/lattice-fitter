@@ -13,7 +13,7 @@ from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import MINTOL
-from latfit.config import GEVP
+from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
 
 
@@ -45,7 +45,8 @@ def mkmin(covinv, coords):
             print("Attempting to continue with manual entry.")
             start_params = START_PARAMS
     else:
-        start_params = [*START_PARAMS, *START_PARAMS, *START_PARAMS]
+        start_params = [*START_PARAMS, *START_PARAMS,
+                        *START_PARAMS] if SYSTEMATIC_EST else START_PARAMS
     if METHOD not in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
@@ -83,11 +84,16 @@ def mkmin(covinv, coords):
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return prune_res_min(res_min)
 
-def prune_res_min(res_min):
-    """Get rid of systematic error information"""
-    print([res_min.x[len(START_PARAMS):][2*i+1] for i in range(len(START_PARAMS))])
-    res_min.x = np.array(res_min.x)[:len(START_PARAMS)]
-    return res_min
+if SYSTEMATIC_EST:
+    def prune_res_min(res_min):
+        """Get rid of systematic error information"""
+        print([res_min.x[len(START_PARAMS):][2*i+1] for i in range(len(START_PARAMS))])
+        res_min.x = np.array(res_min.x)[:len(START_PARAMS)]
+        return res_min
+else:
+    def prune_res_min(res_min):
+        """pass"""
+        return res_min
 
 class NegChisq(Exception):
     """Exception for imaginary GEVP eigenvalue"""

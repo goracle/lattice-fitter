@@ -40,6 +40,10 @@ EFF_MASS = True if GEVP else EFF_MASS
 
 EFF_MASS_METHOD = 4
 
+# estimate systematic error with function in chi_sq.py (not working yet)
+SYSTEMATIC_EST = True
+SYSTEMATIC_EST = False
+
 # METHODS/PARAMS
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
