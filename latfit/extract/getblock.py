@@ -85,6 +85,19 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
                                       overwrite_b=overb, check_finite=False)
+    eigfin = np.zeros((len(eigvals)), dtype=np.float)
+    for i, j in enumerate(eigvals):
+        if j.imag == 0:
+            eigfin[i] = eigvals[i].real
+        else:
+            print("Eigenvalue=", j)
+            print("Manually enforcing Hermiticity of GEVP.")
+            if not np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8):
+                c_lhs = (c_lhs+np.conj(c_lhs))/2
+            if not np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8):
+                c_rhs = (c_rhs+np.conj(c_rhs))/2
+            eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
+                                              overwrite_b=overb, check_finite=False)
     if print_evecs:
         print("start solve")
         print("lhs=", c_lhs)
@@ -92,7 +105,6 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
-    eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
