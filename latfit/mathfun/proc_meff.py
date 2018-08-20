@@ -183,10 +183,11 @@ elif EFF_MASS_METHOD == 4:
                                options={'disp': True, 'maxiter': 10000,
                                                        'maxfev': 10000,})
             else:
-                sol = minimize_scalar(EFF_MASS_TOMIN[index],
-                                      args=(times[0], sol), bounds=(0, None))
-            fun = sol.fun
-            sol = sol.x
+                if not np.isnan(sol):
+                    sol = minimize_scalar(EFF_MASS_TOMIN[index],
+                                          args=(times[0], sol), bounds=(0, None))
+                    fun = sol.fun
+                    sol = sol.x
             # other solution methods:
             # too unstable
             # sol = brentq(eff_mass_root, 0, 5, args=(times[0], sol))
@@ -201,7 +202,8 @@ elif EFF_MASS_METHOD == 4:
             print("corrs:", corrs)
             print(minimize_scalar(EFF_MASS_TOMIN[index], args=(times[0], sol)))
             sys.exit(1)
-        sol = checksol(sol, index, times, corrs, fun)
+        if not np.isnan(sol):
+            sol = checksol(sol, index, times, corrs, fun)
         return sol
 
     def checksol(sol, index, times, corrs, fun):
