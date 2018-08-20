@@ -91,13 +91,23 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
             eigfin[i] = eigvals[i].real
         else:
             print("Eigenvalue=", j)
-            print("Manually enforcing Hermiticity of GEVP.")
-            if not np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8):
-                c_lhs = (c_lhs+np.conj(c_lhs))/2
-            if not np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8):
-                c_rhs = (c_rhs+np.conj(c_rhs))/2
-            eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
-                                              overwrite_b=overb, check_finite=False)
+            print("Manually enforcing hermiticity of GEVP.")
+            for opa in range(dimops):
+                for opb in range(dimops):
+                    if not np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8):
+                        avg = c_lhs[opa][opb] + c_lhs[opb][opa]
+                        avg /= 2
+                        c_lhs[opa][opb] = avg
+                        c_lhs[opb][opa] = avg
+                    if not np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8):
+                        avg = c_rhs[opa][opb] + c_rhs[opb][opa]
+                        avg /= 2
+                        c_rhs[opa][opb] = avg
+                        c_rhs[opb][opa] = avg
+                    assert np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8), "hermiticity failed"
+                    assert np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8), "hermiticity failed"
+                    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
+                                                      overwrite_b=overb, check_finite=False)
     if print_evecs:
         print("start solve")
         print("lhs=", c_lhs)
@@ -156,9 +166,11 @@ if EFF_MASS:
         for num in range(num_configs):
             if GEVP_DEBUG:
                 print("config #=", num)
+            tprob = timeij
             try:
                 eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1],
                                              print_evecs=True), reverse=True)
+                tprob = None if not EFF_MASS else tprob
                 eigvals2 = sorted(get_eigvals(num, file_tup[2],
                                               file_tup[1]), reverse=True)
                 eigvals3 = sorted(get_eigvals(num, file_tup[3],
@@ -179,8 +191,9 @@ if EFF_MASS:
                         eigvals2[i] -= eigvals3[i]*j
             except ImaginaryEigenvalue:
                 #print(num, file_tup)
-                print('config_num:', num, 'time:', timeij)
-                raise XmaxError(problemx=timeij)
+                print('config_num:', num, 'time:', tprob)
+                if tprob is not None:
+                    raise XmaxError(problemx=tprob)
             check_variance.append(eigvals)
             retblk.append(np.array([proc_meff(
                 (eigvals[op], eigvals2[op], eigvals3[op],
