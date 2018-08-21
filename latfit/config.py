@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -139,6 +139,12 @@ FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+
+# use very late time slices in the GEVP.
+# these may have very large error bars and be numerically less well behaved,
+# so it's usually safer to start with this option turned off
+USE_LATE_TIMES = True
+USE_LATE_TIMES = False
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,

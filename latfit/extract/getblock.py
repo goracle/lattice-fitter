@@ -3,6 +3,7 @@ import sys
 from collections import deque
 import scipy
 import scipy.linalg
+from scipy import linalg
 import numpy as np
 import h5py
 
@@ -15,7 +16,7 @@ from latfit.jackknife_fit import jack_mean_err
 from latfit.config import EFF_MASS
 from latfit.config import GEVP
 from latfit.config import ELIM_JKCONF_LIST
-from latfit.config import NORMS, GEVP_DEBUG
+from latfit.config import NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
@@ -64,8 +65,9 @@ if 1 > 2:
 def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
-    optionally, overwrite the rhs matrix we get if we don't need it anymore.
+    optionally, overwrite the rhs matrix we get if we don't need it anymore (overb=True)
     """
+    overb = False # completely unnecessary and dangerous speedup
     print_evecs = False if not GEVP_DEBUG else print_evecs
     if not get_eigvals.sent and print_evecs:
         print("First solve, so printing norms which are multiplied onto GEVP entries.")
@@ -83,8 +85,8 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
             c_rhs[opa][opb] = proc_line(
                 getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
-    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
-                                      overwrite_b=overb, check_finite=False)
+    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
+                                      overwrite_b=False, check_finite=True)
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
@@ -106,8 +108,42 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
                         c_rhs[opb][opa] = avg
                     assert np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8), "hermiticity failed"
                     assert np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8), "hermiticity failed"
-                    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=True,
-                                                      overwrite_b=overb, check_finite=False)
+                    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
+                                                      overwrite_b=False, check_finite=True)
+    for i, j in enumerate(eigvals):
+        if j.imag == 0:
+            eigfin[i] = eigvals[i].real
+        else:
+            print("Eigenvalue=", j)
+            print("Manually enforcing commutativity of GEVP C(t), C(t_0)^-1.")
+            c_rhs_inv = linalg.inv(c_rhs)
+            assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
+            c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+            correction = (np.dot(np.dot(c_rhs, c_lhs), c_rhs_inv) - c_lhs)/2
+            assert correction.shape == c_lhs.shape, "Bad correction shape:"+str(correction.shape)
+            try:
+                assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
+            except AssertionError:
+                print("Correction to hermitian matrix failed.")
+                print(c_lhs_new.T)
+                print(c_lhs_new)
+                print("printing difference in rows:")
+                for l, m in zip(c_lhs_new.T, c_lhs_new):
+                    print(l-m)
+                sys.exit(1)
+            if USE_LATE_TIMES:
+                eigvals, evecs = scipy.linalg.eig(c_lhs, overwrite_a=False,
+                                                  overwrite_b=False, check_finite=True)
+            else:
+                print("Eigenvalue=", j)
+                raise ImaginaryEigenvalue
+
+    for i, j in enumerate(eigvals):
+        if j.imag == 0:
+            eigfin[i] = eigvals[i].real
+        else:
+            print("Eigenvalue=", j)
+            sys.exit(1)
     if print_evecs:
         print("start solve")
         print("lhs=", c_lhs)
@@ -115,12 +151,6 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
-    for i, j in enumerate(eigvals):
-        if j.imag == 0:
-            eigfin[i] = eigvals[i].real
-        else:
-            print("Eigenvalue=", j)
-            raise ImaginaryEigenvalue
     return eigfin
 get_eigvals.sent = False
 
