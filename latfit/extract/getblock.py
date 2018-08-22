@@ -110,7 +110,6 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
-            print("Eigenvalue=", j)
             if USE_LATE_TIMES:
                 eigvals, evecs = scipy.linalg.eig(
                     c_lhs_new,
@@ -125,7 +124,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
             eigfin[i] = eigvals[i].real
         else:
             print("Eigenvalue=", j)
-            sys.exit(1)
+            raise ImaginaryEigenvalue
     if print_evecs:
         print("start solve")
         print("lhs=", c_lhs)
