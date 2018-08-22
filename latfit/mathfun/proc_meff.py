@@ -167,7 +167,8 @@ elif EFF_MASS_METHOD == 4:
             errstr = "bad time/op"+\
                     "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
             if FIT:
-                assert times and times[0] in latfit.config.FIT_EXCL[index], errstr
+                if not(times and times[0] in latfit.config.FIT_EXCL[index]):
+                    latfit.config.FIT_EXCL[index].append(times[0])
             else:
                 print(errstr)
             print('operator index=', index)

@@ -53,6 +53,7 @@ from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG
+from latfit.config import SIGMA
 import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -178,6 +179,9 @@ def main():
                 np.linalg.linalg.LinAlgError,
                 DOFNonPos, BadChisqJackknife, ZetaError) as _:
             pass
+        # update the known exclusion information with plot points
+        # which are nan (not a number)
+        augment_excl.excl_orig = latfit.config.FIT_EXCL
         if FIT:
             # store different excluded, and the avg chisq/dof
             min_arr = []
@@ -212,7 +216,7 @@ def main():
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
-                if MULT == 1:
+                if MULT == 1 or SIGMA:
                     break
                 coords = np.array([j[i] for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
@@ -221,13 +225,15 @@ def main():
             if random_fit:
                 # go in a random order if lenprod is small (biased by how likely fit will succeed),
                 for i in range(MULT):
+                    if MULT == 1 or SIGMA:
+                        break
                     probs, sampi = sortfit.sample_norms(
                         sampler, tsorted[i], lenfit)
                     probs = probs if BIASED_SPEEDUP else None
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
-                    if MULT == 1:
+                    if MULT == 1 or SIGMA:
                         break
                     sampi = sortfit.sortcombinations(
                         sampler, tsorted[i], lenfit)
@@ -243,12 +249,14 @@ def main():
             # assume that manual spec. overrides brute force search
             skip_loop = False
             if not random_fit:
-                for excl in FIT_EXCL:
+                for excl in EXCL_ORIG:
                     if len(excl) > 0:
                         skip_loop = True
             if MULT == 1:
                 skip_loop = True
 
+            print(lenprod)
+            sys.exit(0)
             for idx in range(lenprod):
 
                 if skip_loop:
@@ -494,9 +502,10 @@ def min_excl(min_arr):
 
 def augment_excl(excl):
     """If the user has specified excluded indices add these to the list."""
-    for num, (i, j) in enumerate(zip(excl, EXCL_ORIG)):
+    for num, (i, j) in enumerate(zip(excl, augment_excl.excl_orig)):
         excl[num] = sorted(list(set(j).union(set(i))))
     return excl
+augment_excl.excl_orig = EXCL_ORIG
 
 def dof_check(lenfit, dimops, excl):
     """Check the degrees of freedom.  If < 1, cause a skip"""
