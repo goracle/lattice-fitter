@@ -85,57 +85,39 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
             c_rhs[opa][opb] = proc_line(
                 getline_loc(file_tup_rhs[opa][opb], num+1),
                 file_tup_rhs[opa][opb])*NORMS[opa][opb]
+    c_lhs = enforce_hermiticity(c_lhs)
+    c_rhs = enforce_hermiticity(c_rhs)
+    assert np.allclose(np.matrix(c_lhs).H, c_lhs, rtol=1e-8), "hermiticity enforcement failed."
+    assert np.allclose(np.matrix(c_rhs).H, c_rhs, rtol=1e-8), "hermiticity enforcement failed."
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                       overwrite_b=False, check_finite=True)
+    c_rhs_inv = linalg.inv(c_rhs)
+    assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
+    assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
+    c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+    try:
+        assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
+    except AssertionError:
+        print("Correction to hermitian matrix failed.")
+        print(c_lhs_new.T)
+        print(c_lhs_new)
+        print("printing difference in rows:")
+        for l, m in zip(c_lhs_new.T, c_lhs_new):
+            print(l-m)
+        sys.exit(1)
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
             print("Eigenvalue=", j)
-            print("Manually enforcing hermiticity of GEVP.")
-            for opa in range(dimops):
-                for opb in range(dimops):
-                    if not np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8):
-                        avg = c_lhs[opa][opb] + c_lhs[opb][opa]
-                        avg /= 2
-                        c_lhs[opa][opb] = avg
-                        c_lhs[opb][opa] = avg
-                    if not np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8):
-                        avg = c_rhs[opa][opb] + c_rhs[opb][opa]
-                        avg /= 2
-                        c_rhs[opa][opb] = avg
-                        c_rhs[opb][opa] = avg
-                    assert np.allclose(c_lhs[opa][opb], np.conj(c_lhs[opb][opa]), rtol=1e-8), "hermiticity failed"
-                    assert np.allclose(c_rhs[opa][opb], np.conj(c_rhs[opb][opa]), rtol=1e-8), "hermiticity failed"
-                    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                                                      overwrite_b=False, check_finite=True)
-    for i, j in enumerate(eigvals):
-        if j.imag == 0:
-            eigfin[i] = eigvals[i].real
-        else:
-            print("Eigenvalue=", j)
-            print("Manually enforcing commutativity of GEVP C(t), C(t_0)^-1.")
-            c_rhs_inv = linalg.inv(c_rhs)
-            assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
-            c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
-            correction = (np.dot(np.dot(c_rhs, c_lhs), c_rhs_inv) - c_lhs)/2
-            assert correction.shape == c_lhs.shape, "Bad correction shape:"+str(correction.shape)
-            try:
-                assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
-            except AssertionError:
-                print("Correction to hermitian matrix failed.")
-                print(c_lhs_new.T)
-                print(c_lhs_new)
-                print("printing difference in rows:")
-                for l, m in zip(c_lhs_new.T, c_lhs_new):
-                    print(l-m)
-                sys.exit(1)
             if USE_LATE_TIMES:
-                eigvals, evecs = scipy.linalg.eig(c_lhs, overwrite_a=False,
-                                                  overwrite_b=False, check_finite=True)
+                eigvals, evecs = scipy.linalg.eig(
+                    c_lhs_new,
+                    overwrite_a=False,
+                    overwrite_b=False, check_finite=True)
+                break
             else:
-                print("Eigenvalue=", j)
                 raise ImaginaryEigenvalue
 
     for i, j in enumerate(eigvals):
@@ -153,6 +135,10 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
         print("end solve")
     return eigfin
 get_eigvals.sent = False
+
+def enforce_hermiticity(gevp_mat):
+    """C->(C+C^\dagger)/2"""
+    return (np.conj(gevp_mat).T+gevp_mat)/2
 
 
 class ImaginaryEigenvalue(Exception):

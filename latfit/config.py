@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -143,8 +143,8 @@ FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
 # so it's usually safer to start with this option turned off
-USE_LATE_TIMES = True
 USE_LATE_TIMES = False
+USE_LATE_TIMES = True
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
