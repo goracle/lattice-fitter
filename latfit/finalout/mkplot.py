@@ -251,7 +251,7 @@ def get_file_string(title, dimops):
         jk_str = ''
     if EFF_MASS:
         eff_str = '_eff_mass'
-        if EFF_MASS_METHD != 4:
+        if EFF_MASS_METHOD != 4:
             eff_str += '_meth'+str(EFF_MASS_METHOD)
         if EFF_MASS_METHOD == 1:
             print("C = ", C)
