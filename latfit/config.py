@@ -60,13 +60,13 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom111'
+IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 300
+MAX_ITER = 100
 # average relative error on the parameter errors to attempt to achieve
 # if achieved, exit the fit loop
 FITSTOP = 0.01

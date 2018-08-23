@@ -1,5 +1,5 @@
 """Misc. Functions"""
-from math import sqrt, pi
+from math import sqrt, pi, sin
 
 MASS = 0
 BOX_LENGTH = 1
@@ -12,4 +12,4 @@ def dispersive(momentum, mass=None, box_length=None):
     """get the dispersive analysis energy == sqrt(m^2+p^2)"""
     mass = MASS if mass is None else mass
     box_length = BOX_LENGTH if box_length is None else box_length
-    return sqrt((mass)**2+(2*pi/box_length)**2*norm2(momentum)) # two pions so double the mass
+    return sqrt((mass)**2+ 4*sin(pi/box_length)**2*norm2(momentum)) # two pions so double the mass

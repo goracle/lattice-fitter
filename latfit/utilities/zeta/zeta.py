@@ -42,7 +42,7 @@ if CALC_PHASE_SHIFT:
         comp = np.array(rf.procmom(MOMSTR))
         try:
             gamma = epipi/sqrt(
-                epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
+                epipi**2-4*np.sin(np.pi/L_BOX)**2*np.dot(comp, comp))
         except ValueError:
             print("zeta.py, bad gamma value for epipi=", epipi)
             print("center of mass momentum=", comp)
