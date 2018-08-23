@@ -697,6 +697,8 @@ def do_plot(title, pdf):
     plt.title(title, **hfontt)
     plt.xlabel(XLABEL, **hfontl)
     plt.ylabel(YLABEL, **hfontl)
+    if EFF_MASS:
+        plt.ylim(0, AINVERSE)
     # read out into a pdf
     pdf.savefig()
     # show the plot
