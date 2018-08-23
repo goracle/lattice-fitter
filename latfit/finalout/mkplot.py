@@ -251,7 +251,8 @@ def get_file_string(title, dimops):
         jk_str = ''
     if EFF_MASS:
         eff_str = '_eff_mass'
-        eff_str += '_meth'+str(EFF_MASS_METHOD)
+        if EFF_MASS_METHD != 4:
+            eff_str += '_meth'+str(EFF_MASS_METHOD)
         if EFF_MASS_METHOD == 1:
             print("C = ", C)
     else:
@@ -261,11 +262,7 @@ def get_file_string(title, dimops):
         uncorr_str = '_uncorr_fit'
     else:
         uncorr_str = ''
-    if GEVP:
-        gevp_str = ' GEVP '+str(dimops)+'dim'
-    else:
-        gevp_str = ''
-    file_str = title_safe + eff_str + uncorr_str + gevp_str + jk_str
+    file_str = title_safe + eff_str + uncorr_str + jk_str
     file_str = re.sub(' ', '_', file_str) + '.pdf'
     return file_str
 
@@ -543,6 +540,8 @@ if GEVP:
         YSTART = 0.90
     else:
         YSTART = 0.90
+    if EFF_MASS:
+        YSTART = 0.2
 
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (GEVP)
@@ -601,9 +600,9 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
 
     else:
         if ADD_CONST:
-            YSTART2 = 0.85
+            YSTART2 = 0.10
         else:
-            YSTART2 = 0.55
+            YSTART2 = 0.10
 
         def annotate_chisq(redchisq_round_str, dof,
                            result_min, ystart=YSTART2):
@@ -626,7 +625,7 @@ else:
             pass
         plt.annotate(
             r"$\chi^2$/dof="+redchisq_round_str+", dof="+str(dof),
-            xy=(0.5, 0.95),
+            xy=(0.5, 0.05),
             xycoords='axes fraction')
 
 
@@ -649,8 +648,9 @@ if JACKKNIFE_FIT:
 
         def annotate_jack():
             """Annotate jackknife type (double)"""
-            plt.annotate('Double jackknife fit.', xy=(
-                0.10, 0.95), xycoords='axes fraction')
+            pass
+            #plt.annotate('Double jackknife fit.', xy=(
+            #    0.10, 0.95), xycoords='axes fraction')
 
 
 elif JACKKNIFE:
