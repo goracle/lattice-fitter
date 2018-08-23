@@ -163,9 +163,18 @@ def main():
 
     if trials == -1:
         # try an initial plot, shrink the xmax if it's too big
+        print("Trying initial test fit.")
+        test_success = False
         try:
-            _ = singlefit(input_f, fitrange, xmin, xmax, xstep)
+            retsingle_save = singlefit(input_f, fitrange, xmin, xmax, xstep)
+            test_success = True
+            print("Test fit succeeded.")
+            # do the fit range key processing here since the initial fit augments the list
+            fit_range_init = str(list(latfit.config.FIT_EXCL))
         except XmaxError as err:
+            fit_range_init = None
+            print("Test fit failed; bad xmax.")
+            test_success = False
             xmax = err.problemx-xstep
             latfit.extract.getblock.XMAX = xmax
             print("xmin, new xmax =", xmin, xmax)
@@ -182,7 +191,7 @@ def main():
             pass
         # update the known exclusion information with plot points
         # which are nan (not a number)
-        augment_excl.excl_orig = latfit.config.FIT_EXCL
+        augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
         if FIT:
             # store different excluded, and the avg chisq/dof
             min_arr = []
@@ -210,18 +219,25 @@ def main():
 
             # now guess as to which time slices look the worst to fit
             # try the better ones first
-            try:
-                retsingle_save = singlefit(input_f,
-                                        fitrange, xmin, xmax, xstep)
-            except (NegChisq, RelGammaError, OverflowError,
-                    np.linalg.linalg.LinAlgError,
-                    DOFNonPos, BadChisqJackknife, ZetaError) as _:
-                print("Test fit failed, but in an acceptable way. Continuing.")
+            if not test_success:
+                fit_range_init = str(latfit.config.FIT_EXCL)
+                try:
+                    print("Trying test fit with improved xmax.")
+                    retsingle_save = singlefit(input_f,
+                                            fitrange, xmin, xmax, xstep)
+                    print("Test fit succeeded.")
+                except (NegChisq, RelGammaError, OverflowError,
+                        np.linalg.linalg.LinAlgError,
+                        DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                    print("Test fit failed, but in an acceptable way. Continuing.")
+                    fit_range_init = None
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
                 if MULT == 1:
                     break
+                if i == 0 and MPIRANK == 0:
+                    print("Finding best times (most likely to give small chi^2 contributions)")
                 coords = np.array([j[i] for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
                 tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
@@ -231,6 +247,8 @@ def main():
                 for i in range(MULT):
                     if MULT == 1:
                         break
+                    if i == 0 and MPIRANK == 0:
+                        print("Setting up biased sorting of (random) fit ranges")
                     probs, sampi = sortfit.sample_norms(
                         sampler, tsorted[i], lenfit)
                     probs = probs if BIASED_SPEEDUP else None
@@ -239,13 +257,14 @@ def main():
                 for i in range(MULT):
                     if MULT == 1:
                         break
+                    if i == 0 and MPIRANK == 0:
+                        print("Setting up sorting of exhaustive list of fit ranges")
                     sampi = sortfit.sortcombinations(
                         sampler, tsorted[i], lenfit)
                     samp_mult.append(sampi)
 
-            # store checked indicies
+            # store checked fit ranges
             checked = set()
-            idx = -1
 
             # running error on parameter error
             errarr = []
@@ -283,21 +302,20 @@ def main():
                 key = None
                 if not random_fit:
                     excl = prod[idx]
-                    key = idx
                 else: # large fit range, try to get lucky
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
                         excl = [np.random.choice(samp_mult[i][1], p=samp_mult[i][0])
                                 for i in range(MULT)]
-                    key = str(excl)
+                # add user info
+                excl = augment_excl([[i for i in j] for j in excl])
+
+                key = str(list(excl))
                 if key in checked:
                     print("key checked, continuing")
                     continue
                 checked.add(key)
-
-                # add user info
-                excl = augment_excl([[i for i in j] for j in excl])
 
                 # each energy should be included
                 if max([len(i) for i in excl]) == fitrange[1]-fitrange[0]+1:
@@ -323,16 +341,20 @@ def main():
                 print("Trying fit with excluded times:",
                       latfit.config.FIT_EXCL, "fit:",
                       str(idx+1)+"/"+str(lenprod))
-                try:
-                    retsingle = singlefit(input_f,
-                                          fitrange, xmin, xmax, xstep)
-                except (NegChisq, RelGammaError, OverflowError,
-                        np.linalg.linalg.LinAlgError,
-                        DOFNonPos, BadChisqJackknife, ZetaError) as _:
-                    # skip on any error
-                    print("fit failed for this selection excluded points=",
-                          excl)
-                    continue
+                if key == fit_range_init:
+                    retsingle = retsingle_save
+                else:
+                    print(key, fit_range_init)
+                    try:
+                        retsingle = singlefit(input_f,
+                                            fitrange, xmin, xmax, xstep)
+                    except (NegChisq, RelGammaError, OverflowError,
+                            np.linalg.linalg.LinAlgError,
+                            DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                        # skip on any error
+                        print("fit failed for this selection excluded points=",
+                            excl)
+                        continue
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
 
