@@ -322,7 +322,7 @@ def main():
                 # do fit
                 print("Trying fit with excluded times:",
                       latfit.config.FIT_EXCL, "fit:",
-                      str(idx)+"/"+str(lenprod))
+                      str(idx+1)+"/"+str(lenprod))
                 try:
                     retsingle = singlefit(input_f,
                                           fitrange, xmin, xmax, xstep)
@@ -391,7 +391,7 @@ def main():
                     min_arr = [x for b in min_arr for x in b]
                     overfit_arr = [x for b in overfit_arr for x in b]
                     try:
-                        assert min_arr, "No fits succeeded."+\
+                        assert len(min_arr) > 0, "No fits succeeded."+\
                             "  Change fit range manually:"+str(min_arr)
                     except AssertionError:
                         min_arr = overfit_arr
