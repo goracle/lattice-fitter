@@ -285,7 +285,8 @@ def get_coord(coords, cov, error2=None):
             error2 = np.array([
                 np.sqrt(cov[i][i]) for i in range(len(coords))])
     print("list of point errors (x, yerr):")
-    print(list(zip(xcoord, error2)))
+    for i, j in zip(xcoord, error2):
+        print(i, j)
     return xcoord, ycoord, error2
 
 
