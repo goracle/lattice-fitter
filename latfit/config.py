@@ -66,7 +66,7 @@ IRREP = 'A_1PLUS_mom000'
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 100
+MAX_ITER = 300
 # average relative error on the parameter errors to attempt to achieve
 # if achieved, exit the fit loop
 FITSTOP = 0.01

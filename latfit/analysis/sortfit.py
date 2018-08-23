@@ -12,9 +12,21 @@ def best_times(coord, cov, index, times):
     """
     dist = []
     for i, ycoord in enumerate(coord):
-        num = (ycoord-DISP_ENERGIES[index])**2
-        denom = cov[i,i]
-        dist.append([times[i], num/denom])
+        chisq = None
+        if np.isnan(ycoord):
+            chisq = 0
+        else:
+            try:
+                num = (ycoord-DISP_ENERGIES[index])**2
+            except IndexError:
+                num = (ycoord-np.mean(DISP_ENERGIES))**2
+            denom = cov[i,i]
+            assert not np.isnan(num), "difference (chisq numerator)"+\
+                " is not a number "+str(DISP_ENERGIES)+" "+str(ycoord)
+            assert denom != 0, "Error: variance is 0"
+            assert not np.isnan(num/denom), "chisq is not a number."
+            chisq = num/denom
+        dist.append([times[i], chisq])
     dist = np.array(sorted(dist, key=lambda row: row[1]))
     return dist
 
@@ -27,6 +39,7 @@ def score_excl(excl1d, tsorted, lenfit, inversescore=True):
     """
     score = 0
     dof = lenfit-ORIGL-len(excl1d)
+    assert dof != 0, "Degrees of freedom for sortfit < 1"
     for i, ttup in enumerate(tsorted):
         time, chisq = ttup
         if time in excl1d:
@@ -51,6 +64,7 @@ def sample_norms(sampler, tsorted, lenfit):
         score = score_excl(excl, tsorted, lenfit, inversescore=False)
         probs.append(score)
         total += score
+    assert not np.isnan(total), "Score total is not a number."
     norm = 1.0/total
     probs = np.array(probs)*norm
     assert np.allclose(

@@ -44,7 +44,6 @@ def zero_p(corr1, corr2=None, times=None):
 def testsol(sol, corrs, times=None):
     """Test ratio in effective mass equation to see if it's less < 0."""
     if not test_arg(sol, SENT):
-        print("Error in testsol.")
         for i, corr in enumerate(corrs):
             print("corrs["+str(i)+"] = ", corr)
         if times is not None:

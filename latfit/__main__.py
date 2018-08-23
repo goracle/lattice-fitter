@@ -52,12 +52,13 @@ from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
-from latfit.config import FIT_EXCL as EXCL_ORIG
-from latfit.config import SIGMA
+from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
+
+EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
 
 class Logger(object):
     """log output from fit"""
@@ -196,7 +197,10 @@ def main():
 
             # length of possibilities is useful to know
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
+            assert lenfit > 0 or not FIT, "length of fit range not > 0"
             lenprod = len(sampler)**(MULT)
+            latfit.config.MINTOL =  True if lenprod == 0 else\
+                latfit.config.MINTOL
             random_fit = True
             if lenprod < MAX_ITER: # fit range is small, use brute force
                 random_fit = False
@@ -207,7 +211,7 @@ def main():
             # now guess as to which time slices look the worst to fit
             # try the better ones first
             try:
-                retsingle = singlefit(input_f,
+                retsingle_save = singlefit(input_f,
                                         fitrange, xmin, xmax, xstep)
             except (NegChisq, RelGammaError, OverflowError,
                     np.linalg.linalg.LinAlgError,
@@ -216,7 +220,7 @@ def main():
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
-                if MULT == 1 or SIGMA:
+                if MULT == 1:
                     break
                 coords = np.array([j[i] for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
@@ -225,7 +229,7 @@ def main():
             if random_fit:
                 # go in a random order if lenprod is small (biased by how likely fit will succeed),
                 for i in range(MULT):
-                    if MULT == 1 or SIGMA:
+                    if MULT == 1:
                         break
                     probs, sampi = sortfit.sample_norms(
                         sampler, tsorted[i], lenfit)
@@ -233,7 +237,7 @@ def main():
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
-                    if MULT == 1 or SIGMA:
+                    if MULT == 1:
                         break
                     sampi = sortfit.sortcombinations(
                         sampler, tsorted[i], lenfit)
@@ -247,7 +251,7 @@ def main():
             errarr = []
 
             # assume that manual spec. overrides brute force search
-            skip_loop = False
+            skip_loop = False if lenprod > 0 else True
             if not random_fit:
                 for excl in EXCL_ORIG:
                     if len(excl) > 0:
@@ -255,11 +259,11 @@ def main():
             if MULT == 1:
                 skip_loop = True
 
-            print(lenprod)
-            sys.exit(0)
+            print("starting loop of max length:"+str(lenprod))
             for idx in range(lenprod):
 
                 if skip_loop:
+                    print("skipping loop")
                     break
 
                 if len(checked) == lenprod or idx == MAX_ITER or len(
@@ -268,10 +272,11 @@ def main():
                     print("a reasonably large set of indices"+\
                           " has been checked, exiting."+\
                           " (number of fit ranges checked:"+str(idx+1)+")")
-                    break
+                    sys.exit(1)
 
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
+                    print("mpi skip")
                     continue
 
                 # small fit range
@@ -284,28 +289,32 @@ def main():
                         excl = latfit.config.FIT_EXCL
                     else:
                         excl = [np.random.choice(samp_mult[i][1], p=samp_mult[i][0])
-                                for i in range(len(latfit.config.FIT_EXCL))]
+                                for i in range(MULT)]
                     key = str(excl)
                 if key in checked:
+                    print("key checked, continuing")
                     continue
                 checked.add(key)
 
                 # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
 
-                # each fit curve should be to more than one data point
-                if fitrange[1]-fitrange[0] in [len(i) for i in excl]:
-                    continue
-
                 # each energy should be included
                 if max([len(i) for i in excl]) == fitrange[1]-fitrange[0]+1:
+                    print("skipped all the data points for a GEVP dim,"+\
+                          "so continuing.")
                     continue
 
-                # dof check
-                if not dof_check(lenfit, len(START_PARAMS), excl):
-                    print("dof < 1 for excluded times:", excl,
-                          "\nSkipping:", str(idx)+"/"+str(lenprod))
+                # each fit curve should be to more than one data point
+                if fitrange[1]-fitrange[0] in [len(i) for i in excl]:
+                    print("only one data point in fit curve, continuing")
                     continue
+
+                # dof check (broken)
+                # if not dof_check(lenfit, len(START_PARAMS), excl):
+                #    print("dof < 1 for excluded times:", excl,
+                #          "\nSkipping:", str(idx)+"/"+str(lenprod))
+                #    continue
 
                 # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
@@ -419,8 +428,12 @@ def main():
                         result_min['x'], min_arr)
                     print("fit excluded points (indices):", latfit.config.FIT_EXCL)
 
-                latfit.config.MINTOL =  True
-                retsingle = singlefit(input_f, fitrange, xmin, xmax, xstep)
+                if not (skip_loop and latfit.config.MINTOL):
+                    latfit.config.MINTOL =  True
+                    retsingle = singlefit(input_f, fitrange,
+                                          xmin, xmax, xstep)
+                else:
+                    retsingle = retsingle_save
                 result_min_close, param_err_close, plotdata.coords, plotdata.cov = retsingle
 
                 # use the representative fit's goodness of fit in final print

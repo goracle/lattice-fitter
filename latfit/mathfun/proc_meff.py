@@ -171,8 +171,8 @@ elif EFF_MASS_METHOD == 4:
                     latfit.config.FIT_EXCL[index].append(times[0])
             else:
                 print(errstr)
-            print('operator index=', index)
-            print("times=", times)
+                print('operator index=', index)
+                print("times=", times)
             sol = np.nan
         index = 0 if index is None else index
         try:
