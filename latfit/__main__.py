@@ -395,6 +395,8 @@ def main():
                             "  Change fit range manually:"+str(min_arr)
                     except AssertionError:
                         min_arr = overfit_arr
+                        assert len(overfit_arr) > 0, "No fits succeeded."+\
+                            "  Change fit range manually:"+str(min_arr)
 
                     print("Fit results:  red. chisq, excl")
                     for i in min_arr:
