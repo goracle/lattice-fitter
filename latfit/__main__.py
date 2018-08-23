@@ -260,19 +260,19 @@ def main():
                 skip_loop = True
 
             print("starting loop of max length:"+str(lenprod))
-            for idx in range(lenprod):
+            for idx in range(min(lenprod, MAX_ITER)):
 
                 if skip_loop:
                     print("skipping loop")
                     break
 
-                if len(checked) == lenprod or idx == MAX_ITER or len(
-                        min_arr) > MAX_RESULTS/MPISIZE and random_fit or len(
-                            overfit_arr) > MAX_RESULTS/MPISIZE and random_fit and len(min_arr) == 0:
-                    print("a reasonably large set of indices"+\
-                          " has been checked, exiting."+\
-                          " (number of fit ranges checked:"+str(idx+1)+")")
-                    sys.exit(1)
+                if random_fit:
+                    if len(min_arr) > MAX_RESULTS/MPISIZE or (
+                            len(overfit_arr) > MAX_RESULTS/MPISIZE and len(min_arr) == 0):
+                        print("a reasonably large set of indices"+\
+                              " has been checked, exiting fit range loop."+\
+                              " (number of fit ranges checked:"+str(idx+1)+")")
+                        break
 
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
