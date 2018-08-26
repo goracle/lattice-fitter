@@ -155,6 +155,9 @@ ELIM_JKCONF_LIST = []
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
+# Cut fit points when the relative error in the error bar is > ERR_CUT
+ERR_CUT = 0.20
+
 # stringent tolerance for minimizer?  true = stringent
 MINTOL = True
 MINTOL = False

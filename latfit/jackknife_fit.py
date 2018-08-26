@@ -234,6 +234,12 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def unnan_coords(coords):
+    """replace nan's with 0 in coords"""
+    for i in range(len(coords)):
+        coords[i][1] = np.nan_to_num(coords[i][1]) 
+    return coords
+
 
 def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
     """Unpack the returned results of phase_shift_scatter_len_avg"""
@@ -437,9 +443,9 @@ def copy_block(params, blk, out):
     for later possible modification"""
     if params.dimops > 1:
         for time in range(len(params.time_range)):
-            out[time, 1] = blk[time]
+            out[time, 1] = np.nan_to_num(blk[time])
     else:
-        out[:, 1] = blk
+        out[:, 1] = np.nan_to_num(blk)
 
 
 def alloc_errbar_arr(params, time_length):

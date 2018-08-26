@@ -70,9 +70,16 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # at this point we have the covariance matrix, and coordinates
 
     if GEVP:
+        singlefit.error2 = np.array([np.sqrt(np.diag(cov_full[i][i])
+        ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2
+        #print(singlefit.error2)
+        #print(singlefit.coords_full)
+        #sys.exit(0)
         print("(Rough) scale of errors in data points = ",
               np.sqrt(np.diag(cov[0][0])))
     else:
+        singlefit.error2 = np.array([np.sqrt(cov_full[i][i]
+        ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
     if FIT:
@@ -101,6 +108,7 @@ singlefit.reuse = None
 singlefit.coords_full = None
 singlefit.cov_full = None
 singlefit.sent = None
+singlefit.error2 = None
 
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
     """Get the starting and ending indices

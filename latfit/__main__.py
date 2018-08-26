@@ -32,6 +32,7 @@ import latfit.singlefit
 import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, FIT_EXCL
 from latfit.config import FIT
+from latfit.config import ERR_CUT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, FIT, STYPE
@@ -190,7 +191,9 @@ def main():
                 DOFNonPos, BadChisqJackknife, ZetaError) as _:
             pass
         # update the known exclusion information with plot points
-        # which are nan (not a number)
+        # which are nan (not a number) or
+        # which have error bars which are too large
+        cut_on_errsize()
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
         if FIT:
             # store different excluded, and the avg chisq/dof
@@ -327,12 +330,10 @@ def main():
                 if fitrange[1]-fitrange[0] in [len(i) for i in excl]:
                     print("only one data point in fit curve, continuing")
                     continue
-
-                # dof check (broken)
-                # if not dof_check(lenfit, len(START_PARAMS), excl):
-                #    print("dof < 1 for excluded times:", excl,
-                #          "\nSkipping:", str(idx)+"/"+str(lenprod))
-                #    continue
+                if fitrange[1]-fitrange[0]-1 > 0:
+                    if fitrange[1]-fitrange[0]-1 in [len(i) for i in excl]:
+                        print("warning: only two data points in fit curve")
+                        # continue
 
                 # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
@@ -500,6 +501,24 @@ def convert_to_namedtuple(dictionary):
     return namedtuple('min', dictionary.keys())(**dictionary)
 
 
+def cut_on_errsize():
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    assert GEVP, "other versions not supported yet"
+    err = singlefit.error2
+    coords = singlefit.coords_full
+    for i in range(len(coords)):
+        excl_add = coords[i][0]
+        for j in range(len(coords[0][1])):
+            print(i,j)
+            print("err =", err[i][j], "coords =", coords[i][1][j])
+            if err[i][j]/coords[i][1][j] > ERR_CUT:
+                print("cutting dimension", j, "for time slice", excl_add)
+                print("err/coords > ERR_CUT =", ERR_CUT)
+                latfit.config.FIT_EXCL[j].append(excl_add)
+                latfit.config.FIT_EXCL[j] = list(set(
+                    latfit.config.FIT_EXCL[j]))
+                
+
 def closest_fit_to_avg(result_min_avg, min_arr):
     """Find closest fit to average fit
     (find the most common fit range)
@@ -554,6 +573,14 @@ def dof_check(lenfit, dimops, excl):
     if dof < 1:
         ret = False
     return ret
+
+# dof check (broken)
+# if not dof_check(lenfit, len(START_PARAMS), excl):
+#    print("dof < 1 for excluded times:", excl,
+#          "\nSkipping:", str(idx)+"/"+str(lenprod))
+#    continue
+
+
 
 def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
