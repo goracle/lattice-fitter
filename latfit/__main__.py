@@ -509,9 +509,8 @@ def cut_on_errsize():
     for i in range(len(coords)):
         excl_add = coords[i][0]
         for j in range(len(coords[0][1])):
-            print(i,j)
-            print("err =", err[i][j], "coords =", coords[i][1][j])
             if err[i][j]/coords[i][1][j] > ERR_CUT:
+                print("err =", err[i][j], "coords =", coords[i][1][j])
                 print("cutting dimension", j, "for time slice", excl_add)
                 print("err/coords > ERR_CUT =", ERR_CUT)
                 latfit.config.FIT_EXCL[j].append(excl_add)
