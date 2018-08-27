@@ -193,7 +193,6 @@ def main():
         # update the known exclusion information with plot points
         # which are nan (not a number) or
         # which have error bars which are too large
-        cut_on_errsize()
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
         if FIT:
             # store different excluded, and the avg chisq/dof
@@ -234,6 +233,8 @@ def main():
                         DOFNonPos, BadChisqJackknife, ZetaError) as _:
                     print("Test fit failed, but in an acceptable way. Continuing.")
                     fit_range_init = None
+            cut_on_errsize()
+            augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
