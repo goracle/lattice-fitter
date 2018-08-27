@@ -69,7 +69,7 @@ if CALC_PHASE_SHIFT:
             errstr = subprocess.Popen(arglist,
                                       stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
-        if 2*np.asin(np.sqrt(epipi*epipi/4-PION_MASS**2)/2) < 0:
+        if 2*np.arcsin(np.sqrt(epipi*epipi/4-PION_MASS**2)/2) < 0:
             out = float(out)*1j
         else:
             try:
