@@ -343,7 +343,12 @@ def print_messages(result_min, param_err, param_chisq):
                       "phase shift:", shift, "+/-", err)
             print("[")
             for i in range(len(result_min.scattering_length)):
-                print(np.array2string(np.array([root_s[i], shift, err_energy[i], err])), ",")
+                shift = result_min.phase_shift[i]
+                shift = np.real(shift) if np.isreal(shift) else shift
+                err = result_min.phase_shift_err[i]
+                err = np.real(err) if np.isreal(err) else err
+                commstr = " ," if i != len(result_min.scattering_length)-1 else ""
+                print(np.array2string(np.array([root_s[i], shift, err_energy[i], err]), separator=', ')+commstr)
             print("]")
             for i in range(len(result_min.scattering_length)):
                 if i == 0: # scattering length only meaningful as p->0

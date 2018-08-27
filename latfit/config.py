@@ -126,8 +126,8 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modi
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
-DELTA_E2_AROUND_THE_WORLD = 0
 DELTA_E2_AROUND_THE_WORLD = None
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR[:-1]+'0' if MOMSTR[-1] != 'm' else re.sub('0', '1', MOMSTR)))-misc.dispersive([1,0,0]) if rf.norm2(rf.procmom(MOMSTR)) != 0 else None # slightly a hack for the 24c
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 
