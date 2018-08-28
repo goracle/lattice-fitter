@@ -200,15 +200,15 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # pickle/unpickle the jackknifed arrays
         min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
 
-        # store arrays for fit range averaging
-        result_min.x_arr = np.array(min_arr)
-
         # for title printing
         latfit.finalout.mkplot.NUM_CONFIGS = len(min_arr)
 
         # compute p-value jackknife uncertainty
         result_min.pvalue_arr = np.array(result_min.pvalue)
         result_min.pvalue, result_min.pvalue_err = jack_mean_err(result_min.pvalue)
+
+        # store arrays for fit range averaging
+        result_min.x_arr = np.array(min_arr)
 
         # compute the mean, error on the params
         result_min.x, param_err = jack_mean_err(min_arr)
@@ -308,7 +308,7 @@ def alloc_phase_shift(params):
     return ret
 
 
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -317,32 +317,52 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
     len_sloppy = len_total-sjcut
     arr2 = arr if arr2 is None else arr2
 
+    if sjcut == 0:
+        assert not sjcut, "sjcut bug"
+    if not sjcut:
+        assert sjcut == 0, "sjcut bug"
+
     # get jackknife correction prefactors
     exact_prefactor = (sjcut-1)/sjcut if sjcut else 0
+    assert not np.isnan(exact_prefactor), "exact prefactor is nan"
     sloppy_prefactor = (len_sloppy-1)/(len_sloppy)
+    assert not np.isnan(sloppy_prefactor), "sloppy prefactor is nan"
 
     # calculate error on exact and sloppy
     if sjcut:
-        errexact = np.sqrt(exact_prefactor*np.sum(
+        errexact = exact_prefactor*np.sum(
             (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))*(arr2[:sjcut]-np.mean(arr2[:sjcut], axis=0)),
-            axis=0))
+            axis=0)
     else:
         errexact = 0
-    errsloppy = np.sqrt(sloppy_prefactor*np.sum(
+    errsloppy = sloppy_prefactor*np.sum(
         (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
-        axis=0))
+        axis=0)
+    if isinstance(errsloppy, numbers.Number):
+        assert not np.isnan(errsloppy), "sloppy err is nan"
+    else:
+        assert not any(np.isnan(errsloppy)), "sloppy err is nan"
 
     # add errors in quadrature (assumes errors are small,
     # decorrelated, linear approx)
-    err = np.sqrt(errsloppy**2+errexact**2)/2
+    err = errsloppy+errexact
+    # do this if we want the variance as opposed to the sqrt(var)
+    err = np.sqrt(err) if not nosqrt else err
+    err = err/2 if sjcut else err
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean
     mean = np.mean(arr, axis=0)
     if isinstance(mean, numbers.Number):
         mean = float(mean)
+        assert not np.isnan(mean), "mean is nan"
+    else:
+        assert not any(np.isnan(mean)), "mean is nan"
     if isinstance(err, numbers.Number):
         err = float(err)
+        assert not np.isnan(err), "err is nan"
+    else:
+        assert not any(np.isnan(err)), "err is nan"
 
     return mean, err
 
