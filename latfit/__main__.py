@@ -376,7 +376,7 @@ def main():
                 result = [result_min, list(param_err), list(excl)]
 
                 # store result
-                if result_min.fun/result_min.dof >= 1: # don't overfit
+                if result_min.fun/result_min.dof >= 0.95: # don't overfit
                     min_arr.append(result)
                 else:
                     overfit_arr.append(result)
@@ -426,6 +426,7 @@ def main():
                     for i in min_arr:
                         print(i[1:])
 
+                    weight_sum = np.sum([1/getattr(i[0], "chisq_arr") for i in min_arr], axis=0)
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
                             print("name=", name, "is None, skipping")
@@ -437,10 +438,10 @@ def main():
                                 "Bad name substitution:"+str(avgname)
                             result_min[name] = np.sqrt(np.sum([
                                 jack_mean_err(
-                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'chisq_arr')**2),
-                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'chisq_arr')**2))[1]**2
-                                for i in min_arr for j in min_arr], axis=0))/np.sum([
-                                        1/getattr(i[0], 'chisq_arr') for i in min_arr])
+                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'chisq_arr')*weight_sum),
+                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'chisq_arr')*weight_sum),
+                                    nosqrt=True)[1]
+                                for i in min_arr for j in min_arr], axis=0))
                         elif '_arr' in name:
                             continue
                         else:
@@ -451,7 +452,8 @@ def main():
                     # [i[0].x for i in min_arr], axis=0)
                     # param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
                     # param_err = np.std([getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
-                    param_err = result_min['x_err']
+                    param_err = np.array(result_min['x_err'])
+                    assert not any(np.isnan(param_err)), "A parameter error is not a number (nan)"
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL =  min_excl(min_arr)
@@ -505,14 +507,29 @@ def main():
 
 def divbychisq(param_arr, chisq_arr):
     """Divide a parameter by chisq"""
+    assert not any(np.isnan(chisq_arr)), "parameter array contains nan"
     ret = np.array(param_arr)
     if len(ret.shape) > 1:
         assert param_arr[:, 0].shape == chisq_arr.shape, "Mismatch between chisq_arr"+\
             " and parameter array (should be the number of configs):"+\
             str(chisq_arr.shape)+","+str(param_arr.shape)
         for i in range(len(ret[0])):
+            try:
+                assert not any(np.isnan(param_arr[:, i])), "parameter array contains nan"
+            except AssertionError:
+                print("found nan in dimension :", i)
+                for j in param_arr:
+                    print(j)
+                sys.exit(1)
             ret[:, i]/=chisq_arr
+            assert not any(np.isnan(ret[:, i])), "parameter array contains nan"
     else:
+        try:
+            assert not any(np.isnan(param_arr)), "parameter array contains nan"
+        except AssertionError:
+            for i in param_arr:
+                print(i)
+            sys.exit(1)
         ret /= chisq_arr
     return ret
         
