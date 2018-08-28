@@ -436,17 +436,22 @@ def main():
                             assert min_arr[0][0].__dict__[avgname] is not None,\
                                 "Bad name substitution:"+str(avgname)
                             result_min[name] = np.sqrt(np.sum([
-                                jack_mean_err(getattr(i[0], avgname), getattr(j[0], avgname))[1]**2
-                                for i in min_arr for j in min_arr], axis=0))/len(min_arr)
+                                jack_mean_err(
+                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'chisq_arr')**2),
+                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'chisq_arr')**2))[1]**2
+                                for i in min_arr for j in min_arr], axis=0))/np.sum([
+                                        1/getattr(i[0], 'chisq_arr') for i in min_arr])
                         elif '_arr' in name:
                             continue
                         else:
-                            result_min[name] = np.mean([
-                                getattr(i[0], name) for i in min_arr], axis=0)
+                            result_min[name] = np.sum([
+                                getattr(i[0], name)/getattr(i[0], 'fun') for i in min_arr], axis=0)/np.sum(
+                                    [1/getattr(i[0], 'fun') for i in min_arr])
                     # result_min.x = np.mean(
                     # [i[0].x for i in min_arr], axis=0)
-                    param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
+                    # param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
                     # param_err = np.std([getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
+                    param_err = result_min['x_err']
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL =  min_excl(min_arr)
@@ -497,6 +502,21 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
+def divbychisq(param_arr, chisq_arr):
+    """Divide a parameter by chisq"""
+    ret = np.array(param_arr)
+    if len(ret.shape) > 1:
+        assert param_arr[:, 0].shape == chisq_arr.shape, "Mismatch between chisq_arr"+\
+            " and parameter array (should be the number of configs):"+\
+            str(chisq_arr.shape)+","+str(param_arr.shape)
+        for i in range(len(ret[0])):
+            ret[:, i]/=chisq_arr
+    else:
+        ret /= chisq_arr
+    return ret
+        
+    
 
 def convert_to_namedtuple(dictionary):
     return namedtuple('min', dictionary.keys())(**dictionary)

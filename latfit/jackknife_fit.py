@@ -39,6 +39,7 @@ class ResultMin:
     def __init__(self):
         self.x = None
         self.x_arr = None
+        self.x_err = None
         self.fun = None
         self.status = None
         self.pvalue = None
@@ -211,6 +212,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute the mean, error on the params
         result_min.x, param_err = jack_mean_err(min_arr)
+        result_min.x_err = np.array(param_err)
 
         # average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
