@@ -290,12 +290,15 @@ def main():
                     break
 
                 if random_fit:
+
                     if len(min_arr) > MAX_RESULTS/MPISIZE or (
                             len(overfit_arr) > MAX_RESULTS/MPISIZE and len(min_arr) == 0):
                         print("a reasonably large set of indices"+\
                               " has been checked, exiting fit range loop."+\
                               " (number of fit ranges checked:"+str(idx+1)+")")
+                        print("rank :", MPIRANK, "exiting fit loop")
                         break
+
 
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
@@ -426,7 +429,7 @@ def main():
                     for i in min_arr:
                         print(i[1:])
 
-                    weight_sum = np.sum([1/getattr(i[0], "chisq_arr") for i in min_arr], axis=0)
+                    weight_sum = np.sum([getattr(i[0], "pvalue_arr") for i in min_arr], axis=0)
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
                             print("name=", name, "is None, skipping")
@@ -438,16 +441,16 @@ def main():
                                 "Bad name substitution:"+str(avgname)
                             result_min[name] = np.sqrt(np.sum([
                                 jack_mean_err(
-                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'chisq_arr')*weight_sum),
-                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'chisq_arr')*weight_sum),
+                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum),
+                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'pvalue_arr')/weight_sum),
                                     nosqrt=True)[1]
                                 for i in min_arr for j in min_arr], axis=0))
                         elif '_arr' in name:
                             continue
                         else:
                             result_min[name] = np.sum([
-                                getattr(i[0], name)/getattr(i[0], 'fun') for i in min_arr], axis=0)/np.sum(
-                                    [1/getattr(i[0], 'fun') for i in min_arr])
+                                getattr(i[0], name)*getattr(i[0], 'pvalue') for i in min_arr], axis=0)/np.sum(
+                                    [getattr(i[0], 'pvalue') for i in min_arr])
                     # result_min.x = np.mean(
                     # [i[0].x for i in min_arr], axis=0)
                     # param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
@@ -505,14 +508,14 @@ def main():
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
-def divbychisq(param_arr, chisq_arr):
+def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq"""
-    assert not any(np.isnan(chisq_arr)), "parameter array contains nan"
+    assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
     ret = np.array(param_arr)
     if len(ret.shape) > 1:
-        assert param_arr[:, 0].shape == chisq_arr.shape, "Mismatch between chisq_arr"+\
+        assert param_arr[:, 0].shape == pvalue_arr.shape, "Mismatch between pvalue_arr"+\
             " and parameter array (should be the number of configs):"+\
-            str(chisq_arr.shape)+","+str(param_arr.shape)
+            str(pvalue_arr.shape)+","+str(param_arr.shape)
         for i in range(len(ret[0])):
             try:
                 assert not any(np.isnan(param_arr[:, i])), "parameter array contains nan"
@@ -521,7 +524,7 @@ def divbychisq(param_arr, chisq_arr):
                 for j in param_arr:
                     print(j)
                 sys.exit(1)
-            ret[:, i]/=chisq_arr
+            ret[:, i] *= pvalue_arr
             assert not any(np.isnan(ret[:, i])), "parameter array contains nan"
     else:
         try:
@@ -530,7 +533,7 @@ def divbychisq(param_arr, chisq_arr):
             for i in param_arr:
                 print(i)
             sys.exit(1)
-        ret /= chisq_arr
+        ret *= pvalue_arr
     return ret
         
     
@@ -661,6 +664,27 @@ def get_fitparams_loc(list_fit_params, trials):
             len(list_fit_params[i]))])*prefactor) for i in range(
                 len(list_fit_params))]
     return avg_fit_params, err_fit_params
+
+# https://stackoverflow.com/questions/1158076/implement-touch-using-python
+def touch(fname, mode=0o666, dir_fd=None, **kwargs):
+    flags = os.O_CREAT | os.O_APPEND
+    with os.fdopen(os.open(fname, flags=flags, mode=mode, dir_fd=dir_fd)) as f:
+        os.utime(f.fileno() if os.utime in os.supports_fd else fname,
+            dir_fd=None if os.supports_fd else dir_fd, **kwargs)
+
+def sum_files_total(basename, local_total):
+    """Find a total by using temp files"""
+    fn1 = open(basename+str(MPIRANK)+".temp", 'w')
+    fn1.write(str(local_total))
+    total = 0
+    for i in range(MPISIZE):
+        readname = basename+str(i)+".temp"
+        touch(readname)
+        gn1 = open(readname, "r")
+        lines = gn1.readlines()
+        if len(lines) != 0:
+            total += int(lines[0])
+    return total
 
 
 if __name__ == "__main__":
