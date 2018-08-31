@@ -439,12 +439,24 @@ def main():
                             print("finding error in", avgname, "which has shape=", min_arr[0][0].__dict__[avgname].shape)
                             assert min_arr[0][0].__dict__[avgname] is not None,\
                                 "Bad name substitution:"+str(avgname)
+                            # compute the jackknife errors as a check
+                            # (should give same result as error propagation)
+                            err_check = jack_mean_err(np.sum([divbychisq(
+                                getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum) for i in min_arr], axis=0))[1]
+                            # error propagation
                             result_min[name] = np.sqrt(np.sum([
                                 jack_mean_err(
                                     divbychisq(getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum),
                                     divbychisq(getattr(j[0], avgname), getattr(j[0], 'pvalue_arr')/weight_sum),
                                     nosqrt=True)[1]
                                 for i in min_arr for j in min_arr], axis=0))
+                            try:
+                                assert np.allclose(err_check, result_min[name], rtol=1e-8), "jackknife error propagation"+\
+                                    " does not agree with jackknife error."
+                            except AssertionError:
+                                print(result_min[name])
+                                print(err_check)
+                                sys.exit(1)
                         elif '_arr' in name:
                             continue
                         else:
@@ -534,6 +546,7 @@ def divbychisq(param_arr, pvalue_arr):
                 print(i)
             sys.exit(1)
         ret *= pvalue_arr
+    assert ret.shape == param_arr.shape, "return shape does not match input shape"
     return ret
         
     
