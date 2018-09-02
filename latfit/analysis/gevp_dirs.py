@@ -23,7 +23,7 @@ def hierarchy(index, isospin, sigma):
     if index == 0:
         retstr = 'S_pipi'
     else: 
-        if isospin == 2:
+        if isospin == 2 or (isospin == 0 and not sigma):
             index += 1
         if index < 3:
             if index == 1 and isospin == 0 and sigma:
