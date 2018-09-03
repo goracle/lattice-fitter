@@ -60,26 +60,18 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom111'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 100
-# average relative error on the parameter errors to attempt to achieve
-# if achieved, exit the fit loop
-FITSTOP = 0.01
-# If set to True, speed up the fit loop by looking at models
-# which resemble non-interacting (dispersive) energies first
-# this biases the results, so turn off if doing a final fit
-BIASED_SPEEDUP = True
-BIASED_SPEEDUP = False
+MAX_ITER = 10
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 15
+MAX_RESULTS = 1000
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -139,6 +131,10 @@ FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+
+# if true, do not loop over fit ranges.
+NOLOOP = True
+NOLOOP = False
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -396,6 +392,15 @@ EIGCUT = 10**(-23)
 
 AUTO_FIT = False
 # AUTO_FIT = False
+
+# average relative error on the parameter errors to attempt to achieve
+# if achieved, exit the fit loop
+FITSTOP = 0.0000000000001
+# If set to True, speed up the fit loop by looking at models
+# which resemble non-interacting (dispersive) energies first
+# this biases the results, so turn off if doing a final fit
+BIASED_SPEEDUP = True
+BIASED_SPEEDUP = False
 
 # ASSISTED_FIT = True
 ASSISTED_FIT = False
