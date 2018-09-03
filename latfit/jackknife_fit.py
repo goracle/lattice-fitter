@@ -192,7 +192,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num])
 
-            if result_min_jack.fun/result_min.dof > 3 or np.isnan(result_min.pvalue[config_num]):
+            if result_min.pvalue[config_num] < .03 or np.isnan(result_min.pvalue[
+                    config_num]) or result_min_jack.fun/result_min.dof < 0.7:
                 raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
 
         # average results, compute jackknife uncertainties
@@ -698,7 +699,7 @@ class BadChisqJackknife(Exception):
     """Exception for imaginary GEVP eigenvalue"""
     def __init__(self, chisq=None, message=''):
         print("***ERROR***")
-        print("chisq/dof > 5 chisq=", chisq)
+        print("chisq/dof >> 1 or p-value >> 0.5 chisq=", chisq)
         super(BadChisqJackknife, self).__init__(message)
         self.dof = chisq
         self.message = message
