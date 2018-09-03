@@ -25,13 +25,15 @@ import random
 import numpy as np
 import h5py
 import re
+import pickle
 from mpi4py import MPI
 
 from latfit.singlefit import singlefit
 import latfit.singlefit
 import latfit.analysis.sortfit as sortfit
-from latfit.config import JACKKNIFE, FIT_EXCL
+from latfit.config import JACKKNIFE, FIT_EXCL, NOLOOP
 from latfit.config import FIT
+from latfit.config import ISOSPIN, MOMSTR
 from latfit.config import ERR_CUT
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
@@ -203,6 +205,7 @@ def main():
             posexcl = powerset(
                 np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             sampler = filter_sparse(posexcl, fitrange, xstep)
+            sampler = list(EXCL_ORIG) if NOLOOP else sampler
             posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
             prod = product(*posexcl)
 
@@ -277,13 +280,13 @@ def main():
             skip_loop = False if lenprod > 0 else True
             if not random_fit:
                 for excl in EXCL_ORIG:
-                    if len(excl) > 0:
+                    if len(excl) > 1:
                         skip_loop = True
             if MULT == 1:
                 skip_loop = True
 
             print("starting loop of max length:"+str(lenprod))
-            for idx in range(min(lenprod, MAX_ITER)):
+            for idx in range(lenprod):
 
                 if skip_loop:
                     print("skipping loop")
@@ -411,12 +414,18 @@ def main():
                 overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
 
             if MPIRANK == 0:
+
                 result_min = {}
                 if not skip_loop:
 
                     # collapse the array structure introduced by mpi
                     min_arr = [x for b in min_arr for x in b]
                     overfit_arr = [x for b in overfit_arr for x in b]
+
+                    # filter out duplicated work (find unique results)
+                    min_arr = getuniqueres(min_arr)
+                    overfit_arr = getuniqueres(overfit_arr)
+
                     try:
                         assert len(min_arr) > 0, "No fits succeeded."+\
                             "  Change fit range manually:"+str(min_arr)
@@ -435,14 +444,23 @@ def main():
                             print("name=", name, "is None, skipping")
                             continue
                         if '_err' in name:
+
+                            # find the name of the array
                             avgname = re.sub('_err', '_arr', name)
-                            print("finding error in", avgname, "which has shape=", min_arr[0][0].__dict__[avgname].shape)
+                            print("finding error in", avgname, "which has shape=",
+                                  min_arr[0][0].__dict__[avgname].shape)
                             assert min_arr[0][0].__dict__[avgname] is not None,\
                                 "Bad name substitution:"+str(avgname)
+
                             # compute the jackknife errors as a check
                             # (should give same result as error propagation)
-                            err_check = jack_mean_err(np.sum([divbychisq(
-                                getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum) for i in min_arr], axis=0))[1]
+                            res_mean, err_check = jack_mean_err(np.sum([divbychisq(
+                                getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum)
+                                                              for i in min_arr], axis=0))
+
+                            # dump the results to file
+                            dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check)
+
                             # error propagation
                             result_min[name] = np.sqrt(np.sum([
                                 jack_mean_err(
@@ -450,6 +468,8 @@ def main():
                                     divbychisq(getattr(j[0], avgname), getattr(j[0], 'pvalue_arr')/weight_sum),
                                     nosqrt=True)[1]
                                 for i in min_arr for j in min_arr], axis=0))
+
+                            # perform the comparison
                             try:
                                 assert np.allclose(err_check, result_min[name], rtol=1e-8), "jackknife error propagation"+\
                                     " does not agree with jackknife error."
@@ -457,8 +477,12 @@ def main():
                                 print(result_min[name])
                                 print(err_check)
                                 sys.exit(1)
+
+                        # process this when we find the error name instead
                         elif '_arr' in name:
                             continue
+
+                        # find the weighted mean
                         else:
                             result_min[name] = np.sum([
                                 getattr(i[0], name)*getattr(i[0], 'pvalue') for i in min_arr], axis=0)/np.sum(
@@ -496,6 +520,10 @@ def main():
 
                 print("closest representative fit result (lattice units):")
                 printerr(result_min_close.x, param_err_close)
+                for i in range(MULT):
+                    print("phase shift of state #",
+                          i, result_min_close.phase_shift[i], "+/-",
+                          result_min_close.phase_shift_err[i])
 
                 if skip_loop:
                     result_min, param_err = result_min_close, param_err_close
@@ -519,6 +547,32 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
+
+def getuniqueres(min_arr):
+    """Find unique fit ranges"""
+    ret = []
+    keys = set()
+    for i in min_arr:
+        key = str(i[2])
+        if key not in keys:
+            ret.append(i)
+            keys.add(key)
+    return ret
+            
+
+def dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check):
+    """Pickle the fit range result
+    """
+    avgname = re.sub('_arr', '', avgname)
+    avgname = 'fun' if avgname == 'chisq' else avgname
+    #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
+    #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
+    pickl_res = [getattr(i[0], avgname) for i in min_arr]
+    pickl_res = np.array([res_mean, err_check, np.array(pickl_res)],
+                         dtype=object)
+    avgname = 'chisq' if avgname == 'fun' else avgname
+    pickle.dump(pickl_res, open(
+        avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)+'.p', "wb"))
 
 def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq"""
