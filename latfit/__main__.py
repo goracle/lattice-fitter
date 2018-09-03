@@ -205,7 +205,7 @@ def main():
             posexcl = powerset(
                 np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             sampler = filter_sparse(posexcl, fitrange, xstep)
-            sampler = list(EXCL_ORIG) if NOLOOP else sampler
+            sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
             posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
             prod = product(*posexcl)
 
@@ -213,6 +213,8 @@ def main():
             lenfit = len(np.arange(fitrange[0], fitrange[1]+xstep, xstep))
             assert lenfit > 0 or not FIT, "length of fit range not > 0"
             lenprod = len(sampler)**(MULT)
+            if NOLOOP:
+                assert lenprod == 1, "Number of fit ranges is too large."
             latfit.config.MINTOL =  True if lenprod == 0 else\
                 latfit.config.MINTOL
             random_fit = True
@@ -262,7 +264,7 @@ def main():
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
-                    if MULT == 1:
+                    if MULT == 1 or lenprod == 1:
                         break
                     if i == 0 and MPIRANK == 0:
                         print("Setting up sorting of exhaustive list of fit ranges")
@@ -277,7 +279,7 @@ def main():
             errarr = []
 
             # assume that manual spec. overrides brute force search
-            skip_loop = False if lenprod > 0 else True
+            skip_loop = False if lenprod > 1 else True
             if not random_fit:
                 for excl in EXCL_ORIG:
                     if len(excl) > 1:
