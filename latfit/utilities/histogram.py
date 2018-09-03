@@ -25,6 +25,7 @@ def make_hist(fname):
     title = re.sub('.p', '', title)
     title = re.sub('0', '', title)
     title = re.sub('mom', 'p', title)
+    title = re.sub('x', 'Energy', title)
     for dim in range(freqarr.shape[-1]):
         save_str = re.sub('.p', '_state'+str(dim)+'.pdf', fname)
         with PdfPages(save_str) as pdf:
