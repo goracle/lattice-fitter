@@ -36,7 +36,7 @@ EFF_MASS = True if GEVP else EFF_MASS
 # (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 # EFF_MASS_METHOD 3: one param fit
 # EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
-# traditional effective mass method), typically a fast version of 3
+# traditional effective mass method), typically a fast version of 3 (3 may have better different error properties, though)
 
 EFF_MASS_METHOD = 4
 
@@ -61,12 +61,12 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom111'
+IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 10
+MAX_ITER = 100
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
