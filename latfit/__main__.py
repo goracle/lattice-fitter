@@ -565,6 +565,7 @@ def getuniqueres(min_arr):
 def dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
+    name = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
@@ -572,9 +573,12 @@ def dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check):
     pickl_res = [getattr(i[0], avgname) for i in min_arr]
     pickl_res = np.array([res_mean, err_check, np.array(pickl_res)],
                          dtype=object)
+    pickl_res_err = np.array([getattr(i[0], name) for i in min_arr])
     avgname = 'chisq' if avgname == 'fun' else avgname
     pickle.dump(pickl_res, open(
         avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)+'.p', "wb"))
+    pickle.dump(pickl_res_err, open(
+        name+"_"+MOMSTR+'_I'+str(ISOSPIN)+'.p', "wb"))
 
 def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq"""
