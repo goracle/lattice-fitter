@@ -21,8 +21,8 @@ FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # Plot Effective Mass? True or False
 
@@ -130,6 +130,7 @@ FIT_EXCL = [[], [], []]
 FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
+FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 # if true, do not loop over fit ranges.
@@ -607,6 +608,7 @@ latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back
 # MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
 FITS.select(UP)
+NOLOOP = True if not GEVP else NOLOOP
 if PIONRATIO:
     FITS.test()
 if EFF_MASS:

@@ -26,7 +26,7 @@ from latfit.config import FIT
 from latfit.config import METHOD
 from latfit.config import BINDS
 from latfit.config import START_PARAMS
-from latfit.config import AUTO_FIT
+from latfit.config import NOLOOP
 from latfit.config import EFF_MASS
 from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
@@ -294,7 +294,7 @@ def print_messages(result_min, param_err, param_chisq):
     # print plot info
     print("Minimizer thinks that it worked.  Plotting fit.")
     print("Fit info:")
-    print("Autofit:", AUTO_FIT)
+    print("looped over fit ranges:", (not NOLOOP))
     print("Model includes additive constant:", ADD_CONST)
     if EFF_MASS:
         print("Effective mass method:", EFF_MASS_METHOD)
@@ -308,6 +308,10 @@ def print_messages(result_min, param_err, param_chisq):
             1000*AINVERSE*np.array(result_min.x), separator=', '))
         print("Error in energies (MeV):", np.array2string(
             1000*AINVERSE*np.array(param_err), separator=', '))
+        print("Energies (lattice units):", np.array2string(
+            np.array(result_min.x), separator=', '))
+        print("Error in energies (lattice units):", np.array2string(
+            np.array(param_err), separator=', '))
     else:
         print("Minimized params:", np.array2string(
             result_min.x, separator=', '))

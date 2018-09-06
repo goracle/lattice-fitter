@@ -39,6 +39,7 @@ from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, FIT, STYPE
 from latfit.config import MAX_ITER, FITSTOP, BIASED_SPEEDUP, MAX_RESULTS
+from latfit.config import CALC_PHASE_SHIFT
 from latfit.jackknife_fit import ResultMin, jack_mean_err
 import latfit.extract.getblock
 
@@ -523,9 +524,10 @@ def main():
                 print("closest representative fit result (lattice units):")
                 printerr(result_min_close.x, param_err_close)
                 for i in range(MULT):
-                    print("phase shift of state #",
-                          i, result_min_close.phase_shift[i], "+/-",
-                          result_min_close.phase_shift_err[i])
+                    if CALC_PHASE_SHIFT:
+                        print("phase shift of state #",
+                              i, result_min_close.phase_shift[i], "+/-",
+                              result_min_close.phase_shift_err[i])
 
                 if skip_loop:
                     result_min, param_err = result_min_close, param_err_close
@@ -616,20 +618,29 @@ def convert_to_namedtuple(dictionary):
 
 
 def cut_on_errsize():
-    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
-    assert GEVP, "other versions not supported yet"
     err = singlefit.error2
     coords = singlefit.coords_full
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    #assert GEVP, "other versions not supported yet"+str(err.shape)+" "+str(coords.shape)
     for i in range(len(coords)):
         excl_add = coords[i][0]
-        for j in range(len(coords[0][1])):
-            if err[i][j]/coords[i][1][j] > ERR_CUT:
-                print("err =", err[i][j], "coords =", coords[i][1][j])
+        if MULT > 1:
+            for j in range(len(coords[0][1])):
+                if err[i][j]/coords[i][1][j] > ERR_CUT:
+                    print("err =", err[i][j], "coords =", coords[i][1][j])
+                    print("cutting dimension", j, "for time slice", excl_add)
+                    print("err/coords > ERR_CUT =", ERR_CUT)
+                    latfit.config.FIT_EXCL[j].append(excl_add)
+                    latfit.config.FIT_EXCL[j] = list(set(
+                        latfit.config.FIT_EXCL[j]))
+        else:
+            if err[i]/coords[i][1] > ERR_CUT:
+                print("err =", err[i], "coords =", coords[i][1])
                 print("cutting dimension", j, "for time slice", excl_add)
                 print("err/coords > ERR_CUT =", ERR_CUT)
-                latfit.config.FIT_EXCL[j].append(excl_add)
-                latfit.config.FIT_EXCL[j] = list(set(
-                    latfit.config.FIT_EXCL[j]))
+                latfit.config.FIT_EXCL[0].append(excl_add)
+                latfit.config.FIT_EXCL[0] = list(set(
+                    latfit.config.FIT_EXCL[0]))
                 
 
 def closest_fit_to_avg(result_min_avg, min_arr):
