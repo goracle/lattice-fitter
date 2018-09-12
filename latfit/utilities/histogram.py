@@ -15,7 +15,7 @@ def main():
         make_hist(fname)
 
 def make_hist(fname):
-    """
+    """Make histograms
     """
     with open(fname, 'rb') as fn1:
         dat = pickle.load(fn1)
@@ -48,9 +48,13 @@ def make_hist(fname):
             title_dim = title+' state:'+str(dim)
             freq = freqarr[:, dim]
             print("val; pvalue; err")
+            pdat_median = np.median(pdat_freqarr)
             for i, j, k in sorted(zip(freq, pdat_freqarr, errdat[
                     :, dim]), key = operator.itemgetter(0)):
+                if j == pdat_median:
+                    freq_median = i
                 print(np.real(i), j, np.real(k))
+            sys_err = np.std(freq, ddof=1)
             # print(freq, np.mean(freq))
             hist, bins = np.histogram(freq, bins=10)
             # print(hist)
@@ -64,6 +68,11 @@ def make_hist(fname):
             assert isinstance(xerr[0], float), "xerr needs conversion"
             assert isinstance(xerr[0], np.float), "xerr needs conversion"
             plt.bar(center, hist, xerr=xerr, align='center', width=width)
+            plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
+                         xycoords='axes fraction')
+            plt.annotate("standard dev (est of systematic)="+str(sys_err),
+                         xy=(0.05, 0.7),
+                         xycoords='axes fraction')
             #fig = plt.gcf()
             print("saving plot as filename:", save_str)
             print("xerr =", xerr)
