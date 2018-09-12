@@ -116,6 +116,50 @@ def get_comp_str(irrep):
         break
     return 'mom'+rf.ptostr(momtotal)
 
+def mom2ndorder(irrep):
+    """Find the two momenta for the second order
+    around the world subtraction
+    """
+    retlist = []
+    if irrep in AVG_ROWS:
+        for irr in AVG_ROWS[irrep]:
+            irrep = irr
+            break
+    opprev = ''
+    momtotal = np.array([0, 0, 0])
+    minp = np.inf
+    for _, _, mom in OPLIST[irrep]:
+        if isinstance(mom[0], int):
+            continue
+        p1, p2 = mom
+        minp = min(rf.norm2(p1), rf.norm2(p2), minp)
+    minp2 = np.inf
+    for _, _, mom in OPLIST[irrep]:
+        if isinstance(mom[0], int):
+            continue
+        p1, p2 = mom
+        if rf.norm2(p1) == minp or rf.norm2(p2) == minp:
+            continue
+        minp2 = min(rf.norm2(p1), rf.norm2(p2), minp2)
+    ret = None
+    mindiff = np.inf
+    for _, _, mom in OPLIST[irrep]:
+        if isinstance(mom[0], int):
+            continue
+        p1, p2 = mom
+        if rf.norm2(p1) == minp2:
+            mindiff = min(mindiff, rf.norm2(p2)-minp2)
+            if mindiff == 0:
+                ret = mom
+            break
+    for _, _, mom in OPLIST[irrep]:
+        if isinstance(mom[0], int):
+            continue
+        p1, p2 = mom
+        if rf.norm2(p1) == minp2 and rf.norm2(p2)-minp2 == mindiff:
+            ret = mom if ret is None else ret
+    return ret
+
 
 def generateChecksums(isospin):
     """Generate a sum of expected diagrams for each operator"""

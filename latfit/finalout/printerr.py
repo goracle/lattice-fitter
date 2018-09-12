@@ -1,9 +1,10 @@
 """Print error"""
+import gvar
 def printerr(result_min, param_err):
     """Print the param error"""
     for i, err in enumerate(param_err):
         print("Minimized parameter #", i, " = ")
-        print(result_min[i], "+/-", err)
+        print(gvar.gvar(result_min[i], err))
     return 0
 # ERR_A0 = sqrt(2*HINV[0][0])
 # ERR_ENERGY = sqrt(2*HINV[1][1])

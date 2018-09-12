@@ -27,6 +27,7 @@ import h5py
 import re
 import pickle
 from mpi4py import MPI
+import gvar
 
 from latfit.singlefit import singlefit
 import latfit.singlefit
@@ -352,6 +353,8 @@ def main():
                 print("Trying fit with excluded times:",
                       latfit.config.FIT_EXCL, "fit:",
                       str(idx+1)+"/"+str(lenprod))
+                print("number of results:", len(min_arr),
+                      "number of overfit", len(overfit_arr))
                 if key == fit_range_init:
                     retsingle = retsingle_save
                 else:
@@ -399,8 +402,7 @@ def main():
                     print("Estimate for parameter error has stabilized, exiting loop")
                     break
                 else:
-                    print("Current error on error =", curr_err,
-                          "number of error estimates:", len(errarr))
+                    print("Current error on error =", curr_err)
 
                 # need better criterion here, maybe just have it be user defined patience level?
                 # how long should the fit run before giving up?
@@ -414,7 +416,9 @@ def main():
             if not skip_loop:
 
                 min_arr = MPI.COMM_WORLD.gather(min_arr, 0)
+                print("results gather complete.")
                 overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
+                print("overfit gather complete.")
 
             if MPIRANK == 0:
 
@@ -526,8 +530,8 @@ def main():
                 for i in range(MULT):
                     if CALC_PHASE_SHIFT:
                         print("phase shift of state #",
-                              i, result_min_close.phase_shift[i], "+/-",
-                              result_min_close.phase_shift_err[i])
+                              i, gvar.gvar(result_min_close.phase_shift[i],
+                              result_min_close.phase_shift_err[i]))
 
                 if skip_loop:
                     result_min, param_err = result_min_close, param_err_close

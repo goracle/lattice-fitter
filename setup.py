@@ -34,7 +34,8 @@ setup(
         'sympy',
         'scipy',
         'numdifftools',
-        'h5py'
+        'h5py',
+        'gvar',
     ],
     entry_points={
         'console_scripts': [

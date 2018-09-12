@@ -21,8 +21,8 @@ FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # Plot Effective Mass? True or False
 
@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -60,8 +60,8 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
+IRREP = 'A1_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom11'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -71,7 +71,7 @@ MAX_ITER = 100
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 1000
+MAX_RESULTS = 20
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -118,10 +118,12 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modi
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
-DELTA_E2_AROUND_THE_WORLD = None
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR[:-1]+'0' if MOMSTR[-1] != 'm' else re.sub('0', '1', MOMSTR)))-misc.dispersive([1,0,0]) if rf.norm2(rf.procmom(MOMSTR)) != 0 and ISOSPIN == 2 else None # slightly a hack for the 24c
+#DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
+print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 

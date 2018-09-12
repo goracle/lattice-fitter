@@ -14,6 +14,7 @@ from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from scipy import stats
 import h5py
+import gvar
 
 from latfit.utilities import read_file as rf
 from latfit.config import fit_func, MOMSTR, L_BOX
@@ -317,15 +318,15 @@ def print_messages(result_min, param_err, param_chisq):
             result_min.x, separator=', '))
         print("Error in params :", np.array2string(np.array(param_err),
                                                    separator=', '))
-    chisq_str = str(result_min.fun)
-    if JACKKNIFE_FIT:
-        chisq_str += '+/-'+str(result_min.chisq_err)
+    chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
+        result_min.fun, result_min.chisq_err)
+    chisq_str = str(chisq_str)
     print("chi^2 minimized = ", chisq_str)
     print("degrees of freedom = ", param_chisq.dof)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
        JACKKNIFE == 'YES':
-        print("avg p-value = ", result_min.pvalue, "+/-",
-              result_min.pvalue_err)
+        print("avg p-value = ", gvar.gvar(result_min.pvalue,
+              result_min.pvalue_err))
         print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
                                                             param_chisq.dof))
     redchisq_str = str(param_chisq.redchisq)
@@ -343,8 +344,9 @@ def print_messages(result_min, param_err, param_chisq):
                 shift = np.real(shift) if np.isreal(shift) else shift
                 err = result_min.phase_shift_err[i]
                 err = np.real(err) if np.isreal(err) else err
-                print(root_s[i], "MeV :", "+/-", err_energy[i],
-                      "phase shift:", shift, "+/-", err)
+                energystr = str(gvar.gvar(root_s[i], err_energy[i]))
+                phasestr = str(gvar.gvar(shift, err))
+                print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
             print("[")
             for i in range(len(result_min.scattering_length)):
                 shift = result_min.phase_shift[i]
@@ -357,15 +359,15 @@ def print_messages(result_min, param_err, param_chisq):
             for i in range(len(result_min.scattering_length)):
                 if i == 0: # scattering length only meaningful as p->0
                     print("I="+str(ISOSPIN)+" scattering length = ",
-                          result_min.scattering_length[i], "+/-",
-                          result_min.scattering_length_err[i])
+                          gvar.gvar(result_min.scattering_length[i],
+                          result_min.scattering_length_err[i]))
         else:
             print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-                  result_min.phase_shift, "+/-",
-                  result_min.phase_shift_err)
+                  gvar.gvar(result_min.phase_shift,
+                            result_min.phase_shift_err))
             print("I="+str(ISOSPIN)+" scattering length = ",
-                  result_min.scattering_length, "+/-",
-                  result_min.scattering_length_err)
+                  gvar.gvar(result_min.scattering_length,
+                  result_min.scattering_length_err))
 
 
 def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
@@ -566,6 +568,7 @@ if GEVP:
         #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
+            estring = str(gvar.gvar(min_e, param_err[i]))
             plt.annotate(
                 "Energy["+str(i)+"] = "+estring,
                 xy=(0.05, ystart-i*.05), xycoords='axes fraction')
@@ -581,10 +584,12 @@ else:
         if len(result_min.x) > 1:
             estring = trunc_prec(result_min.x[1])+"+/-"+trunc_prec(
                 param_err[1], 2)
+            estring = str(gvar.gvar(result_min.x[1], param_err[1]))
         else:
             # for an effective mass plot
             estring = trunc_prec(result_min.x[0])+"+/-"+trunc_prec(
                 param_err[0], 2)
+            estring = str(gvar.gvar(result_min.x[0], param_err[0]))
         plt.annotate("Energy="+estring, xy=(0.05, ystart),
                      xycoords='axes fraction')
 
