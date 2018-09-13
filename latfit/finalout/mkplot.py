@@ -271,8 +271,7 @@ def get_file_string(title, dimops):
 def get_coord(coords, cov, error2=None):
     """Plotted coordinates setup
     """
-    print("list of plotted points [x, y]:")
-    print(coords)
+    print("list of plotted points [x, y(yerr)]:")
     xcoord = [coords[i][0] for i in range(len(coords))]
     ycoord = [coords[i][1] for i in range(len(coords))]
     if error2 is None:
@@ -282,9 +281,8 @@ def get_coord(coords, cov, error2=None):
         else:
             error2 = np.array([
                 np.sqrt(cov[i][i]) for i in range(len(coords))])
-    print("list of point errors (x, yerr):")
-    for i, j in zip(xcoord, error2):
-        print(i, j)
+    for i, j, k in zip(xcoord, ycoord, error2):
+        print(i, gvar.gvar(j, k))
     return xcoord, ycoord, error2
 
 
