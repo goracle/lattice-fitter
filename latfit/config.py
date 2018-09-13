@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -60,7 +60,7 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom111'
+IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
