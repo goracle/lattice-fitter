@@ -117,13 +117,14 @@ ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1], continuum=DISPCON)-misc.dispersive([1,0,0], continuum=True)
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=True)-misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=DISPCON)
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 

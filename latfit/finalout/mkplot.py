@@ -336,17 +336,23 @@ def print_messages(result_min, param_err, param_chisq):
         if GEVP:
             print("sqrt(s), I="+str(ISOSPIN)+" phase shift(in degrees) = ")
             energy = 1000*AINVERSE*np.array(result_min.x)
-            mom = 1000*np.sqrt(AINVERSE**2*rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2)
+            mom = 1000*AINVERSE*np.sqrt(rf.norm2(
+                rf.procmom(MOMSTR)))*(2*np.pi/L_BOX)
             print("mom =", mom)
             root_s = np.sqrt(energy**2-mom**2)
             err_energy = 1000*AINVERSE*np.array(param_err)*energy/root_s
+            root_s_chk = 1000*AINVERSE*np.sqrt(
+                gvar.gvar(result_min.x, param_err)**2-(
+                    2*np.pi/L_BOX)**2*rf.norm2(rf.procmom(MOMSTR)))
             for i in range(len(result_min.scattering_length)):
                 shift = result_min.phase_shift[i]
                 shift = np.real(shift) if np.isreal(shift) else shift
                 err = result_min.phase_shift_err[i]
                 err = np.real(err) if np.isreal(err) else err
                 energystr = str(gvar.gvar(root_s[i], err_energy[i]))
-                assert energystr == str(np.sqrt((1000*AINVERSE(gvar.gvar(result_min.x, param_err)))**2-mom**2)), "Bad error propagation."
+                chkstr = str(root_s_chk[i])
+                assert energystr == chkstr, "Bad error propagation:"+\
+                    energystr+" chk:"+chkstr
                 phasestr = str(gvar.gvar(shift, err))
                 print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
             print("[")
