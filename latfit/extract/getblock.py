@@ -91,26 +91,31 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
     assert np.allclose(np.matrix(c_rhs).H, c_rhs, rtol=1e-8), "hermiticity enforcement failed."
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                       overwrite_b=False, check_finite=True)
-    c_rhs_inv = linalg.inv(c_rhs)
-    assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
-    assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
-    c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+    skip_late = False
     try:
-        assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
-    except AssertionError:
-        print("Correction to hermitian matrix failed.")
-        print(c_lhs_new.T)
-        print(c_lhs_new)
-        print("printing difference in rows:")
-        for l, m in zip(c_lhs_new.T, c_lhs_new):
-            print(l-m)
-        sys.exit(1)
+        c_rhs_inv = linalg.inv(c_rhs)
+        assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
+        assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
+        c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+        try:
+            assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
+        except AssertionError:
+            print("Correction to hermitian matrix failed.")
+            print(c_lhs_new.T)
+            print(c_lhs_new)
+            print("printing difference in rows:")
+            for l, m in zip(c_lhs_new.T, c_lhs_new):
+                print(l-m)
+            sys.exit(1)
+    except np.linalg.linalg.LinAlgError:
+        print("unable to symmetrize problem at late times")
+        skip_late = True
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
-            if USE_LATE_TIMES:
+            if USE_LATE_TIMES and not skip_late:
                 eigvals, evecs = scipy.linalg.eig(
                     c_lhs_new,
                     overwrite_a=False,
