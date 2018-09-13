@@ -282,7 +282,10 @@ def get_coord(coords, cov, error2=None):
             error2 = np.array([
                 np.sqrt(cov[i][i]) for i in range(len(coords))])
     for i, j, k in zip(xcoord, ycoord, error2):
-        print(i, gvar.gvar(j, k))
+        var = gvar.gvar(j, k)
+        root_s_var = np.sqrt(
+            var**2-rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2)
+        print(i, var, "| sqrt(s) =", root_s_var)
     return xcoord, ycoord, error2
 
 
@@ -343,6 +346,7 @@ def print_messages(result_min, param_err, param_chisq):
                 err = result_min.phase_shift_err[i]
                 err = np.real(err) if np.isreal(err) else err
                 energystr = str(gvar.gvar(root_s[i], err_energy[i]))
+                assert energystr == str(np.sqrt((1000*AINVERSE(gvar.gvar(result_min.x, param_err)))**2-mom**2)), "Bad error propagation."
                 phasestr = str(gvar.gvar(shift, err))
                 print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
             print("[")
