@@ -258,7 +258,7 @@ def main():
                 for i in range(MULT):
                     if MULT == 1:
                         break
-                    if i == 0 and MPIRANK == 0:
+                    if i == 0 and MPIRANK == 0 and BIASED_SPEEDUP:
                         print("Setting up biased sorting of (random) fit ranges")
                     probs, sampi = sortfit.sample_norms(
                         sampler, tsorted[i], lenfit)
@@ -357,10 +357,10 @@ def main():
                       str(idx+1)+"/"+str(lenprod))
                 print("number of results:", len(min_arr),
                       "number of overfit", len(overfit_arr))
+                assert len(latfit.config.FIT_EXCL) == MULT, "bug"
                 if key == fit_range_init:
                     retsingle = retsingle_save
                 else:
-                    print(key, fit_range_init)
                     try:
                         retsingle = singlefit(input_f,
                                             fitrange, xmin, xmax, xstep)
