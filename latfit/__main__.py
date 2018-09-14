@@ -391,8 +391,7 @@ def main():
                 result = [result_min, list(param_err), list(excl)]
 
                 # store result
-                if result_min.fun/result_min.dof >= 1-2/len(
-                        result_min.pvalue_arr): # don't overfit
+                if result_min.fun/result_min.dof >= 1: # don't overfit
                     min_arr.append(result)
                 else:
                     overfit_arr.append(result)

@@ -199,10 +199,13 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num])
 
-            if result_min_jack.fun > chisq_fiduc_cut or np.isnan(
-                    result_min.pvalue[
-                    config_num]) or result_min_jack.fun < 1-5*result_min.dof*2/params.num_configs:
-                raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
+            assert not np.isnan(result_min.pvalue[
+                config_num]), "pvalue is nan"
+            if config_num == 0:
+                if result_min_jack.fun > chisq_fiduc_cut or\
+                   result_min_jack.fun/result_min.dof < 1-5*2/params.num_configs:
+                    raise BadChisqJackknife(
+                        result_min_jack.fun/result_min.dof)
 
         # average results, compute jackknife uncertainties
 
