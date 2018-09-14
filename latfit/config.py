@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -60,9 +60,9 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -96,7 +96,7 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA else 0) # no need to change
 TSEP_VEC = [0]
 TSEP_VEC = [3, 3]
 TSEP_VEC = [3, 0, 3]
-TSEP_VEC = [3]*DIM if GEVP else [0]
+TSEP_VEC = [3 for _ in range(DIM)] if GEVP else [0]
 LT = 64
 
 # print raw gevp info (for debugging source construction)
@@ -113,8 +113,8 @@ MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
-ADD_CONST_VEC = [True]*DIM if GEVP else [False]
-ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
+ADD_CONST_VEC = [True for _ in range(DIM)] if GEVP else [False]
+ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
@@ -298,6 +298,9 @@ BOX_PLOT = True
 PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False if not GEVP else True
 
+# Decrease variance
+DECREASE_VAR = 1e-0
+
 # precision to display, number of decimal places
 
 PREC_DISP = 4
@@ -376,7 +379,7 @@ NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5),
           1.0/10**2.5/10**5.5],
          [1.0/10**3/10**5.5,
           1.0/10**2.5/10**5.5, 1.0/10**11]]
-NORMS = [[1.0]*DIM]*DIM
+NORMS = [[1.0 for _ in range(DIM)] for _ in range(DIM)]
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
