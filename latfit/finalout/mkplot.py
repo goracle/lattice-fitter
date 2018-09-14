@@ -281,11 +281,15 @@ def get_coord(coords, cov, error2=None):
         else:
             error2 = np.array([
                 np.sqrt(cov[i][i]) for i in range(len(coords))])
+    root_s_var = []
+    var = p
     for i, j, k in zip(xcoord, ycoord, error2):
-        var = gvar.gvar(j, k)
-        root_s_var = np.sqrt(
-            var**2-rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2)
-        print(i, var, "| sqrt(s) =", root_s_var)
+        var.append(gvar.gvar(j, k))
+        root_s_var.append(np.sqrt(var**2-rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2))
+    for i, xc1 in enumerate(xcoord):
+        print(xc1, "E(lattice units) =", var[i])
+    for i, xc1 in enumerate(xcoord):
+        print("sqrt(s) =", root_s_var[i])
     return xcoord, ycoord, error2
 
 
