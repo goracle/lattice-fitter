@@ -154,7 +154,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                      result_min.dof)
 
         # loop over configs, doing a fit for each one
-        skip_next = False
+        skip_votes = []
         for config_num in range(params.num_configs):
 
             # if config_num>160: break # for debugging only
@@ -205,16 +205,33 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             if config_num in [0, 1]:
                 if result_min_jack.fun > chisq_fiduc_cut or\
                    result_min_jack.fun/result_min.dof < 1-5*2/params.num_configs:
-                    if skip_next:
-                        raise BadChisqJackknife(
-                            result_min_jack.fun/result_min.dof)
+                    skip_votes.append(config_num)
+                if config_num == 1:
+                    skip_range = False
                     # don't skip the fit range until we confirm
                     # on the next sample
-                    skip_next = True
-                if config_num == 1:
-                    # the second sample should never have a good fit
-                    # if the first one has that bad a fit
-                    assert not skip_next, "Bad jackknife distribution."
+                    if len(skip_votes) == 2:
+                        skip_range = True
+                    elif len(skip_votes) == 1:
+                        # approximate the difference as the stddev: sqrt(\sum(x-<x>)**2/(N));
+                        # mult by sqrt(N-1) to get the variance in chi^2
+                        # if we have one bad fit and another which is within 5 sigma of the bad chi^2, skip, else throw an error
+                        skip_range = abs(result_min_jack.fun-chisq_min_arr[0])<2*5*result_min.dof/np.sqrt(params.num_configs-1)
+                    if skip_range:
+                        raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
+                    elif len(skip_votes) > 0:
+                        # the second sample should never have a good fit
+                        # if the first one has that bad a fit
+                        print("fiducial cut =", chisq_fiduc_cut)
+                        print("dof=", result_min.dof)
+                        print(abs(result_min_jack.fun-chisq_min_arr[0]),2*5*result_min.dof/np.sqrt(params.num_configs))
+                        print(result_min_jack.fun, chisq_min_arr[0])
+                        print("Bad jackknife distribution:"+\
+                              str(chisq_min_arr[0]/result_min.dof)+" "+\
+                              str(chisq_min_arr[1]/result_min.dof)+" "+\
+                              str(result_min.pvalue[0])+" "+\
+                              str(result_min.pvalue[1])+" ")
+                        sys.exit(1)
 
         # average results, compute jackknife uncertainties
 
@@ -264,9 +281,15 @@ def chisqfiduc(num_configs, dof):
     (5 \sigma away from acceptable pvalue)
     2*dof is the variance in chi^2
     """
-    func = lambda tau: PVALUE_MIN - stats.chi2.cdf(
-        tau-tau*5*2*dof/num_configs, dof)
-    return fsolve(func, 2)
+    func = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(
+        tau, dof))
+    # guess about 2 for the max chi^2/dof
+    sol = float(fsolve(func, 2*dof))
+    # known variance of chi^2 is 2*dof
+    ret = sol+5*2*dof/num_configs
+    #print(ret/dof, sol/dof, num_configs, dof, PVALUE_MIN,
+    #      1-stats.chi2.cdf(ret, dof), 1-stats.chi2.cdf(sol, dof))
+    return ret
 
 def unnan_coords(coords):
     """replace nan's with 0 in coords"""
