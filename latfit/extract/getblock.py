@@ -21,6 +21,7 @@ from latfit.config import BINNUM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
+from latfit.config import DECREASE_VAR
 
 if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
@@ -62,11 +63,40 @@ if 1 > 2:
        # return getline(filetup, num)
 
 
-def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False):
+def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
+    """Read in the GEVP matrix
+    """
+    decrease_var = 0 if decrease_var is None else decrease_var
+    dimops = len(file_tup)
+    cmat = np.zeros((num_configs, dimops, dimops), dtype=float)
+    for num in range(num_configs):
+        for opa in range(dimops):
+            for opb in range(dimops):
+                cmat[num][opa][opb] = proc_line(
+                    getline_loc(file_tup[opa][opb], num+1),
+                    file_tup[opa][opb])*NORMS[opa][opb]
+        cmat[num] = enforce_hermiticity(cmat[num])
+        checkherm(cmat[num])
+    mean = np.mean(cmat, axis=0)
+    checkherm(mean)
+    if decrease_var:
+        check = np.array(cmat)
+        cmat = (cmat-mean)*decrease_var+mean
+        check2 = (cmat-mean)/decrease_var+mean
+        assert np.allclose(check, check2, rtol=1e-10), "Round off error detected." 
+    return np.asarray(cmat), np.asarray(mean)
+
+def checkherm(carr):
+    """Check hermiticity of gevp matrix"""
+    assert np.allclose(np.matrix(carr).H, carr, rtol=1e-8), "hermiticity enforcement failed."
+
+def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
     optionally, overwrite the rhs matrix we get if we don't need it anymore (overb=True)
     """
+    checkherm(c_lhs)
+    checkherm(c_rhs)
     overb = False # completely unnecessary and dangerous speedup
     print_evecs = False if not GEVP_DEBUG else print_evecs
     if not get_eigvals.sent and print_evecs:
@@ -74,21 +104,7 @@ def get_eigvals(num, file_tup_lhs, file_tup_rhs, overb=False, print_evecs=False)
         print("e.g. C(t)_ij -> Norms[i][j]*C(t)_ij")
         print("Norms=", NORMS)
         get_eigvals.sent = True
-    dimops = len(file_tup_lhs)
-    c_lhs = np.zeros((dimops, dimops), dtype=float)
-    c_rhs = np.zeros((dimops, dimops), dtype=float)
-    for opa in range(dimops):
-        for opb in range(dimops):
-            c_lhs[opa][opb] = proc_line(
-                getline_loc(file_tup_lhs[opa][opb], num+1),
-                file_tup_lhs[opa][opb])*NORMS[opa][opb]
-            c_rhs[opa][opb] = proc_line(
-                getline_loc(file_tup_rhs[opa][opb], num+1),
-                file_tup_rhs[opa][opb])*NORMS[opa][opb]
-    c_lhs = enforce_hermiticity(c_lhs)
-    c_rhs = enforce_hermiticity(c_rhs)
-    assert np.allclose(np.matrix(c_lhs).H, c_lhs, rtol=1e-8), "hermiticity enforcement failed."
-    assert np.allclose(np.matrix(c_rhs).H, c_rhs, rtol=1e-8), "hermiticity enforcement failed."
+    dimops = len(c_lhs)
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                       overwrite_b=False, check_finite=True)
     late = False if all(np.imag(eigvals) == 0) else True
@@ -168,7 +184,7 @@ class XmaxError(Exception):
 
 
 if EFF_MASS:
-    def getblock_gevp(file_tup, timeij=None):
+    def getblock_gevp(file_tup, timeij=None, decrease_var=DECREASE_VAR):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -185,20 +201,41 @@ if EFF_MASS:
         if GEVP_DEBUG:
             print("Getting block for time slice=", timeij)
         check_variance = []
+
+        cmat_lhs_t, cmat_lhs_t_mean = readin_gevp_matrices(file_tup[0], num_configs)
+        cmat_rhs, cmat_rhs_mean = readin_gevp_matrices(file_tup[1], num_configs)
+        cmat_lhs_tp1, cmat_lhs_tp1_mean = readin_gevp_matrices(file_tup[2], num_configs)
+        cmat_lhs_tp2, cmat_lhs_tp2_mean = readin_gevp_matrices(file_tup[3], num_configs)
+        cmat_lhs_tp3, cmat_lhs_tp3_mean = readin_gevp_matrices(file_tup[3], num_configs)
+
+        eigvals_mean_t = sorted(get_eigvals(
+            cmat_lhs_t_mean, cmat_rhs_mean), reverse=True)
+        eigvals_mean_tp1 = sorted(get_eigvals(
+            cmat_lhs_tp1_mean, cmat_rhs_mean), reverse=True)
+        eigvals_mean_tp2 = sorted(get_eigvals(
+            cmat_lhs_tp2_mean, cmat_rhs_mean), reverse=True)
+        eigvals_mean_tp3 = sorted(get_eigvals(
+            cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
+
         for num in range(num_configs):
             if GEVP_DEBUG:
                 print("config #=", num)
             tprob = timeij
             try:
-                eigvals = sorted(get_eigvals(num, file_tup[0], file_tup[1],
-                                             print_evecs=True), reverse=True)
+                eigvals = 1/decrease_var*(np.array(sorted(get_eigvals(
+                    cmat_lhs_t[num], cmat_rhs[num],
+                    print_evecs=True), reverse=True))-eigvals_mean_t)+eigvals_mean_t
                 tprob = None if not EFF_MASS else tprob
-                eigvals2 = sorted(get_eigvals(num, file_tup[2],
-                                              file_tup[1]), reverse=True)
-                eigvals3 = sorted(get_eigvals(num, file_tup[3],
-                                              file_tup[1]), reverse=True)
-                eigvals4 = sorted(get_eigvals(num, file_tup[4], file_tup[1],
-                                              overb=True), reverse=True)
+
+                eigvals2 = 1/decrease_var*(np.array(sorted(get_eigvals(
+                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True))-eigvals_mean_tp1)+eigvals_mean_tp1
+
+                eigvals3 = 1/decrease_var*(np.array(sorted(get_eigvals(
+                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True))-eigvals_mean_tp2)+eigvals_mean_tp2
+
+                eigvals4 = 1/decrease_var*(np.array(sorted(get_eigvals(
+                    cmat_lhs_tp3[num], cmat_rhs[num],
+                    overb=True), reverse=True))-eigvals_mean_tp3)+eigvals_mean_tp3
 
                 if PIONRATIO:
                     div = np.array([np.real(
