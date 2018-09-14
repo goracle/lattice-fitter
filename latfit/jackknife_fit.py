@@ -9,6 +9,7 @@ from numpy import ma
 from numpy import swapaxes as swap
 from numpy.linalg import inv, tensorinv
 from scipy import stats
+from scipy.optimize import fsolve
 
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
@@ -18,6 +19,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP
 from latfit.config import UNCORR
+from latfit.config import PVALUE_MIN
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF
@@ -146,6 +148,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
 
+        # p-value fiducial cut:  cut below this pvalue
+        # as it is 5 \sigma away from an acceptable chi^2/dof
+        chisq_fiduc_cut = chisqfiduc(params.num_configs,
+                                     result_min.dof)
+
         # loop over configs, doing a fit for each one
         for config_num in range(params.num_configs):
 
@@ -192,14 +199,16 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num])
 
-            if result_min.pvalue[config_num] < .03 or np.isnan(result_min.pvalue[
-                    config_num]) or result_min_jack.fun/result_min.dof < 0.7:
+            if result_min_jack.fun > chisq_fiduc_cut or np.isnan(
+                    result_min.pvalue[
+                    config_num]) or result_min_jack.fun < 1-5*result_min.dof*2/params.num_configs:
                 raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
 
         # average results, compute jackknife uncertainties
 
         # pickle/unpickle the jackknifed arrays
-        min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min, chisq_min_arr)
+        min_arr, result_min, chisq_min_arr = pickl(min_arr, result_min,
+                                                   chisq_min_arr)
 
         # for title printing
         latfit.finalout.mkplot.NUM_CONFIGS = len(min_arr)
@@ -236,6 +245,15 @@ else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def chisqfiduc(num_configs, dof):
+    """Find the chi^2/dof cutoff
+    (5 \sigma away from acceptable pvalue)
+    2*dof is the variance in chi^2
+    """
+    func = lambda tau: PVALUE_MIN - stats.chi2.cdf(
+        tau-tau*5*2*dof/num_configs, dof)
+    return fsolve(func, 2)
 
 def unnan_coords(coords):
     """replace nan's with 0 in coords"""
@@ -309,7 +327,7 @@ def alloc_phase_shift(params):
     return ret
 
 
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -324,11 +342,16 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
         assert sjcut == 0, "sjcut bug"
 
     # get jackknife correction prefactors
-    exact_prefactor = sjcut/(sjcut-1)
+    exact_prefactor = (sjcut-1)/sjcut if sjcut else 0
+    exact_prefactor_inv = sjcut/(sjcut-1) if sjcut else 0
     assert not np.isnan(exact_prefactor), "exact prefactor is nan"
-    sloppy_prefactor = (len_sloppy)/(len_sloppy-1)
+    sloppy_prefactor = (len_sloppy-1)/len_sloppy
     assert not np.isnan(sloppy_prefactor), "sloppy prefactor is nan"
     overall_prefactor = (len_total-1)/len_total
+    assert not np.isnan(overall_prefactor), "sloppy prefactor is nan"
+    if not sjcut:
+        assert overall_prefactor == sloppy_prefactor, "bug"
+    assert arr.shape == arr2.shape, "Shape mismatch"
 
     # calculate error on exact and sloppy
     if sjcut:
@@ -337,6 +360,13 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
             axis=0)
     else:
         errexact = 0
+    if isinstance(errexact, numbers.Number):
+        assert not np.isnan(errexact), "exact err is nan"
+    else:
+        assert not any(np.isnan(errexact)), "exact err is nan"
+
+    if sjcut == 0:
+        assert errexact == 0, "non-zero error in the non-existent exact samples"
     errsloppy = sloppy_prefactor*np.sum(
         (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
         axis=0)
@@ -345,7 +375,9 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
     else:
         assert not any(np.isnan(errsloppy)), "sloppy err is nan"
 
-    err = np.sqrt(err_sloppy**2+err_exact**2)*np.sqrt(total_prefactor)
+    # calculate the superjackknife errors (redundant prefactor multiplies, but perhaps clearer)
+    err = overall_prefactor*(errsloppy/sloppy_prefactor+errexact*exact_prefactor_inv)
+    err = err if nosqrt else np.sqrt(err)
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean

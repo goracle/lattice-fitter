@@ -35,7 +35,7 @@ import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, FIT_EXCL, NOLOOP
 from latfit.config import FIT
 from latfit.config import ISOSPIN, MOMSTR
-from latfit.config import ERR_CUT
+from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, FIT, STYPE
@@ -299,7 +299,8 @@ def main():
                 if random_fit:
 
                     if len(min_arr) > MAX_RESULTS/MPISIZE or (
-                            len(overfit_arr) > MAX_RESULTS/MPISIZE and len(min_arr) == 0):
+                            len(overfit_arr) > MAX_RESULTS/MPISIZE and len(
+                                min_arr) == 0):
                         print("a reasonably large set of indices"+\
                               " has been checked, exiting fit range loop."+\
                               " (number of fit ranges checked:"+str(idx+1)+")")
@@ -320,7 +321,8 @@ def main():
                     if idx == 0:
                         excl = latfit.config.FIT_EXCL
                     else:
-                        excl = [np.random.choice(samp_mult[i][1], p=samp_mult[i][0])
+                        excl = [np.random.choice(
+                            samp_mult[i][1], p=samp_mult[i][0])
                                 for i in range(MULT)]
                 # add user info
                 excl = augment_excl([[i for i in j] for j in excl])
@@ -366,8 +368,8 @@ def main():
                             np.linalg.linalg.LinAlgError,
                             DOFNonPos, BadChisqJackknife, ZetaError) as _:
                         # skip on any error
-                        print("fit failed for this selection excluded points=",
-                            excl)
+                        print("fit failed for this selection"+\
+                              " excluded points=", excl)
                         continue
                 result_min, param_err, plotdata.coords, plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
@@ -375,7 +377,7 @@ def main():
                 print("p-value = ", result_min.pvalue)
 
                 # reject model at 10% level
-                if result_min.pvalue < .1:
+                if result_min.pvalue < PVALUE_MIN:
                     print("Not storing result because p-value"+\
                           " is below rejection threshold. number"+\
                           " of non-overfit results so far =", len(min_arr))
@@ -384,11 +386,13 @@ def main():
 
                 # calculate average relative error (to be minimized)
                 # result = (avg_relerr(result_min, param_err), excl)
-                # print("avg relative error, fit excl:", result, "dof=", result_min.dof)
+                # print("avg relative error, fit excl:", result,
+                # "dof=", result_min.dof)
                 result = [result_min, list(param_err), list(excl)]
 
                 # store result
-                if result_min.fun/result_min.dof >= 0.95: # don't overfit
+                if result_min.fun/result_min.dof >= 1-2/len(
+                        result_min.pvalue_arr): # don't overfit
                     min_arr.append(result)
                 else:
                     overfit_arr.append(result)
@@ -396,15 +400,18 @@ def main():
 
                 errarr.append(param_err)
                 curr_err, avg_curr_err = errerr(errarr)
-                print("average statistical error on parameters", avg_curr_err)
+                print("average statistical error on parameters",
+                      avg_curr_err)
                 stop = max(curr_err)/avg_curr_err[np.argmax(curr_err)]
                 if stop < FITSTOP:
-                    print("Estimate for parameter error has stabilized, exiting loop")
+                    print("Estimate for parameter error has"+\
+                          " stabilized, exiting loop")
                     break
                 else:
                     print("Current error on error =", curr_err)
 
-                # need better criterion here, maybe just have it be user defined patience level?
+                # need better criterion here,
+                # maybe just have it be user defined patience level?
                 # how long should the fit run before giving up?
                 # if result[0] < FITSTOP and random_fit:
                     # print("Fit is good enough.  Stopping search.")
@@ -478,9 +485,9 @@ def main():
 
                             # perform the comparison
                             try:
-                                assert np.allclose(err_check, result_min[name], rtol=1e-8), "jackknife error propagation"+\
-                                    " does not agree with jackknife error."
+                                assert np.allclose(err_check, result_min[name], rtol=1e-8)
                             except AssertionError:
+                                print("jackknife error propagation does not agree with jackknife error.") 
                                 print(result_min[name])
                                 print(err_check)
                                 sys.exit(1)

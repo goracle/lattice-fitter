@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -62,7 +62,7 @@ IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom11'
+IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -118,9 +118,9 @@ ADD_CONST_VEC = [False]*DIM if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1], continuum=DISPCON)-misc.dispersive([1,0,0], continuum=True)
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=True)-misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=DISPCON)
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
@@ -201,6 +201,9 @@ else:
 
 UNCORR = True
 UNCORR = False
+
+# pvalue minimum; we reject model if a pvalue less than this is found
+PVALUE_MIN = 0.1
 
 # Log off, vs. log on; in eff_mass method 3, calculate log at the end vs. not
 
@@ -631,3 +634,6 @@ assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction suppo
     " only with eff mass method 4"
 assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting methods no longer supported."
 assert NUM_PENCILS == 0, "this feature is less tested, use at your own risk (safest to have NUM_PENCILS==0)"
+assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
+    "averaged over rows, A1_mom111 is one row.  "+\
+    "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
