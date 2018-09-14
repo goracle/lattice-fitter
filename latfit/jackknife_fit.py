@@ -309,7 +309,7 @@ def alloc_phase_shift(params):
     return ret
 
 
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -324,10 +324,11 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
         assert sjcut == 0, "sjcut bug"
 
     # get jackknife correction prefactors
-    exact_prefactor = (sjcut-1)/sjcut if sjcut else 0
+    exact_prefactor = sjcut/(sjcut-1)
     assert not np.isnan(exact_prefactor), "exact prefactor is nan"
-    sloppy_prefactor = (len_sloppy-1)/(len_sloppy)
+    sloppy_prefactor = (len_sloppy)/(len_sloppy-1)
     assert not np.isnan(sloppy_prefactor), "sloppy prefactor is nan"
+    overall_prefactor = (len_total-1)/len_total
 
     # calculate error on exact and sloppy
     if sjcut:
@@ -344,12 +345,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     else:
         assert not any(np.isnan(errsloppy)), "sloppy err is nan"
 
-    # add errors in quadrature (assumes errors are small,
-    # decorrelated, linear approx)
-    err = errsloppy+errexact
-    # do this if we want the variance as opposed to the sqrt(var)
-    err = np.sqrt(err) if not nosqrt else err
-    err = err/2 if sjcut else err
+    err = np.sqrt(err_sloppy**2+err_exact**2)*np.sqrt(total_prefactor)
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean
