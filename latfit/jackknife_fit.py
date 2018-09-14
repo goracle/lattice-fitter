@@ -154,6 +154,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                      result_min.dof)
 
         # loop over configs, doing a fit for each one
+        skip_next = False
         for config_num in range(params.num_configs):
 
             # if config_num>160: break # for debugging only
@@ -201,11 +202,19 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             assert not np.isnan(result_min.pvalue[
                 config_num]), "pvalue is nan"
-            if config_num == 0:
+            if config_num in [0, 1]:
                 if result_min_jack.fun > chisq_fiduc_cut or\
                    result_min_jack.fun/result_min.dof < 1-5*2/params.num_configs:
-                    raise BadChisqJackknife(
-                        result_min_jack.fun/result_min.dof)
+                    if skip_next:
+                        raise BadChisqJackknife(
+                            result_min_jack.fun/result_min.dof)
+                    # don't skip the fit range until we confirm
+                    # on the next sample
+                    skip_next = True
+                if config_num == 1:
+                    # the second sample should never have a good fit
+                    # if the first one has that bad a fit
+                    assert not skip_next, "Bad jackknife distribution."
 
         # average results, compute jackknife uncertainties
 
@@ -218,7 +227,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute p-value jackknife uncertainty
         result_min.pvalue_arr = np.array(result_min.pvalue)
-        result_min.pvalue, result_min.pvalue_err = jack_mean_err(result_min.pvalue)
+        result_min.pvalue, result_min.pvalue_err = jack_mean_err(
+            result_min.pvalue)
 
         # store arrays for fit range averaging
         result_min.x_arr = np.array(min_arr)
