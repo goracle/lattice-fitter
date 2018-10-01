@@ -1246,7 +1246,8 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
         retblks = {}
         for blk in sloppyblks:
 
-            len_sloppy, len_exact = check_ama(blk, sloppyblks, exactblks, sloppysubtractionblks)
+            len_sloppy, len_exact = check_ama(blk, sloppyblks, exactblks,
+                                              sloppysubtractionblks)
 
             # compute correction
             correction = exactblks[blk] - sloppysubtractionblks[blk]
@@ -1293,7 +1294,7 @@ def main(fixn=True):
                         single_block], single_block)
                 except KeyError:
                     print(single_block, "not found.  not writing.")
-                    continue
+                    sys.exit(1)
                 h5write_blk(allblks[single_block],
                             single_block, extension='.jkdat', ocs=None)
         if not WRITE_INDIVIDUAL:
