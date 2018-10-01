@@ -1381,10 +1381,10 @@ AVG_ROWS = {
                  'A1y_mom_101',
                  'A1y_mom10_1',
                  'A1y_mom_10_1',
-                 'A1z_mom110'
-                 'A1z_mom_110'
-                 'A1z_mom1_10'
-                 'A1z_mom_1_10'
+                 'A1z_mom110',
+                 'A1z_mom_110',
+                 'A1z_mom1_10',
+                 'A1z_mom_1_10',
     ),
     'A1_avg_mom111': ('A1_mom111',
                       'A1_mom_1_1_1',
