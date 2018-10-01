@@ -137,6 +137,8 @@ if GEVP:
             time2 = roundup(time, xstep, xmin)
         elif T0 == 'TMINUS1':
             time2 = time-xstep
+        elif isinstance(T0, int):
+            time2 = T0
         return getfiles_gevp(time, time2, xstep)
 else:
     def getfiles(time, xstep, _, input_f):
