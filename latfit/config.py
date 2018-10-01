@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -61,8 +61,9 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -172,6 +173,7 @@ RESCALE = 1.0
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
+T0 = 3
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -626,7 +628,7 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR))-misc.MASS if GEVP else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=True)-misc.MASS if GEVP else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
