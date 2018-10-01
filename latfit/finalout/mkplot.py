@@ -292,6 +292,8 @@ def get_coord(coords, cov, error2=None):
         print(xc1, "E(lattice units) =", var[i])
     for i, xc1 in enumerate(xcoord):
         print(xc1, "sqrt(s) (MeV) =", 1000*AINVERSE*root_s_var[i])
+    for i, xc1 in enumerate(xcoord):
+        print(xc1, "sqrt(s) (lattice units) =", root_s_var[i])
     return xcoord, ycoord, error2
 
 
