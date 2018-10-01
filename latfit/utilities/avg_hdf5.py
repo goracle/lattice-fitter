@@ -25,7 +25,7 @@ def main(*args):
         except OSError:
             print("Not including:", data, "File doesn't exist.")
             norm = 1.0/(1.0/norm-1)
-            continue
+            sys.exit(1)
         print("Including", data)
         for k in fn:
             isospin = k
