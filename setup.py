@@ -14,7 +14,7 @@ with codecs.open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='latfit',
-    version='0.10.0.0',
+    version='0.11.0.0',
     description='lattice qcd data fitter',
     long_description=LONG_DESCRIPTION,
     url='https://www.github.com/goracle/lattice-fitter',
