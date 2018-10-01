@@ -35,6 +35,8 @@ def main():
         else:
             fn1 = h5py.File(file1, 'w')
         for j, file2 in enumerate(glob.glob('traj_'+str(traj)+'_*hdf5')):
+            if 'exact' in file2:
+                continue
             if j:
                 pass
             try:
