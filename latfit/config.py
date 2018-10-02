@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -48,8 +48,8 @@ SYSTEMATIC_EST = False
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 10
 SUPERJACK_CUTOFF = 0
+SUPERJACK_CUTOFF = 7
 
 # isospin value, (0,1,2 supported)
 ISOSPIN = 2
@@ -61,9 +61,9 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -119,6 +119,7 @@ ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
+DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
@@ -126,7 +127,6 @@ print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -300,8 +300,9 @@ BOX_PLOT = True
 PLOT_DISPERSIVE = True
 PLOT_DISPERSIVE = False if not GEVP else True
 
-# Decrease variance
-DECREASE_VAR = 1e-0
+# Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
+# should be < 1
+DECREASE_VAR = 1e-2
 
 # precision to display, number of decimal places
 
@@ -628,7 +629,7 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=True)-misc.MASS if GEVP else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
