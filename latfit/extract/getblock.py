@@ -83,7 +83,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         check = np.array(cmat)
         cmat = (cmat-mean)*decrease_var+mean
         check2 = (cmat-mean)/decrease_var+mean
-        assert np.allclose(check, check2, rtol=1e-10), "Round off error detected." 
+        assert np.allclose(check, check2, rtol=1e-10), "precision loss detected." 
     return np.asarray(cmat), np.asarray(mean)
 
 def checkherm(carr):
@@ -182,6 +182,15 @@ class XmaxError(Exception):
         self.message = message
 
 
+def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
+    """
+    apply y->(y_i-<y>)*decrease_var+<y>
+    """
+    ret = (orig-avg)*decrease_var+avg
+    check = (ret-avg)/decrease_var+avg
+    assert np.allclose(check, orig, rtol=1e-10), "precision loss detected." 
+    return ret
+
 
 if EFF_MASS:
     def getblock_gevp(file_tup, timeij=None, decrease_var=DECREASE_VAR):
@@ -222,20 +231,21 @@ if EFF_MASS:
                 print("config #=", num)
             tprob = timeij
             try:
-                eigvals = 1/decrease_var*(np.array(sorted(get_eigvals(
+                eigvals = variance_reduction(np.array(sorted(get_eigvals(
                     cmat_lhs_t[num], cmat_rhs[num],
-                    print_evecs=True), reverse=True))-eigvals_mean_t)+eigvals_mean_t
+                    print_evecs=True), reverse=True)), eigvals_mean_t, 1/decrease_var)
+
                 tprob = None if not EFF_MASS else tprob
 
-                eigvals2 = 1/decrease_var*(np.array(sorted(get_eigvals(
-                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True))-eigvals_mean_tp1)+eigvals_mean_tp1
+                eigvals2 = variance_reduction(np.array(sorted(get_eigvals(
+                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True)), eigvals_mean_tp1, 1/decrease_var)
 
-                eigvals3 = 1/decrease_var*(np.array(sorted(get_eigvals(
-                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True))-eigvals_mean_tp2)+eigvals_mean_tp2
+                eigvals3 = variance_reduction(np.array(sorted(get_eigvals(
+                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True)), eigvals_mean_tp2, 1/decrease_var)
 
-                eigvals4 = 1/decrease_var*(np.array(sorted(get_eigvals(
+                eigvals4 = variance_reduction(np.array(sorted(get_eigvals(
                     cmat_lhs_tp3[num], cmat_rhs[num],
-                    overb=True), reverse=True))-eigvals_mean_tp3)+eigvals_mean_tp3
+                    overb=True), reverse=True)), eigvals_mean_tp3, 1/decrease_var)
 
                 if PIONRATIO:
                     div = np.array([np.real(
