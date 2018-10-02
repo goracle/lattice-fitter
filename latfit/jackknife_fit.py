@@ -231,7 +231,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                               str(chisq_min_arr[1]/result_min.dof)+" "+\
                               str(result_min.pvalue[0])+" "+\
                               str(result_min.pvalue[1])+" ")
-                        sys.exit(1)
+                        raise BadJackknifeDist
+                        #sys.exit(1)
 
         # average results, compute jackknife uncertainties
 
@@ -318,7 +319,7 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift):
             try:
                 min_arr = min_arr[:, 0]
             except IndexError:
-                raise
+                sys.exit(1)
 
     # get rid of configs were phase shift calculation failed
     # (good for debug only)
@@ -750,8 +751,17 @@ def jack_errorbars(covjack, params):
         sys.exit(1)
     return error_bars
 
+class BadJackknifeDist(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, dof=None, message=''):
+        print("***ERROR***")
+        print("Bad jackknife distribution, variance in chi^2 too large")
+        super(BadJackknifeDist, self).__init__(message)
+        self.message = message
+
+
 class DOFNonPos(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
+    """Exception for dof < 0"""
     def __init__(self, dof=None, message=''):
         print("***ERROR***")
         print("dof < 1: dof=", dof)
@@ -760,7 +770,7 @@ class DOFNonPos(Exception):
         self.message = message
 
 class BadChisqJackknife(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
+    """Exception for bad chi^2"""
     def __init__(self, chisq=None, message=''):
         print("***ERROR***")
         print("chisq/dof >> 1 or p-value >> 0.5 chisq=", chisq)

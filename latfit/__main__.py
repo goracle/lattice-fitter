@@ -56,6 +56,7 @@ from latfit.makemin.mkmin import NegChisq
 from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
+from latfit.jackknife_fit import BadJackknifeDist
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 import latfit.config
@@ -365,7 +366,7 @@ def main():
                         retsingle = singlefit(input_f,
                                             fitrange, xmin, xmax, xstep)
                     except (NegChisq, RelGammaError, OverflowError,
-                            np.linalg.linalg.LinAlgError,
+                            np.linalg.linalg.LinAlgError, BadJackknifeDist,
                             DOFNonPos, BadChisqJackknife, ZetaError) as _:
                         # skip on any error
                         print("fit failed for this selection"+\
