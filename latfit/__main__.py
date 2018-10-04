@@ -59,6 +59,7 @@ from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
 from latfit.jackknife_fit import BadJackknifeDist
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
+from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
 import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -385,6 +386,19 @@ def main():
                     print("number of overfit results =", len(overfit_arr))
                     continue
 
+                # is this justifiable?
+                if skip_large_errors(result_min.x, param_err):
+                    print("Skipping fit range because param errors"+\
+                          " are greater than 100%")
+                    continue
+
+                # is this justifiable?
+                if CALC_PHASE_SHIFT and MULT > 1:
+                    if any(result_min.phase_shift_err > PHASE_SHIFT_ERR_CUT):
+                        print("phase shift errors too large")
+                        continue
+
+
                 # calculate average relative error (to be minimized)
                 # result = (avg_relerr(result_min, param_err), excl)
                 # print("avg relative error, fit excl:", result,
@@ -681,6 +695,23 @@ def errerr(param_err_arr):
         err[i] = np.std(param_err_arr[:, i], ddof=1)/np.sqrt(len(err))/np.sqrt(MPISIZE)
         avgerr[i] = np.mean(param_err_arr[:, i])
     return err, avgerr
+    
+
+def skip_large_errors(result_param, param_err):
+    """Skip on parameter errors greater than 100%
+    (fit range is too noisy)
+    return a bool if we should skip this fit range
+    """
+    ret = False
+    result_param = np.asarray(result_param)
+    param_err = np.asarray(param_err)
+    if result_param.shape:
+        for i, j in zip(result_param, param_err):
+            assert j > 0, "negative error found:"+\
+                str(result_param)+" "+str(param_err)
+            ret = abs(i/j) < 1
+    return ret if SKIP_LARGE_ERRORS else False
+            
     
 
 # obsolete, we should simply pick the model with the smallest errors and an adequate chi^2
