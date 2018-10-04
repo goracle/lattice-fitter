@@ -108,13 +108,13 @@ GEVP_DEBUG = False
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
-ADD_CONST_VEC = [True for _ in range(DIM)] if GEVP else [False]
+ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
@@ -127,6 +127,7 @@ print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION else DELTA_E2_AROUND_THE_WORLD
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -292,6 +293,14 @@ CALC_PHASE_SHIFT = False
 CALC_PHASE_SHIFT = True
 CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
+# phase shift error cut, absolute, in degrees.
+# if the error is bigger than this, skip this fit range
+PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else 30
+
+# skip fit range if parameter (energy) errors greater than 100%
+SKIP_LARGE_ERRORS = False
+SKIP_LARGE_ERRORS = True
+
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = False
 BOX_PLOT = True
@@ -440,7 +449,7 @@ LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
-if not GEVP_DEBUG:
+if not GEVP_DEBUG and any(ADD_CONST_VEC):
     assert MATRIX_SUBTRACTION or not GEVP,\
         "Must subtract around the world constant at GEVP level"
 else:
@@ -449,6 +458,7 @@ MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if MATRIX_SUBTRACTION:
     for i, _ in enumerate(ADD_CONST_VEC):
         ADD_CONST_VEC[i] = MATRIX_SUBTRACTION
+
 ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
 # library of functions to fit.  define them in the usual way
@@ -629,7 +639,7 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP and MATRIX_SUBTRACTION else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",

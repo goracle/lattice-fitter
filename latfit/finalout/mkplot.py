@@ -45,7 +45,7 @@ from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE
-from latfit.config import FIT
+from latfit.config import FIT, ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 import latfit.config
@@ -58,7 +58,7 @@ def update_result_min_nofit(plotdata):
     """Update the result with around the world shift in energy
     associated with non-zero center of mass momentum
     """
-    assert MATRIX_SUBTRACTION, "addition of delta E makes sense only if"+\
+    assert MATRIX_SUBTRACTION or not any(ADD_CONST_VEC), "addition of delta E makes sense only if"+\
         " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):
         plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
