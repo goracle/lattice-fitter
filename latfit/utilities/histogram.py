@@ -50,12 +50,19 @@ def make_hist(fname):
             print("val; pvalue; err")
             pdat_median = np.median(pdat_freqarr)
             median_diff = np.inf
+            median_diff2 = np.inf
+            half = 0
             for i, j, k in sorted(zip(freq, pdat_freqarr, errdat[
                     :, dim]), key = operator.itemgetter(0)):
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
                     freq_median = i
+                elif abs(j - pdat_median) <= median_diff2:
+                    median_diff2 = abs(j-pdat_median)
+                    half = i
                 print(np.real(i), j, np.real(k))
+            if median_diff != 0:
+                freq_median = (freq_median+half)/2
             sys_err = np.std(freq, ddof=1)
             # print(freq, np.mean(freq))
             hist, bins = np.histogram(freq, bins=10)
