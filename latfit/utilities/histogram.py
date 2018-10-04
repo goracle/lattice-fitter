@@ -49,9 +49,11 @@ def make_hist(fname):
             freq = freqarr[:, dim]
             print("val; pvalue; err")
             pdat_median = np.median(pdat_freqarr)
+            median_diff = np.inf
             for i, j, k in sorted(zip(freq, pdat_freqarr, errdat[
                     :, dim]), key = operator.itemgetter(0)):
-                if j == pdat_median:
+                if abs(j - pdat_median) <= median_diff:
+                    median_diff = abs(j-pdat_median)
                     freq_median = i
                 print(np.real(i), j, np.real(k))
             sys_err = np.std(freq, ddof=1)
