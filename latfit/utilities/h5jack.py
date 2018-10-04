@@ -137,7 +137,7 @@ DOAMA = True
 #EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
-EXACT_CONFIGS = [1090, 1110, 1130, 1150, 1170, 1190, 1210, 1230, 1250, 1270, 1290, 1330, 1350, 1370, 1390]
+EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250,  1370, 1390]
 
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
@@ -1277,8 +1277,8 @@ def main(fixn=True):
     if not DOAMA:
         allblks, numt, auxblks = get_data()
     else:
-        sloppyblks, numt, auxblks = get_data(False, False)
         exactblks, numt, auxblks = get_data(True, False)
+        sloppyblks, numt, auxblks = get_data(False, False)
         sloppysubtractionblks, numt, auxblks = get_data(False, True)
         allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
     check_diag = "FigureCv3_sep"+str(TSEP)+"_momsrc_100_momsnk000" # sanity check
