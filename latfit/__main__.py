@@ -643,6 +643,7 @@ def convert_to_namedtuple(dictionary):
 
 
 def cut_on_errsize():
+    """Cut on the size of the error bars on individual points"""
     err = singlefit.error2
     coords = singlefit.coords_full
     assert singlefit.error2 is not None, "Bug in the acquiring error bars"
