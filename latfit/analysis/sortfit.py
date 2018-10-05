@@ -10,6 +10,7 @@ def best_times(coord, cov, index, times):
     (todo:make more general?)
     chisq = num/denom
     """
+    dispmean = np.mean(DISP_ENERGIES) if DISP_ENERGIES else 0
     dist = []
     for i, ycoord in enumerate(coord):
         chisq = None
@@ -19,7 +20,7 @@ def best_times(coord, cov, index, times):
             try:
                 num = (ycoord-DISP_ENERGIES[index])**2
             except IndexError:
-                num = (ycoord-np.mean(DISP_ENERGIES))**2
+                num = (ycoord-dispmean)**2
             denom = cov[i,i]
             assert not np.isnan(num), "difference (chisq numerator)"+\
                 " is not a number "+str(DISP_ENERGIES)+" "+str(ycoord)

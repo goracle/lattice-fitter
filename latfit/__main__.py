@@ -247,19 +247,25 @@ def main():
             plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
             tsorted = []
             for i in range(MULT):
-                if MULT == 1:
-                    break
+                #if MULT == 1:
+                #    break
                 if i == 0 and MPIRANK == 0:
                     print("Finding best times (most likely to give small chi^2 contributions)")
-                coords = np.array([j[i] for j in plotdata.coords[:,1]])
+                if MULT > 1:
+                    coords = np.array([j[i] for j in plotdata.coords[:,1]])
+                else:
+                    coords = np.array([j for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
-                tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
+                if MULT > 1:
+                    tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
+                else:
+                    tsorted.append(sortfit.best_times(coords, plotdata.cov, 0, times))
             samp_mult = []
             if random_fit:
                 # go in a random order if lenprod is small (biased by how likely fit will succeed),
                 for i in range(MULT):
-                    if MULT == 1:
-                        break
+                    #if MULT == 1:
+                    #    break
                     if i == 0 and MPIRANK == 0 and BIASED_SPEEDUP:
                         print("Setting up biased sorting of (random) fit ranges")
                     probs, sampi = sortfit.sample_norms(
@@ -268,8 +274,10 @@ def main():
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
-                    if MULT == 1 or lenprod == 1:
+                    if lenprod == 1:
                         break
+                    #if MULT == 1 or lenprod == 1:
+                    #    break
                     if i == 0 and MPIRANK == 0:
                         print("Setting up sorting of exhaustive list of fit ranges")
                     sampi = sortfit.sortcombinations(
@@ -287,9 +295,10 @@ def main():
             if not random_fit:
                 for excl in EXCL_ORIG:
                     if len(excl) > 1:
+                        assert False
                         skip_loop = True
-            if MULT == 1:
-                skip_loop = True
+            #if MULT == 1:
+            #    skip_loop = True
 
             print("starting loop of max length:"+str(lenprod))
             for idx in range(lenprod):

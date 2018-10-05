@@ -470,43 +470,36 @@ def plot_fit(xcoord, result_min, dimops):
     for curve_num in range(dimops):
         # result_min.x is is the array of minimized fit params
         yfit = np.array([
-            fit_func(xfit[curve_num][i], result_min.x)[curve_num] if dimops > 1 else
-            fit_func(xfit[i], result_min.x)
-            for i in range(len(xfit[curve_num] if dimops > 1 else xfit))])
+            fit_func(xfit[curve_num][i], result_min.x)[
+                curve_num] for i in range(len(xfit[curve_num]))])
         if np.nan in yfit:
             continue
         # only plot fit function if minimizer result makes sense
         # if result_min.status == 0:
-        plt.plot(xfit[curve_num] if dimops > 1 else xfit, yfit)
+        plt.plot(xfit[curve_num], yfit)
 
 def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
     """Return the abscissa for the plot of the fit function."""
-    if dimops == 1:
-        step_size = abs((xcoord[len(xcoord)-1]-xcoord[0]))/FINE/(
-            len(xcoord)-1)
-        xfit = np.arange(xcoord[0], xcoord[len(xcoord)-1]+step_size,
-                         step_size)
-    else:
-        xfit = np.zeros((dimops), dtype=object)
-        for i in range(dimops):
-            xfit[i] = np.array(xcoord)
-            todel = []
-            badcoord = []
-            for j, coord in enumerate(xcoord):
-                if coord in latfit.config.FIT_EXCL[i]:
-                    todel.append(j)
-                    badcoord.append(coord)
-            xfit[i] = np.delete(xfit[i], todel)
-            if not box_plot:
-                step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
-                    len(xfit[i])-1) if step_size is None else step_size
-                step_size = 1.0 if np.isnan(step_size) else step_size
-                try:
-                    xfit[i] = list(np.arange(xfit[i][0],
-                                            xfit[i][len(xfit[i])-1]+step_size,
-                                            step_size))
-                except IndexError: # here in case nothing is to be plot
-                    xfit[i] = []
+    xfit = np.zeros((dimops), dtype=object)
+    for i in range(dimops):
+        xfit[i] = np.array(xcoord)
+        todel = []
+        badcoord = []
+        for j, coord in enumerate(xcoord):
+            if coord in latfit.config.FIT_EXCL[i]:
+                todel.append(j)
+                badcoord.append(coord)
+        xfit[i] = np.delete(xfit[i], todel)
+        if not box_plot:
+            step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
+                len(xfit[i])-1) if step_size is None else step_size
+            step_size = 1.0 if np.isnan(step_size) else step_size
+            try:
+                xfit[i] = list(np.arange(xfit[i][0],
+                                        xfit[i][len(xfit[i])-1]+step_size,
+                                        step_size))
+            except IndexError: # here in case nothing is to be plot
+                xfit[i] = []
     return xfit
 
 
@@ -519,7 +512,7 @@ if GEVP:
         # gca, gcf = getcurrentaxes getcurrentfigure
         fig = plt.gcf()
         xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
-        xfit = [xfit] if dimops == 1 else xfit
+        #xfit = [xfit] if dimops == 1 else xfit
         for i in range(dimops):
             if np.isnan(result_min.x[i]):
                 continue
@@ -542,6 +535,7 @@ if GEVP:
                     if continuous:
                         break
             except IndexError:
+                assert False, "index error"
                 pass
 else:
     def plot_box(xcoord, result_min, param_err, dimops=1):

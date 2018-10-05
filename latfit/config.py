@@ -111,6 +111,7 @@ GEVP_DEBUG = False
 MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
@@ -631,7 +632,7 @@ latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back
 # MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
 FITS.select(UP)
-NOLOOP = True if not GEVP else NOLOOP
+#NOLOOP = True if not GEVP else NOLOOP
 if PIONRATIO:
     FITS.test()
 if EFF_MASS:

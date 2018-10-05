@@ -478,14 +478,21 @@ def prune_fit_range(covinv_jack, coords_jack):
     from fit range.  Thus, the contribution to chi^2 will be 0.
     """
     excl = latfit.config.FIT_EXCL
+    dimops1 = len(excl) == 1
     for i, xcoord in enumerate(coords_jack[:, 0]):
         for opa, _ in enumerate(excl):
             for j, _ in enumerate(excl[opa]):
                 if xcoord == excl[opa][j]:
-                    assert covinv_jack[i, :, opa, :].all() == 0, "Prune failed."
-                    assert covinv_jack[:, i, opa, :].all() == 0, "Prune failed."
-                    assert covinv_jack[:, i, :, opa].all() == 0, "Prune failed."
-                    assert covinv_jack[i, :, :, opa].all() == 0, "Prune failed."
+                    if not dimops1:
+                        assert covinv_jack[i, :, opa, :].all() == 0, "Prune failed."
+                        assert covinv_jack[:, i, opa, :].all() == 0, "Prune failed."
+                        assert covinv_jack[:, i, :, opa].all() == 0, "Prune failed."
+                        assert covinv_jack[i, :, :, opa].all() == 0, "Prune failed."
+                    else:
+                        assert covinv_jack[i, :].all() == 0, "Prune failed."
+                        assert covinv_jack[:, i].all() == 0, "Prune failed."
+                        assert covinv_jack[:, i].all() == 0, "Prune failed."
+                        assert covinv_jack[i, :].all() == 0, "Prune failed."
     return covinv_jack
 
 def prune_phase_shift_arr(arr):
