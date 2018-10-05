@@ -193,7 +193,7 @@ def main():
             print("new fit range = ", fitrange)
             plotdata.fitcoord = fit_coord(fitrange, xstep)
         except (NegChisq, RelGammaError,
-                np.linalg.linalg.LinAlgError,
+                np.linalg.linalg.LinAlgError, BadJackknifeDist,
                 DOFNonPos, BadChisqJackknife, ZetaError) as _:
             pass
         # update the known exclusion information with plot points
@@ -238,7 +238,7 @@ def main():
                                             fitrange, xmin, xmax, xstep)
                     print("Test fit succeeded.")
                 except (NegChisq, RelGammaError, OverflowError,
-                        np.linalg.linalg.LinAlgError,
+                        np.linalg.linalg.LinAlgError, BadJackknifeDist,
                         DOFNonPos, BadChisqJackknife, ZetaError) as _:
                     print("Test fit failed, but in an acceptable way. Continuing.")
                     fit_range_init = None
