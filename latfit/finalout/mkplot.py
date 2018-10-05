@@ -502,58 +502,39 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
                 xfit[i] = []
     return xfit
 
-
-if GEVP:
-    def plot_box(xcoord, result_min, param_err, dimops):
-        """plot tolerance box around straight line fit for effective mass
-        assumes xstep = 1
-        """
-        axvar = plt.gca()
-        # gca, gcf = getcurrentaxes getcurrentfigure
-        fig = plt.gcf()
-        xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
-        #xfit = [xfit] if dimops == 1 else xfit
-        for i in range(dimops):
-            if np.isnan(result_min.x[i]):
-                continue
-            try:
-                continuous = len(
-                    np.arange(xfit[i][0],
-                              xfit[i][len(xfit[i])-1]+1)) == len(xfit[i])
-                for start in xfit[i]:
-                    delw = xfit[i][len(
-                        xfit[i])-1]-xfit[i][0] if continuous else 0
-                    axvar.add_patch((
-                        plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                            (start-.5, result_min.x[i]-param_err[i]),  # (x, y)
-                            1+delw,  # width
-                            2*param_err[i],  # height
-                            fill=True, color='k', alpha=0.5,
-                            zorder=1000, figure=fig,
-                            # transform=fig.transFigure
-                        )))
-                    if continuous:
-                        break
-            except IndexError:
-                assert False, "index error"
-                pass
-else:
-    def plot_box(xcoord, result_min, param_err, dimops=1):
-        """plot tolerance box around straight line fit for effective mass
-        """
-        if dimops:
+def plot_box(xcoord, result_min, param_err, dimops):
+    """plot tolerance box around straight line fit for effective mass
+    assumes xstep = 1
+    """
+    axvar = plt.gca()
+    # gca, gcf = getcurrentaxes getcurrentfigure
+    fig = plt.gcf()
+    xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
+    #xfit = [xfit] if dimops == 1 else xfit
+    for i in range(dimops):
+        if np.isnan(result_min.x[i]):
+            continue
+        try:
+            continuous = len(
+                np.arange(xfit[i][0],
+                            xfit[i][len(xfit[i])-1]+1)) == len(xfit[i])
+            for start in xfit[i]:
+                delw = xfit[i][len(
+                    xfit[i])-1]-xfit[i][0] if continuous else 0
+                axvar.add_patch((
+                    plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
+                        (start-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                        1+delw,  # width
+                        2*param_err[i],  # height
+                        fill=True, color='k', alpha=0.5,
+                        zorder=1000, figure=fig,
+                        # transform=fig.transFigure
+                    )))
+                if continuous:
+                    break
+        except IndexError:
+            assert False, "index error"
             pass
-        axvar = plt.gca()
-        # gca, gcf = getcurrentaxes getcurrentfigure
-        fig = plt.gcf()
-        axvar.add_patch((
-            plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                (xcoord[0]-.5, result_min.x[0]-param_err[0]),   # (x, y)
-                xcoord[len(xcoord)-1]-xcoord[0]+1,  # width
-                2*param_err[0],          # height
-                fill=True, color='k', alpha=0.5, zorder=1000, figure=fig,
-                # transform=fig.transFigure
-            )))
 
 if ADD_CONST:
     YSTART = 0.95
