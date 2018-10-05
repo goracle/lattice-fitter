@@ -83,6 +83,7 @@ PION_MASS = 0.13975*AINVERSE
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
+DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
 #print(misc.dispersive([1,1,1]))
@@ -108,8 +109,8 @@ GEVP_DEBUG = False
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False
+MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
