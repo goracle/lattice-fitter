@@ -171,6 +171,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
+                raise NoConvergence
 
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
@@ -766,6 +767,13 @@ class BadJackknifeDist(Exception):
         super(BadJackknifeDist, self).__init__(message)
         self.message = message
 
+class NoConvergence(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, dof=None, message=''):
+        print("***ERROR***")
+        print("Minimizer failed to converge")
+        super(NoConvergence, self).__init__(message)
+        self.message = message
 
 class DOFNonPos(Exception):
     """Exception for dof < 0"""

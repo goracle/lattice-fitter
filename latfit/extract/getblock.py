@@ -28,7 +28,7 @@ if MATRIX_SUBTRACTION and GEVP:
 
 XMAX = 999
 
-if PIONRATIO:
+if PIONRATIO and GEVP:
     PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+('s' if i != 1 else '') for i in range(2)]
     PION = []
     for istr in PIONSTR:

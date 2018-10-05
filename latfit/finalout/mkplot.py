@@ -44,7 +44,7 @@ from latfit.config import ERROR_BAR_METHOD
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
-from latfit.config import AINVERSE
+from latfit.config import AINVERSE, SUPERJACK_CUTOFF
 from latfit.config import FIT, ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
@@ -206,6 +206,14 @@ def get_dimops(cov, result_min, coords):
             sys.exit(1)
     return dimops
 
+def superjackstring():
+    """Get string for displaying the number of bias correction configs"""
+    if SUPERJACK_CUTOFF:
+        ret = ","+str(SUPERJACK_CUTOFF)
+    else:
+        ret = ""
+    return ret
+
 
 def get_title(input_f):
     """get title info"""
@@ -221,7 +229,7 @@ def get_title(input_f):
             title = input_f
     else:
         title = TITLE
-    pretitle = latfit.config.TITLE_PREFIX+str(NUM_CONFIGS)+' configs '
+    pretitle = latfit.config.TITLE_PREFIX+str(NUM_CONFIGS)+superjackstring()+' configs '
     if len(pretitle) > 50:
         title = ''
         pretitle = pretitle[:-1]
@@ -469,9 +477,14 @@ def plot_fit(xcoord, result_min, dimops):
     xfit = get_xfit(dimops, xcoord)
     for curve_num in range(dimops):
         # result_min.x is is the array of minimized fit params
-        yfit = np.array([
-            fit_func(xfit[curve_num][i], result_min.x)[
-                curve_num] for i in range(len(xfit[curve_num]))])
+        if dimops > 1:
+            yfit = np.array([
+                fit_func(xfit[curve_num][i], result_min.x)[
+                    curve_num] for i in range(len(xfit[curve_num]))])
+        else:
+            yfit = np.array([
+                fit_func(xfit[curve_num][i], result_min.x)
+                for i in range(len(xfit[curve_num]))])
         if np.nan in yfit:
             continue
         # only plot fit function if minimizer result makes sense

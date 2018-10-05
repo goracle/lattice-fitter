@@ -56,7 +56,7 @@ from latfit.makemin.mkmin import NegChisq
 from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
-from latfit.jackknife_fit import BadJackknifeDist
+from latfit.jackknife_fit import BadJackknifeDist, NoConvergence
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
@@ -166,7 +166,7 @@ def main():
     latfit.config.TSTEP = xstep
     plotdata.fitcoord = fit_coord(fitrange, xstep)
     trials = trials_err(options.trials)
-    update_num_configs()
+    update_num_configs(input_f=(input_f if not GEVP else None))
 
     if trials == -1:
         # try an initial plot, shrink the xmax if it's too big
@@ -192,7 +192,7 @@ def main():
             fitrange = fitrange_err(options, xmin, xmax)
             print("new fit range = ", fitrange)
             plotdata.fitcoord = fit_coord(fitrange, xstep)
-        except (NegChisq, RelGammaError,
+        except (NegChisq, RelGammaError, NoConvergence,
                 np.linalg.linalg.LinAlgError, BadJackknifeDist,
                 DOFNonPos, BadChisqJackknife, ZetaError) as _:
             pass
@@ -237,7 +237,7 @@ def main():
                     retsingle_save = singlefit(input_f,
                                             fitrange, xmin, xmax, xstep)
                     print("Test fit succeeded.")
-                except (NegChisq, RelGammaError, OverflowError,
+                except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                         np.linalg.linalg.LinAlgError, BadJackknifeDist,
                         DOFNonPos, BadChisqJackknife, ZetaError) as _:
                     print("Test fit failed, but in an acceptable way. Continuing.")
@@ -375,7 +375,7 @@ def main():
                     try:
                         retsingle = singlefit(input_f,
                                             fitrange, xmin, xmax, xstep)
-                    except (NegChisq, RelGammaError, OverflowError,
+                    except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                             np.linalg.linalg.LinAlgError, BadJackknifeDist,
                             DOFNonPos, BadChisqJackknife, ZetaError) as _:
                         # skip on any error
@@ -763,18 +763,22 @@ def powerset(iterable):
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def update_num_configs():
+def update_num_configs(num_configs=None, input_f=None):
     """Update the number of configs in the case that FIT is False.
     """
-    if not FIT and GEVP and STYPE == 'hdf5':
-        fn1 = h5py.File(latfit.config.GEVP_DIRS[0][0], 'r')
+    num_configs = -1 if num_configs is None else num_configs
+    if not FIT and STYPE == 'hdf5' and num_configs == -1:
+        infile = input_f if input_f is not None else latfit.config.GEVP_DIRS[0][0]
+        fn1 = h5py.File(infile, 'r')
         for i in fn1:
             for j in fn1[i]:
                 latfit.finalout.mkplot.NUM_CONFIGS = np.array(
                     fn1[i+'/'+j]).shape[0]
                 break
             break
-
+    elif num_configs != -1:
+        latfit.finalout.mkplot.NUM_CONFIGS = num_configs
+    
 def fit_coord(fitrange, xstep):
     """Get xcoord to plot fit function."""
     return np.arange(fitrange[0], fitrange[1]+xstep, xstep)

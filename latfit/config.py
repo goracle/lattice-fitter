@@ -83,7 +83,6 @@ PION_MASS = 0.13975*AINVERSE
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
-DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
 #print(misc.dispersive([1,1,1]))
@@ -92,6 +91,7 @@ DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA else 0) # no need to change
+DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 
@@ -255,8 +255,7 @@ else:
     TITLE_PREFIX = '24c '
 
 if SUPERJACK_CUTOFF:
-    pass
-    # TITLE_PREFIX = TITLE_PREFIX + 'exact '
+    TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
     TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
 if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
@@ -583,7 +582,7 @@ else:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
                         exponential fit function."""
-                        return FITS.f['pion_ratio'](ctime, trial_params)
+                        return FITS._select['pion_ratio'](ctime, trial_params)
                 else:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
