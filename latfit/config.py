@@ -125,6 +125,7 @@ DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
+DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=False) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
