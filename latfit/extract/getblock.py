@@ -22,6 +22,9 @@ from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DECREASE_VAR
+from mpi4py import MPI
+
+MPIRANK = MPI.COMM_WORLD.rank
 
 if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
@@ -90,7 +93,7 @@ def checkherm(carr):
     """Check hermiticity of gevp matrix"""
     assert np.allclose(np.matrix(carr).H, carr, rtol=1e-8), "hermiticity enforcement failed."
 
-def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False):
+def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
     optionally, overwrite the rhs matrix we get if we don't need it anymore (overb=True)
@@ -109,31 +112,33 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False):
                                       overwrite_b=False, check_finite=True)
     late = False if all(np.imag(eigvals) == 0) else True
     skip_late = False
-    if late:
+    try:
+        c_rhs_inv = linalg.inv(c_rhs)
+        # compute commutator divided by norm to see how close NxN GEVP matrix is to having only N states
+        commutator_norm = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
+        assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
+        assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
+        c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
         try:
-            c_rhs_inv = linalg.inv(c_rhs)
-            assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
-            assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
-            c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
-            try:
-                assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
-            except AssertionError:
-                print("Correction to hermitian matrix failed.")
-                print(c_lhs_new.T)
-                print(c_lhs_new)
-                print("printing difference in rows:")
-                for l, m in zip(c_lhs_new.T, c_lhs_new):
-                    print(l-m)
-                sys.exit(1)
-        except np.linalg.linalg.LinAlgError:
-            print("unable to symmetrize problem at late times")
-            skip_late = True
+            assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
+        except AssertionError:
+            print("Correction to hermitian matrix failed.")
+            print("commutator norm =", commutator_norm)
+            print(c_lhs_new.T)
+            print(c_lhs_new)
+            print("printing difference in rows:")
+            for l, m in zip(c_lhs_new.T, c_lhs_new):
+                print(l-m)
+            sys.exit(1)
+    except np.linalg.linalg.LinAlgError:
+        print("unable to symmetrize problem at late times")
+        skip_late = True
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
-            if USE_LATE_TIMES and not skip_late:
+            if USE_LATE_TIMES and not skip_late and late:
                 eigvals, evecs = scipy.linalg.eig(
                     c_lhs_new,
                     overwrite_a=False,
@@ -155,7 +160,8 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False):
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
-    return eigfin
+    ret = (eigfin, commutator_norm) if commnorm else eigfin
+    return ret
 get_eigvals.sent = False
 
 def enforce_hermiticity(gevp_mat):
@@ -226,14 +232,15 @@ if EFF_MASS:
         eigvals_mean_tp3 = sorted(get_eigvals(
             cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
 
+        norm_comm = []
         for num in range(num_configs):
             if GEVP_DEBUG:
                 print("config #=", num)
             tprob = timeij
             try:
-                eigvals = variance_reduction(np.array(sorted(get_eigvals(
-                    cmat_lhs_t[num], cmat_rhs[num],
-                    print_evecs=True), reverse=True)), eigvals_mean_t, 1/decrease_var)
+                eigret = get_eigvals(cmat_lhs_t[num], cmat_rhs[num], print_evecs=True, commnorm=True)
+                norm_comm.append(eigret[1])
+                eigvals = variance_reduction(np.array(sorted(eigret[0], reverse=True)), eigvals_mean_t, 1/decrease_var)
 
                 tprob = None if not EFF_MASS else tprob
 
@@ -268,6 +275,8 @@ if EFF_MASS:
                 (eigvals[op], eigvals2[op], eigvals3[op],
                  eigvals4[op]), index=op, time_arr=timeij)
                                     for op in range(dimops)]))
+        if MPIRANK == 0:
+            print("average commutator norm, (t =", timeij, ") =", np.mean(norm_comm))
         if GEVP_DEBUG:
             print("time, avg evals, variance of evals:",
                   timeij, jack_mean_err(np.array(check_variance)))
