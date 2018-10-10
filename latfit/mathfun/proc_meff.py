@@ -28,6 +28,7 @@ from latfit.config import ORIGL, DIM
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
+from latfit.analysis.test_arg import NegLogArgument
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -163,7 +164,7 @@ elif EFF_MASS_METHOD == 4:
         try:
             sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
-        except:
+        except NegLogArgument:
             errstr = "bad time/op"+\
                     "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
             if FIT:
