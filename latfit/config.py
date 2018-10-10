@@ -297,11 +297,11 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # phase shift error cut, absolute, in degrees.
 # if the error is bigger than this, skip this fit range
-PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else 30
+PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else 100
 
 # skip fit range if parameter (energy) errors greater than 100%
 SKIP_LARGE_ERRORS = False
-SKIP_LARGE_ERRORS = True
+SKIP_LARGE_ERRORS = True if ISOSPIN != 0 else SKIP_LARGE_ERRORS
 
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = False
