@@ -53,9 +53,9 @@ EXTENSION = 'hdf5'
 FNDEF = PREFIX+'250.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'250.'+EXTENSION
-FNDEF = PREFIX+'1000.'+EXTENSION
-GNDEF = PREFIX+'1010.'+EXTENSION
-HNDEF = PREFIX+'1030.'+EXTENSION
+FNDEF = PREFIX+'1140.'+EXTENSION
+GNDEF = PREFIX+'1200.'+EXTENSION
+HNDEF = PREFIX+'1220.'+EXTENSION
 if TEST44:
     FNDEF = PREFIX+'4540.'+EXTENSION
     GNDEF = PREFIX+'4540.'+EXTENSION
@@ -138,6 +138,7 @@ DOAMA = True
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
 EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250,  1370, 1390]
+EXACT_CONFIGS = [1110, 1130, 1250,  1370]
 
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
@@ -263,6 +264,21 @@ def baselist(fn1=None):
             print("Make sure the working directory is correct.")
             sys.exit(1)
     basl = getbasl(fn1).intersection(getbasl(gn1)).intersection(getbasl(hn1))
+    basl_union = getbasl(fn1).union(getbasl(gn1)).union(getbasl(hn1))
+    if len(list(basl_union-basl)):
+        for i in basl_union-basl:
+            assert i in getbasl(hn1), "hn1 missing dataset:"+str(i)
+            assert i in getbasl(gn1), "gn1 missing dataset:"+str(i)
+            assert i in getbasl(fn1), "fn1 missing dataset:"+str(i)
+        if len(list(getbasl(fn1)-getbasl(gn1))):
+            print("fn1 larger than gn1")
+        elif len(list(getbasl(gn1)-getbasl(fn1))):
+            print("gn1 larger than fn1")
+        elif len(list(getbasl(hn1)-getbasl(gn1))):
+            print("hn1 larger than gn1")
+        elif len(list(getbasl(gn1)-getbasl(hn1))):
+            print("gn1 larger than hn1")
+    assert not basl_union-basl, "Union of basenames is larger than intersection"
     fn1.close()
     gn1.close()
     hn1.close()
@@ -330,6 +346,7 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
                 print(diagram, ":", coeff)
         except KeyError:
             print(ocs[outfile])
+            sys.exit(1)
     filen = h5py.File(outh5, 'w')
     filen[outfile] = blk
     filen.close()
@@ -484,6 +501,9 @@ def check_count_of_diagrams(ocs, isospin_str='I0'):
     if it does not match the expected, abort
     """
     checks = opc.generateChecksums(isospin_str[-1])
+    for opa in list(checks):
+        checks[strip_op(opa)] = checks[opa]
+        del checks[opa]
     print("checks for I=", isospin_str[-1], "=", checks)
     counter_checks = {}
     isocount = -1
@@ -1319,10 +1339,18 @@ def main(fixn=True):
                 unused = find_unused(
                     ocs, allblks.keys() | set(),
                     auxblks.keys() | set(), fig=fig).union(unused)
+            count = len(unused)
             for useless in sorted(list(unused)):
-                print("unused diagram:", useless)
+                try:
+                    if not (rf.vecp(useless) and rf.norm2(wd.momtotal(rf.mom(useless)))): # we don't analyze all of pcom for I=1 yet
+                        if not rf.checkp(useless) and not (rf.vecp(useless) and rf.allzero(rf.mom(useless))):
+                            print("unused diagram:", useless)
+                            count -= 1
+                except TypeError:
+                    print(useless)
+                    sys.exit(1)
             print("length of unused=", len(unused))
-            assert len(unused) == 0, "Unused diagrams exist."
+            assert len(unused) == 0 or count == len(unused), "Unused (non-vec) diagrams exist."
             if TESTKEY:
                 buberr(allblks)
                 sys.exit(0)

@@ -10,6 +10,7 @@ import warnings
 import linecache as lc
 import numpy as np
 import h5py
+from collections import Iterable
 
 FORMAT = 'ASCII'
 
@@ -118,6 +119,15 @@ def reverse_p(filename):
         boolp = False
     return boolp
 
+def allzero(mom):
+    """Check if momentum components are all 0"""
+    if isinstance(mom[0], Iterable):
+        for onep in mom:
+            ret = all(0==np.asarray(onep))
+    else:
+        ret = all(0==np.asarray(mom))
+    return ret
+            
 
 def checkp(filename):
     """determine if file contains check data on vector diagram
