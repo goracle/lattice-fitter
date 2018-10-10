@@ -2,8 +2,25 @@
 import sys
 from warnings import warn
 import numpy as np
+from mpi4py import MPI
 
 SENT = object()
+
+MPIRANK = MPI.COMM_WORLD.rank
+
+class NegLogArgument(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, arg=None, message='', corrs=None, no_print=False):
+        if not no_print and MPIRANK == 0:
+            warn("argument to log in eff. mass"+" calc is than 0: "+str(
+                arg))
+            print("argument to log in effective mass",
+                  "calc is less than 0:", arg)
+            super(NegLogArgument, self).__init__(message)
+            if corrs is not None:
+                for i, corr in enumerate(corrs):
+                    print("corrs["+str(i)+"] = ", corr)
+        self.message = message
 
 
 def test_arg(arg, sent=None):
@@ -11,12 +28,7 @@ def test_arg(arg, sent=None):
     """
     if arg <= 0 and sent != 0:
         # print("***ERROR***")
-        warn("argument to log in eff. mass"+" calc is than 0: "+str(
-            arg))
-        print("argument to log in effective mass",
-              "calc is less than 0:", arg)
-        return False
-    return True
+        raise NegLogArgument(arg=arg)
 
 
 def zero_p(corr1, corr2=None, times=None):
@@ -43,10 +55,13 @@ def zero_p(corr1, corr2=None, times=None):
 
 def testsol(sol, corrs, times=None):
     """Test ratio in effective mass equation to see if it's less < 0."""
-    if not test_arg(sol, SENT):
-        for i, corr in enumerate(corrs):
-            print("corrs["+str(i)+"] = ", corr)
-        if times is not None:
-            print("problematic time slices:", times)
-        # raise
-        sys.exit(1)
+    if sol <= 0 and SENT != 0:
+        no_print = True
+        if times is not None and isinstance(times, list):
+            if times[0] not in testsol.problemtimes:
+                no_print = False
+                testsol.problemtimes.append(times[0])
+                if MPIRANK == 0:
+                    print("problematic time slices:", times)
+        raise NegLogArgument(arg=sol, corrs=corrs, no_print=no_print)
+testsol.problemtimes = []
