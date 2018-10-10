@@ -177,7 +177,6 @@ RESCALE = 1.0
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
-T0 = 3
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -297,7 +296,7 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # phase shift error cut, absolute, in degrees.
 # if the error is bigger than this, skip this fit range
-PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else 100
+PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
 
 # skip fit range if parameter (energy) errors greater than 100%
 SKIP_LARGE_ERRORS = False
