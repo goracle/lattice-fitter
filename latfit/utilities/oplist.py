@@ -1536,7 +1536,8 @@ OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
 }
 
 AVG_ROWS = {
-    'T_1_MINUS': ('T_1_1MINUS', 'T_1_2MINUS', 'T_1_3MINUS'),
+    'T_1_MINUS': ('T_1_1MINUS_mom000', 'T_1_2MINUS_mom000',
+                  'T_1_3MINUS_mom000'),
     'A1_mom1': ('A1x_mom100',
                 'A1x_mom_100',
                 'A1y_mom010',

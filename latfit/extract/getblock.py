@@ -115,7 +115,14 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
     try:
         c_rhs_inv = linalg.inv(c_rhs)
         # compute commutator divided by norm to see how close rhs and lhs bases
-        commutator_norm = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
+        try:
+            commutator_norm = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
+        except FloatingPointError:
+            print("bad denominator:")
+            print(np.linalg.norm(c_rhs_inv))
+            print(np.linalg.norm(c_lhs))
+            print(c_lhs)
+            sys.exit(1)
         assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
         assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
         c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2

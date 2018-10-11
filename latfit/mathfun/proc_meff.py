@@ -171,9 +171,11 @@ elif EFF_MASS_METHOD == 4:
                 if not(times and times[0] in latfit.config.FIT_EXCL[index]):
                     latfit.config.FIT_EXCL[index].append(times[0])
             else:
-                print(errstr)
-                print('operator index=', index)
-                print("times=", times)
+                if not times[0] in proc_meff4.badtimes:
+                    print(errstr)
+                    print('operator index=', index)
+                    print("times=", times)
+                    proc_meff4.badtimes.append(times[0])
             sol = np.nan
         index = 0 if index is None else index
         try:
@@ -207,6 +209,7 @@ elif EFF_MASS_METHOD == 4:
         if not np.isnan(sol):
             sol = checksol(sol, index, times, corrs, fun)
         return sol
+    proc_meff4.badtimes = []
 
     def checksol(sol, index, times, corrs, fun):
         if isinstance(sol, collections.Iterable) and PIONRATIO:

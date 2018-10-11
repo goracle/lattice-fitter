@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -52,18 +52,18 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 2
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
-IRREP = 'T_1_MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'T_1_MINUS'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -90,7 +90,7 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
-DIM = len(DISP_ENERGIES) + (1 if SIGMA else 0) # no need to change
+DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -112,6 +112,7 @@ GEVP_DEBUG = False
 MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
@@ -131,6 +132,7 @@ print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1 else DELTA_E2_AROUND_THE_WORLD
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -312,7 +314,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-2
+DECREASE_VAR = 1e-3
 
 # precision to display, number of decimal places
 
@@ -640,7 +642,7 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP and MATRIX_SUBTRACTION else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",

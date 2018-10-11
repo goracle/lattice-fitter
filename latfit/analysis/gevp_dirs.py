@@ -2,6 +2,7 @@
 # import sys
 import re
 import latfit.utilities.read_file as rf
+import sys
 
 def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
     """Return array of gevp dirs"""
@@ -20,10 +21,14 @@ def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
 
 def hierarchy(index, isospin, sigma):
     """Return the operator for this dimension, in ascending energy order"""
-    if index == 0:
+    if index == 0 and isospin != 1:
         retstr = 'S_pipi'
+    elif isospin == 1 and index == 0:
+        retstr = 'pipi'
     else: 
         if isospin == 2 or (isospin == 0 and not sigma):
+            index += 1
+        if isospin == 1 and index >= 2:
             index += 1
         if index < 3:
             if index == 1 and isospin == 0 and sigma:

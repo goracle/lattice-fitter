@@ -10,6 +10,13 @@ import write_discon as wd
 import read_file as rf
 from oplist import *
 
+for opa in list(OPLIST): # get rid of polarization information
+    print(opa)
+    opa_strip = opa.split('?')[0]
+    if opa != opa_strip:
+        OPLIST[opa_strip] = OPLIST[opa] 
+        del OPLIST[opa]
+
 
 def momstr(psrc, psnk):
     """Take psrc and psnk and return a diagram string of the combination.
