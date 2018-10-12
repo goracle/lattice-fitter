@@ -5,7 +5,7 @@
 from math import sqrt
 
 
-ENSEMBLE = '32ID-fine'
+ENSEMBLE = 'FULL'
 ENSEMBLE = '24ID'
 
 
@@ -549,7 +549,7 @@ if ENSEMBLE == '24ID':
 
 
 
-elif ENSEMBLE == '32ID-fine':
+elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a production for the forseeable future)
 
     A_1PLUS_mom000 = [
         (1, 'S_pipi', [[0, 0, 0], [0, 0, 0]]),
