@@ -11,7 +11,6 @@ import read_file as rf
 from oplist import *
 
 for opa in list(OPLIST): # get rid of polarization information
-    print(opa)
     opa_strip = opa.split('?')[0]
     if opa != opa_strip:
         OPLIST[opa_strip] = OPLIST[opa] 
