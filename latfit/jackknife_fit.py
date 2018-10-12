@@ -153,9 +153,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         chisq_fiduc_cut = chisqfiduc(params.num_configs,
                                      result_min.dof)
 
-        # loop over configs, doing a fit for each one
         skip_votes = []
-        for config_num in range(params.num_configs):
+        # loop over configs, doing a fit for each one
+        # rearrange loop order so we can check goodness of fit on more stable sloppy samples
+        for config_num in (np.array(range(params.num_configs))+
+                           SUPERJACK_CUTOFF)%params.num_configs:
 
             # if config_num>160: break # for debugging only
 
@@ -199,41 +201,52 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # print results for this config
             print("config", config_num, ":", result_min_jack.x,
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
-                  "p-value=", result_min.pvalue[config_num])
+                  "p-value=", result_min.pvalue[config_num],
+                  'dof=', result_min.dof)
 
             assert not np.isnan(result_min.pvalue[
                 config_num]), "pvalue is nan"
-            if config_num in [0, 1]:
+            # use sloppy configs to check if fit will work
+            if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
+
+                # check if chisq too big, too small
                 if result_min_jack.fun > chisq_fiduc_cut or\
-                   result_min_jack.fun/result_min.dof < 1-5*2/params.num_configs:
+                   result_min_jack.fun/result_min.dof < 1-5*(
+                       2 if result_min.dof < 10 else 1)*np.sqrt(2*result_min.dof)/(
+                       params.num_configs-SUPERJACK_CUTOFF):
                     skip_votes.append(config_num)
-                if config_num == 1:
+
+                if config_num == 1+SUPERJACK_CUTOFF:
                     skip_range = False
                     # don't skip the fit range until we confirm
-                    # on the next sample
+                    # on 2nd config
                     if len(skip_votes) == 2:
                         skip_range = True
                     elif len(skip_votes) == 1:
                         # approximate the difference as the stddev: sqrt(\sum(x-<x>)**2/(N));
                         # mult by sqrt(N-1) to get the variance in chi^2
                         # if we have one bad fit and another which is within 5 sigma of the bad chi^2, skip, else throw an error
-                        skip_range = abs(result_min_jack.fun-chisq_min_arr[0])<2*5*result_min.dof/np.sqrt(params.num_configs-1)
+                        skip_range = abs(result_min_jack.fun-chisq_min_arr[0+SUPERJACK_CUTOFF])<5*np.sqrt(
+                            2*result_min.dof/(params.num_configs-1))
                     if skip_range:
-                        raise BadChisqJackknife(result_min_jack.fun/result_min.dof)
+                        raise BadChisqJackknife(
+                            chisq=result_min_jack.fun/result_min.dof,
+                            dof=result_min.dof)
                     elif len(skip_votes) > 0:
                         # the second sample should never have a good fit
                         # if the first one has that bad a fit
                         print("fiducial cut =", chisq_fiduc_cut)
                         print("dof=", result_min.dof)
-                        print(abs(result_min_jack.fun-chisq_min_arr[0]),2*5*result_min.dof/np.sqrt(params.num_configs))
+                        print(abs(result_min_jack.fun-chisq_min_arr[0]),
+                              2*5*result_min.dof/np.sqrt(params.num_configs))
                         print(result_min_jack.fun, chisq_min_arr[0])
                         print("Bad jackknife distribution:"+\
                               str(chisq_min_arr[0]/result_min.dof)+" "+\
                               str(chisq_min_arr[1]/result_min.dof)+" "+\
                               str(result_min.pvalue[0])+" "+\
                               str(result_min.pvalue[1])+" ")
+                        sys.exit(1)
                         raise BadJackknifeDist
-                        #sys.exit(1)
 
         # average results, compute jackknife uncertainties
 
@@ -279,16 +292,18 @@ else:
     sys.exit(1)
 
 def chisqfiduc(num_configs, dof):
-    """Find the chi^2/dof cutoff
-    (5 \sigma away from acceptable pvalue)
+    """Find the chi^2/dof cutoff (acceptance upper bound)
+    defined as > 5 \sigma away from an acceptable pvalue
     2*dof is the variance in chi^2
     """
-    func = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(
-        tau, dof))
+    func = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(tau, dof))
     # guess about 2 for the max chi^2/dof
-    sol = float(fsolve(func, 2*dof))
-    # known variance of chi^2 is 2*dof
-    ret = sol+5*2*dof/num_configs
+    sol = float(fsolve(func, dof))
+    assert abs(func(sol)) < 1e-8, "fsolve failed."
+    # known variance of chi^2 is 2*dof, but skewed at low dof (here chosen to be < 10)
+    # thus, the notion of a "5 sigma fluctuation" is only defined as dof->inf
+    # so we have a factor of 2 to make low dof p-value cut less aggressive
+    ret = sol+5*(2 if dof < 10 else 1)*np.sqrt(2*dof)/(num_configs-SUPERJACK_CUTOFF)
     #print(ret/dof, sol/dof, num_configs, dof, PVALUE_MIN,
     #      1-stats.chi2.cdf(ret, dof), 1-stats.chi2.cdf(sol, dof))
     return ret
@@ -786,11 +801,13 @@ class DOFNonPos(Exception):
 
 class BadChisqJackknife(Exception):
     """Exception for bad chi^2"""
-    def __init__(self, chisq=None, message=''):
+    def __init__(self, chisq=None, message='', dof=None):
         print("***ERROR***")
-        print("chisq/dof >> 1 or p-value >> 0.5 chisq=", chisq)
+        print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
+              chisq, "dof =", dof)
         super(BadChisqJackknife, self).__init__(message)
-        self.dof = chisq
+        self.chisq = chisq
+        self.dof = dof
         self.message = message
 
 

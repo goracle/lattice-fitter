@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 1
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -61,9 +61,9 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
 IRREP = 'T_1_MINUS'
+IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
