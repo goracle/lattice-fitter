@@ -1,9 +1,12 @@
 """"Get the data block."""
 import sys
 from collections import deque
+from math import fsum
 import scipy
 import scipy.linalg
 from scipy import linalg
+from scipy import stats
+from matplotlib.mlab import PCA
 import numpy as np
 import h5py
 
@@ -126,6 +129,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
         assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
         c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+        commutator_norm = np.linalg.norm(commutator_norms)
         try:
             assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
         except AssertionError:
@@ -167,7 +171,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
-    ret = (eigfin, commutator_norm) if commnorm else eigfin
+    ret = (eigfin, commutator_norm, commutator_norms) if commnorm else eigfin
     return ret
 get_eigvals.sent = False
 
@@ -240,6 +244,7 @@ if EFF_MASS:
             cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
 
         norm_comm = []
+        norms_comm = []
         for num in range(num_configs):
             if GEVP_DEBUG:
                 print("config #=", num)
@@ -247,6 +252,7 @@ if EFF_MASS:
             try:
                 eigret = get_eigvals(cmat_lhs_t[num], cmat_rhs[num], print_evecs=True, commnorm=True)
                 norm_comm.append(eigret[1])
+                norms_comm.append(eigret[2])
                 eigvals = variance_reduction(np.array(sorted(eigret[0], reverse=True)), eigvals_mean_t, 1/decrease_var)
 
                 tprob = None if not EFF_MASS else tprob
@@ -283,7 +289,8 @@ if EFF_MASS:
                  eigvals4[op]), index=op, time_arr=timeij)
                                     for op in range(dimops)]))
         if MPIRANK == 0:
-            print("average commutator norm, (t =", timeij, ") =", np.mean(norm_comm))
+            chisq_bad, pval, dof = pval_commutator(norms_comm)
+            print("average commutator norm, (t =", timeij, ") =", np.mean(norm_comm), "chi^2/dof =", chisq_bad, "p-value =", pval, "dof =", dof)
         if GEVP_DEBUG:
             print("time, avg evals, variance of evals:",
                   timeij, jack_mean_err(np.array(check_variance)))
@@ -313,6 +320,44 @@ else:
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk
+
+# obsolete; only works if GEVP matrix vector space shifts a lot from time slice to time slice
+# weak consistency check
+def pval_commutator(norms_comm):
+    """Find the p-value for the test statistic defined by
+    sum of squares of the commutator of the LHS and inverse RHS GEVP matrices
+    we want to test this being consistent with 0
+    """
+    norms_comm = np.asarray(norms_comm)
+    dimops = len(norms_comm[0][0])
+    pca_list = []
+    for i in norms_comm:
+        reshape = np.reshape(i, dimops**2)
+        pca_list.append(reshape)
+    pca_list = np.asarray(pca_list)
+    results_pca = PCA(pca_list, standardize=False)
+    dof = len([i for i in results_pca.fracs if i > 0])
+    #print("frac=", results_pca.fracs, "dof=", dof)
+    #print("mean=", np.mean(results_pca.Y, axis=0))
+    results_pca.Y = np.asarray(results_pca.Y)[:, dimops:dof]
+    dof = results_pca.Y.shape[1]
+    #print("original dimensions", dimops,
+    #      "reduced dimensions:", results_pca.Y.shape)
+    sample_stddev = np.std(
+        results_pca.Y, ddof=0, axis=0)
+    # assuming the population mean of our statistic is 0
+    chisq_arr = []
+    for i in results_pca.Y:
+        chisq_arr.append(fsum([i[j]**2/sample_stddev[j]**2 for j in range(dof)]))
+    chisq_arr = np.array(chisq_arr)
+    pval_arr = 1-stats.chi2.cdf(chisq_arr, dof)
+    pval = fsum(pval_arr)/len(chisq_arr)
+    chisq = fsum(chisq_arr)/len(chisq_arr)
+    #print("dev:", np.std(chisq_arr, ddof=1))
+    #for i in sorted(list(chisq_arr)):
+    #    print(i, ",")
+    #print(np.sum(chisq_arr)/len(chisq_arr), fsum(chisq_arr)/len(chisq_arr))
+    return chisq, pval, dof
 
 if EFF_MASS:
     def getblock_simple(file_tup, reuse, timeij=None):
