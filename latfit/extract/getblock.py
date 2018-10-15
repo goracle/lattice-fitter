@@ -289,8 +289,9 @@ if EFF_MASS:
                  eigvals4[op]), index=op, time_arr=timeij)
                                     for op in range(dimops)]))
         if MPIRANK == 0:
-            chisq_bad, pval, dof = pval_commutator(norms_comm)
-            print("average commutator norm, (t =", timeij, ") =", np.mean(norm_comm), "chi^2/dof =", chisq_bad, "p-value =", pval, "dof =", dof)
+            pass
+            #chisq_bad, pval, dof = pval_commutator(norms_comm)
+            #print("average commutator norm, (t =", timeij, ") =", np.mean(norm_comm), "chi^2/dof =", chisq_bad, "p-value =", pval, "dof =", dof)
         if GEVP_DEBUG:
             print("time, avg evals, variance of evals:",
                   timeij, jack_mean_err(np.array(check_variance)))
