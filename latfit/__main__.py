@@ -238,8 +238,8 @@ def main():
                                             fitrange, xmin, xmax, xstep)
                     print("Test fit succeeded.")
                 except (NegChisq, RelGammaError, OverflowError, NoConvergence,
-                        np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                        DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                        BadJackknifeDist, DOFNonPos,
+                        BadChisqJackknife, ZetaError) as _:
                     print("Test fit failed, but in an acceptable way. Continuing.")
                     fit_range_init = None
             cut_on_errsize()
