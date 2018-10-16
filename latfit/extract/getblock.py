@@ -93,6 +93,41 @@ def checkherm(carr):
     """Check hermiticity of gevp matrix"""
     assert np.allclose(np.matrix(carr).H, carr, rtol=1e-8), "hermiticity enforcement failed."
 
+def removerowcol(cmat, idx):
+    """Delete the idx'th row and column"""
+    return np.delete(np.delete(cmat, idx, axis=0), idx, axis=1)
+
+def solve_gevp(c_lhs, c_rhs=None):
+    dimops_orig = len(c_lhs)
+    dimops = len(c_lhs)
+    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
+                                      overwrite_b=False, check_finite=True)
+    while any(eigvals < 0):
+        dimops -= 1
+        assert dimops > 0, "dimension reduction technique exhausted."
+        count = 0
+        dimdeldict = {}
+        for dimdel in range(dimops+1):
+            if dimdel == 0:
+                continue
+            c_lhs_temp = removerowcol(c_lhs, dimdel)
+            c_rhs_temp = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
+            eigvals, evecs = scipy.linalg.eig(c_lhs_temp, c_rhs_temp, overwrite_a=False,
+                                              overwrite_b=False, check_finite=True)
+            count = max(np.count_nonzero(~np.isnan(eigvals)), count)
+            dimdeldict[count] = dimdel
+        if dimdeldict:
+            dimdel = dimdeldict[max([count for count in dimdeldict])]
+            c_lhs = removerowcol(c_lhs, dimdel)
+            c_rhs = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
+        eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
+                                          overwrite_b=False, check_finite=True)
+        for _ in range(dimops_orig-dimops):
+            eigvals = np.append(eigvals, np.nan)
+    assert len(eigvals) == dimops_orig, "eigenvalue shape extension needed"
+    return eigvals, evecs
+
+
 def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
@@ -107,22 +142,22 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         print("e.g. C(t)_ij -> Norms[i][j]*C(t)_ij")
         print("Norms=", NORMS)
         get_eigvals.sent = True
+    eigvals, evecs = solve_gevp(c_lhs, c_rhs)
+    checkgteq0(eigvals)
     dimops = len(c_lhs)
-    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                                      overwrite_b=False, check_finite=True)
     late = False if all(np.imag(eigvals) == 0) else True
     skip_late = False
     try:
         c_rhs_inv = linalg.inv(c_rhs)
         # compute commutator divided by norm to see how close rhs and lhs bases
         try:
-            commutator_norms = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
+            commutator_norms = (np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))
         except FloatingPointError:
             print("bad denominator:")
             print(np.linalg.norm(c_rhs_inv))
             print(np.linalg.norm(c_lhs))
             print(c_lhs)
-            sys.exit(1)
+            raise FloatingPointError
         assert np.allclose(np.dot(c_rhs_inv, c_rhs), np.eye(dimops), rtol=1e-8), "Bad C_rhs inverse. Numerically unstable."
         assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv, rtol=1e-8), "Inverse failed (result is not hermite)."
         c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
@@ -143,14 +178,11 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         skip_late = True
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
-        if j.imag == 0 and j.real > 0:
+        if j.imag == 0:
             eigfin[i] = eigvals[i].real
         else:
             if USE_LATE_TIMES and not skip_late and late:
-                eigvals, evecs = scipy.linalg.eig(
-                    c_lhs_new,
-                    overwrite_a=False,
-                    overwrite_b=False, check_finite=True)
+                eigvals, evecs = solve_gevp(c_lhs_new)
                 break
             else:
                 raise ImaginaryEigenvalue
@@ -168,9 +200,15 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
+    checkgteq0(eigfin)
     ret = (eigfin, commutator_norm, commutator_norms) if commnorm else eigfin
     return ret
 get_eigvals.sent = False
+
+def checkgteq0(eigfin):
+    for i in eigfin:
+        if not np.isnan(i):
+            assert i >= 0, "non-positive eigenvalue found:"+str(eigfin)
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^\dagger)/2"""
@@ -226,7 +264,39 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
 
 
 if EFF_MASS:
-    def getblock_gevp(file_tup, timeij=None, decrease_var=DECREASE_VAR):
+    def getblock_gevp(file_tup, delta_t, timeij=None, decrease_var=DECREASE_VAR):
+        """Get a single rhs; loop to find the one with the least nan's"""
+        blkdict = {}
+        countdict = {}
+        if hasattr(delta_t, '__iter__'):
+            for i, dt1 in enumerate(delta_t):
+                print('dt1' , dt1, 'timeij', timeij)
+                try:
+                    assert len(file_tup[1]) == len(delta_t), "rhs times dimensions do not match:"+\
+                        len(file_tup[1])+str(",")+len(delta_t)
+                except TypeError:
+                    print(file_tup)
+                    print(delta_t)
+                    assert None, "bug"
+                argtup = (file_tup[0], file_tup[1][i], file_tup[2], file_tup[3])
+                for i,j in enumerate(argtup):
+                    assert j is not None, "file_tup["+str(i)+"] is None"
+                blkdict[dt1] = getblock_gevp_singlerhs(argtup, dt1, timeij, decrease_var)
+                count = 0
+                for config, blk in enumerate(blkdict[dt1]):
+                    count = max(np.count_nonzero(~np.isnan(blk)), count)
+                    countdict[count] = dt1
+            keymax = countdict[max([count for count in countdict])]
+            print("final tlhs, trhs =", timeij, timeij-keymax)
+            ret = blkdict[keymax]
+        else:
+            print("final tlhs, trhs =", timeij, timeij-delta_t)
+            ret = getblock_gevp_singlerhs(
+                file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
+        return ret
+
+
+    def getblock_gevp_singlerhs(file_tup, delta_t, timeij=None, decrease_var=DECREASE_VAR):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -234,6 +304,11 @@ if EFF_MASS:
         files_tup[3] is the t+2 lhs
         C(t)v = Eigval*C(t_0)v
         """
+        if timeij == 3.0:
+            assert delta_t == 1, "bug:"+str(delta_t)
+        assert delta_t is not None, "delta_t is None"
+        if not delta_t:
+            delta_t = 1.0
         retblk = deque()
         dimops = len(file_tup[0])
         if STYPE == 'ascii':
@@ -260,9 +335,9 @@ if EFF_MASS:
             cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
 
         avg_energies = np.array([proc_meff(
-            (eigvals_mean_t[op], eigvals_mean_tp1[op], eigvals_mean_tp2[op],
+            (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
              eigvals_mean_tp3[op]), index=op, time_arr=timeij)
-                         for op in range(dimops)])
+                         for op in range(dimops)])/delta_t
 
         norm_comm = []
         norms_comm = []
@@ -306,8 +381,8 @@ if EFF_MASS:
                     raise XmaxError(problemx=tprob)
             check_variance.append(eigvals)
             result = variance_reduction(np.array([proc_meff(
-                (eigvals[op], eigvals2[op], eigvals3[op], eigvals4[op]),
-                index=op, time_arr=timeij) for op in range(dimops)]), avg_energies, 1/decrease_var)
+                (1/eigvals[op], 1, eigvals3[op], eigvals4[op]),
+                index=op, time_arr=timeij) for op in range(dimops)])/delta_t, avg_energies, 1/decrease_var)
             retblk.append(result)
         if MPIRANK == 0:
             pass
@@ -321,7 +396,7 @@ if EFF_MASS:
         return retblk
 
 else:
-    def getblock_gevp(file_tup, timeij=None):
+    def getblock_gevp(file_tup, _, timeij=None):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
         files_tup[0] is the LHS of the GEVP, files_tup[1] is the RHS
@@ -431,11 +506,11 @@ if GEVP:
                     print("GEVP has negative eigenvalues.")
                     sys.exit(1)
 
-    def getblock_plus(file_tup, reuse, timeij=None):
+    def getblock_plus(file_tup, reuse, timeij=None, delta_t=None):
         """get the block"""
         if reuse:
             pass
-        retblk = getblock_gevp(file_tup, timeij)
+        retblk = getblock_gevp(file_tup, delta_t, timeij)
         test_imagblk(retblk)
         return retblk
 else:
@@ -445,9 +520,9 @@ else:
         return getblock_simple(file_tup, reuse, timeij)
 
 
-def getblock(file_tup, reuse, timeij=None):
+def getblock(file_tup, reuse, timeij=None, delta_t=None):
     """get the block and subtract any bad configs"""
-    retblk = np.array(getblock_plus(file_tup, reuse, timeij))
+    retblk = np.array(getblock_plus(file_tup, reuse, timeij, delta_t=delta_t))
     if ELIM_JKCONF_LIST:
         retblk = elim_jkconfigs(retblk)
     if BINNUM != 1:

@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -180,6 +180,7 @@ RESCALE = 1.0
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
+T0 = 'LOOP' # ceil(t/2)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -315,7 +316,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-6
+DECREASE_VAR = 1e-5
 
 # precision to display, number of decimal places
 

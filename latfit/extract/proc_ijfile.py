@@ -9,7 +9,7 @@ from latfit.extract.get_coventry import get_coventry
 from latfit.config import BINNUM
 
 
-def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None)):
+def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=None):
     """Process the current file.
     Return covariance matrix entry I, indexj in the case of multi-file
     structure.
@@ -23,7 +23,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None)):
     try:
         num_configs = len(reuse['i'])
     except TypeError:
-        reuse['i'] = getblock(ifile_tup, reuse, timeij[0])
+        reuse['i'] = getblock(ifile_tup, reuse, timeij[0], delta_t=delta_t)
         num_configs = len(reuse['i'])
     avg_i = np.mean(reuse['i'], axis=0)
 
@@ -49,7 +49,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None)):
                 print("Offending files:", ifile_tup, "\nand", jfile_tup)
                 sys.exit(1)
         except TypeError:
-            reuse['j'] = getblock(jfile_tup, reuse, timeij[1])
+            reuse['j'] = getblock(jfile_tup, reuse, timeij[1], delta_t=delta_t)
 
     return rets(coord=avg_i, covar=get_coventry(reuse, sameblk, avg_i),
                 returnblk=reuse['j'])

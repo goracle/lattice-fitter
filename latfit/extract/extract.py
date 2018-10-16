@@ -50,18 +50,18 @@ def extract(input_f, xmin, xmax, xstep):
             tij[0] = timei
 
             # get the ifile(s)
-            ifile_tup = getfiles(timei, xstep, xmin, input_f)
+            ifile_tup, delta_t = getfiles(timei, xstep, xmin, input_f)
 
             for j, timej in enumerate(np.arange(xmin, xmax+1, xstep)):
 
                 # same for j
                 reuse['j'] = reuse_ij(reuse, timej)
-                jfile_tup = getfiles(timej, xstep, xmin, input_f)
+                jfile_tup, delta_t = getfiles(timej, xstep, xmin, input_f)
                 tij[1] = timej
 
                 # get the cov entry and the block
                 resret = proc_ijfile(ifile_tup, jfile_tup,
-                                     reuse=reuse, timeij=tij)
+                                     reuse=reuse, timeij=tij, delta_t=delta_t)
 
                 # fill in the covariance matrix
                 cov[i][j] = resret.covar

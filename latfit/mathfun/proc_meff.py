@@ -221,7 +221,7 @@ elif EFF_MASS_METHOD == 4:
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             sol = np.array(sol)
             tryfun = (EFF_MASS_TOMIN[index](-sol, times[0], ratioval) - fun)
-            if tryfun/fun < 10:
+            if tryfun/(fun+1e-24) < 10:
                 sol = -sol
                 #print("positive solution close to" +
                 #      " negative solution; switching; new tol", tryfun)

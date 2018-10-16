@@ -54,7 +54,31 @@ def getExtraTimes(time, time2, dt1, xstep):
     return ret, max(time2-dt1, 0)
 
 def getfiles_gevp(time, time2, xstep):
-    """Get files, gevp, eff_mass"""
+    """Loop over time2"""
+    rhs_files = []
+    if hasattr(time2, '__iter__'):
+        tupret = getfiles_gevp_singlerhs(time, time2[0], xstep)
+        assert tupret[1] is not None, "rhs files not found."
+        for time_rhs in time2:
+            assert time >= time_rhs, "Bad rhs time. t values (lhs, rhs):"+\
+                str(time)+","+str(time_rhs)
+            if time_rhs not in getfiles_gevp_singlerhs.mats:
+                tuptemp = getfiles_gevp_singlerhs(time, time_rhs, xstep)
+                file_rhs = tuptemp[1]
+            else:
+                file_rhs = getfiles_gevp_singlerhs.mats[time_rhs]
+            assert file_rhs is not None, "rhs files not found."
+            rhs_files.append(file_rhs)
+        assert len(time2) == len(rhs_files), "rhs times dimension mismatch"
+        ret = (tupret[0], rhs_files, *tupret[2:])
+    else:
+        assert time >= time2, "Bad rhs time. t values (lhs, rhs):"+\
+            str(time)+","+str(time2)+","+str(xmin)
+        ret = getfiles_gevp_singlerhs(time, time2, xstep)
+    return ret
+
+def getfiles_gevp_singlerhs(time, time2, xstep):
+    """Get files, gevp, eff_mass for single t0 (rhs time)"""
     # extract files
     files = {}
     sub = {}
@@ -100,7 +124,11 @@ def getfiles_gevp(time, time2, xstep):
                files[time+2*xstep], files[time+3*xstep])
     else:
         ret = (files[time], files[time2])
+    for savedt in files:
+        if savedt not in getfiles_gevp_singlerhs.mats:
+            getfiles_gevp_singlerhs.mats[savedt] = copy.deepcopy(np.array(files[savedt]))
     return ret
+getfiles_gevp_singlerhs.mats = {}
 
 def matsub(files, sub, dt1, dt12='One'):
     """Do the around the world subtraction"""
@@ -125,10 +153,13 @@ def matsub(files, sub, dt1, dt12='One'):
 
 def roundup(time, xstep, xmin):
     """ceil(t/2) with xstep factored in"""
+    time2 = int(time/2/xstep)*xstep
     time2 = np.ceil(float(time)/2.0/xstep)*xstep if np.ceil(
         float(time)/2.0) != time else max(
             np.floor(float(time)/2.0/xstep)*xstep, xmin)
-    time2 = 2 if time == 5 else 4
+    #time2 = 2 if time == 5 else time2
+    #time2 = 9 if time == 11 else time2
+    #time2 = time-2 if time >= 11 else time2
     return time2
 
 if GEVP:
@@ -140,8 +171,14 @@ if GEVP:
             time2 = time-xstep
         elif isinstance(T0, int):
             time2 = T0
-        return getfiles_gevp(time, time2, xstep)
+        elif T0 == 'LOOP':
+            time2 = sorted(list(np.arange(roundup(
+                time,xstep,xmin), time, xstep)), reverse=True)
+            if not len(time2) > 1:
+                time2 = roundup(time, xstep, xmin)
+            time2 = 4 if time == 5 else time2
+        return getfiles_gevp(time, time2, xstep), time-time2
 else:
     def getfiles(time, xstep, _, input_f):
         """Get files, (meta)"""
-        return getfiles_simple(time, input_f, xstep)
+        return getfiles_simple(time, input_f, xstep), None
