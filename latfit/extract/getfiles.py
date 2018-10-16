@@ -128,6 +128,7 @@ def roundup(time, xstep, xmin):
     time2 = np.ceil(float(time)/2.0/xstep)*xstep if np.ceil(
         float(time)/2.0) != time else max(
             np.floor(float(time)/2.0/xstep)*xstep, xmin)
+    time2 = 2 if time == 5 else 4
     return time2
 
 if GEVP:

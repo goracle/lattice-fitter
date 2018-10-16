@@ -85,11 +85,8 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         checkherm(cmat[num])
     mean = np.mean(cmat, axis=0)
     checkherm(mean)
-    if decrease_var:
-        check = np.array(cmat)
-        cmat = (cmat-mean)*decrease_var+mean
-        check2 = (cmat-mean)/decrease_var+mean
-        assert np.allclose(check, check2, rtol=1e-10), "precision loss detected." 
+    if decrease_var != 0:
+        cmat = variance_reduction(cmat, mean)
     return np.asarray(cmat), np.asarray(mean)
 
 def checkherm(carr):
@@ -119,7 +116,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         c_rhs_inv = linalg.inv(c_rhs)
         # compute commutator divided by norm to see how close rhs and lhs bases
         try:
-            commutator_norm = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
+            commutator_norms = np.linalg.norm((np.dot(c_rhs_inv, c_lhs)-np.dot(c_lhs, c_rhs_inv))/np.linalg.norm(c_rhs_inv)/np.linalg.norm(c_lhs))
         except FloatingPointError:
             print("bad denominator:")
             print(np.linalg.norm(c_rhs_inv))
@@ -146,7 +143,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         skip_late = True
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
-        if j.imag == 0:
+        if j.imag == 0 and j.real > 0:
             eigfin[i] = eigvals[i].real
         else:
             if USE_LATE_TIMES and not skip_late and late:
@@ -203,9 +200,28 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
     apply y->(y_i-<y>)*decrease_var+<y>
     """
+    nanindices = []
+    if hasattr(orig, '__iter__'):
+        assert hasattr(avg, '__iter__'), "dimension mismatch"
+        if len(orig.shape) == 1:
+            for i,j in enumerate(zip(orig, avg)):
+                    if any(np.isnan(j)):
+                        orig[i] = np.nan
+                        avg[i] = np.nan
+    else:
+        assert not np.isnan(orig+avg), "nan found"
     ret = (orig-avg)*decrease_var+avg
     check = (ret-avg)/decrease_var+avg
-    assert np.allclose(check, orig, rtol=1e-10), "precision loss detected." 
+    try:
+        assert np.allclose(check, orig, rtol=1e-8, equal_nan=True),\
+            "precision loss detected:"+str(orig)+" "+str(check)+" "+str(decrease_var)
+    except AssertionError:
+        print("precision loss detected: (check, orig, avg, ret):")
+        print(check)
+        print(orig)
+        print(avg)
+        print(ret)
+        sys.exit(1)
     return ret
 
 
@@ -243,6 +259,11 @@ if EFF_MASS:
         eigvals_mean_tp3 = sorted(get_eigvals(
             cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
 
+        avg_energies = np.array([proc_meff(
+            (eigvals_mean_t[op], eigvals_mean_tp1[op], eigvals_mean_tp2[op],
+             eigvals_mean_tp3[op]), index=op, time_arr=timeij)
+                         for op in range(dimops)])
+
         norm_comm = []
         norms_comm = []
         for num in range(num_configs):
@@ -253,19 +274,19 @@ if EFF_MASS:
                 eigret = get_eigvals(cmat_lhs_t[num], cmat_rhs[num], print_evecs=True, commnorm=True)
                 norm_comm.append(eigret[1])
                 norms_comm.append(eigret[2])
-                eigvals = variance_reduction(np.array(sorted(eigret[0], reverse=True)), eigvals_mean_t, 1/decrease_var)
+                eigvals = np.array(sorted(eigret[0], reverse=True))
 
                 tprob = None if not EFF_MASS else tprob
 
-                eigvals2 = variance_reduction(np.array(sorted(get_eigvals(
-                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True)), eigvals_mean_tp1, 1/decrease_var)
+                eigvals2 = np.array(sorted(get_eigvals(
+                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True))
 
-                eigvals3 = variance_reduction(np.array(sorted(get_eigvals(
-                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True)), eigvals_mean_tp2, 1/decrease_var)
+                eigvals3 = np.array(sorted(get_eigvals(
+                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True))
 
-                eigvals4 = variance_reduction(np.array(sorted(get_eigvals(
+                eigvals4 = np.array(sorted(get_eigvals(
                     cmat_lhs_tp3[num], cmat_rhs[num],
-                    overb=True), reverse=True)), eigvals_mean_tp3, 1/decrease_var)
+                    overb=True), reverse=True))
 
                 if PIONRATIO:
                     div = np.array([np.real(
@@ -284,10 +305,10 @@ if EFF_MASS:
                 if tprob is not None:
                     raise XmaxError(problemx=tprob)
             check_variance.append(eigvals)
-            retblk.append(np.array([proc_meff(
-                (eigvals[op], eigvals2[op], eigvals3[op],
-                 eigvals4[op]), index=op, time_arr=timeij)
-                                    for op in range(dimops)]))
+            result = variance_reduction(np.array([proc_meff(
+                (eigvals[op], eigvals2[op], eigvals3[op], eigvals4[op]),
+                index=op, time_arr=timeij) for op in range(dimops)]), avg_energies, 1/decrease_var)
+            retblk.append(result)
         if MPIRANK == 0:
             pass
             #chisq_bad, pval, dof = pval_commutator(norms_comm)

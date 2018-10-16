@@ -225,7 +225,8 @@ elif EFF_MASS_METHOD == 4:
                 sol = -sol
                 #print("positive solution close to" +
                 #      " negative solution; switching; new tol", tryfun)
-                assert abs(tryfun) < 1e-16, "New tolerance too large."
+                assert abs(tryfun) < 1e-12, "New tolerance too large:"+str(
+                    tryfun)
             else:
                 print("***ERROR***\nnegative energy found:", sol, times)
                 print(EFF_MASS_TOMIN[index](sol, times[0], ratioval))

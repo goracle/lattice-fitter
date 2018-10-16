@@ -240,37 +240,47 @@ def main():
                 except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                         BadJackknifeDist, DOFNonPos,
                         BadChisqJackknife, ZetaError) as _:
-                    print("Test fit failed, but in an acceptable way. Continuing.")
+                    print("Test fit failed,"+\
+                          " but in an acceptable way. Continuing.")
                     fit_range_init = None
             cut_on_errsize()
             augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
-            plotdata.coords, plotdata.cov = singlefit.coords_full, singlefit.cov_full
+            plotdata.coords, plotdata.cov = singlefit.coords_full,\
+                singlefit.cov_full
             tsorted = []
             for i in range(MULT):
                 #if MULT == 1:
                 #    break
                 if i == 0 and MPIRANK == 0:
-                    print("Finding best times (most likely to give small chi^2 contributions)")
+                    print("Finding best times ("+\
+                          "most likely to give small chi^2 contributions)")
                 if MULT > 1:
                     coords = np.array([j[i] for j in plotdata.coords[:,1]])
                 else:
                     coords = np.array([j for j in plotdata.coords[:,1]])
                 times = np.array(list(plotdata.coords[:,0]))
                 if MULT > 1:
-                    tsorted.append(sortfit.best_times(coords, plotdata.cov[:,:,i,i], i, times))
+                    tsorted.append(sortfit.best_times(
+                        coords, plotdata.cov[:,:,i,i], i, times))
                 else:
-                    tsorted.append(sortfit.best_times(coords, plotdata.cov, 0, times))
+                    tsorted.append(
+                        sortfit.best_times(coords, plotdata.cov, 0, times))
             samp_mult = []
             if random_fit:
-                # go in a random order if lenprod is small (biased by how likely fit will succeed),
+                # go in a random order if lenprod is small
+                # (biased by how likely fit will succeed),
                 for i in range(MULT):
                     #if MULT == 1:
                     #    break
                     if i == 0 and MPIRANK == 0 and BIASED_SPEEDUP:
-                        print("Setting up biased sorting of (random) fit ranges")
-                    probs, sampi = sortfit.sample_norms(
-                        sampler, tsorted[i], lenfit)
-                    probs = probs if BIASED_SPEEDUP else None
+                        print("Setting up biased sorting of"+\
+                              " (random) fit ranges")
+                    if BIASED_SPEEDUP:
+                        probs, sampi = sortfit.sample_norms(
+                            sampler, tsorted[i], lenfit)
+                    else:
+                        probs =  None
+                        sampi = sorted(list(sampler))
                     samp_mult.append([probs, sampi])
             else:
                 for i in range(MULT):
@@ -404,8 +414,11 @@ def main():
                 # is this justifiable?
                 if CALC_PHASE_SHIFT and MULT > 1:
                     if any(result_min.phase_shift_err > PHASE_SHIFT_ERR_CUT):
-                        print("phase shift errors too large")
-                        continue
+                        if all(result_min.phase_shift_err[:-1] < PHASE_SHIFT_ERR_CUT):
+                            print("warning: phase shift errors on last state very large")
+                        else:
+                            print("phase shift errors too large")
+                            continue
 
 
                 # calculate average relative error (to be minimized)
@@ -421,17 +434,18 @@ def main():
                     overfit_arr.append(result)
                     continue
 
-                errarr.append(param_err)
-                curr_err, avg_curr_err = errerr(errarr)
-                print("average statistical error on parameters",
-                      avg_curr_err)
-                stop = max(curr_err)/avg_curr_err[np.argmax(curr_err)]
-                if stop < FITSTOP:
-                    print("Estimate for parameter error has"+\
-                          " stabilized, exiting loop")
-                    break
-                else:
-                    print("Current error on error =", curr_err)
+                # obsolete
+                #errarr.append(param_err)
+                #curr_err, avg_curr_err = errerr(errarr)
+                #print("average statistical error on parameters",
+                #      avg_curr_err)
+                #stop = max(curr_err)/avg_curr_err[np.argmax(curr_err)]
+                #if stop < FITSTOP:
+                #    print("Estimate for parameter error has"+\
+                #          " stabilized, exiting loop")
+                #    break
+                #else:
+                #    print("Current error on error =", curr_err)
 
                 # need better criterion here,
                 # maybe just have it be user defined patience level?

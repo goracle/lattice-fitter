@@ -152,6 +152,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # as it is 5 \sigma away from an acceptable chi^2/dof
         chisq_fiduc_cut = chisqfiduc(params.num_configs,
                                      result_min.dof)
+        # similarly, cut below 5 sigma below chisq/dof = 1
+        chisq_fiduc_overfit_cut = overfit_chisq_fiduc(
+            params.num_configs, result_min.dof)
 
         skip_votes = []
         # loop over configs, doing a fit for each one
@@ -211,9 +214,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
                 # check if chisq too big, too small
                 if result_min_jack.fun > chisq_fiduc_cut or\
-                   result_min_jack.fun/result_min.dof < 1-5*(
-                       2 if result_min.dof < 10 else 1)*np.sqrt(2*result_min.dof)/(
-                       params.num_configs-SUPERJACK_CUTOFF):
+                   result_min_jack.fun < chisq_fiduc_overfit_cut:
                     skip_votes.append(config_num)
 
                 if config_num == 1+SUPERJACK_CUTOFF:
@@ -246,7 +247,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                               str(result_min.pvalue[0])+" "+\
                               str(result_min.pvalue[1])+" ")
                         sys.exit(1)
-                        raise BadJackknifeDist
+                        #raise BadJackknifeDist
 
         # average results, compute jackknife uncertainties
 
@@ -291,19 +292,40 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def overfit_chisq_fiduc(num_configs, dof, guess=None):
+    """Find the overfit 5 sigma cut
+    (see chisqfiduc for the lower cut on the upper bound)
+    """
+    cut = stats.chi2.cdf(dof, dof)
+    lbound = 3e-7
+    func = lambda tau: ((1-cut*lbound)-(1-stats.chi2.cdf(abs(tau), dof)))**2
+    sol = abs(float(fsolve(func, 1e-5 if guess is None else guess)))
+    sol2 = dof
+    assert abs(func(sol)) < 1e-12, "fsolve failed:"+str(num_configs)+\
+        " "+str(dof)
+    diff = (sol2-sol)/(num_configs-SUPERJACK_CUTOFF-1)
+    assert diff > 0, "bad solution to p-value solve, chisq/dof solution > 1"
+    ret = sol2-diff
+    return ret
+
 def chisqfiduc(num_configs, dof):
     """Find the chi^2/dof cutoff (acceptance upper bound)
     defined as > 5 \sigma away from an acceptable pvalue
     2*dof is the variance in chi^2
     """
-    func = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(tau, dof))
+    func = lambda tau: PVALUE_MIN*3e-7-(1-stats.chi2.cdf(tau, dof))
+    func2 = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(tau, dof))
     # guess about 2 for the max chi^2/dof
     sol = float(fsolve(func, dof))
+    sol2 = float(fsolve(func2, dof))
     assert abs(func(sol)) < 1e-8, "fsolve failed."
+    assert abs(func2(sol2)) < 1e-8, "fsolve2 failed."
     # known variance of chi^2 is 2*dof, but skewed at low dof (here chosen to be < 10)
     # thus, the notion of a "5 sigma fluctuation" is only defined as dof->inf
     # so we have a factor of 2 to make low dof p-value cut less aggressive
-    ret = sol+5*(2 if dof < 10 else 1)*np.sqrt(2*dof)/(num_configs-SUPERJACK_CUTOFF)
+    #ret = sol+5*(2 if dof < 10 else 1)*np.sqrt(2*dof)/(num_configs-SUPERJACK_CUTOFF)
+    diff = (sol-sol2)/(num_configs-SUPERJACK_CUTOFF-1)
+    ret = sol2+diff
     #print(ret/dof, sol/dof, num_configs, dof, PVALUE_MIN,
     #      1-stats.chi2.cdf(ret, dof), 1-stats.chi2.cdf(sol, dof))
     return ret

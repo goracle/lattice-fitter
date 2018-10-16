@@ -61,15 +61,17 @@ def sample_norms(sampler, tsorted, lenfit):
     samp = sorted(list(sampler))
     total = 0
     probs = []
+    assert len(samp) != 0, "no fit ranges"
     for excl in samp:
         score = score_excl(excl, tsorted, lenfit, inversescore=False)
         probs.append(score)
         total += score
     assert not np.isnan(total), "Score total is not a number."
+    assert total != 0, "total is 0."
     norm = 1.0/total
     probs = np.array(probs)*norm
     assert np.allclose(
-        np.sum(probs, axis=0), 1.0), "Probabilities chosen do not sum to 1."
+        np.sum(probs, axis=0), 1.0, rtol=1e-8), "Probabilities chosen do not sum to 1:"+str(np.sum(probs, axis=0))
     #for i, j in zip(samp, probs):
     #    print(i, j)
     #sys.exit(0)

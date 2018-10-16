@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 2
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -62,8 +62,8 @@ IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'T_1_MINUS'
 IRREP = 'A1_mom1'
+IRREP = 'T_1_MINUS'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -91,6 +91,7 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
+#DIM = 4
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -109,8 +110,8 @@ GEVP_DEBUG = False
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
@@ -177,8 +178,8 @@ RESCALE = 1.0
 # T0 behavior for GEVP (t/2 or t-1)
 
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
-T0 = 'ROUND' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
+T0 = 'ROUND' # ceil(t/2)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -248,7 +249,7 @@ if GEVP:
             r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
     elif ISOSPIN == 1:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I1, $\pi\pi,~\rho$ ' + PSTR_TITLE + ' '
+            r' GEVP, I1, $\pi\pi, \rho$ ' + PSTR_TITLE + ' '
     else:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
             r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
@@ -298,7 +299,7 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # phase shift error cut, absolute, in degrees.
 # if the error is bigger than this, skip this fit range
-PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
+PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN != 0 else np.inf
 
 # skip fit range if parameter (energy) errors greater than 100%
 SKIP_LARGE_ERRORS = False
@@ -314,7 +315,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-3
+DECREASE_VAR = 1e-6
 
 # precision to display, number of decimal places
 
@@ -394,7 +395,8 @@ NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5),
           1.0/10**2.5/10**5.5],
          [1.0/10**3/10**5.5,
           1.0/10**2.5/10**5.5, 1.0/10**11]]
-NORMS = [[1.0 for _ in range(DIM)] for _ in range(DIM)]
+NORMS = [[(-1 if i ==1 else 1)*(-1 if j==1 else 1) for i in range(DIM)] for j in range(DIM)]
+NORMS = [[1 for i in range(DIM)] for j in range(DIM)]
 
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
