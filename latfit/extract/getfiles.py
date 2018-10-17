@@ -176,7 +176,7 @@ if GEVP:
                 time,xstep,xmin), time, xstep)), reverse=True)
             if not len(time2) > 1:
                 time2 = roundup(time, xstep, xmin)
-            time2 = 4 if time == 5 else time2
+            #time2 = 4 if time == 5 else time2
         return getfiles_gevp(time, time2, xstep), time-time2
 else:
     def getfiles(time, xstep, _, input_f):

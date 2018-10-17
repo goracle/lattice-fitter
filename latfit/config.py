@@ -155,6 +155,12 @@ NOLOOP = False
 USE_LATE_TIMES = False
 USE_LATE_TIMES = True
 
+# hints to eliminate
+HINTS_ELIM = {}
+HINTS_ELIM[11] = ( 4 , 0 )
+HINTS_ELIM[12] = ( 4 , 3 )
+HINTS_ELIM[15] = ( 3 , 0 )
+
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs

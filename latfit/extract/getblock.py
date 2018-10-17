@@ -25,6 +25,8 @@ from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DECREASE_VAR
+from latfit.config import HINTS_ELIM
+
 from mpi4py import MPI
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -100,21 +102,35 @@ def removerowcol(cmat, idx):
 def solve_gevp(c_lhs, c_rhs=None):
     dimops_orig = len(c_lhs)
     dimops = len(c_lhs)
+    if solve_gevp.hint is not None:
+        dimremaining, toelim  = solve_gevp.hint
+    else:
+        dimremaining, toelim  = (-1, -2)
+    assert toelim < dimremaining, "index error"
+
     eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                       overwrite_b=False, check_finite=True)
+    sorted(eigvals, reverse=True)
+    if dimops == dimremaining:
+        assert eigvals[toelim] > 0, "already negative"
+        eigvals[toelim] *= -1
     while any(eigvals < 0):
         dimops -= 1
         assert dimops > 0, "dimension reduction technique exhausted."
         count = 0
         dimdeldict = {}
         for dimdel in range(dimops+1):
-            if dimdel == 0:
+            if dimdel == 0 and toelim < 0: # heuristic
                 continue
             c_lhs_temp = removerowcol(c_lhs, dimdel)
             c_rhs_temp = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
             eigvals, evecs = scipy.linalg.eig(c_lhs_temp, c_rhs_temp, overwrite_a=False,
                                               overwrite_b=False, check_finite=True)
-            count = max(np.count_nonzero(~np.isnan(eigvals)), count)
+            if dimremaining == dimops:
+                assert eigvals[toelim] > 0, "already negative"
+                eigvals[toelim] *= -1
+            count = max(np.count_nonzero(eigvals > 0), count)
+            #assert count not in dimdeldict, "degeneracy of deletions:"+str(count)+","+str(dimdel)+","+str(dimdeldict[count])
             dimdeldict[count] = dimdel
         if dimdeldict:
             dimdel = dimdeldict[max([count for count in dimdeldict])]
@@ -122,10 +138,14 @@ def solve_gevp(c_lhs, c_rhs=None):
             c_rhs = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
         eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                           overwrite_b=False, check_finite=True)
+        if dimremaining == dimops:
+            assert eigvals[toelim] > 0, "already negative"
+            eigvals[toelim] *= -1
         for _ in range(dimops_orig-dimops):
             eigvals = np.append(eigvals, np.nan)
     assert len(eigvals) == dimops_orig, "eigenvalue shape extension needed"
     return eigvals, evecs
+solve_gevp.hint = None
 
 
 def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
@@ -268,9 +288,13 @@ if EFF_MASS:
         """Get a single rhs; loop to find the one with the least nan's"""
         blkdict = {}
         countdict = {}
+        errdict = {}
+        check_length = 0
         if hasattr(delta_t, '__iter__'):
             for i, dt1 in enumerate(delta_t):
+                solve_gevp.hint = HINTS_ELIM[timeij] if timeij in HINTS_ELIM else None
                 print('dt1' , dt1, 'timeij', timeij)
+                print('hint=', solve_gevp.hint)
                 try:
                     assert len(file_tup[1]) == len(delta_t), "rhs times dimensions do not match:"+\
                         len(file_tup[1])+str(",")+len(delta_t)
@@ -282,15 +306,22 @@ if EFF_MASS:
                 for i,j in enumerate(argtup):
                     assert j is not None, "file_tup["+str(i)+"] is None"
                 blkdict[dt1] = getblock_gevp_singlerhs(argtup, dt1, timeij, decrease_var)
+                check_length = len(blkdict[dt1])
+                relerr = np.abs(np.std(blkdict[dt1], ddof=1, axis=0)*(len(blkdict[dt1])-1)/np.mean(blkdict[dt1], axis=0))
+                errdict[dt1] = np.nanargmax(relerr)
                 count = 0
                 for config, blk in enumerate(blkdict[dt1]):
                     count = max(np.count_nonzero(~np.isnan(blk)), count)
                     countdict[count] = dt1
             keymax = countdict[max([count for count in countdict])]
-            print("final tlhs, trhs =", timeij, timeij-keymax)
+            print("final tlhs, trhs =", timeij, timeij-keymax, "next hint:(",
+                  np.count_nonzero(~np.isnan(blkdict[keymax][0])), ",", errdict[keymax], ")")
+            for key in blkdict:
+                assert len(blkdict[key]) == check_length, "number of configs is not consistent for different times"
             ret = blkdict[keymax]
         else:
             print("final tlhs, trhs =", timeij, timeij-delta_t)
+            solve_gevp.hint = None
             ret = getblock_gevp_singlerhs(
                 file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
         return ret
