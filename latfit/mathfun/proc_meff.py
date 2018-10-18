@@ -161,6 +161,9 @@ elif EFF_MASS_METHOD == 4:
         (e.g.) [ C(t) ]/[ C(t+1) ]
         This is the conventional effective mass formula.
         """
+        #if any(np.isnan(np.array(corrs, dtype=np.complex)[:2])):
+        #    sol = np.nan
+        #else:
         try:
             sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)

@@ -158,8 +158,8 @@ USE_LATE_TIMES = True
 # hints to eliminate
 HINTS_ELIM = {}
 HINTS_ELIM[11] = ( 4 , 0 )
-HINTS_ELIM[12] = ( 4 , 3 )
-HINTS_ELIM[15] = ( 3 , 0 )
+HINTS_ELIM[12] = [( 4 , 3 ), ( 3 , 2 )]
+HINTS_ELIM[15] = [(4, 3), ( 3 , 0 ), ( 2 , 1 )]
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,

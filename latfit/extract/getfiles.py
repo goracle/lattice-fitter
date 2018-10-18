@@ -75,6 +75,7 @@ def getfiles_gevp(time, time2, xstep):
         assert time >= time2, "Bad rhs time. t values (lhs, rhs):"+\
             str(time)+","+str(time2)+","+str(xmin)
         ret = getfiles_gevp_singlerhs(time, time2, xstep)
+    assert len(ret) == 5, "return tuple is wrong length:"+str(len(ret))
     return ret
 
 def getfiles_gevp_singlerhs(time, time2, xstep):
@@ -177,7 +178,10 @@ if GEVP:
             if not len(time2) > 1:
                 time2 = roundup(time, xstep, xmin)
             #time2 = 4 if time == 5 else time2
-        return getfiles_gevp(time, time2, xstep), time-time2
+        delta_t = time-time2
+        ret = getfiles_gevp(time, time2, xstep), delta_t
+        assert len(ret[0]) == 5, "bad file_tup length:"+str(len(ret[0]))
+        return ret
 else:
     def getfiles(time, xstep, _, input_f):
         """Get files, (meta)"""

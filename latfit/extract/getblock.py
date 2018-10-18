@@ -99,53 +99,164 @@ def removerowcol(cmat, idx):
     """Delete the idx'th row and column"""
     return np.delete(np.delete(cmat, idx, axis=0), idx, axis=1)
 
+def calleig(c_lhs, c_rhs=None):
+    """Actual call to scipy.linalg.eig"""
+    eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
+                            overwrite_b=False, check_finite=True)
+    eigenvals = np.array(sorted(eigenvals, reverse=True))
+    return eigenvals, evecs
+
+def makeneg(val):
+    """make a value negative"""
+    val = drop0imag(val)
+    if hasattr(val, '__iter__'):
+        if all(val < 0):
+            ret = val
+        elif any(val < 0):
+            ret = val
+        else:
+            ret = np.asarray(val)*(-1)
+        assert all(ret < 0), "bug"
+    else:
+        ret = val if val < 0 else -1*val
+        assert ret <= 0, "val="+str(val)
+    return ret
+
+def drop0imag(val):
+    ret = val
+    if isinstance(val, complex):
+        if val.imag == 0:
+            ret = val.real
+    if hasattr(val, '__iter__'):
+        if isinstance(val[0], complex):
+            if all(val.imag) == 0:
+                ret = val.real
+    return ret 
+            
+def propnan(vals):
+    """propagate a nan in a complex value"""
+    if hasattr(vals, '__iter__'):
+        for i,val in enumerate(vals):
+            if np.isnan(val) and np.imag(val) != 0:
+                vals[i] = np.nan
+    else:
+        if np.isnan(vals) and np.imag(vals) != 0:
+            vals = np.nan
+    return vals
+
 def solve_gevp(c_lhs, c_rhs=None):
+    """Solve the GEVP"""
     dimops_orig = len(c_lhs)
     dimops = len(c_lhs)
-    if solve_gevp.hint is not None:
-        dimremaining, toelim  = solve_gevp.hint
-    else:
-        dimremaining, toelim  = (-1, -2)
-    assert toelim < dimremaining, "index error"
-
-    eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                                      overwrite_b=False, check_finite=True)
-    sorted(eigvals, reverse=True)
+    dimremaining, toelim  = nexthint()
+    eigvals, evecs = calleig(c_lhs, c_rhs)
+    # make eval negative to eliminate it
     if dimops == dimremaining:
-        assert eigvals[toelim] > 0, "already negative"
-        eigvals[toelim] *= -1
+        eigvals[toelim] = makeneg(eigvals[toelim])
+    eliminated_operators = set()
+    #allowedeliminations(reset=True)
     while any(eigvals < 0):
+
+        # indexing updates
+        assert isinstance(dimremaining, int), "bug"
+        assert isinstance(toelim, int), "bug"
         dimops -= 1
+        dimremaining, toelim = nexthint()
         assert dimops > 0, "dimension reduction technique exhausted."
         count = 0
         dimdeldict = {}
-        for dimdel in range(dimops+1):
-            if dimdel == 0 and toelim < 0: # heuristic
+
+        # try to eliminate different operators to remove negative eigenvalues
+        loop = list(range(dimops+1))
+        if len(loop) > 2:
+            loop[1], loop[2] = loop[2], loop[1]
+        for dimdel in loop:
+            if dimdel == 0 and toelim < 0: # heuristic, override with hint
                 continue
             c_lhs_temp = removerowcol(c_lhs, dimdel)
             c_rhs_temp = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
-            eigvals, evecs = scipy.linalg.eig(c_lhs_temp, c_rhs_temp, overwrite_a=False,
-                                              overwrite_b=False, check_finite=True)
+            eigvals, evecs = calleig(c_lhs_temp, c_rhs_temp)
             if dimremaining == dimops:
-                assert eigvals[toelim] > 0, "already negative"
-                eigvals[toelim] *= -1
+                eigvals[toelim] = makeneg(eigvals[toelim])
+            # count number of non-negative eigenvalues
             count = max(np.count_nonzero(eigvals > 0), count)
-            #assert count not in dimdeldict, "degeneracy of deletions:"+str(count)+","+str(dimdel)+","+str(dimdeldict[count])
+            # store dimension deletion leading to this count
             dimdeldict[count] = dimdel
+        # find the maximum number of non-negative entries
         if dimdeldict:
             dimdel = dimdeldict[max([count for count in dimdeldict])]
             c_lhs = removerowcol(c_lhs, dimdel)
             c_rhs = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
-        eigvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                                          overwrite_b=False, check_finite=True)
+            eliminated_operators.add(dimdel)
+        # do final solve in truncated basis
+        eigvals, evecs = calleig(c_lhs, c_rhs)
         if dimremaining == dimops:
-            assert eigvals[toelim] > 0, "already negative"
-            eigvals[toelim] *= -1
-        for _ in range(dimops_orig-dimops):
-            eigvals = np.append(eigvals, np.nan)
+            eigvals[toelim] = makeneg(eigvals[toelim])
+    if allowedeliminations() is not None:
+        try:
+            assert eliminated_operators.issubset(allowedeliminations())
+        except AssertionError:
+            print("incompatible operator eliminations")
+            print(allowedeliminations())
+            print(eliminated_operators)
+            sys.exit(1)
+        #for dimdel in allowedeliminations():
+        #    assert dimdel, "we should not be removing ground operator"
+        #    c_lhs = removerowcol(c_lhs, dimdel)
+        #    c_rhs = removerowcol(c_rhs, dimdel)
+        #eigvals, evecs = calleig(c_lhs, c_rhs)
+        #assert all(eigvals < 1), "negative energies found"
+        #dimops = len(eigvals)
+    else:
+        allowedeliminations(eliminated_operators)
+    try:
+        assert len(eliminated_operators) == dimops_orig-dimops, "deletion count is wrong."
+    except AssertionError:
+        print('dimops, dimops_orig, eliminated_operators:')
+        print(dimops, dimops_orig, eliminated_operators)
+        sys.exit(1)
+    # inflate number of evals with nan's to match dimensions
+    for _ in range(dimops_orig-dimops):
+        eigvals = np.append(eigvals, np.nan)
+            #if nexthint.idx > 0:
+            #    print(dimremaining, toelim)
+            #    sys.exit(0)
+    if eliminated_operators:
+        #print(sorted(eliminated_operators))
+        assert np.count_nonzero(np.isnan(eigvals)) == len(eliminated_operators), "deletion mismatch."
     assert len(eigvals) == dimops_orig, "eigenvalue shape extension needed"
+    nexthint(0)
+    eigvals = propnan(eigvals)
     return eigvals, evecs
 solve_gevp.hint = None
+
+def allowedeliminations(newelim=None, reset=False):
+    """The complete list of allowed eliminations"""
+    if reset:
+        allowedeliminations.elims = None
+    else:
+        allowedeliminations.elims = set(newelim) if isinstance(newelim, set) and newelim else allowedeliminations.elims
+    return allowedeliminations.elims
+allowedeliminations.elims = None
+ 
+
+def nexthint(idx=None):
+    ret = (-1, -2)
+    if isinstance(solve_gevp.hint, tuple):
+        ret = solve_gevp.hint
+    elif isinstance(solve_gevp.hint, list):
+        ret = solve_gevp.hint[nexthint.idx]
+        if len(solve_gevp.hint) > nexthint.idx+1:
+            nexthint.idx += 1
+    else:
+        assert solve_gevp.hint is None, "inconsistency in assigning variable"
+    dimremaining, toelim = ret
+    assert toelim < dimremaining, "index error"
+    assert isinstance(dimremaining, int), "bug"
+    assert isinstance(toelim, int), "bug"
+    nexthint.idx = idx if idx is not None else nexthint.idx
+    return ret
+nexthint.idx = 0
 
 
 def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
@@ -163,7 +274,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         print("Norms=", NORMS)
         get_eigvals.sent = True
     eigvals, evecs = solve_gevp(c_lhs, c_rhs)
-    checkgteq0(eigvals)
+    #checkgteq0(eigvals)
     dimops = len(c_lhs)
     late = False if all(np.imag(eigvals) == 0) else True
     skip_late = False
@@ -220,15 +331,16 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False, commnorm=False):
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
         print("end solve")
-    checkgteq0(eigfin)
+    #checkgteq0(eigfin)
     ret = (eigfin, commutator_norm, commutator_norms) if commnorm else eigfin
     return ret
 get_eigvals.sent = False
 
 def checkgteq0(eigfin):
+    """Check to be sure all eigenvalues are greater than 0"""
     for i in eigfin:
         if not np.isnan(i):
-            assert i >= 0, "non-positive eigenvalue found:"+str(eigfin)
+            assert i >= 0, "negative eigenvalue found:"+str(eigfin)
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^\dagger)/2"""
@@ -282,6 +394,18 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
         sys.exit(1)
     return ret
 
+# mostly useless (only a check)
+def propagate_nans(blk):
+    """Propagate nan's"""
+    nandim = np.zeros(blk[0].shape)
+    for _, sample in enumerate(blk):
+        for i, val in enumerate(sample):
+            if np.isnan(val):
+                nandim[i] = np.nan
+    for config, _ in enumerate(blk):
+        blk[config] += nandim
+    return blk
+
 
 if EFF_MASS:
     def getblock_gevp(file_tup, delta_t, timeij=None, decrease_var=DECREASE_VAR):
@@ -290,11 +414,10 @@ if EFF_MASS:
         countdict = {}
         errdict = {}
         check_length = 0
+        assert len(file_tup) == 5, "bad file_tup length:"+str(len(file_tup))
         if hasattr(delta_t, '__iter__'):
             for i, dt1 in enumerate(delta_t):
                 solve_gevp.hint = HINTS_ELIM[timeij] if timeij in HINTS_ELIM else None
-                print('dt1' , dt1, 'timeij', timeij)
-                print('hint=', solve_gevp.hint)
                 try:
                     assert len(file_tup[1]) == len(delta_t), "rhs times dimensions do not match:"+\
                         len(file_tup[1])+str(",")+len(delta_t)
@@ -302,10 +425,12 @@ if EFF_MASS:
                     print(file_tup)
                     print(delta_t)
                     assert None, "bug"
-                argtup = (file_tup[0], file_tup[1][i], file_tup[2], file_tup[3])
+                argtup = (file_tup[0], file_tup[1][i], *file_tup[2:])
                 for i,j in enumerate(argtup):
                     assert j is not None, "file_tup["+str(i)+"] is None"
                 blkdict[dt1] = getblock_gevp_singlerhs(argtup, dt1, timeij, decrease_var)
+                print('dt1' , dt1, 'timeij', timeij, 'elim hint', solve_gevp.hint,
+                      "operator eliminations", allowedeliminations(), 'sample', blkdict[dt1][55])
                 check_length = len(blkdict[dt1])
                 relerr = np.abs(np.std(blkdict[dt1], ddof=1, axis=0)*(len(blkdict[dt1])-1)/np.mean(blkdict[dt1], axis=0))
                 errdict[dt1] = np.nanargmax(relerr)
@@ -327,6 +452,49 @@ if EFF_MASS:
         return ret
 
 
+    def average_energies(mean_cmats_lhs, mean_crhs, delta_t, timeij):
+        """get average energies"""
+        dimops = len(mean_crhs)
+        cmat_lhs_t_mean = mean_cmats_lhs[0]
+        cmat_lhs_tp1_mean = mean_cmats_lhs[1]
+        cmat_lhs_tp2_mean = mean_cmats_lhs[2]
+        cmat_lhs_tp3_mean = mean_cmats_lhs[3]
+        eigvals_mean_t = get_eigvals(cmat_lhs_t_mean, mean_crhs)
+        checkgteq0(eigvals_mean_t)
+        #eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
+        eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
+        checkgteq0(eigvals_mean_tp1)
+        #eigvals_mean_tp2 = get_eigvals(cmat_lhs_tp2_mean, mean_crhs)
+        eigvals_mean_tp2 = [np.nan]*len(eigvals_mean_t)
+        checkgteq0(eigvals_mean_tp2)
+        #eigvals_mean_tp3 = get_eigvals(cmat_lhs_tp3_mean, mean_crhs)
+        eigvals_mean_tp3 = [np.nan]*len(eigvals_mean_t)
+        checkgteq0(eigvals_mean_tp3)
+
+        avg_energies = np.array([proc_meff(
+            (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
+             eigvals_mean_tp3[op]), index=op, time_arr=timeij)
+                         for op in range(dimops)])/delta_t
+
+        return avg_energies
+
+    def getlhsrhs(file_tup, num_configs):
+        """Get lhs and rhs gevp matrices from file_tup
+        (extract from index structure)
+        """
+        mean_cmats_lhs = []
+        cmats_lhs = []
+        assert len(file_tup) == 5, "bad length:"+str(len(file_tup))
+        for idx in range(5):
+            cmat , mean = readin_gevp_matrices(file_tup[idx], num_configs)
+            if idx == 1:
+                cmat_rhs, mean_crhs = cmat, mean
+            else:
+                cmats_lhs.append(cmat)
+                mean_cmats_lhs.append(mean)
+        return cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs
+
+
     def getblock_gevp_singlerhs(file_tup, delta_t, timeij=None, decrease_var=DECREASE_VAR):
         """Given file tuple (for eff_mass),
         get block, store in reuse[ij_str]
@@ -340,7 +508,6 @@ if EFF_MASS:
         assert delta_t is not None, "delta_t is None"
         if not delta_t:
             delta_t = 1.0
-        retblk = deque()
         dimops = len(file_tup[0])
         if STYPE == 'ascii':
             num_configs = sum(1 for _ in open(file_tup[0][0][0]))
@@ -348,51 +515,43 @@ if EFF_MASS:
             num_configs = len(file_tup[0][0][0])
         if GEVP_DEBUG:
             print("Getting block for time slice=", timeij)
-        check_variance = []
 
-        cmat_lhs_t, cmat_lhs_t_mean = readin_gevp_matrices(file_tup[0], num_configs)
-        cmat_rhs, cmat_rhs_mean = readin_gevp_matrices(file_tup[1], num_configs)
-        cmat_lhs_tp1, cmat_lhs_tp1_mean = readin_gevp_matrices(file_tup[2], num_configs)
-        cmat_lhs_tp2, cmat_lhs_tp2_mean = readin_gevp_matrices(file_tup[3], num_configs)
-        cmat_lhs_tp3, cmat_lhs_tp3_mean = readin_gevp_matrices(file_tup[3], num_configs)
-
-        eigvals_mean_t = sorted(get_eigvals(
-            cmat_lhs_t_mean, cmat_rhs_mean), reverse=True)
-        eigvals_mean_tp1 = sorted(get_eigvals(
-            cmat_lhs_tp1_mean, cmat_rhs_mean), reverse=True)
-        eigvals_mean_tp2 = sorted(get_eigvals(
-            cmat_lhs_tp2_mean, cmat_rhs_mean), reverse=True)
-        eigvals_mean_tp3 = sorted(get_eigvals(
-            cmat_lhs_tp3_mean, cmat_rhs_mean), reverse=True)
-
-        avg_energies = np.array([proc_meff(
-            (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
-             eigvals_mean_tp3[op]), index=op, time_arr=timeij)
-                         for op in range(dimops)])/delta_t
+        # get the gevp matrices
+        cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = getlhsrhs(file_tup, num_configs)
 
         norm_comm = []
         norms_comm = []
-        for num in range(num_configs):
+        num = 0
+        # reset the list of allowed operator eliminations at the beginning of the loop
+        allowedeliminations(reset=True)
+        while num < num_configs:
             if GEVP_DEBUG:
                 print("config #=", num)
             tprob = timeij
             try:
-                eigret = get_eigvals(cmat_lhs_t[num], cmat_rhs[num], print_evecs=True, commnorm=True)
+                eigret = get_eigvals(cmats_lhs[0][num], cmat_rhs[num], print_evecs=True, commnorm=True)
                 norm_comm.append(eigret[1])
                 norms_comm.append(eigret[2])
-                eigvals = np.array(sorted(eigret[0], reverse=True))
+                eigvals = np.array(eigret[0])
+                try:
+                    checkgteq0(eigvals)
+                except AssertionError:
+                    print("negative eigenvalues found")
+                    print('eigvals:', eigvals)
+                    print("allowed operator eliminations:", allowedeliminations())
+                    num = 0
+                    continue
 
                 tprob = None if not EFF_MASS else tprob
 
-                eigvals2 = np.array(sorted(get_eigvals(
-                    cmat_lhs_tp1[num], cmat_rhs[num]), reverse=True))
+                #eigvals2 = get_eigvals(cmat_lhs_tp1[num], cmat_rhs[num])
+                eigvals2 = [np.nan]*len(eigvals)
 
-                eigvals3 = np.array(sorted(get_eigvals(
-                    cmat_lhs_tp2[num], cmat_rhs[num]), reverse=True))
+                #eigvals3 = get_eigvals(cmat_lhs_tp2[num], cmat_rhs[num])
+                eigvals3 = [np.nan]*len(eigvals)
 
-                eigvals4 = np.array(sorted(get_eigvals(
-                    cmat_lhs_tp3[num], cmat_rhs[num],
-                    overb=True), reverse=True))
+                #eigvals4 = get_eigvals(cmat_lhs_tp3[num], cmat_rhs[num], overb=True)
+                eigvals4 = [np.nan]*len(eigvals)
 
                 if PIONRATIO:
                     div = np.array([np.real(
@@ -410,11 +569,22 @@ if EFF_MASS:
                 print('config_num:', num, 'time:', tprob)
                 if tprob is not None:
                     raise XmaxError(problemx=tprob)
-            check_variance.append(eigvals)
+            
+            # process the eigenvalues
+            if num == 0:
+                avg_energies = average_energies(mean_cmats_lhs, mean_crhs, delta_t, timeij)
+                print('avg_energies', avg_energies)
             result = variance_reduction(np.array([proc_meff(
                 (1/eigvals[op], 1, eigvals3[op], eigvals4[op]),
                 index=op, time_arr=timeij) for op in range(dimops)])/delta_t, avg_energies, 1/decrease_var)
+            if not num:
+                check_variance = []
+                retblk = deque()
+            check_variance.append(eigvals)
             retblk.append(result)
+            num += 1
+        assert len(retblk) == num_configs, "number of configs should be the block length"
+        #retblk = propagate_nans(retblk)
         if MPIRANK == 0:
             pass
             #chisq_bad, pval, dof = pval_commutator(norms_comm)
