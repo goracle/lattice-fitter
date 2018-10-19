@@ -150,6 +150,7 @@ def solve_gevp(c_lhs, c_rhs=None):
     dimops = len(c_lhs)
     dimremaining, toelim  = nexthint()
     eigvals, evecs = calleig(c_lhs, c_rhs)
+    remaining_operator_indices = set(range(dimops))
     # make eval negative to eliminate it
     if dimops == dimremaining:
         eigvals[toelim] = makeneg(eigvals[toelim])
@@ -187,7 +188,9 @@ def solve_gevp(c_lhs, c_rhs=None):
             dimdel = dimdeldict[max([count for count in dimdeldict])]
             c_lhs = removerowcol(c_lhs, dimdel)
             c_rhs = removerowcol(c_rhs, dimdel) if c_rhs is not None else c_rhs
-            eliminated_operators.add(dimdel)
+            orig_index = sorted(list(remaining_operator_indices))[dimdel]
+            eliminated_operators.add(orig_index)
+            remaining_operator_indices.remove(orig_index)
         # do final solve in truncated basis
         eigvals, evecs = calleig(c_lhs, c_rhs)
         if dimremaining == dimops:
@@ -210,10 +213,14 @@ def solve_gevp(c_lhs, c_rhs=None):
     else:
         allowedeliminations(eliminated_operators)
     try:
-        assert len(eliminated_operators) == dimops_orig-dimops, "deletion count is wrong."
+        assert len(eliminated_operators) == dimops_orig-dimops
     except AssertionError:
+        print("deletion count is wrong.")
         print('dimops, dimops_orig, eliminated_operators:')
         print(dimops, dimops_orig, eliminated_operators)
+        print("toelim", toelim, 'dimremaining', dimremaining)
+        print('evals', eigvals)
+        print('clhs', c_lhs)
         sys.exit(1)
     # inflate number of evals with nan's to match dimensions
     for _ in range(dimops_orig-dimops):
@@ -573,7 +580,7 @@ if EFF_MASS:
             # process the eigenvalues
             if num == 0:
                 avg_energies = average_energies(mean_cmats_lhs, mean_crhs, delta_t, timeij)
-                print('avg_energies', avg_energies)
+                #print('avg_energies', avg_energies)
             result = variance_reduction(np.array([proc_meff(
                 (1/eigvals[op], 1, eigvals3[op], eigvals4[op]),
                 index=op, time_arr=timeij) for op in range(dimops)])/delta_t, avg_energies, 1/decrease_var)
