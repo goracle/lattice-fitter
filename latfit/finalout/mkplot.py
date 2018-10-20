@@ -294,8 +294,28 @@ def get_coord(coords, cov, error2=None):
     for i, j, k in zip(xcoord, ycoord, error2):
         res = gvar.gvar(j, k)
         var.append(res)
-        root_s_var.append(np.sqrt(res**2-rf.norm2(
-            rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2))
+        errstate = np.geterr()['invalid']
+        if errstate == 'raise':
+            np.seterr(invalid='warn')
+        try:
+            arg = res**2-rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2
+            if len(ycoord[0]) > 0:
+                assert all(arg >= 0)
+            else:
+                assert arg >= 0
+        except AssertionError:
+            print("invalid arg to sqrt", arg, "result", res)
+        except FloatingPointError:
+            print("floating point error in arg:", arg)
+            if hasattr(arg, '__iter__'):
+                for i in arg:
+                    try:
+                        print(np.sqrt(i))
+                    except FloatingPointError:
+                        print('problem entry:', i)
+            sys.exit(1)
+        root_s_var.append(np.sqrt(arg))
+        np.seterr(errstate)
     for i, xc1 in enumerate(xcoord):
         print(xc1, "E(lattice units) =", var[i])
     for i, xc1 in enumerate(xcoord):

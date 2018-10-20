@@ -167,6 +167,7 @@ elif EFF_MASS_METHOD == 4:
         try:
             sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
+            assert not np.isnan(sol) or any(np.isnan(np.array(corrs, dtype=np.complex))), "solution to energy from eval is unexpectedly nan."+str(corrs)
         except NegLogArgument:
             errstr = "bad time/op"+\
                     "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
