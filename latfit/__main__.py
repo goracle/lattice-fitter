@@ -157,6 +157,7 @@ def main():
 
     # error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
+    dump_fit_range.fn1 = input_f
     xmin, xmax = xlim_err(options.xmin, options.xmax)
     latfit.extract.getblock.XMAX = xmax
     xstep = xstep_err(options.xstep, input_f)
@@ -367,7 +368,8 @@ def main():
                 if fitrange[1]-fitrange[0]-1 > 0:
                     if fitrange[1]-fitrange[0]-1 in [len(i) for i in excl]:
                         print("warning: only two data points in fit curve")
-                        # continue
+                        if ISOSPIN != 0 or not GEVP: # allow for very noisy excited states in I=0
+                            continue
 
                 # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
@@ -485,10 +487,6 @@ def main():
                         assert len(overfit_arr) > 0, "No fits succeeded."+\
                             "  Change fit range manually:"+str(min_arr)
 
-                    print("Fit results:  red. chisq, excl")
-                    for i in min_arr:
-                        print(i[1:])
-
                     weight_sum = np.sum([getattr(i[0], "pvalue_arr") for i in min_arr], axis=0)
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
@@ -510,7 +508,8 @@ def main():
                                                               for i in min_arr], axis=0))
 
                             # dump the results to file
-                            dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check)
+                            dump_fit_range(min_arr, weight_sum,
+                                           avgname, res_mean, err_check)
 
                             # error propagation
                             result_min[name] = np.sqrt(np.sum([
@@ -569,6 +568,8 @@ def main():
 
                 result_min = convert_to_namedtuple(result_min)
 
+                print_fit_results(min_arr)
+
                 print("closest representative fit result (lattice units):")
                 printerr(result_min_close.x, param_err_close)
                 for i in range(MULT):
@@ -600,6 +601,19 @@ def main():
     print("END STDOUT OUTPUT")
     warn("END STDERR OUTPUT")
 
+def print_fit_results(min_arr):
+    """ Print the fit results
+    """
+    print("Fit results:  red. chisq, excl, pvalue")
+    res = []
+    for i in min_arr:
+        res.append((getattr(i[0], "pvalue"), i[1:]))
+    res = sorted(res, key=lambda x: x[0])
+    for i in res:
+        print(i)
+    
+
+
 def getuniqueres(min_arr):
     """Find unique fit ranges"""
     ret = []
@@ -625,10 +639,16 @@ def dump_fit_range(min_arr, weight_sum, avgname, res_mean, err_check):
                          dtype=object)
     pickl_res_err = np.array([getattr(i[0], name) for i in min_arr])
     avgname = 'chisq' if avgname == 'fun' else avgname
-    pickle.dump(pickl_res, open(
-        avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)+'.p', "wb"))
-    pickle.dump(pickl_res_err, open(
-        name+"_"+MOMSTR+'_I'+str(ISOSPIN)+'.p', "wb"))
+    if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.p':
+        avgname = avgname+'_'+dump_fit_range.fn1\
+            if dump_fit_range.fn1 is not '.' and not GEVP else avgname
+        avgname = re.sub('.jkdat', '', avgname)
+        name = avgname.replace('_', "_err_", 1)
+    filename = avgname+"_"+MOMSTR+'_I'+str(ISOSPIN) if GEVP else avgname
+    filename_err = name+"_"+MOMSTR+'_I'+str(ISOSPIN) if GEVP else name
+    pickle.dump(pickl_res, open(filename+'.p', "wb"))
+    pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
+dump_fit_range.fn1 = None
 
 def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq"""

@@ -246,7 +246,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                               str(chisq_min_arr[1]/result_min.dof)+" "+\
                               str(result_min.pvalue[0])+" "+\
                               str(result_min.pvalue[1])+" ")
-                        sys.exit(1)
+                        #sys.exit(1)
                         #raise BadJackknifeDist
 
         # average results, compute jackknife uncertainties

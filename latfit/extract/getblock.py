@@ -844,8 +844,10 @@ if GEVP:
         return retblk
 else:
 
-    def getblock_plus(file_tup, reuse, timeij=None):
+    def getblock_plus(file_tup, reuse, timeij=None, delta_t=None):
         """get the block"""
+        if delta_t is None:
+            pass
         return getblock_simple(file_tup, reuse, timeij)
 
 

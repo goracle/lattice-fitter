@@ -298,8 +298,8 @@ def get_coord(coords, cov, error2=None):
         if errstate == 'raise':
             np.seterr(invalid='warn')
         try:
-            arg = res**2-rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2
-            if len(ycoord[0]) > 0:
+            arg = res**2-(rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
+            if len(ycoord[0] if hasattr(ycoord[0], '__iter__') else []) > 0:
                 assert all(arg >= 0)
             else:
                 assert arg >= 0
