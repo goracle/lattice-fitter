@@ -53,9 +53,9 @@ EXTENSION = 'hdf5'
 FNDEF = PREFIX+'250.'+EXTENSION
 GNDEF = PREFIX+'250.'+EXTENSION
 HNDEF = PREFIX+'250.'+EXTENSION
-FNDEF = PREFIX+'1130.'+EXTENSION
-GNDEF = PREFIX+'1250.'+EXTENSION
-HNDEF = PREFIX+'1370.'+EXTENSION
+FNDEF = PREFIX+'1090.'+EXTENSION
+GNDEF = PREFIX+'1110.'+EXTENSION
+HNDEF = PREFIX+'1230.'+EXTENSION
 if TEST44:
     FNDEF = PREFIX+'4540.'+EXTENSION
     GNDEF = PREFIX+'4540.'+EXTENSION
@@ -1179,14 +1179,14 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
                 " dictionary found"
 
     ttime = -time.perf_counter()
-    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
-    ttime += time.perf_counter()
-    print("time to get disconnected blocks:", ttime, "seconds")
-
-    ttime = -time.perf_counter()
     mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
     ttime += time.perf_counter()
     print("time to get most blocks:", ttime, "seconds")
+
+    ttime = -time.perf_counter()
+    bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
+    ttime += time.perf_counter()
+    print("time to get disconnected blocks:", ttime, "seconds")
 
     if TEST44:
         check_aux_consistency(auxblks, mostblks)
