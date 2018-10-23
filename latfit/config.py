@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -52,18 +52,18 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0,1,2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_avg_mom111'
 IRREP = 'T_1_MINUS'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
+IRREP = 'A1_avg_mom111'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -73,7 +73,7 @@ MAX_ITER = 100
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 20
+MAX_RESULTS = 16
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -82,6 +82,7 @@ AINVERSE = 1.015
 PION_MASS = 0.13975*AINVERSE
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
+misc.IRREP = IRREP
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
@@ -107,6 +108,12 @@ LT = 64
 GEVP_DEBUG = True
 GEVP_DEBUG = False
 
+# continuum dispersion relation corrected using fits (true) or phat (false)
+FIT_SPACING_CORRECTION = False
+FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
+misc.CONTINUUM = FIT_SPACING_CORRECTION
+
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -125,16 +132,23 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modi
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = None
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive([1,1,1])-misc.dispersive([1,0,0])
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
+    [1,1,1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
+        [1,0,0], continuum=FIT_SPACING_CORRECTION)
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
-DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=False) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(
+    IRREP)[0], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
+        opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION )
+DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0 else DELTA_E2_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION else DELTA_E2_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1 else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0\
+    else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION\
+    else DELTA_E2_AROUND_THE_WORLD
+DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
+    else DELTA_E2_AROUND_THE_WORLD
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -204,8 +218,8 @@ RESCALE = 1.0
 
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
-T0 = 'TMINUS1' # t-1
 T0 = 'LOOP' # ceil(t/2)
+T0 = 'TMINUS1' # t-1
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -468,7 +482,8 @@ CUTOFF = 10**(7)
 
 # additive constant subtracted by hand from exact effective mass functions
 # questionable, since this is an extra, badly optimized, fit parameter
-C = 1.935*SCALE*0 if (ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
+C = 1.935*SCALE*0 if (
+    ADD_CONST and EFF_MASS_METHOD == 1 and EFF_MASS) else 0
 
 # rhs time separation (t0) of GEVP matrix
 # (used for non eff mass fits), probably obsolete
@@ -499,7 +514,8 @@ ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
 FITS = FitFunctions()
 
-UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep', 'pionmass', 'pionratio'])
+UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep',
+                           'pionmass', 'pionratio'])
 UP.add_const = ADD_CONST
 UP.log = LOG
 UP.c = C
@@ -557,7 +573,8 @@ if EFF_MASS:
                 """eff mass 3, fit func, rescaled
                 """
                 return [RESCALE * FITS.f['fit_func_1p'][
-                    ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
+                    ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL],
+                                      LT_VEC[j])
                         for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
@@ -673,17 +690,28 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=False)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
 print("2nd order around the world term, delta E=",
       DELTA_E2_AROUND_THE_WORLD)
-assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix subtraction supported"+\
+assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix"+\
+    " subtraction supported"+\
     " only with eff mass method 4"
-assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting methods no longer supported."
-assert NUM_PENCILS == 0, "this feature is less tested, use at your own risk (safest to have NUM_PENCILS==0)"
+assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
+    " methods no longer supported."
+assert NUM_PENCILS == 0, "this feature is less tested,"+\
+    " use at your own risk (safest to have NUM_PENCILS==0)"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
+FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
+if FIT_SPACING_CORRECTION:
+    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
+    DELTA_E2_AROUND_THE_WORLD= misc.uncorrect_epipi(
+        DELTA_E2_AROUND_THE_WORLD)
+if rf.norm2(rf.procmom(MOMSTR)) == 0:
+    assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
+    assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"

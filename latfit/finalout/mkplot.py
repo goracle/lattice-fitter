@@ -47,7 +47,8 @@ from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE, SUPERJACK_CUTOFF
 from latfit.config import FIT, ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
-from latfit.config import DELTA_E2_AROUND_THE_WORLD
+from latfit.config import DELTA_E2_AROUND_THE_WORLD, FIT_SPACING_CORRECTION
+import latfit.analysis.misc as misc
 import latfit.config
 
 rcParams.update({'figure.autolayout': True})
@@ -58,12 +59,14 @@ def update_result_min_nofit(plotdata):
     """Update the result with around the world shift in energy
     associated with non-zero center of mass momentum
     """
-    assert MATRIX_SUBTRACTION or not any(ADD_CONST_VEC), "addition of delta E makes sense only if"+\
+    assert MATRIX_SUBTRACTION or not any(
+        ADD_CONST_VEC), "addition of delta E makes sense only if"+\
         " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):
         plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
         if DELTA_E2_AROUND_THE_WORLD is not None:
             plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
+        plotdata.coords[i][1] += misc.correct_epipi(plotdata.coords[i][1])
     return plotdata
 
 def mkplot(plotdata, input_f,
@@ -98,7 +101,8 @@ def mkplot(plotdata, input_f,
     if FIT:
         if result_min.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
-        param_chisq = get_param_chisq(plotdata.coords, dimops, plotdata.fitcoord,
+        param_chisq = get_param_chisq(plotdata.coords, dimops,
+                                      plotdata.fitcoord,
                                       result_min_mod, fitrange)
         print_messages(result_min_mod, param_err, param_chisq)
 
@@ -229,7 +233,8 @@ def get_title(input_f):
             title = input_f
     else:
         title = TITLE
-    pretitle = latfit.config.TITLE_PREFIX+str(NUM_CONFIGS)+superjackstring()+' configs '
+    pretitle = latfit.config.TITLE_PREFIX+str(
+        NUM_CONFIGS)+superjackstring()+' configs '
     if len(pretitle) > 50:
         title = ''
         pretitle = pretitle[:-1]
@@ -298,7 +303,8 @@ def get_coord(coords, cov, error2=None):
         if errstate == 'raise':
             np.seterr(invalid='warn')
         try:
-            arg = res**2-(rf.norm2(rf.procmom(MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
+            arg = res**2-(rf.norm2(rf.procmom(
+                MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
             if len(ycoord[0] if hasattr(ycoord[0], '__iter__') else []) > 0:
                 assert all(arg >= 0)
             else:
@@ -397,8 +403,11 @@ def print_messages(result_min, param_err, param_chisq):
                 shift = np.real(shift) if np.isreal(shift) else shift
                 err = result_min.phase_shift_err[i]
                 err = np.real(err) if np.isreal(err) else err
-                commstr = " ," if i != len(result_min.scattering_length)-1 else ""
-                print(np.array2string(np.array([root_s[i], shift, err_energy[i], err]), separator=', ')+commstr)
+                commstr = " ," if i != len(
+                    result_min.scattering_length)-1 else ""
+                print(np.array2string(np.array([root_s[i], shift,
+                                                err_energy[i], err]),
+                                      separator=', ')+commstr)
             print("]")
             for i in range(len(result_min.scattering_length)):
                 if i == 0: # scattering length only meaningful as p->0
@@ -586,9 +595,11 @@ if GEVP:
         """Annotate plot with fitted energy (GEVP)
         """
         # annotate plot with fitted energy
-        nplots = len(param_err)+(len(DISP_ENERGIES) if PLOT_DISPERSIVE else 0)
+        nplots = len(param_err)+(len(
+            DISP_ENERGIES) if PLOT_DISPERSIVE else 0)
         print('nplots=', nplots)
-        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
+        plt.legend(loc='upper center',
+                   bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
         #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)

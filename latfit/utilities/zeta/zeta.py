@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, AINVERSE
-from latfit.config import AINVERSE, ISOSPIN, MOMSTR
+from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.utilities import read_file as rf
 
 class ZetaError(Exception):
@@ -41,8 +41,12 @@ if CALC_PHASE_SHIFT:
                 pass
         comp = np.array(rf.procmom(MOMSTR))
         try:
-            gamma = epipi/sqrt(
-                epipi**2-4*np.sin(np.pi/L_BOX)**2*np.dot(comp, comp))
+            if FIT_SPACING_CORRECTION:
+                gamma = epipi/sqrt(
+                    epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
+            else:
+                gamma = epipi/sqrt(
+                    epipi**2-4*np.sin(np.pi/L_BOX)**2*np.dot(comp, comp))
         except ValueError:
             print("zeta.py, bad gamma value for epipi=", epipi)
             print("center of mass momentum=", comp)
@@ -55,7 +59,8 @@ if CALC_PHASE_SHIFT:
         #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
-                   str(comp[0]), str(comp[1]), str(comp[2]), str(gamma)]
+                   str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
+                   str(int(FIT_SPACING_CORRECTION))]
         try:
             out = subprocess.check_output(arglist)
         except FileNotFoundError:
@@ -69,7 +74,10 @@ if CALC_PHASE_SHIFT:
             errstr = subprocess.Popen(arglist,
                                       stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
-        if 2*np.arcsin(np.sqrt(epipi*epipi/4-PION_MASS**2)/2) < 0:
+        test = 2*np.arcsin(np.sqrt(epipi*epipi/4-PION_MASS**2)/2) < 0
+        test2 = np.sqrt(epipi*epipi/4-PION_MASS**2) < 0
+        test = test2 if FIT_SPACING_CORRECTION else test
+        if test:
             out = float(out)*1j
         else:
             try:

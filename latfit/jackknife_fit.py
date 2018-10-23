@@ -17,7 +17,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
-from latfit.config import GEVP
+from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import UNCORR
 from latfit.config import PVALUE_MIN
 from latfit.config import PICKLE
@@ -28,6 +28,7 @@ from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
+import latfit.analysis.misc as misc
 
 
 MIN = namedtuple('min',
@@ -158,7 +159,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         skip_votes = []
         # loop over configs, doing a fit for each one
-        # rearrange loop order so we can check goodness of fit on more stable sloppy samples
+        # rearrange loop order so we can check goodness of fit
+        # on more stable sloppy samples
         for config_num in (np.array(range(params.num_configs))+
                            SUPERJACK_CUTOFF)%params.num_configs:
 
@@ -187,7 +189,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min_jack.x = np.asarray(result_min_jack.x)+\
                 (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
                     DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
-                    is not None else 0)
+                    is not None else 0)+\
+                    (misc.correct_epipi(result_min_jack.x)
+                     if FIT_SPACING_CORRECTION else 0)
 
             # store the result
             min_arr[config_num] = result_min_jack.x
@@ -224,11 +228,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     if len(skip_votes) == 2:
                         skip_range = True
                     elif len(skip_votes) == 1:
-                        # approximate the difference as the stddev: sqrt(\sum(x-<x>)**2/(N));
+                        # approximate the difference as the stddev:
+                        # sqrt(\sum(x-<x>)**2/(N));
                         # mult by sqrt(N-1) to get the variance in chi^2
-                        # if we have one bad fit and another which is within 5 sigma of the bad chi^2, skip, else throw an error
-                        skip_range = abs(result_min_jack.fun-chisq_min_arr[0+SUPERJACK_CUTOFF])<5*np.sqrt(
-                            2*result_min.dof/(params.num_configs-1))
+                        # if we have one bad fit and another which is within
+                        # 5 sigma of the bad chi^2, skip, else throw an error
+                        skip_range = abs(result_min_jack.fun-chisq_min_arr[
+                            0+SUPERJACK_CUTOFF])<5*np.sqrt(2*result_min.dof/(
+                                params.num_configs-1))
                     if skip_range:
                         raise BadChisqJackknife(
                             chisq=result_min_jack.fun/result_min.dof,
@@ -431,7 +438,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     # calculate error on exact and sloppy
     if sjcut:
         errexact = exact_prefactor*np.sum(
-            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))*(arr2[:sjcut]-np.mean(arr2[:sjcut], axis=0)),
+            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))*(
+                arr2[:sjcut]-np.mean(arr2[:sjcut], axis=0)),
             axis=0)
     else:
         errexact = 0
@@ -441,17 +449,21 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
         assert not any(np.isnan(errexact)), "exact err is nan"
 
     if sjcut == 0:
-        assert errexact == 0, "non-zero error in the non-existent exact samples"
+        assert errexact == 0, "non-zero error in the non-existent"+\
+            " exact samples"
     errsloppy = sloppy_prefactor*np.sum(
-        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
+        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(
+            arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
         axis=0)
     if isinstance(errsloppy, numbers.Number):
         assert not np.isnan(errsloppy), "sloppy err is nan"
     else:
         assert not any(np.isnan(errsloppy)), "sloppy err is nan"
 
-    # calculate the superjackknife errors (redundant prefactor multiplies, but perhaps clearer)
-    err = overall_prefactor*(errsloppy/sloppy_prefactor+errexact*exact_prefactor_inv)
+    # calculate the superjackknife errors
+    # (redundant prefactor multiplies, but perhaps clearer)
+    err = overall_prefactor*(errsloppy/sloppy_prefactor+\
+                             errexact*exact_prefactor_inv)
     err = err if nosqrt else np.sqrt(err)
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
@@ -476,22 +488,27 @@ def pickl(min_arr, result_min, chisq_min_arr):
     """
     if PICKLE == 'pickle':
         pickle.dump(min_arr, open(unique_pickle_file("min_arr"), "wb"))
-        pickle.dump(result_min.phase_shift, open(unique_pickle_file("phase_shift"), "wb"))
-        pickle.dump(chisq_min_arr, open(unique_pickle_file("chisq_min_arr"), "wb"))
+        pickle.dump(result_min.phase_shift, open(
+            unique_pickle_file("phase_shift"), "wb"))
+        pickle.dump(chisq_min_arr,
+                    open(unique_pickle_file("chisq_min_arr"), "wb"))
     elif PICKLE == 'unpickle':
         _, rangei = unique_pickle_file("min_arr", True)
         _, rangej = unique_pickle_file("phase_shift", True)
         _, rangek = unique_pickle_file("chisq_min_arr", True)
         for i in range(rangei):
             min_arr /= (rangei+1)
-            min_arr += 1.0/(rangei+1)*pickle.load(open("min_arr"+str(i)+".p", "rb"))
+            min_arr += 1.0/(rangei+1)*pickle.load(open(
+                "min_arr"+str(i)+".p", "rb"))
         for j in range(rangej):
             result_min.phase_shift /= (rangej+1)
             result_min.phase_shift += 1.0/(
-                rangej+1)*pickle.load(open("phase_shift"+str(j)+".p", "rb"))
+                rangej+1)*pickle.load(open(
+                    "phase_shift"+str(j)+".p", "rb"))
         for k in range(rangek):
             chisq_min_arr /= (rangek+1)
-            chisq_min_arr += 1.0/(rangek+1)*pickle.load(open("chisq_min_arr"+str(k)+".p", "rb"))
+            chisq_min_arr += 1.0/(rangek+1)*pickle.load(open(
+                "chisq_min_arr"+str(k)+".p", "rb"))
     elif PICKLE is None:
         pass
     return min_arr, result_min, chisq_min_arr
@@ -522,10 +539,14 @@ def prune_fit_range(covinv_jack, coords_jack):
             for j, _ in enumerate(excl[opa]):
                 if xcoord == excl[opa][j]:
                     if not dimops1:
-                        assert covinv_jack[i, :, opa, :].all() == 0, "Prune failed."
-                        assert covinv_jack[:, i, opa, :].all() == 0, "Prune failed."
-                        assert covinv_jack[:, i, :, opa].all() == 0, "Prune failed."
-                        assert covinv_jack[i, :, :, opa].all() == 0, "Prune failed."
+                        assert covinv_jack[
+                            i, :, opa, :].all() == 0, "Prune failed."
+                        assert covinv_jack[
+                            :, i, opa, :].all() == 0, "Prune failed."
+                        assert covinv_jack[
+                            :, i, :, opa].all() == 0, "Prune failed."
+                        assert covinv_jack[
+                            i, :, :, opa].all() == 0, "Prune failed."
                     else:
                         assert covinv_jack[i, :].all() == 0, "Prune failed."
                         assert covinv_jack[:, i].all() == 0, "Prune failed."
@@ -543,7 +564,8 @@ def prune_phase_shift_arr(arr):
             print("Bad phase shift in jackknife block # "+
                   str(i)+", omitting.")
             dellist.append(i)
-            raise ZetaError("bad phase shift (nan)") # remove this if debugging
+            raise ZetaError(
+                "bad phase shift (nan)") # remove this if debugging
     return dellist
 
 def phase_shift_jk(params, epipi_arr):
@@ -631,7 +653,8 @@ if CORRMATRIX:
             for i in range(lent):
                 for j in range(params.dimops):
                     reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])
-            corrjack = np.tensordot(np.tensordot(reweight, covjack), reweight)
+            corrjack = np.tensordot(
+                np.tensordot(reweight, covjack), reweight)
             if UNCORR:
                 diagcorr = np.zeros(corrjack.shape)
                 for i in range(lent):
@@ -727,8 +750,9 @@ def prune_covjack(params, covjack, coords_jack, flag):
         # fill in the pruned dimensions with 0's
         for opa in range(params.dimops):
             for opb in range(params.dimops):
-                covinv_jack[opa, opb, :, :] = marray.data[opa*len_time:(opa+1)*len_time,
-                                                          opb*len_time:(opb+1)*len_time]
+                covinv_jack[opa, opb, :, :] = marray.data[
+                    opa*len_time:(opa+1)*len_time, opb*len_time:(
+                        opb+1)*len_time]
         # to put things back in time, time, dimops, dimops basis
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)

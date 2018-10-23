@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pickle
 import operator
 from matplotlib.backends.backend_pdf import PdfPages
+import gvar
 
 
 def main():
@@ -33,46 +34,54 @@ def make_hist(fname):
         pdat_avg, pdat_err, pdat_freqarr = pdat
 
     # get file name for error
-    errfn = re.sub('_mom', '_err_mom', fname)
+    errfn = fname.replace('_', "_err_", 1)
+    #errfn = re.sub('_mom', '_err_mom', fname)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
         errdat = np.array(errdat)
+    assert len(errdat) > 0, "error array not found"
 
     print(freqarr.shape, avg)
 
     title = gettitle(fname)
 
     for dim in range(freqarr.shape[-1]):
-        save_str = re.sub('.p', '_state'+str(dim)+'.pdf', fname)
+        save_str = re.sub(r'.p$', '_state'+str(dim)+'.pdf', fname)
         with PdfPages(save_str) as pdf:
             title_dim = title+' state:'+str(dim)
             freq = freqarr[:, dim]
-            print("val; pvalue; err")
+            print("val(err); pvalue")
             pdat_median = np.median(pdat_freqarr)
             median_diff = np.inf
             median_diff2 = np.inf
             half = 0
-            for i, j, k in sorted(zip(freq, pdat_freqarr, errdat[
-                    :, dim]), key = operator.itemgetter(0)):
+            errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
+            loop = sorted(zip(freq, pdat_freqarr, errlooparr),
+                          key = operator.itemgetter(0))
+            median_err = []
+            for i, j, k in loop:
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
                     freq_median = i
                 elif abs(j - pdat_median) <= median_diff2:
                     median_diff2 = abs(j-pdat_median)
                     half = i
-                print(np.real(i), j, np.real(k))
+                median_err.append(gvar.gvar(np.real(i), np.real(k)))
+                print(median_err[-1], j)
             if median_diff != 0:
                 freq_median = (freq_median+half)/2
-            sys_err = np.std(freq, ddof=1)
+            sys_err = np.std(np.array(median_err), ddof=1)
             # print(freq, np.mean(freq))
             hist, bins = np.histogram(freq, bins=10)
             # print(hist)
             center = (bins[:-1] + bins[1:]) / 2
             width = 0.7 * (bins[1] - bins[0])
+            erronerrmedianstr = str(gvar.gvar(freq_median, sys_err.sdev)).split('(')[1]
+            print('median =', str(gvar.gvar(freq_median, sys_err.val)))
             plt.ylabel('count')
             plt.title(title_dim)
-            xerr = np.array(errdat[:, dim], dtype=np.float)
-            xerr = getxerr(freq, center, errdat[:, dim])
+            xerr = np.array(errlooparr, dtype=np.float)
+            xerr = getxerr(freq, center, errlooparr)
             assert not isinstance(xerr[0], str), "xerr needs conversion"
             assert isinstance(xerr[0], float), "xerr needs conversion"
             assert isinstance(xerr[0], np.float), "xerr needs conversion"

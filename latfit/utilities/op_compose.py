@@ -17,6 +17,22 @@ for opa in list(OPLIST): # get rid of polarization information
         del OPLIST[opa]
 
 
+def freemomenta(irrep, dim):
+    """Get the free momenta for the irrep and dimension"""
+    irrep = representative_row(irrep)
+    currop = ''
+    cdim = -1
+    for _, opstr, mom in OPLIST[irrep]:
+        if currop != opstr:
+            currop = opstr
+            cdim += 1
+        if cdim == dim and len(mom) == 2:
+            ret = mom
+            break
+        elif cdim == dim:
+            dim += 1
+    return ret
+
 def momstr(psrc, psnk):
     """Take psrc and psnk and return a diagram string of the combination.
     """
@@ -105,13 +121,17 @@ def free_energies(irrep, pionmass, lbox):
         retlist.append(energy)
     return sorted(retlist)
 
-def get_comp_str(irrep):
-    """Get center of mass momentum of an irrep, return as a string for latfit"""
-    retlist = []
+def representative_row(irrep):
     if irrep in AVG_ROWS:
         for irr in AVG_ROWS[irrep]:
             irrep = irr
             break
+    return irrep
+
+def get_comp_str(irrep):
+    """Get center of mass momentum of an irrep, return as a string for latfit"""
+    retlist = []
+    irrep = representative_row(irrep)
     opprev = ''
     momtotal = np.array([0, 0, 0])
     for _, _, mom in OPLIST[irrep]:

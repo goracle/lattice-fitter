@@ -8,8 +8,8 @@
 
 int main(int argc, char* argv[])
 {
-  if(argc > 1 && argc!=4 && argc!= 8){
-    printf("wrong number of arguments; expected E_pipi, m_pi, L (optional:boost)\n");
+  if(argc > 1 && argc!=4 && argc!= 8 && argc != 9){
+    printf("wrong number of arguments; expected E_pipi, m_pi, L (optional:boost), (optional:phat dispersion)\n");
     exit(-1);
   }else if(argc == 1){
     ZetaTesting z;
@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
   double gamma = 1.0;
   GSLvector boost(3);
   if(argc==4){boost[0] = 0; boost[1] = 0; boost[2] = 0;}
-  else if(argc == 8) {
+  else if(argc == 8 || argc == 9) {
     //printf("setting boost argv length = %d\n", argc);
     for(int i=0; i<3; i++){
       boost[i] = strtod(argv[4+i], NULL);
@@ -32,8 +32,12 @@ int main(int argc, char* argv[])
     printf("boost vector input invalid (needs 3 ints)\n");
     exit(-1);
   }
+  bool phat_disp = false;
+  if(argc == 9)
+    phat_disp = atoi(argv[8]);
 
-  //printf("calculating phase shift with E_pipi=%e, m_pi=%e, L_box=%e\n", E_pipi, m_pi, L_box);
+  //printf("calculating phase shift with E_pipi=%e, m_pi=%e, L_box=%e\n",
+  // E_pipi, m_pi, L_box);
 
   double arg = E_pipi*E_pipi/4 - m_pi*m_pi;
   double x = cosh(E_pipi/2)-cosh(m_pi);
@@ -44,13 +48,14 @@ int main(int argc, char* argv[])
   bool imag_q = arg < 0;
   if(arg<0) arg = -arg;
   double p_hat = sqrt( arg );
-  double p_pipi = 2*asin(p_hat/2);
-  //double p_pipi = arg ;
+  double p_pipi = arg;
+  if(phat_disp) p_pipi = 2*asin(p_hat/2);
   double q_pipi = L_box * p_pipi /( 2 * M_PI ); //M_PI = pi
 
   assert(gamma>=1.0);
 
-  //printf("calculating phase shift with p_pipi=%e, q_pipi=%e, test=%e\n", p_pipi, q_pipi, sqrt(E_pipi));
+  //printf("calculating phase shift with p_pipi=%e,
+  // q_pipi=%e, test=%e\n", p_pipi, q_pipi, sqrt(E_pipi));
 
   //printf("boost=%d, %d, %d\n", (int)boost[0], (int)boost[1], (int)boost[2]);
 
