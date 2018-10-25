@@ -60,6 +60,7 @@ from latfit.jackknife_fit import BadJackknifeDist, NoConvergence
 from latfit.config import START_PARAMS, GEVP_DIRS, MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
+from latfit.config import ONLY_SMALL_FIT_RANGES
 import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -131,7 +132,10 @@ def filter_sparse(sampler, fitrange, xstep=1):
     for excl in sampler:
         excl = list(excl)
         fdel = list(filter(lambda a: a not in excl, frange))
-        if len(fdel) < 3:
+        len_condition = len(fdel) > 3
+        len_condition =  len(fdel) < 3 if ONLY_SMALL_FIT_RANGES\
+            else len_condition
+        if len_condition:
             continue
         start = fdel[0]
         incr = fdel[1]-fdel[0]
@@ -362,13 +366,16 @@ def main():
                     continue
 
                 # each fit curve should be to more than one data point
-                if fitrange[1]-fitrange[0] in [len(i) for i in excl]:
+                if fitrange[1]-fitrange[0] in [len(i) for i in excl] and\
+                   not ONLY_SMALL_FIT_RANGES:
                     print("only one data point in fit curve, continuing")
                     continue
-                if fitrange[1]-fitrange[0]-1 > 0:
+                if fitrange[1]-fitrange[0]-1 > 0 and\
+                   not ONLY_SMALL_FIT_RANGES:
                     if fitrange[1]-fitrange[0]-1 in [len(i) for i in excl]:
                         print("warning: only two data points in fit curve")
-                        if ISOSPIN != 0 or not GEVP: # allow for very noisy excited states in I=0
+                        # allow for very noisy excited states in I=0
+                        if ISOSPIN != 0 or not GEVP: 
                             continue
 
                 # update global info about excluded points
@@ -387,14 +394,16 @@ def main():
                     try:
                         retsingle = singlefit(input_f,
                                             fitrange, xmin, xmax, xstep)
-                    except (NegChisq, RelGammaError, OverflowError, NoConvergence,
-                            np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                    except (NegChisq, RelGammaError, OverflowError,
+                            NoConvergence, np.linalg.linalg.LinAlgError,
+                            BadJackknifeDist,
                             DOFNonPos, BadChisqJackknife, ZetaError) as _:
                         # skip on any error
                         print("fit failed for this selection"+\
                               " excluded points=", excl)
                         continue
-                result_min, param_err, plotdata.coords, plotdata.cov = retsingle
+                result_min, param_err, plotdata.coords,\
+                    plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
 
                 print("p-value = ", result_min.pvalue)
@@ -416,8 +425,10 @@ def main():
                 # is this justifiable?
                 if CALC_PHASE_SHIFT and MULT > 1:
                     if any(result_min.phase_shift_err > PHASE_SHIFT_ERR_CUT):
-                        if all(result_min.phase_shift_err[:-1] < PHASE_SHIFT_ERR_CUT):
-                            print("warning: phase shift errors on last state very large")
+                        if all(result_min.phase_shift_err[
+                                :-1] < PHASE_SHIFT_ERR_CUT):
+                            print("warning: phase shift errors on "+\
+                                  "last state very large")
                         else:
                             print("phase shift errors too large")
                             continue
@@ -487,7 +498,8 @@ def main():
                         assert len(overfit_arr) > 0, "No fits succeeded."+\
                             "  Change fit range manually:"+str(min_arr)
 
-                    weight_sum = np.sum([getattr(i[0], "pvalue_arr") for i in min_arr], axis=0)
+                    weight_sum = np.sum([getattr(
+                        i[0], "pvalue_arr") for i in min_arr], axis=0)
                     for name in min_arr[0][0].__dict__:
                         if min_arr[0][0].__dict__[name] is None:
                             print("name=", name, "is None, skipping")
@@ -496,16 +508,19 @@ def main():
 
                             # find the name of the array
                             avgname = re.sub('_err', '_arr', name)
-                            print("finding error in", avgname, "which has shape=",
+                            print("finding error in", avgname,
+                                  "which has shape=",
                                   min_arr[0][0].__dict__[avgname].shape)
-                            assert min_arr[0][0].__dict__[avgname] is not None,\
+                            assert min_arr[0][0].__dict__[
+                                avgname] is not None,\
                                 "Bad name substitution:"+str(avgname)
 
                             # compute the jackknife errors as a check
                             # (should give same result as error propagation)
-                            res_mean, err_check = jack_mean_err(np.sum([divbychisq(
-                                getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum)
-                                                              for i in min_arr], axis=0))
+                            res_mean, err_check = jack_mean_err(np.sum([
+                                divbychisq(getattr(i[0], avgname), getattr(
+                                    i[0], 'pvalue_arr')/weight_sum)\
+                                for i in min_arr], axis=0))
 
                             # dump the results to file
                             dump_fit_range(min_arr, weight_sum,
@@ -514,16 +529,28 @@ def main():
                             # error propagation
                             result_min[name] = np.sqrt(np.sum([
                                 jack_mean_err(
-                                    divbychisq(getattr(i[0], avgname), getattr(i[0], 'pvalue_arr')/weight_sum),
-                                    divbychisq(getattr(j[0], avgname), getattr(j[0], 'pvalue_arr')/weight_sum),
+                                    divbychisq(
+                                        getattr(
+                                            i[0], avgname),
+                                        getattr(
+                                            i[0], 'pvalue_arr')/weight_sum),
+                                    divbychisq(
+                                        getattr(
+                                            j[0],
+                                            avgname), getattr(
+                                                j[0],
+                                                'pvalue_arr')/weight_sum),
                                     nosqrt=True)[1]
                                 for i in min_arr for j in min_arr], axis=0))
 
                             # perform the comparison
                             try:
-                                assert np.allclose(err_check, result_min[name], rtol=1e-8)
+                                assert np.allclose(
+                                    err_check, result_min[name], rtol=1e-8)
                             except AssertionError:
-                                print("jackknife error propagation does not agree with jackknife error.") 
+                                print("jackknife error propagation"+\
+                                      " does not agree with jackknife"+\
+                                      " error.") 
                                 print(result_min[name])
                                 print(err_check)
                                 sys.exit(1)
@@ -535,20 +562,28 @@ def main():
                         # find the weighted mean
                         else:
                             result_min[name] = np.sum([
-                                getattr(i[0], name)*getattr(i[0], 'pvalue') for i in min_arr], axis=0)/np.sum(
-                                    [getattr(i[0], 'pvalue') for i in min_arr])
+                                getattr(
+                                    i[0], name)*getattr(
+                                        i[0], 'pvalue') for i in min_arr],
+                                                      axis=0)/np.sum(
+                                    [getattr(i[0],
+                                             'pvalue') for i in min_arr])
                     # result_min.x = np.mean(
                     # [i[0].x for i in min_arr], axis=0)
-                    # param_err = np.sqrt(np.mean([np.array(i[1])**2 for i in min_arr], axis=0))
-                    # param_err = np.std([getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
+                    # param_err = np.sqrt(np.mean([np.array(
+                    # i[1])**2 for i in min_arr], axis=0))
+                    # param_err = np.std([
+                    # getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
                     param_err = np.array(result_min['x_err'])
-                    assert not any(np.isnan(param_err)), "A parameter error is not a number (nan)"
+                    assert not any(np.isnan(param_err)),\
+                        "A parameter error is not a number (nan)"
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL =  min_excl(min_arr)
                     latfit.config.FIT_EXCL = closest_fit_to_avg(
                         result_min['x'], min_arr)
-                    print("fit excluded points (indices):", latfit.config.FIT_EXCL)
+                    print("fit excluded points (indices):",
+                          latfit.config.FIT_EXCL)
 
                 if not (skip_loop and latfit.config.MINTOL):
                     latfit.config.MINTOL =  True
@@ -556,7 +591,8 @@ def main():
                                           xmin, xmax, xstep)
                 else:
                     retsingle = retsingle_save
-                result_min_close, param_err_close, plotdata.coords, plotdata.cov = retsingle
+                result_min_close, param_err_close,\
+                    plotdata.coords, plotdata.cov = retsingle
 
                 # use the representative fit's goodness of fit in final print
 

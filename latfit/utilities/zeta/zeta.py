@@ -8,7 +8,7 @@ from math import sqrt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT, AINVERSE
+from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.utilities import read_file as rf
 
@@ -28,10 +28,8 @@ class RelGammaError(Exception):
         self.message = message
 
 if CALC_PHASE_SHIFT:
-    def zeta(epipi):
-        """Calculate the I=0 scattering phase shift given the pipi energy
-        for that channel.
-        """
+    def remove_epipi_indexing(epipi):
+        """Remove the indexining on epipi"""
         try:
             epipi = epipi[1]
         except (IndexError, TypeError):
@@ -39,6 +37,13 @@ if CALC_PHASE_SHIFT:
                 epipi = epipi[0]
             except (IndexError, TypeError):
                 pass
+        return epipi
+
+    def zeta(epipi):
+        """Calculate the I=0 scattering phase shift given the pipi energy
+        for that channel.
+        """
+        epipi = remove_epipi_indexing(epipi)
         comp = np.array(rf.procmom(MOMSTR))
         try:
             if FIT_SPACING_CORRECTION:

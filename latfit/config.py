@@ -75,6 +75,11 @@ MAX_ITER = 100
 MAX_RESULTS = np.inf
 MAX_RESULTS = 16
 
+# only loop over fit ranges with one or two time slices
+# (useful for error optimization after a full fit range loop)
+ONLY_SMALL_FIT_RANGES = True
+ONLY_SMALL_FIT_RANGES = False
+
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
 L_BOX = 24

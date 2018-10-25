@@ -1,28 +1,27 @@
 """Vacuum subtract disconnected k->x diagrams."""
 
-import sys
 from collections import defaultdict
+import numpy as np
 import kaonfileproc as kfp
 import kaonpostproc as kpp
 import latfit.utilities.h5jack
 from latfit.utilities.h5jack import LT as LT_CHECK
 import kaonprojop
-import numpy as np
 
-def vacSubtractMix4(mix4, sinkbubbles, trajl, otype):
+def vac_subtract_mix4(mix4, sinkbubbles, trajl):
     """Vacuum subtract type4"""
 
     sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
-    ltraj = len(trajl)
 
     # jackknife type 4
 
     aftersub = {}
     # for time in range(LT_CHECK):
     # aftersub[subkey] = np.zeros((ltraj, 2, LT_CHECK), dtype=np.complex)
-    aftersub = defaultdict(lambda: np.zeros((ltraj, 2, LT_CHECK),
+    aftersub = defaultdict(lambda: np.zeros((len(trajl), 2, LT_CHECK),
                                             dtype=np.complex))
-    for fidx in range(2): # loop over gamma structure in the mix diagram (g5, unit)
+    # loop over gamma structure in the mix diagram (g5, unit)
+    for fidx in range(2):
         for tdis in range(LT_CHECK):
 
             # get src bubbles
@@ -47,20 +46,20 @@ def vacSubtractMix4(mix4, sinkbubbles, trajl, otype):
 
             for blkname in bubblks:
                 for tsep_kpi in range(LT_CHECK):
-                    subkey = blkname+"_mix4_deltat_"+str(tsep_kpi)
-                    aftersub[subkey][:, fidx, tdis] = bubblks[
-                        blkname][:, tsep_kpi]
+                    aftersub[
+                        blkname+"_mix4_deltat_"+str(tsep_kpi)][
+                            :, fidx, tdis] = bubblks[
+                                blkname][:, tsep_kpi]
 
     return aftersub
-        
 
 
-def vacSubtractType4(type4, sinkbubbles, trajl, otype):
+def vac_subtract_type4(type4, sinkbubbles, trajl, otype):
     """Vacuum subtract type4"""
 
     # for reference
-    # shapeType4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
-    # shapeMix4 = (ltraj, 2, LT_CHECK, LT_CHECK)
+    # shape_type4 = (ltraj, 8, 4, LT_CHECK, LT_CHECK)
+    # shape_mix4 = (ltraj, 2, LT_CHECK, LT_CHECK)
 
     # to do, loop over tsep_kpi
 
@@ -74,8 +73,7 @@ def vacSubtractType4(type4, sinkbubbles, trajl, otype):
                 temp_dict = {}
                 # for backwards compatibility,
                 # means key@ptotal, ptotal=000 since Kaon is at rest
-                momdiagc = 'type4@000'
-                temp_dict[momdiagc] = type4[:, conidx, gcombidx, tdis, :]
+                temp_dict['type4@000'] = type4[:, conidx, gcombidx, tdis, :]
                 srcsub = latfit.utilities.h5jack.bubsub(temp_dict)
 
                 # dict of averaged bubbles, to subtract
@@ -92,30 +90,42 @@ def vacSubtractType4(type4, sinkbubbles, trajl, otype):
 
                 # now, use the result to create type4 diagrams,
                 # with defined tsep_kpi
-                for blkname in bubblks:
-                    for tsep_kpi in range(LT_CHECK):
-                        subkey = blkname+"_deltat_"+str(tsep_kpi)
-                        aftersub[subkey] = np.zeros(
-                            (len(trajl), 8, 4, LT_CHECK), dtype=np.complex)
-                        aftersub[subkey][
-                            :, conidx, gcombidx, tdis] = bubblks[
-                                blkname][:, tsep_kpi]
+                aftersub = fill_aftersub(aftersub, bubblks, trajl,
+                                         (conidx, gcombidx, tdis))
 
     # project finally onto the operators
+    final_projection_vactype4(trajl, aftersub, otype)
 
-    for num, traj in enumerate(trajl):
+def fill_aftersub(aftersub, bubblks, trajl, indices):
+    """Fill the after sub dict
+    """
+    conidx, gcombidx, tdis = indices
+    for blkname in bubblks:
+        for tsep_kpi in range(LT_CHECK):
+            subkey = blkname+"_deltat_"+str(tsep_kpi)
+            aftersub[subkey] = np.zeros(
+                (len(trajl), 8, 4, LT_CHECK), dtype=np.complex)
+            aftersub[subkey][
+                :, conidx, gcombidx, tdis] = bubblks[
+                    blkname][:, tsep_kpi]
+    return aftersub
+
+def final_projection_vactype4(trajl, aftersub, otype):
+    """project finally onto the operators, vactype4"""
+
+    for num, _ in enumerate(trajl):
         for momdiag in aftersub:
-            keyirr = kfp.genKey(momdiag)
+            keyirr = kfp.gen_key(momdiag)
             for i in np.arange(1, 11):
                 if otype == 'pipi':
                     assert str(i) in kpp.QOPI0, "Missing Q:"+str(i)
                     kpp.QOPI0[str(i)][
-                        keyirr][num] += kaonprojop.QiprojType4(
+                        keyirr][num] += kaonprojop.qi_proj_type4(
                             aftersub[momdiag][num], i)
                 elif otype == 'sigma':
-                    assert str(i) in kpp.QOP_sigma, "Missing Q:"+str(i)
-                    kpp.QOP_sigma[str(i)][keyirr][
-                        num] += kaonprojop.QiprojSigmaType4(
+                    assert str(i) in kpp.QOP_SIGMA, "Missing Q:"+str(i)
+                    kpp.QOP_SIGMA[str(i)][keyirr][
+                        num] += kaonprojop.qi_proj_sigma_type4(
                             aftersub[momdiag][num], i)
                 else:
                     assert None, "bad otype"

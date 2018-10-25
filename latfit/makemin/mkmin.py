@@ -12,7 +12,7 @@ from latfit.config import AUTO_FIT
 from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
-from latfit.config import MINTOL
+# from latfit.config import MINTOL
 from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
 

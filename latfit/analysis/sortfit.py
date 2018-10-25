@@ -1,6 +1,4 @@
 """Find the worst fit coordinates"""
-import sys
-import math
 import numpy as np
 from latfit.config import DISP_ENERGIES, ORIGL
 
@@ -21,7 +19,7 @@ def best_times(coord, cov, index, times):
                 num = (ycoord-DISP_ENERGIES[index])**2
             except IndexError:
                 num = (ycoord-dispmean)**2
-            denom = cov[i,i]
+            denom = cov[i, i]
             assert not np.isnan(num), "difference (chisq numerator)"+\
                 " is not a number "+str(DISP_ENERGIES)+" "+str(ycoord)
             assert denom != 0, "Error: variance is 0"
@@ -41,7 +39,7 @@ def score_excl(excl1d, tsorted, lenfit, inversescore=True):
     score = 0
     dof = lenfit-ORIGL-len(excl1d)
     assert dof != 0, "Degrees of freedom for sortfit < 1"
-    for i, ttup in enumerate(tsorted):
+    for _, ttup in enumerate(tsorted):
         time, chisq = ttup
         if time in excl1d:
             score += chisq/dof
@@ -50,6 +48,7 @@ def score_excl(excl1d, tsorted, lenfit, inversescore=True):
     return score
 
 def sortcombinations(combinations, tsorted, lenfit):
+    """Sort the combinations of t using the sorted t list"""
     return sorted(combinations, key=lambda row: score_excl(
         row, tsorted, lenfit))
 
@@ -61,7 +60,7 @@ def sample_norms(sampler, tsorted, lenfit):
     samp = sorted(list(sampler))
     total = 0
     probs = []
-    assert len(samp) != 0, "no fit ranges"
+    assert samp, "no fit ranges"
     for excl in samp:
         score = score_excl(excl, tsorted, lenfit, inversescore=False)
         probs.append(score)
@@ -71,7 +70,9 @@ def sample_norms(sampler, tsorted, lenfit):
     norm = 1.0/total
     probs = np.array(probs)*norm
     assert np.allclose(
-        np.sum(probs, axis=0), 1.0, rtol=1e-8), "Probabilities chosen do not sum to 1:"+str(np.sum(probs, axis=0))
+        np.sum(probs, axis=0),
+        1.0, rtol=1e-8),\
+        "Probabilities chosen do not sum to 1:"+str(np.sum(probs, axis=0))
     #for i, j in zip(samp, probs):
     #    print(i, j)
     #sys.exit(0)

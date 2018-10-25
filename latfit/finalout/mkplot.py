@@ -13,7 +13,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from scipy import stats
-import h5py
 import gvar
 
 from latfit.utilities import read_file as rf
@@ -45,7 +44,7 @@ from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
 from latfit.config import AINVERSE, SUPERJACK_CUTOFF
-from latfit.config import FIT, ADD_CONST_VEC
+from latfit.config import ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD, FIT_SPACING_CORRECTION
 import latfit.analysis.misc as misc
@@ -66,7 +65,9 @@ def update_result_min_nofit(plotdata):
         plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
         if DELTA_E2_AROUND_THE_WORLD is not None:
             plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
-        plotdata.coords[i][1] += misc.correct_epipi(plotdata.coords[i][1])
+        if FIT_SPACING_CORRECTION:
+            plotdata.coords[i][1] += misc.correct_epipi(
+                plotdata.coords[i][1])
     return plotdata
 
 def mkplot(plotdata, input_f,
@@ -96,7 +97,7 @@ def mkplot(plotdata, input_f,
 
     # GET STRINGS
     title = get_title(input_f)
-    file_str = get_file_string(title, dimops)
+    file_str = get_file_string(title)
 
     if FIT:
         if result_min.status != 0:
@@ -117,7 +118,7 @@ def mkplot(plotdata, input_f,
 
         #plot dispersion analysis
         if PLOT_DISPERSIVE:
-            plot_dispersive(dimops, xcoord)
+            plot_dispersive(xcoord)
 
         if FIT:
             # plot fit function
@@ -156,18 +157,19 @@ def modmissingdim(dimops, plotdata, result_min):
     return dimops_mod, result_min_mod
 
 
-def plot_dispersive(dimops, xcoord):
+def plot_dispersive(xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
-        estring = trunc_prec(energy)
-        """
-        plt.annotate(
-            "Dispersive energy["+str(i)+"] = "+estring,
-            xy=(0.05, 0.90-(i+dimops)*.05), xycoords='axes fraction')
-        """
+        # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),
                  label='Dispersive('+str(i)+')')
     plt.legend(loc='lower left')
+
+# """
+# plt.annotate(
+# "Dispersive energy["+str(i)+"] = "+estring,
+# xy=(0.05, 0.90-(i+dimops)*.05), xycoords='axes fraction')
+# """
 
 def get_prelim_errbars(result_min):
     """If the fit range is not identical to the plot range,
@@ -245,7 +247,7 @@ def get_title(input_f):
     return title
 
 
-def get_file_string(title, dimops):
+def get_file_string(title):
     """get strings"""
 
     # brief attempt at sanitization
@@ -302,24 +304,7 @@ def get_coord(coords, cov, error2=None):
         errstate = np.geterr()['invalid']
         if errstate == 'raise':
             np.seterr(invalid='warn')
-        try:
-            arg = res**2-(rf.norm2(rf.procmom(
-                MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
-            if len(ycoord[0] if hasattr(ycoord[0], '__iter__') else []) > 0:
-                assert all(arg >= 0)
-            else:
-                assert arg >= 0
-        except AssertionError:
-            print("invalid arg to sqrt", arg, "result", res)
-        except FloatingPointError:
-            print("floating point error in arg:", arg)
-            if hasattr(arg, '__iter__'):
-                for i in arg:
-                    try:
-                        print(np.sqrt(i))
-                    except FloatingPointError:
-                        print('problem entry:', i)
-            sys.exit(1)
+        arg = testcoordarg(res, ycoord)
         root_s_var.append(np.sqrt(arg))
         np.seterr(errstate)
     for i, xc1 in enumerate(xcoord):
@@ -329,6 +314,28 @@ def get_coord(coords, cov, error2=None):
     for i, xc1 in enumerate(xcoord):
         print(xc1, "sqrt(s) (lattice units) =", root_s_var[i])
     return xcoord, ycoord, error2
+
+def testcoordarg(res, ycoord):
+    """Find/test the argument to the square root in sqrt(s)"""
+    try:
+        arg = res**2-(rf.norm2(rf.procmom(
+            MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
+        if ycoord[0] if hasattr(ycoord[0], '__iter__') else []:
+            assert all(arg >= 0)
+        else:
+            assert arg >= 0
+    except AssertionError:
+        print("invalid arg to sqrt", arg, "result", res)
+    except FloatingPointError:
+        print("floating point error in arg:", arg)
+        if hasattr(arg, '__iter__'):
+            for argi in arg:
+                try:
+                    print(np.sqrt(argi))
+                except FloatingPointError:
+                    print('problem entry:', argi)
+        sys.exit(1)
+    return arg
 
 
 def print_messages(result_min, param_err, param_chisq):
@@ -369,59 +376,62 @@ def print_messages(result_min, param_err, param_chisq):
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
        JACKKNIFE == 'YES':
         print("avg p-value = ", gvar.gvar(result_min.pvalue,
-              result_min.pvalue_err))
+                                          result_min.pvalue_err))
         print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
                                                             param_chisq.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
-        if GEVP:
-            print("sqrt(s), I="+str(ISOSPIN)+" phase shift(in degrees) = ")
-            energy = 1000*AINVERSE*np.array(result_min.x)
-            mom = 1000*AINVERSE*np.sqrt(rf.norm2(
-                rf.procmom(MOMSTR)))*(2*np.pi/L_BOX)
-            print("mom =", mom)
-            root_s = np.sqrt(energy**2-mom**2)
-            err_energy = 1000*AINVERSE*np.array(param_err)*energy/root_s
-            root_s_chk = 1000*AINVERSE*np.sqrt(
-                gvar.gvar(result_min.x, param_err)**2-(
-                    2*np.pi/L_BOX)**2*rf.norm2(rf.procmom(MOMSTR)))
-            for i in range(len(result_min.scattering_length)):
-                shift = result_min.phase_shift[i]
-                shift = np.real(shift) if np.isreal(shift) else shift
-                err = result_min.phase_shift_err[i]
-                err = np.real(err) if np.isreal(err) else err
-                energystr = str(gvar.gvar(root_s[i], err_energy[i]))
-                chkstr = str(root_s_chk[i])
-                assert energystr == chkstr, "Bad error propagation:"+\
-                    energystr+" chk:"+chkstr
-                phasestr = str(gvar.gvar(shift, err))
-                print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
-            print("[")
-            for i in range(len(result_min.scattering_length)):
-                shift = result_min.phase_shift[i]
-                shift = np.real(shift) if np.isreal(shift) else shift
-                err = result_min.phase_shift_err[i]
-                err = np.real(err) if np.isreal(err) else err
-                commstr = " ," if i != len(
-                    result_min.scattering_length)-1 else ""
-                print(np.array2string(np.array([root_s[i], shift,
-                                                err_energy[i], err]),
-                                      separator=', ')+commstr)
-            print("]")
-            for i in range(len(result_min.scattering_length)):
-                if i == 0: # scattering length only meaningful as p->0
-                    print("I="+str(ISOSPIN)+" scattering length = ",
-                          gvar.gvar(result_min.scattering_length[i],
-                          result_min.scattering_length_err[i]))
-        else:
-            print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-                  gvar.gvar(result_min.phase_shift,
-                            result_min.phase_shift_err))
-            print("I="+str(ISOSPIN)+" scattering length = ",
-                  gvar.gvar(result_min.scattering_length,
-                  result_min.scattering_length_err))
+        print_phase_info(result_min, param_err)
 
+def print_phase_info(result_min, param_err):
+    """Print phase shift specific info"""
+    if GEVP:
+        print("sqrt(s), I="+str(ISOSPIN)+" phase shift(in degrees) = ")
+        energy = 1000*AINVERSE*np.array(result_min.x)
+        mom = 1000*AINVERSE*np.sqrt(rf.norm2(
+            rf.procmom(MOMSTR)))*(2*np.pi/L_BOX)
+        print("mom =", mom)
+        root_s = np.sqrt(energy**2-mom**2)
+        err_energy = 1000*AINVERSE*np.array(param_err)*energy/root_s
+        root_s_chk = 1000*AINVERSE*np.sqrt(
+            gvar.gvar(result_min.x, param_err)**2-(
+                2*np.pi/L_BOX)**2*rf.norm2(rf.procmom(MOMSTR)))
+        for i in range(len(result_min.scattering_length)):
+            shift = result_min.phase_shift[i]
+            shift = np.real(shift) if np.isreal(shift) else shift
+            err = result_min.phase_shift_err[i]
+            err = np.real(err) if np.isreal(err) else err
+            energystr = str(gvar.gvar(root_s[i], err_energy[i]))
+            chkstr = str(root_s_chk[i])
+            assert energystr == chkstr, "Bad error propagation:"+\
+                energystr+" chk:"+chkstr
+            phasestr = str(gvar.gvar(shift, err))
+            print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
+        print("[")
+        for i in range(len(result_min.scattering_length)):
+            shift = result_min.phase_shift[i]
+            shift = np.real(shift) if np.isreal(shift) else shift
+            err = result_min.phase_shift_err[i]
+            err = np.real(err) if np.isreal(err) else err
+            commstr = " ," if i != len(
+                result_min.scattering_length)-1 else ""
+            print(np.array2string(np.array([root_s[i], shift,
+                                            err_energy[i], err]),
+                                  separator=', ')+commstr)
+        print("]")
+        for i in range(len(result_min.scattering_length)):
+            if i == 0: # scattering length only meaningful as p->0
+                print("I="+str(ISOSPIN)+" scattering length = ",
+                      gvar.gvar(result_min.scattering_length[i],
+                                result_min.scattering_length_err[i]))
+    else:
+        print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
+              gvar.gvar(result_min.phase_shift,
+                        result_min.phase_shift_err))
+        print("I="+str(ISOSPIN)+" scattering length = ",
+              gvar.gvar(result_min.scattering_length,
+                        result_min.scattering_length_err))
 
 def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     """Get chi^2 parameters."""
@@ -538,8 +548,8 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
             step_size = 1.0 if np.isnan(step_size) else step_size
             try:
                 xfit[i] = list(np.arange(xfit[i][0],
-                                        xfit[i][len(xfit[i])-1]+step_size,
-                                        step_size))
+                                         xfit[i][len(xfit[i])-1]+step_size,
+                                         step_size))
             except IndexError: # here in case nothing is to be plot
                 xfit[i] = []
     return xfit
@@ -559,7 +569,7 @@ def plot_box(xcoord, result_min, param_err, dimops):
         try:
             continuous = len(
                 np.arange(xfit[i][0],
-                            xfit[i][len(xfit[i])-1]+1)) == len(xfit[i])
+                          xfit[i][len(xfit[i])-1]+1)) == len(xfit[i])
             for start in xfit[i]:
                 delw = xfit[i][len(
                     xfit[i])-1]-xfit[i][0] if continuous else 0
@@ -576,7 +586,6 @@ def plot_box(xcoord, result_min, param_err, dimops):
                     break
         except IndexError:
             assert False, "index error"
-            pass
 
 if ADD_CONST:
     YSTART = 0.95

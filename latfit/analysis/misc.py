@@ -25,6 +25,7 @@ IRREP = None
 CONTINUUM = True
 
 def fitepi(norm):
+    """Select the right E_pi"""
     ret = None
     if norm == 0:
         ret = P0
@@ -46,7 +47,7 @@ def correct_epipi(energies, irr=None, uncorrect=False):
     assert irr is not None, "irrep not set."
     assert hasattr(energies, '__iter__'),\
         "corrections not supported for single correlators"
-    correction = np.zeros(np.asarray(energies).shape,np.float)
+    correction = np.zeros(np.asarray(energies).shape, np.float)
     for dim in range(len(energies)):
         moms = freemomenta(irr, dim)
         try:

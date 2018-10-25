@@ -1,17 +1,12 @@
 #!/usr/bin/python3
 """K->pipi analysis code"""
 
-import sys
-import re
-import h5py
-import numpy as np
-import read_file as rf
-import math
 from collections import defaultdict
-from mpi4py import MPI
+import numpy as np
 from latfit.utilities import h5jack
 
-import kaondecompose # decompose the results, stored as 1d arrays, into multi-dimensional arrays
+# import kaondecompose # decompose the results,
+# stored as 1d arrays, into multi-dimensional arrays
 import kaonfileproc as kfp # process kaon files
 import kaonpostproc as kpp # global container for results
 import kaonmix # do mix subtraction
@@ -20,8 +15,10 @@ import kaonvac # vacuum subtraction
 TSTEP12 = 2
 LT_CHECK = 4
 assert h5jack.LT == LT_CHECK, "Time extents do not match"
-# the key structure is different, key doesn't end with @momentum string, e.g. @000
-assert not h5jack.STILLSUB , "Vacuum subtraction not backwards compatible with this option"
+# the key structure is different,
+# key doesn't end with @momentum string, e.g. @000
+assert not h5jack.STILLSUB,\
+    "Vacuum subtraction not backwards compatible with this option"
 
 # to do
 # 1 mix3,mix4,sigma stuff
@@ -30,19 +27,19 @@ assert not h5jack.STILLSUB , "Vacuum subtraction not backwards compatible with t
 # outline
 # 1 read in diagrams
 
-def filterOutSigma(unfiltered):
+def filter_out_sigma(unfiltered):
     """Filter out sigma"""
     ret = list(filter(lambda x: 'sigma' not in x, unfiltered))
     assert ret, "filter out sigma returned empty list"
     return ret
 
-def filterOutMix(unfiltered):
+def filter_out_mix(unfiltered):
     """Filter out sigma"""
     ret = list(filter(lambda x: 'mix' not in x, unfiltered))
     assert ret, "filter out mix returned empty list"
     return ret
 
-def filterDiags(filter_str, diags_unfiltered):
+def filter_diags(filter_str, diags_unfiltered):
     """Filter based on str"""
     ret = list(filter(lambda x: filter_str in x, diags_unfiltered))
     assert ret, "Filter diags returned empty list for filter str="+str(
@@ -55,7 +52,6 @@ def filter_out_ktopi(unfiltered):
     ret = list(filter(lambda x: 'ktopi' not in x, unfiltered))
     assert ret, "filter out k->pi returned empty list"
     return ret
-    
 
 def analyze():
     """Read in the k->x diagrams"""
@@ -65,26 +61,26 @@ def analyze():
     diags = {}
     purefilterlist = ['type1', 'type2', 'type3', 'type4']
     for filt in purefilterlist:
-        diags[filt] = filterDiags(filt, diags_unfiltered)
+        diags[filt] = filter_diags(filt, diags_unfiltered)
         assert diags[filt], str(filt)+" diagrams missing from base set."
 
     # mix3,4
-    diags['mix4'] = filterDiags('mix4', diags['type4'])
-    diags['type4'] = filterOutMix(diags['type4'])
-    diags['mix3'] = filterDiags('mix3', diags['type3'])
-    diags['type3'] = filterOutMix(diags['type3'])
+    diags['mix4'] = filter_diags('mix4', diags['type4'])
+    diags['type4'] = filter_out_mix(diags['type4'])
+    diags['mix3'] = filter_diags('mix3', diags['type3'])
+    diags['type3'] = filter_out_mix(diags['type3'])
 
     # sigma specific diagram lists
-    diags['mix3sigma'] = filterDiags('sigma', diags['mix3'])
-    diags['mix3'] = filterOutSigma(diags['mix3'])
-    diags['type2sigma'] = filterDiags('sigma', diags['type2'])
-    diags['type2'] = filterOutSigma(diags['type2'])
-    diags['type3sigma'] = filterDiags('sigma', diags['type3'])
-    diags['type3'] = filterOutSigma(diags['type3'])
+    diags['mix3sigma'] = filter_diags('sigma', diags['mix3'])
+    diags['mix3'] = filter_out_sigma(diags['mix3'])
+    diags['type2sigma'] = filter_diags('sigma', diags['type2'])
+    diags['type2'] = filter_out_sigma(diags['type2'])
+    diags['type3sigma'] = filter_diags('sigma', diags['type3'])
+    diags['type3'] = filter_out_sigma(diags['type3'])
 
     # get bubbles
-    diags['pipibubbles'] = filterDiags('Vdis', diags_unfiltered)
-    diags['sigmabubbles'] = filterDiags('scalar-bubble', diags_unfiltered)
+    diags['pipibubbles'] = filter_diags('Vdis', diags_unfiltered)
+    diags['sigmabubbles'] = filter_diags('scalar-bubble', diags_unfiltered)
     sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'], trajl)
     pipibubbles = h5jack.getbubbles(diags['pipibubbles'], trajl)
 
@@ -97,51 +93,51 @@ def analyze():
         kpp.QOPI2[str(i)] = defaultdict(lambda: np.zeros(
             (len(trajl), LT_CHECK), dtype=np.complex))
 
-        kpp.QOP_sigma[str(i)] = defaultdict(lambda: np.zeros(
+        kpp.QOP_SIGMA[str(i)] = defaultdict(lambda: np.zeros(
             (len(trajl), LT_CHECK), dtype=np.complex))
 
     # add type 1,2,3 to the output
     kfp.proctype123(diags['type1'], trajl, 'type1')
     kfp.proctype123(diags['type2'], trajl, 'type2')
     kfp.proctype123(diags['type3'], trajl, 'type3')
-    kfp.procSigmaType23(diags['type2sigma'], trajl, 'type2')
-    kfp.procSigmaType23(diags['type3sigma'], trajl, 'type3')
+    kfp.proc_sigma_type23(diags['type2sigma'], trajl, 'type2')
+    kfp.proc_sigma_type23(diags['type3sigma'], trajl, 'type3')
 
     # form single jackknife blocks of the operators, which should be only projected types 1,2,3
-    jackknifeOPS()
+    jackknife_ops()
 
     # get the disconnected k->x pieces
     diags = get_kdiscon_fromfile(diags, trajl)
 
     # get mix coefficients from tK summed type4/2 and tK summed mix4
-    alpha_kpipi = kaonmix.mixCoeffs(diags['type4_summed'],
-                                    diags['mix4_summed'], trajl, 0)
+    alpha_kpipi = kaonmix.mix_coeffs(diags['type4_summed'],
+                                     diags['mix4_summed'], trajl, 0)
     # useful for chipt study
-    #alpha_kpi = kaonmix.mixCoeffs(diags['type4_summed'],
+    #alpha_kpi = kaonmix.mix_coeffs(diags['type4_summed'],
     #                              diags['mix4_summed'], trajl, 1)
 
     # do the mix4 vacuum subtraction, bubble composition,
     # tK time averaging, jackknifing
-    mix4to_pipi = kaonvac.vacSubtractMix4(diags['mix4_unsummed'],
-                                          pipibubbles, trajl, 'pipi')
-    mix4to_sigma = kaonvac.vacSubtractMix4(diags['mix4_unsummed'],
-                                           sigmabubbles, trajl, 'sigma')
+    mix4to_pipi = kaonvac.vac_subtract_mix4(diags['mix4_unsummed'],
+                                            pipibubbles, trajl)
+    mix4to_sigma = kaonvac.vac_subtract_mix4(diags['mix4_unsummed'],
+                                             sigmabubbles, trajl)
 
     # do vacuum subtraction, jackknife,
     # project resulting type 4 onto operators
-    kaonvac.vacSubtractType4(diags['type4_unsummed'],
-                             pipibubbles, trajl, 'pipi')
-    kaonvac.vacSubtractType4(diags['type4_unsummed'],
-                             sigmabubbles, trajl, 'sigma')
+    kaonvac.vac_subtract_type4(diags['type4_unsummed'],
+                               pipibubbles, trajl, 'pipi')
+    kaonvac.vac_subtract_type4(diags['type4_unsummed'],
+                               sigmabubbles, trajl, 'sigma')
 
     # do mix subtraction
-    assert jackknifeOPS.complete, "Operators need to be jackknifed"+\
+    assert jackknife_ops.complete, "Operators need to be jackknifed"+\
         " before mix subtraction."
-    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi', len(trajl))
-    kaonmix.mixSubtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi', len(trajl))
+    kaonmix.mix_subtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi', len(trajl))
+    kaonmix.mix_subtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi', len(trajl))
 
     # write the results
-    kpp.writeOut()
+    kpp.write_out()
 
 def get_kdiscon_fromfile(diags, trajl):
     """Get the mix4 and disconnected type4 diagrams from file"""
@@ -157,22 +153,19 @@ def get_kdiscon_fromfile(diags, trajl):
     return diags
 
 
-def jackknifeOPS():
+def jackknife_ops():
     """Jackknife operators."""
     for i in np.arange(1, 11): # loop over operators
-        keylist = []
+        # keylist = []
         for key in kpp.QOPI0[str(i)]:
             kpp.QOPI0[str(i)][key] = h5jack.dojackknife(
                 kpp.QOPI0[str(i)][key])
             kpp.QOPI2[str(i)][key] = h5jack.dojackknife(
                 kpp.QOPI2[str(i)][key])
-            kpp.QOP_sigma[str(i)][key] = h5jack.dojackknife(
-                kpp.QOP_sigma[str(i)][key])
-    jackknifeOPS.complete = True
-jackknifeOPS.complete = False
-            
-
-
+            kpp.QOP_SIGMA[str(i)][key] = h5jack.dojackknife(
+                kpp.QOP_SIGMA[str(i)][key])
+    jackknife_ops.complete = True
+jackknife_ops.complete = False
 
 
 
@@ -181,11 +174,11 @@ jackknifeOPS.complete = False
 # 3.5 and jackknifing
 # make into operators
 
-#def ptokey(momdiag):
-#    """Turns a momentum key into a momentum, then finds |p|"""
-#    mom = rf.mom(momdiag)
-#    key = np.dot(mom, mom)
-#return key
+# def ptokey(momdiag):
+#     """Turns a momentum key into a momentum, then finds |p|"""
+#     mom = rf.mom(momdiag)
+#     key = np.dot(mom, mom)
+# return key
 
 
 
