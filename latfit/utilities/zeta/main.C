@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
   bool imag_q = arg < 0;
   if(arg<0) arg = -arg;
   double p_hat = sqrt( arg );
-  double p_pipi = arg;
+  double p_pipi = sqrt(arg);
   if(phat_disp) p_pipi = 2*asin(p_hat/2);
   double q_pipi = L_box * p_pipi /( 2 * M_PI ); //M_PI = pi
 

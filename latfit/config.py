@@ -51,7 +51,7 @@ SYSTEMATIC_EST = False
 SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
-# isospin value, (0,1,2 supported)
+# isospin value, (0, 1, 2 supported)
 ISOSPIN = 2
 
 # group irrep
@@ -61,9 +61,9 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
+IRREP = 'A_1PLUS_mom000'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -73,7 +73,7 @@ MAX_ITER = 100
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 16
+MAX_RESULTS = 4
 
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
@@ -91,7 +91,7 @@ misc.IRREP = IRREP
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
-#print(misc.dispersive([1,1,1]))
+#print(misc.dispersive([1, 1, 1]))
 #sys.exit(0)
 
 # don't include the sigma in the gevp fits
@@ -114,8 +114,8 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
-FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
@@ -138,12 +138,12 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modi
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
-    [1,1,1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        [1,0,0], continuum=FIT_SPACING_CORRECTION)
+    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
+        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(
     IRREP)[0], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION )
+        opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
 DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
@@ -177,26 +177,26 @@ USE_LATE_TIMES = True
 
 # hints to eliminate
 HINTS_ELIM = {}
-HINTS_ELIM[11] = ( 4 , 0 )
-HINTS_ELIM[12] = [( 4 , 3 ), ( 3 , 2 )]
-HINTS_ELIM[15] = [(4, 3), ( 3 , 0 ), ( 2 , 1 )]
+HINTS_ELIM[11] = (4, 0)
+HINTS_ELIM[12] = [(4, 3), (3, 2)]
+HINTS_ELIM[15] = [(4, 3), (3, 0), (2, 1)]
 HINTS_ELIM = {}
-HINTS_ELIM[9] = [(5,4),(4,3)]
-HINTS_ELIM[10] = [( 5 , 0 ), (4, 0)]
-HINTS_ELIM[11] = [( 4 , 0 )]
-HINTS_ELIM[12] = [( 5 , 0 ), (4, 0), (3,0)]
-HINTS_ELIM[13] = [( 5 , 0 ), (4, 0), (3,0), (2, 0)]
-HINTS_ELIM[14] = [( 5 , 1 ), (4, 0), (3,0), (2, 0)]
-HINTS_ELIM[15] = [( 5 , 0 ), (4, 0), (3,0), (2, 0)]
+HINTS_ELIM[9] = [(5, 4), (4, 3)]
+HINTS_ELIM[10] = [(5, 0), (4, 0)]
+HINTS_ELIM[11] = [(4, 0)]
+HINTS_ELIM[12] = [(5, 0), (4, 0), (3, 0)]
+HINTS_ELIM[13] = [(5, 0), (4, 0), (3, 0), (2, 0)]
+HINTS_ELIM[14] = [(5, 1), (4, 0), (3, 0), (2, 0)]
+HINTS_ELIM[15] = [(5, 0), (4, 0), (3, 0), (2, 0)]
 HINTS_ELIM = {}
-HINTS_ELIM[5] = [(5,0)]
-HINTS_ELIM[7] = [(5,0), (4,0), (3,0)]
-HINTS_ELIM[8] = [(5,0)]
-HINTS_ELIM[9] = [(5,0)]
-HINTS_ELIM[10] = [(5,0), (4,0)]
-HINTS_ELIM[14] = [(3,0), (2,0)]
-HINTS_ELIM[15] = [(3,0), (2,0)]
-HINTS_ELIM[15] = [(5,0),(4,0), (3,0)]
+HINTS_ELIM[5] = [(5, 0)]
+HINTS_ELIM[7] = [(5, 0), (4, 0), (3, 0)]
+HINTS_ELIM[8] = [(5, 0)]
+HINTS_ELIM[9] = [(5, 0)]
+HINTS_ELIM[10] = [(5, 0), (4, 0)]
+HINTS_ELIM[14] = [(3, 0), (2, 0)]
+HINTS_ELIM[15] = [(3, 0), (2, 0)]
+HINTS_ELIM[15] = [(5, 0), (4, 0), (3, 0)]
 HINTS_ELIM = {}
 
 # eliminate problematic configs.
@@ -308,7 +308,7 @@ else:
     TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
 if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
-        str(DELTA_T_MATRIX_SUBTRACTION)+','+\
+        str(DELTA_T_MATRIX_SUBTRACTION)+', '+\
         str(DELTA_T2_MATRIX_SUBTRACTION)+' '
 elif MATRIX_SUBTRACTION and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
@@ -504,7 +504,7 @@ for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
 if not GEVP_DEBUG and any(ADD_CONST_VEC):
-    assert MATRIX_SUBTRACTION or not GEVP,\
+    assert MATRIX_SUBTRACTION or not GEVP, \
         "Must subtract around the world constant at GEVP level"
 else:
     MATRIX_SUBTRACTION = False
@@ -707,7 +707,7 @@ assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix"+\
     " only with eff mass method 4"
 assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
     " methods no longer supported."
-assert NUM_PENCILS == 0, "this feature is less tested,"+\
+assert NUM_PENCILS == 0, "this feature is less tested, "+\
     " use at your own risk (safest to have NUM_PENCILS==0)"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
@@ -720,3 +720,4 @@ if FIT_SPACING_CORRECTION:
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
+assert not FIT_SPACING_CORRECTION

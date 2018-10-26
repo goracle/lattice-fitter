@@ -65,7 +65,7 @@ if CALC_PHASE_SHIFT:
         binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
-                   str(int(FIT_SPACING_CORRECTION))]
+                   str(int(not FIT_SPACING_CORRECTION))]
         try:
             out = subprocess.check_output(arglist)
         except FileNotFoundError:

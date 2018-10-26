@@ -3,11 +3,12 @@
 import sys
 import time
 import os
-import glob
 import re
+import glob
+import math
+import itertools
 import numpy as np
 from mpi4py import MPI
-import itertools
 import h5py
 import read_file as rf
 from sum_blks import isoproj
@@ -15,9 +16,7 @@ import op_compose as opc
 from op_compose import AVG_ROWS
 import write_discon as wd
 import aux_write as aux
-import math
 import avg_hdf5
-import glob
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -137,8 +136,8 @@ DOAMA = True
 #EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
-EXACT_CONFIGS = [ 1130, 1250,  1370]
-EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250,  1370, 1390]
+EXACT_CONFIGS = [1130, 1250, 1370]
+EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250, 1370, 1390]
 
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
@@ -195,14 +194,15 @@ def getindices(tsep, nmomaux):
 def trajlist(getexactconfigs=False, getsloppysubtraction=False):
     """Get trajectory list from files of form
     <traj>.EXTENSION"""
-    assert not getexactconfigs or not getsloppysubtraction, "Must choose one or the other."
+    assert not getexactconfigs or not getsloppysubtraction,\
+        "Must choose one or the other."
     trajl = set()
     suffix = '_exact' if getexactconfigs else ''
     for fn1 in glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION):
 
         try:
-            toadd = int(re.sub(suffix+'.'+EXTENSION, '', re.sub(PREFIX, '', fn1)))
-        
+            toadd = int(re.sub(suffix+'.'+EXTENSION, '',
+                               re.sub(PREFIX, '', fn1)))
         except ValueError:
             if '_exact' not in str(fn1) or getexactconfigs:
                 print("skipping:", re.sub(suffix+'.'+EXTENSION, '',
@@ -228,7 +228,7 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
             trajl.add(toadd)
     trajl = sorted(list(trajl))
     if not TEST44 and not TEST24C:
-        assert len(trajl)>1, "Len of trajectory list="+str(trajl)
+        assert len(trajl) > 1, "Len of trajectory list="+str(trajl)
     if getexactconfigs:
         trajl = [str(traj)+'_exact' for traj in trajl]
     if MPIRANK == 0:
@@ -265,18 +265,18 @@ def baselist(fn1=None):
             sys.exit(1)
     basl = getbasl(fn1).intersection(getbasl(gn1)).intersection(getbasl(hn1))
     basl_union = getbasl(fn1).union(getbasl(gn1)).union(getbasl(hn1))
-    if len(list(basl_union-basl)):
+    if list(basl_union-basl):
         for i in basl_union-basl:
             assert i in getbasl(hn1), "hn1 missing dataset:"+str(i)
             assert i in getbasl(gn1), "gn1 missing dataset:"+str(i)
             assert i in getbasl(fn1), "fn1 missing dataset:"+str(i)
-        if len(list(getbasl(fn1)-getbasl(gn1))):
+        if list(getbasl(fn1)-getbasl(gn1)):
             print("fn1 larger than gn1")
-        elif len(list(getbasl(gn1)-getbasl(fn1))):
+        elif list(getbasl(gn1)-getbasl(fn1)):
             print("gn1 larger than fn1")
-        elif len(list(getbasl(hn1)-getbasl(gn1))):
+        elif list(getbasl(hn1)-getbasl(gn1)):
             print("hn1 larger than gn1")
-        elif len(list(getbasl(gn1)-getbasl(hn1))):
+        elif list(getbasl(gn1)-getbasl(hn1)):
             print("gn1 larger than hn1")
     assert not basl_union-basl, "Union of basenames is larger than intersection"
     fn1.close()
@@ -391,11 +391,11 @@ def overall_coeffs(iso, irr):
     return ocs
 
 # obsolete
-def cross_p(fname):
+def cross_p(_):
     """Check if this is a pipi diagram with cross momenta (x+-x->y+-y)
     """
-    mom = rf.mom(fname)
-    compare = set()
+    # mom = rf.mom(fname)
+    # compare = set()
     ret = False
     return ret
     #if rf.nmom_arr(mom) == 3 and FILTER_OUT_CROSS_MOMENTA:
@@ -406,7 +406,6 @@ def cross_p(fname):
     #                    compare.add(j)
     #                elif j not in compare:
     #                    ret = True
-        
 
 def strip_op(op1):
     """Strips off extra specifiers including polarizations."""
@@ -485,9 +484,9 @@ def check_match_oplist(ocs):
             figlist = set()
             momlist = set()
             diaglist = [tup[0] for tup in ocs[opa]]
-            for diag, coeff in ocs[opa]:
+            for diag, _ in ocs[opa]:
                 figlist.add(rf.mom_prefix(diag))
-            for diag, coeff in opcheck[irrop]:
+            for diag, _ in opcheck[irrop]:
                 momlist.add(rf.mom_suffix(diag))
             for prefix, suffix in itertools.product(figlist, momlist):
                 checkstr = prefix + '_' + suffix
@@ -550,7 +549,6 @@ def getopstr(opstr):
         ret = ret+sub+'_'
     ret = ret[:-1]
     return ret
-    
 
 @PROFILE
 def h5sum_blks(allblks, ocs, outblk_shape):
@@ -568,7 +566,8 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 ntchk = allblks[base].shape[0]
                 print('ntchk=', ntchk)
                 printt = False
-                outblk = np.zeros((ntchk, outblk_shape[1]), dtype=np.complex)
+                outblk = np.zeros((
+                    ntchk, outblk_shape[1]), dtype=np.complex)
                 if ntchk != outblk.shape[0]:
                     print("Warning:", opa,
                           "has different number of trajectories")
@@ -588,16 +587,9 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                     print("does not match:", ntchk)
                     flag = 1
                     break
-            if base == 'FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110' or base == 'FigureC_sep3_mom1src000_mom2src000_mom1snk000':
-                temp = fold_time(allblks[base])
-                print(base)
-                print(allblks[base].shape)
-                print(allblks[base])
-                printt = True
-                for i, row in enumerate(temp):
-                    print('traj=', i)
-                    for j in row:
-                        print(j)
+            if base == 'FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110'\
+               or base == 'FigureC_sep3_mom1src000_mom2src000_mom1snk000':
+                printt = debugprint(allblks[base], base=base)
             try:
                 outblk += coeff*allblks[base]
             except ValueError:
@@ -613,21 +605,28 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 flag = 1
                 break
         if printt:
-            temp = fold_time(outblk)
-            print("outblk=", opa)
-            print(temp.shape)
-            print(temp)
-            printt = True
-            for i, row in enumerate(temp):
-                print('traj=', i)
-                for j in row:
-                    print(j)
+            printt = debugprint(outblk, pstr='outblk=')
         if flag == 0:
-            pass
             h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
     if MPIRANK == 0:
         print("Done writing summed blocks.")
     return
+
+def debugprint(blk, base=None, pstr=None):
+    """Print some debug info about this jackknife block"""
+    temp = fold_time(blk)
+    if pstr is None:
+        print(base)
+        print(blk)
+    else:
+        print(pstr, blk)
+    print(blk.shape)
+    printt = True
+    for i, row in enumerate(temp):
+        print('traj=', i)
+        for j in row:
+            print(j)
+    return printt
 
 
 @PROFILE
@@ -682,8 +681,10 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         traj = convert_traj(traj)
         filekey = get_file_name(traj)
         try:
-            fn1['traj_'+str(traj)+'_'+base].read_direct(outarr, np.s_[:, :TDIS_MAX+1], np.s_[:, :TDIS_MAX+1])
-            #outarr = np.array(fn1['traj_'+str(traj)+'_'+base][:, :TDIS_MAX+1])
+            fn1['traj_'+str(traj)+'_'+base].read_direct(
+                outarr, np.s_[:, :TDIS_MAX+1], np.s_[:, :TDIS_MAX+1])
+            # outarr = np.array(fn1['traj_'+str(traj)+'_'+base][
+            # :, :TDIS_MAX+1])
         except:
             namec = 'traj_'+str(traj)+'_'+base
             print(namec in fn1)
@@ -754,7 +755,7 @@ def getbubbles(bubl, trajl, openlist=None):
             pdiag = rf.mom(keysrc)
             try:
                 ptot = rf.ptostr(wd.momtotal(pdiag))
-            except:
+            except TypeError:
                 print(pdiag, keysrc, filekey)
                 sys.exit(1)
             savekey = dsrc+"@"+ptot
@@ -883,10 +884,10 @@ def bubjack(bubl, trajl, openlist, bubbles=None, sub=None):
     return dobubjack(bubbles, sub)
 
 @PROFILE
-def dobubjack(bubbles, sub, skipVBub2=False):
+def dobubjack(bubbles, sub, skip_v_bub2=False):
     """Now that we have the bubbles,
     compose the diagrams, jackknife
-    skipVBub2 if FigureV and FigureBub2 are not needed
+    skip_v_bub2 if FigureV and FigureBub2 are not needed
     """
     out = {}
     for srckey in bubbles:
@@ -894,7 +895,7 @@ def dobubjack(bubbles, sub, skipVBub2=False):
         dsrc_split = srckey.split("@")
         for snkkey in bubbles:
             outkey, sepval = getdiscon_name(dsrc_split, snkkey.split("@"))
-            if skipVBub2 and outkey and (
+            if skip_v_bub2 and outkey and (
                     'Bub2' in outkey or 'FigureV' in outkey):
                 continue
             if sepval < 0 or not check_key(outkey) or outkey is None:
@@ -1010,7 +1011,9 @@ def aux_jack(basl, trajl, numt, openlist):
         np.mean(TSTEP*getgenconblk(base, trajl, openlist=openlist,
                                    avgtsrc=False, rowcols=[rows, cols]),
                 axis=1, out=blk)
-        # now do the jackknife.  apply -1 coefficient if doing aux to a vector T (ccw/cw switch in mirror)
+        # now do the jackknife.
+        # apply -1 coefficient if doing aux to a vector T
+        # (ccw/cw switch in mirror)
         auxblks[outfn] = dojackknife(blk) *(-1.0 if rf.vecp(base) and 'FigureT' in base else 1.0)
     if MPIRANK == 0:
         print("Done getting the auxiliary jackknife blocks.")
@@ -1022,8 +1025,8 @@ def split_dict_equally(input_dict, chunks=2):
     # prep with empty dicts
     return_list = [{} for _ in range(chunks)]
     idx = 0
-    for k,v in input_dict.items():
-        return_list[idx][k] = v
+    for k, vitem in input_dict.items():
+        return_list[idx][k] = vitem
         if idx < chunks-1:  # indexes start at 0
             idx += 1
         else:
@@ -1078,30 +1081,30 @@ def check_inner_outer(ocs, allkeys, auxkeys):
     allkeys = set(allkeys)
     auxkeys = set(auxkeys)
     for opa in ocs:
-            for diag, _ in ocs[opa]:
-                if 'FigureC_' in diag:
-                    mom = rf.mom(diag)
-                    norm0 = rf.norm2(mom[0])
-                    norm1 = rf.norm2(mom[1])
-                    assert norm0 >= norm1, "Inner"+\
-                        " particle momentum should be >= outer particle"+\
-                        " momentum (source). :"+str(diag)
-                    mom = np.array(mom)
-                    mom3 = mom[0]+mom[1]-mom[2]
-                    norm2 = rf.norm2(mom[2])
-                    norm3 = rf.norm2(mom3)
-                    assert norm2 >= norm3, "Inner"+\
-                        " particle momentum should be >= outer particle"+\
-                        " momentum (sink). :"+str(diag)
-                    assert diag in allkeys, "Missing figure C"+\
-                        " from allkeys:"+str(diag)
-                    if diag in auxkeys:
-                        assert norm0 == norm1, "Inner particle momentum"+\
-                            " should be >= outer particle momentum"+\
-                            " (source). :"+str(diag)
-                        assert norm2 == norm3, "Inner particle momentum"+\
-                            " should be >= outer particle momentum"+\
-                            " (sink). :"+str(diag)
+        for diag, _ in ocs[opa]:
+            if 'FigureC_' in diag:
+                mom = rf.mom(diag)
+                norm0 = rf.norm2(mom[0])
+                norm1 = rf.norm2(mom[1])
+                assert norm0 >= norm1, "Inner"+\
+                    " particle momentum should be >= outer particle"+\
+                    " momentum (source). :"+str(diag)
+                mom = np.array(mom)
+                mom3 = mom[0]+mom[1]-mom[2]
+                norm2 = rf.norm2(mom[2])
+                norm3 = rf.norm2(mom3)
+                assert norm2 >= norm3, "Inner"+\
+                    " particle momentum should be >= outer particle"+\
+                    " momentum (sink). :"+str(diag)
+                assert diag in allkeys, "Missing figure C"+\
+                    " from allkeys:"+str(diag)
+                if diag in auxkeys:
+                    assert norm0 == norm1, "Inner particle momentum"+\
+                        " should be >= outer particle momentum"+\
+                        " (source). :"+str(diag)
+                    assert norm2 == norm3, "Inner particle momentum"+\
+                        " should be >= outer particle momentum"+\
+                        " (sink). :"+str(diag)
 
 @PROFILE
 def find_unused(ocs, allkeys, auxkeys, fig=None):
@@ -1134,6 +1137,16 @@ def find_unused(ocs, allkeys, auxkeys, fig=None):
     unused = allfigc.difference(used)
     return unused
 
+def individual_bases(basl):
+    """Get individual jackknife block names to be written (no projection)"""
+    assert WRITE_INDIVIDUAL, "switch mismatch, bug."
+    basl_new = set()
+    for base in basl:
+        if base in WRITEBLOCK:
+            basl_new.add(base)
+    basl = basl_new
+    return basl
+
 @PROFILE
 def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
@@ -1141,13 +1154,7 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     bubl = set() if WRITE_INDIVIDUAL else bubl
     trajl = trajlist(getexactconfigs, getsloppysubtraction)
     basl = baselist()
-    if WRITE_INDIVIDUAL:
-        basl_new = set()
-        for base in basl:
-            if base in WRITEBLOCK:
-                basl_new.add(base)
-        basl = basl_new
-    numt = len(trajl)
+    basl = individual_bases(basl) if WRITE_INDIVIDUAL else basl
     openlist = {}
     # this speeds things up but h5py appears to be broken here (gives an error)
     #for traj in trajl:
@@ -1164,7 +1171,8 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
 
     if not NOAUX:
         ttime = -time.perf_counter()
-        auxblks = gatherdicts(aux_jack(nodebases, trajl, numt, openlist))
+        auxblks = gatherdicts(aux_jack(nodebases, trajl,
+                                       len(trajl), openlist))
         ttime += time.perf_counter()
         print("time to get aux blocks:", ttime, "seconds")
     else:
@@ -1201,7 +1209,7 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
         allblks = {**auxblks, **mostblks, **bubblks}  # for non-gparity
     #for filekey in openlist:
     #    openlist[filekey].close()
-    return allblks, numt, auxblks
+    return allblks, len(trajl), auxblks
 
 @PROFILE
 def check_aux_consistency(auxblks, mostblks):
@@ -1227,7 +1235,6 @@ def check_aux_consistency(auxblks, mostblks):
     exitthis = MPI.COMM_WORLD.bcast(exitthis, 0)
     if exitthis:
         sys.exit(1)
-                            
 
 @PROFILE
 def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
@@ -1342,15 +1349,19 @@ def main(fixn=True):
             count = len(unused)
             for useless in sorted(list(unused)):
                 try:
-                    if not (rf.vecp(useless) and rf.norm2(wd.momtotal(rf.mom(useless)))): # we don't analyze all of pcom for I=1 yet
-                        if not rf.checkp(useless) and not (rf.vecp(useless) and rf.allzero(rf.mom(useless))):
+                    # we don't analyze all of pcom for I=1 yet
+                    if not (rf.vecp(useless) and rf.norm2(wd.momtotal(
+                            rf.mom(useless)))):
+                        if not rf.checkp(useless) and not (rf.vecp(
+                                useless) and rf.allzero(rf.mom(useless))):
                             print("unused diagram:", useless)
                             count -= 1
                 except TypeError:
                     print(useless)
                     sys.exit(1)
             print("length of unused=", len(unused))
-            assert len(unused) == 0 or count == len(unused), "Unused (non-vec) diagrams exist."
+            assert unused or count == len(unused),\
+                "Unused (non-vec) diagrams exist."
             if TESTKEY:
                 buberr(allblks)
                 sys.exit(0)

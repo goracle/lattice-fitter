@@ -1,6 +1,5 @@
 """Library of fit functions to use"""
 
-import sys
 from math import log, cosh, sinh, tanh
 from numbers import Number
 import numpy as np
@@ -339,13 +338,13 @@ class FitFunc:
                  for i in range(2)]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
-    def fit_func_1p_pionratio(self, ctime, trial_params, lent=None, tstep=(None, None)):
+    def fit_func_1p_pionratio(self, ctime, trial_params, lent=None, tstep_arr=(None, None)):
         """one parameter eff. mass fit function
         for EFF_MASS_METHOD = 3
         """
         lent = self._lent if lent is None else lent
         tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(2)]
         corrs = [trial_params[0]*(sinh((tpion[i]-1/2)*trial_params[

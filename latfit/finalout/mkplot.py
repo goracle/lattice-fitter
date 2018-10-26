@@ -320,7 +320,7 @@ def testcoordarg(res, ycoord):
     try:
         arg = res**2-(rf.norm2(rf.procmom(
             MOMSTR))*(2*np.pi/L_BOX)**2 if GEVP else 0)
-        if ycoord[0] if hasattr(ycoord[0], '__iter__') else []:
+        if len(ycoord[0]) if hasattr(ycoord[0], '__iter__') else []:
             assert all(arg >= 0)
         else:
             assert arg >= 0

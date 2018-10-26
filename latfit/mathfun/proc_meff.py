@@ -3,7 +3,7 @@
 import sys
 import re
 import collections
-from math import acosh, sqrt
+from math import acosh
 import numbers
 from sympy import nsolve
 from sympy.abc import x, y, z
@@ -21,10 +21,9 @@ from latfit.config import ADD_CONST
 from latfit.config import STYPE
 from latfit.config import FITS
 from latfit.config import PIONRATIO
-from latfit.config import RESCALE
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
-from latfit.config import MINTOL, METHOD, BINDS
-from latfit.config import ORIGL, DIM
+from latfit.config import METHOD
+from latfit.config import ORIGL
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
@@ -46,7 +45,8 @@ if EFF_MASS_METHOD == 1:
         (See config)
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = FITS['acosh_ratio'](corrs, times) if index is None else FITS.f['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
+        sol = FITS['acosh_ratio'](corrs, times) if index is None else\
+            FITS.f['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
         if sol < 1:
             print("***ERROR***")
             print("argument to acosh in effective mass" +
@@ -62,7 +62,7 @@ if EFF_MASS_METHOD == 1:
 # sliding window method,
 # solved by solving a system of (transcendental) equations
 elif EFF_MASS_METHOD == 2:
-    def proc_meff(lines, index=None, files=None, time_arr=None):
+    def proc_meff(lines, _, files=None, time_arr=None):
         """numerically solve a system of three transcendental equations
         return the eff. mass
         """
@@ -100,9 +100,9 @@ elif EFF_MASS_METHOD == 2:
     else:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 2 equations numerically."""
-            return  nsolve((FITS['fit_func_sym'](times[0], [x, y])-corrs[0],
+            return nsolve((FITS['fit_func_sym'](times[0], [x, y])-corrs[0],
                            FITS['fit_func_sym'](times[1], [x, y])-corrs[1]),
-                           (x, y), START_PARAMS)
+                          (x, y), START_PARAMS)
 
 # one parameter fit, optional additive constant (determined in config)
 elif EFF_MASS_METHOD == 3:
@@ -111,7 +111,8 @@ elif EFF_MASS_METHOD == 3:
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = FITS['ratio'](corrs, times) if index is None else FITS.f['ratio'][ADD_CONST_VEC[index]](corrs, times)
+        sol = FITS['ratio'](corrs, times) if index is None else\
+            FITS.f['ratio'][ADD_CONST_VEC[index]](corrs, times)
         return sol
 
 # sliding window, solved by minimizing a one parameter cost function
@@ -132,6 +133,7 @@ elif EFF_MASS_METHOD == 4:
         return proc_meff4(corrs, index, files, times)
 
     def make_eff_mass_tomin(ini, add_const_bool, tstep_arr):
+        """Create the functions to be minimized."""
         def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
@@ -148,12 +150,12 @@ elif EFF_MASS_METHOD == 4:
             tstep = -DELTA_T_MATRIX_SUBTRACTION
             tstep2 = -DELTA_T2_MATRIX_SUBTRACTION if\
                 DELTA_E2_AROUND_THE_WORLD is not None else None
-        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
+            EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this
         (find a root) to solve a sliding window problem."""
-        raise #not supported anymore
+        assert None, 'not supported.'
         return FITS.f['fit_func_1p'](ctime, [energy])-sol
 
     def proc_meff4(corrs, index, _, times=(None)):
@@ -167,7 +169,10 @@ elif EFF_MASS_METHOD == 4:
         try:
             sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
-            assert not np.isnan(sol) or any(np.isnan(np.array(corrs, dtype=np.complex))), "solution to energy from eval is unexpectedly nan."+str(corrs)
+            assert not np.isnan(sol) or any(np.isnan(np.array(
+                corrs, dtype=np.complex))),\
+                "solution to energy from eval is unexpectedly nan."+str(
+                    corrs)
         except NegLogArgument:
             errstr = "bad time/op"+\
                     "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
@@ -188,12 +193,14 @@ elif EFF_MASS_METHOD == 4:
                 sol = minimize(EFF_MASS_TOMIN[index], START_PARAMS,
                                args=(times[0], sol),
                                method=METHOD, tol=1e-20,
-                               options={'disp': True, 'maxiter': 10000,
-                                                       'maxfev': 10000,})
+                               options={'disp': True,
+                                        'maxiter': 10000,
+                                        'maxfev': 10000,})
             else:
                 if not np.isnan(sol):
                     sol = minimize_scalar(EFF_MASS_TOMIN[index],
-                                          args=(times[0], sol), bounds=(0, None))
+                                          args=(times[0], sol),
+                                          bounds=(0, None))
                     fun = sol.fun
                     sol = sol.x
             # other solution methods:
@@ -216,6 +223,7 @@ elif EFF_MASS_METHOD == 4:
     proc_meff4.badtimes = []
 
     def checksol(sol, index, times, corrs, fun):
+        """Check the solution."""
         if isinstance(sol, collections.Iterable) and PIONRATIO:
             test = any(i < 0 for i in sol[1:])
         else:
@@ -224,9 +232,10 @@ elif EFF_MASS_METHOD == 4:
             ratioval = FITS.f['ratio'] if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             sol = np.array(sol)
-            tryfun = (EFF_MASS_TOMIN[index](-sol, times[0], ratioval) - fun)
+            tryfun = (EFF_MASS_TOMIN[index](
+                -1*sol, times[0], ratioval) - fun)
             if tryfun/(fun+1e-24) < 10:
-                sol = -sol
+                sol = -1*sol
                 #print("positive solution close to" +
                 #      " negative solution; switching; new tol", tryfun)
                 assert abs(tryfun) < 1e-12, "New tolerance too large:"+str(
@@ -283,4 +292,3 @@ elif STYPE == 'ascii':
         return corrs, times
 else:
     raise Exception("Unsupported file type:", STYPE)
-
