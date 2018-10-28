@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -48,8 +48,8 @@ SYSTEMATIC_EST = False
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
+SUPERJACK_CUTOFF = 0
 
 # isospin value, (0, 1, 2 supported)
 ISOSPIN = 2
@@ -114,10 +114,11 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
-FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
+misc.CONTINUUM = True
 
 
 # additive constant, due to around-the-world effect
@@ -138,13 +139,13 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modi
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
-    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
+    [1, 1, 1], continuum=True)-misc.dispersive(
+        [1, 0, 0], continuum=True)
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(
-    IRREP)[0], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
-DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
+    IRREP)[0], continuum=True)-misc.dispersive(
+        opc.mom2ndorder(IRREP)[1], continuum=True)
+DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=True) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
 print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
@@ -225,6 +226,7 @@ T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS1' # t-1
+T0 = 3
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -696,7 +698,7 @@ if EFF_MASS:
         print("rescale set to 1.0")
         RESCALE = 1.0
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=True)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
