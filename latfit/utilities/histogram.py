@@ -21,6 +21,7 @@ def make_hist(fname):
     with open(fname, 'rb') as fn1:
         dat = pickle.load(fn1)
         dat = np.array(dat)
+        dat = np.real(dat)
         avg, err, freqarr = dat
     spl = fname.split('_')[0]
 
@@ -31,17 +32,21 @@ def make_hist(fname):
     with open(pvalfn, 'rb') as fn1:
         pdat = pickle.load(fn1)
         pdat = np.array(pdat)
+        pdat = np.real(pdat)
         pdat_avg, pdat_err, pdat_freqarr = pdat
 
     # get file name for error
-    errfn = fname.replace('_', "_err_", 1)
-    #errfn = re.sub('_mom', '_err_mom', fname)
+    if 'mom' not in fname:
+        errfn = fname.replace('_', "_err_", 1)
+    else:
+        errfn = re.sub('_mom', '_err_mom', fname)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
-        errdat = np.array(errdat)
+        errdat = np.real(np.array(errdat))
     assert len(errdat) > 0, "error array not found"
 
-    print(freqarr.shape, avg)
+    print('shape:', freqarr.shape, avg)
+    print('shape2:', errdat.shape)
 
     title = gettitle(fname)
 
@@ -49,7 +54,7 @@ def make_hist(fname):
         save_str = re.sub(r'.p$', '_state'+str(dim)+'.pdf', fname)
         with PdfPages(save_str) as pdf:
             title_dim = title+' state:'+str(dim)
-            freq = freqarr[:, dim]
+            freq = np.array([np.real(i) for i in freqarr[:, dim]])
             print("val(err); pvalue")
             pdat_median = np.median(pdat_freqarr)
             median_diff = np.inf
@@ -57,7 +62,7 @@ def make_hist(fname):
             half = 0
             errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
             loop = sorted(zip(freq, pdat_freqarr, errlooparr),
-                          key = operator.itemgetter(0))
+                          key = lambda elem: elem[2])
             median_err = []
             for i, j, k in loop:
                 if abs(j - pdat_median) <= median_diff:

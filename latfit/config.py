@@ -709,6 +709,7 @@ assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
     " methods no longer supported."
 assert NUM_PENCILS == 0, "this feature is less tested, "+\
     " use at your own risk (safest to have NUM_PENCILS==0)"
+assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)

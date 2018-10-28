@@ -72,8 +72,8 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     if GEVP:
         singlefit.error2 = np.array([np.sqrt(np.diag(cov_full[i][i])
         ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2
-        print("(Rough) scale of errors in data points = ",
-              np.sqrt(np.diag(cov[0][0])))
+        #print("(Rough) scale of errors in data points = ",
+        #np.sqrt(np.diag(cov[0][0])))
     else:
         singlefit.error2 = np.array([np.sqrt(cov_full[i][i]
         ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2

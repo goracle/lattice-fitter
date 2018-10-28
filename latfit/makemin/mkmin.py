@@ -50,8 +50,7 @@ def mkmin(covinv, coords):
     if METHOD not in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD, options={'disp': True,
-                                                       'maxiter': 10000,
+                               method=METHOD, options={'maxiter': 10000,
                                                        'maxfev': 10000,
                                                        'xatol': 0.00000001,
                                                        'fatol': 0.00000001})

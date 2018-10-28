@@ -346,7 +346,7 @@ def main():
 
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
-                    print("mpi skip")
+                    #print("mpi skip")
                     continue
 
                 # get one fit range, check it
@@ -362,7 +362,7 @@ def main():
                       latfit.config.FIT_EXCL, "fit:",
                       str(idx+1)+"/"+str(meta.lenprod))
                 print("number of results:", len(min_arr),
-                      "number of overfit", len(overfit_arr))
+                      "number of overfit", len(overfit_arr), "rank:", MPIRANK)
                 assert len(latfit.config.FIT_EXCL) == MULT, "bug"
                 if keyexcl(excl) == fit_range_init:
                     retsingle = retsingle_save
@@ -381,6 +381,8 @@ def main():
                 result_min, param_err, plotdata.coords, \
                     plotdata.cov = retsingle
                 printerr(result_min.x, param_err)
+                if CALC_PHASE_SHIFT:
+                    print_phaseshift(result_min)
 
                 if cutresult(result_min, min_arr, overfit_arr, param_err):
                     continue
@@ -563,8 +565,8 @@ def toosmallp(meta, excl):
     ret = False
     # each energy should be included
     if max([len(i) for i in excl]) == meta.fitwindow[1]-meta.fitwindow[0]+meta.xstep:
-        print("skipped all the data points for a GEVP dim, "+\
-                "so continuing.")
+        #print("skipped all the data points for a GEVP dim, "+\
+        #        "so continuing.")
         ret = True
 
     # each fit curve should be to more than one data point
@@ -575,7 +577,7 @@ def toosmallp(meta, excl):
     if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.xstep > 0 and\
         not ONLY_SMALL_FIT_RANGES:
         if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
-            print("warning: only two data points in fit curve")
+            #print("warning: only two data points in fit curve")
             # allow for very noisy excited states in I=0
             if ISOSPIN != 0 or not GEVP:
                 ret = True
@@ -738,9 +740,10 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = np.array([getattr(i[0], avgname) for i in min_arr], dtype=object)
-    pickl_res = np.array([res_mean, err_check, pickl_res],
-                         dtype=object)
+    pickl_res = np.array([res_mean, err_check, pickl_res], dtype=object)
     pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
+    assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
+        str(pickl_res_err.shape)+str(pickl_res.shape)
     avgname = 'chisq' if avgname == 'fun' else avgname
     if not GEVP:
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':

@@ -22,7 +22,7 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
         params.dimops = 1
     if JACKKNIFE == 'YES':
         # applying jackknife correction of (count-1)^2
-        warn("Applying jackknife correction to cov. matrix.")
+        #warn("Applying jackknife correction to cov. matrix.")
         params.prefactor = (params.num_configs-1.0)/(1.0*params.num_configs)
     elif JACKKNIFE == 'NO':
         params.prefactor = (1.0)/(
