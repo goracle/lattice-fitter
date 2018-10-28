@@ -252,7 +252,7 @@ def main():
 
     # error processing, parameter extractions
     input_f, options = procargs(sys.argv[1:])
-    dump_fit_range.fn1 = input_f
+    dump_fit_range.fn1 = str(input_f)
     meta.xmin, meta.xmax = xlim_err(options.xmin, options.xmax)
     latfit.extract.getblock.XMAX = meta.xmax
     meta.xstep = xstep_err(options.xstep, input_f)
@@ -731,7 +731,8 @@ def getuniqueres(min_arr):
 def dump_fit_range(min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
-    name = re.sub('_arr', '_err', avgname)
+    print("starting arg:", avgname)
+    errname = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
@@ -739,16 +740,20 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
     pickl_res = np.array([getattr(i[0], avgname) for i in min_arr], dtype=object)
     pickl_res = np.array([res_mean, err_check, pickl_res],
                          dtype=object)
-    pickl_res_err = np.array([getattr(i[0], name) for i in min_arr])
+    pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
     avgname = 'chisq' if avgname == 'fun' else avgname
-    if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.p':
-        avgname = avgname+'_'+dump_fit_range.fn1\
-            if dump_fit_range.fn1 != '.' and not GEVP else avgname
+    if not GEVP:
+        if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
+            avgname = avgname+'_'+dump_fit_range.fn1
         avgname = re.sub('.jkdat', '', avgname)
-        name = avgname.replace('_', "_err_", 1)
-    filename = avgname+"_"+MOMSTR+'_I'+str(ISOSPIN) if GEVP else avgname
-    filename_err = name+"_"+MOMSTR+'_I'+str(ISOSPIN) if GEVP else name
+        errname = avgname.replace('_', "_err_", 1)
+    else:
+        filename = avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)
+        filename_err = errname+"_"+MOMSTR+'_I'+str(ISOSPIN)
+    print("writing file", filename)
+    assert len(pickl_res) == 3, "bad result length"
     pickle.dump(pickl_res, open(filename+'.p', "wb"))
+    print("writing file", filename_err)
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
 dump_fit_range.fn1 = None
 
@@ -969,8 +974,8 @@ def exitp(meta, min_arr, overfit_arr, idx):
         ret = True
 
     if not ret and meta.random_fit:
-        if len(min_arr) > MAX_RESULTS/MPISIZE or (
-                len(overfit_arr) > MAX_RESULTS/MPISIZE
+        if len(min_arr) >= MAX_RESULTS/MPISIZE or (
+                len(overfit_arr) >= MAX_RESULTS/MPISIZE
                 and not min_arr):
             ret = True
             print("a reasonably large set of indices"+\

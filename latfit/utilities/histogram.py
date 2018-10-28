@@ -70,7 +70,12 @@ def make_hist(fname):
                 print(median_err[-1], j)
             if median_diff != 0:
                 freq_median = (freq_median+half)/2
-            sys_err = np.std(np.array(median_err), ddof=1)
+            try:
+                sys_err = np.std(np.array(median_err), ddof=1)
+            except ZeroDivisionError:
+                print("zero division error:")
+                print(np.array(median_err))
+                sys.exit(1)
             # print(freq, np.mean(freq))
             hist, bins = np.histogram(freq, bins=10)
             # print(hist)

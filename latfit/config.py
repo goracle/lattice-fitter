@@ -73,7 +73,7 @@ MAX_ITER = 100
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 4
+MAX_RESULTS = 20
 
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
