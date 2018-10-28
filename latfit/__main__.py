@@ -358,6 +358,7 @@ def main():
                 latfit.config.FIT_EXCL = excl
 
                 # do fit
+                START = time.perf_counter()
                 print("Trying fit with excluded times:",
                       latfit.config.FIT_EXCL, "fit:",
                       str(idx+1)+"/"+str(meta.lenprod))
@@ -383,6 +384,9 @@ def main():
                 printerr(result_min.x, param_err)
                 if CALC_PHASE_SHIFT:
                     print_phaseshift(result_min)
+                    END = time.perf_counter()
+                    print("Total elapsed time =", END-START, "seconds")
+
 
                 if cutresult(result_min, min_arr, overfit_arr, param_err):
                     continue
@@ -733,7 +737,7 @@ def getuniqueres(min_arr):
 def dump_fit_range(min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
-    print("starting arg:", avgname)
+    #print("starting arg:", avgname)
     errname = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname
@@ -988,7 +992,11 @@ def exitp(meta, min_arr, overfit_arr, idx):
     return ret
 
 if __name__ == "__main__":
+    START = time.perf_counter()
     main()
+    END = time.perf_counter()
+    if MPIRANK == 0:
+        print("Total elapsed time =", END-START, "seconds")
 
 
 # obsolete

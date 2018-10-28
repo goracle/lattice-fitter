@@ -23,6 +23,7 @@ def make_hist(fname):
         dat = np.array(dat)
         dat = np.real(dat)
         avg, err, freqarr = dat
+        avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
 
     # get file name for pvalue
@@ -87,7 +88,8 @@ def make_hist(fname):
             center = (bins[:-1] + bins[1:]) / 2
             width = 0.7 * (bins[1] - bins[0])
             erronerrmedianstr = str(gvar.gvar(freq_median, sys_err.sdev)).split('(')[1]
-            print('median =', str(gvar.gvar(freq_median, sys_err.val)))
+            print('p-value weighted median =', str(gvar.gvar(freq_median, sys_err.val)))
+            print("p-value weighted mean =", avg[dim])
             plt.ylabel('count')
             plt.title(title_dim)
             xerr = np.array(errlooparr, dtype=np.float)

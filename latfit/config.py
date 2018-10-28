@@ -114,8 +114,8 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
-FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False
+FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
@@ -389,6 +389,7 @@ if EFF_MASS_METHOD < 3:
 # for use with L-BFGS-B
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
 BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
+BINDS = tuple((None,None) for _ in range(DIM))
 # BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
 # fineness of scale to plot (higher is more fine)
@@ -412,7 +413,7 @@ ERROR_BAR_METHOD = 'avgcov'
 # it's probably not a good idea
 
 METHOD = 'Nelder-Mead'
-# METHOD = 'L-BFGS-B'
+METHOD = 'L-BFGS-B'
 
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed
@@ -721,4 +722,4 @@ if FIT_SPACING_CORRECTION:
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
-assert not FIT_SPACING_CORRECTION
+#assert not FIT_SPACING_CORRECTION

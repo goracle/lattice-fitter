@@ -49,14 +49,16 @@ def mkmin(covinv, coords):
                         *START_PARAMS] if SYSTEMATIC_EST else START_PARAMS
     if METHOD not in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
-            res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD, options={'maxiter': 10000,
-                                                       'maxfev': 10000,
-                                                       'xatol': 0.00000001,
-                                                       'fatol': 0.00000001})
+            options = {'maxiter': 10000, 'maxfev': 10000,
+                       'xatol': 0.00000001, 'fatol': 0.00000001}
         else:
-            res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD)
+            options = {}
+        res_min = minimize(chi_sq, start_params, (covinv, coords),
+                           method=METHOD,
+                           options=options)
+        #else:
+        #    res_min = minimize(chi_sq, start_params, (covinv, coords),
+        #                       method=METHOD)
         # options={'disp': True})
         #'maxiter': 10000,
         #'maxfev': 10000})
@@ -65,9 +67,14 @@ def mkmin(covinv, coords):
         # bounds = BINDS
         # options = {'disp': True}
     if METHOD in set(['L-BFGS-B']):
+        if latfit.config.MINTOL:
+            options = {}
+        else:
+            options = {}
         res_min = minimize(chi_sq, start_params, (covinv, coords),
                            method=METHOD, bounds=BINDS,
-                           options={'disp': True})
+                           options=options)
+        
     # print "minimized params = ", res_min.x
     if not JACKKNIFE_FIT:
         print("number of iterations = ", res_min.nit)
