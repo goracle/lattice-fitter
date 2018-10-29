@@ -585,6 +585,10 @@ def toosmallp(meta, excl):
             # allow for very noisy excited states in I=0
             if ISOSPIN != 0 or not GEVP:
                 ret = True
+    #cut on arithmetic sequence
+    if not ret and len(filter_sparse(
+            excl, meta.fitwindow, xstep=meta.xstep)) != len(excl):
+        ret = True
     return ret
 
 def print_phaseshift(result_min):
@@ -624,6 +628,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                     :-1] < PHASE_SHIFT_ERR_CUT):
                 print("warning: phase shift errors on "+\
                         "last state very large")
+                ret = True if ISOSPIN == 2 else ret
             else:
                 print("phase shift errors too large")
                 ret = True
