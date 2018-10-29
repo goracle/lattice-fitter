@@ -308,23 +308,31 @@ def main():
             # update powerset if brute force solution is possible
             prod = meta.length_fit(prod, sampler)
 
-            # now guess as to which time slices look the worst to fit
-            # try the better ones first
-            if not test_success:
-                fit_range_init = str(latfit.config.FIT_EXCL)
-                try:
-                    print("Trying test fit with improved xmax.")
-                    retsingle_save = singlefit(input_f,
-                                               meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
-                    print("Test fit succeeded.")
-                except (NegChisq, RelGammaError, OverflowError, NoConvergence,
-                        BadJackknifeDist, DOFNonPos,
-                        BadChisqJackknife, ZetaError) as _:
-                    print("Test fit failed, "+\
-                          " but in an acceptable way. Continuing.")
-                    fit_range_init = None
-
+            # cut late time points from the fit range
             cut_on_errsize()
+
+            fit_range_init = str(latfit.config.FIT_EXCL)
+            try:
+                print("Trying second test fit.")
+                retsingle_save = singlefit(input_f,
+                                            meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+                print("Test fit succeeded.")
+                test_success = True
+            except (NegChisq, RelGammaError, OverflowError, NoConvergence,
+                    BadJackknifeDist, DOFNonPos,
+                    BadChisqJackknife, ZetaError) as _:
+                print("Test fit failed, "+\
+                        " but in an acceptable way. Continuing.")
+                fit_range_init = None
+            if test_success:
+                result_min, param_err, _, _ = retsingle_save
+                if not cutresult(result_min, min_arr, overfit_arr, param_err):
+                    result = [result_min, list(param_err), list(excl)]
+                    if result_min.fun/result_min.dof >= 1: # don't overfit
+                        min_arr.append(result)
+                    else:
+                        overfit_arr.append(result)
+
 
             augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
             plotdata.coords, plotdata.cov = singlefit.coords_full, \
@@ -365,14 +373,14 @@ def main():
                 print("number of results:", len(min_arr),
                       "number of overfit", len(overfit_arr), "rank:", MPIRANK)
                 assert len(latfit.config.FIT_EXCL) == MULT, "bug"
-                if keyexcl(excl) == fit_range_init:
-                    retsingle = retsingle_save
+                if keyexcl(excl) == fit_range_init: # retsingle_save needs a cut on error size
+                    continue
                 else:
                     try:
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax, meta.xstep)
                     except (NegChisq, RelGammaError, OverflowError,
-                            NoConvergence, np.linalg.linalg.LinAlgError,
+                            NoConvergence,
                             BadJackknifeDist,
                             DOFNonPos, BadChisqJackknife, ZetaError) as _:
                         # skip on any error
