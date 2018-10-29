@@ -340,14 +340,14 @@ def main():
             print("starting loop of max length:"+str(meta.lenprod))
             for idx in range(meta.lenprod):
 
-                # exit the fit loop?
-                if exitp(meta, min_arr, overfit_arr, idx):
-                    break
-
                 # parallelize loop
                 if idx % MPISIZE != MPIRANK:
                     #print("mpi skip")
                     continue
+
+                # exit the fit loop?
+                if exitp(meta, min_arr, overfit_arr, idx):
+                    break
 
                 # get one fit range, check it
                 excl, checked = get_one_fit_range(meta, prod, idx, sorted_fit_ranges, checked)
@@ -401,9 +401,14 @@ def main():
 
             if not meta.skip_loop:
 
-                min_arr = MPI.COMM_WORLD.gather(min_arr, 0)
+                min_arr_send = np.array(min_arr)
+
+                COMM_WORLD.barrier()
+                min_arr = MPI.COMM_WORLD.gather(min_arr_send, 0)
+                COMM_WORLD.barrier()
                 print("results gather complete.")
                 overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
+                COMM_WORLD.barrier()
                 print("overfit gather complete.")
 
             if MPIRANK == 0:
@@ -454,7 +459,6 @@ def main():
         printerr(*get_fitparams_loc(list_fit_params, trials))
         sys.exit(0)
     print("END STDOUT OUTPUT")
-    warn("END STDERR OUTPUT")
 
 def combine_results(result_min, result_min_close,
                     skip_loop, param_err, param_err_close):
@@ -997,11 +1001,7 @@ def exitp(meta, min_arr, overfit_arr, idx):
     return ret
 
 if __name__ == "__main__":
-    START = time.perf_counter()
     main()
-    END = time.perf_counter()
-    if MPIRANK == 0:
-        print("Total elapsed time =", END-START, "seconds")
 
 
 # obsolete
