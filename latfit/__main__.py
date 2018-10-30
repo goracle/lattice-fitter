@@ -186,7 +186,8 @@ class FitRangeMetaData:
     def skip_loop(self):
         """Set the loop condition"""
         self.skiploop = False if self.lenprod > 1 else True
-        if not self.random_fit:
+        self.skiploop = True if NOLOOP else self.skiploop
+        if not self.random_fit and not self.skiploop:
             for excl in EXCL_ORIG:
                 if len(excl) > 1:
                     assert False
@@ -327,7 +328,8 @@ def main():
             if test_success:
                 result_min, param_err, _, _ = retsingle_save
                 if not cutresult(result_min, min_arr, overfit_arr, param_err):
-                    result = [result_min, list(param_err), list(excl)]
+                    result = [result_min, list(param_err),
+                              list(latfit.config.FIT_EXCL)]
                     if result_min.fun/result_min.dof >= 1: # don't overfit
                         min_arr.append(result)
                     else:
@@ -422,9 +424,8 @@ def main():
             if MPIRANK == 0:
 
                 result_min = {}
+                min_arr = loop_result(min_arr, overfit_arr)
                 if not meta.skiploop:
-
-                    min_arr = loop_result(min_arr, overfit_arr)
 
                     result_min = find_mean_and_err(min_arr)
 
