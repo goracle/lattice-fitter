@@ -17,7 +17,7 @@ from latfit.extract.proc_line import proc_line
 from latfit.jackknife_fit import jack_mean_err
 
 from latfit.config import EFF_MASS
-from latfit.config import GEVP
+from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM
@@ -192,7 +192,8 @@ def solve_gevp(c_lhs, c_rhs=None):
     #allowedeliminations(reset=True)
     while any(eigvals < 0):
 
-        break
+        if not DELETE_NEGATIVE_OPERATORS:
+            break
 
         # indexing updates
         assert isinstance(dimremaining, int), "bug"
@@ -554,8 +555,8 @@ if EFF_MASS:
         while 1<2:
             eigvals_mean_t = get_eigvals(cmat_lhs_t_mean, mean_crhs)
             try:
-                pass
-                #checkgteq0(eigvals_mean_t)
+                if DELETE_NEGATIVE_OPERATORS:
+                    checkgteq0(eigvals_mean_t)
                 break
             except AssertionError:
                 print("negative eigenvalues found")
@@ -566,13 +567,14 @@ if EFF_MASS:
 
         #eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
         eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
-        #checkgteq0(eigvals_mean_tp1)
         #eigvals_mean_tp2 = get_eigvals(cmat_lhs_tp2_mean, mean_crhs)
         eigvals_mean_tp2 = [np.nan]*len(eigvals_mean_t)
-        #checkgteq0(eigvals_mean_tp2)
         #eigvals_mean_tp3 = get_eigvals(cmat_lhs_tp3_mean, mean_crhs)
         eigvals_mean_tp3 = [np.nan]*len(eigvals_mean_t)
-        #checkgteq0(eigvals_mean_tp3)
+        if DELETE_NEGATIVE_OPERATORS:
+            checkgteq0(eigvals_mean_tp1)
+            checkgteq0(eigvals_mean_tp2)
+            checkgteq0(eigvals_mean_tp3)
 
         avg_energies = np.array([proc_meff(
             (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
@@ -652,8 +654,8 @@ if EFF_MASS:
                 #print('avg_energies', avg_energies)
 
                 try:
-                    pass
-                    #checkgteq0(eigvals)
+                    if DELETE_NEGATIVE_OPERATORS:
+                        checkgteq0(eigvals)
                 except AssertionError:
                     print("negative eigenvalues found (non-avg)")
                     print('eigvals:', eigvals)

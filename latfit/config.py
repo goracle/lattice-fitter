@@ -52,18 +52,18 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 0
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'T_1_MINUS'
 IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom1'
+IRREP = 'T_1_MINUS'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -97,7 +97,6 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
-#DIM = 4
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -200,6 +199,11 @@ HINTS_ELIM[14] = [(3, 0), (2, 0)]
 HINTS_ELIM[15] = [(3, 0), (2, 0)]
 HINTS_ELIM[15] = [(5, 0), (4, 0), (3, 0)]
 HINTS_ELIM = {}
+if ISOSPIN == 1:
+    HINTS_ELIM[15] = [(4,0), (3,0), (2,1)]
+    HINTS_ELIM[16] = [(4,0), (3,0), (2,0)]
+    HINTS_ELIM[11] = [(4,0)]
+    HINTS_ELIM[12] = [(4,3), (3,2)]
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
@@ -224,9 +228,9 @@ RESCALE = 1.0
 # T0 behavior for GEVP (t/2 or t-1)
 
 T0 = 'TMINUS1' # t-1
-T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
+T0 = 'LOOP' # ceil(t/2)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -362,7 +366,12 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-0
+DECREASE_VAR = 1e-5
+
+# delete operators which plausibly give rise to negative eigenvalues
+DELETE_NEGATIVE_OPERATORS = False
+DELETE_NEGATIVE_OPERATORS = True
+DELETE_NEGATIVE_OPERATORS = False if ISOSPIN != 1 else DELETE_NEGATIVE_OPERATORS
 
 # precision to display, number of decimal places
 

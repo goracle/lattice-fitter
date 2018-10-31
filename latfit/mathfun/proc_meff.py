@@ -150,7 +150,7 @@ elif EFF_MASS_METHOD == 4:
             tstep = -DELTA_T_MATRIX_SUBTRACTION
             tstep2 = -DELTA_T2_MATRIX_SUBTRACTION if\
                 DELTA_E2_AROUND_THE_WORLD is not None else None
-            EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
+        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this
