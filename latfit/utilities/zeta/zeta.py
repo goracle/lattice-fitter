@@ -79,9 +79,12 @@ if CALC_PHASE_SHIFT:
             errstr = subprocess.Popen(arglist,
                                       stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
-        test = 2*np.arcsin(np.sqrt(epipi*epipi/4-PION_MASS**2)/2) < 0
-        test2 = np.sqrt(epipi*epipi/4-PION_MASS**2) < 0
-        test = test2 if FIT_SPACING_CORRECTION else test
+        try:
+            test = epipi*epipi/4-PION_MASS**2 < 0
+        except FloatingPointError:
+            print("floating point error")
+            print("epipi=", epipi)
+            sys.exit(1)
         if test:
             out = float(out)*1j
         else:

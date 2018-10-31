@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -68,7 +68,7 @@ IRREP = 'A_1PLUS_mom000'
 MOMSTR = opc.get_comp_str(IRREP)
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 100
+MAX_ITER = 1000
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
@@ -114,8 +114,8 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
-FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
@@ -221,10 +221,10 @@ RESCALE = 1.0
 
 # T0 behavior for GEVP (t/2 or t-1)
 
+T0 = 'TMINUS1' # t-1
+T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
-T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS1' # t-1
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -360,7 +360,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-4
+DECREASE_VAR = 1e-5
 
 # precision to display, number of decimal places
 

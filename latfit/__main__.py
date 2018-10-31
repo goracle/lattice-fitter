@@ -159,7 +159,7 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
     key = keyexcl(excl)
     ret = None
     if key in checked:
-        print("key checked, continuing")
+        print("key checked, continuing:", key)
         ret = None
     else:
         ret = excl
@@ -347,7 +347,7 @@ def main():
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
-            print("starting loop of max length:"+str(meta.lenprod))
+            print("starting loop of max length:"+str(meta.lenprod), "random fit:", meta.random_fit)
             for idx in range(meta.lenprod):
 
                 # parallelize loop
@@ -883,7 +883,7 @@ def skip_large_errors(result_param, param_err):
     param_err = np.asarray(param_err)
     if result_param.shape:
         for i, j in zip(result_param, param_err):
-            assert j > 0, "negative error found:"+\
+            assert j >= 0, "negative error found:"+\
                 str(result_param)+" "+str(param_err)
             ret = abs(i/j) < 1
     return ret if SKIP_LARGE_ERRORS else False

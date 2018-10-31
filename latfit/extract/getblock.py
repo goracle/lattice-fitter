@@ -192,6 +192,8 @@ def solve_gevp(c_lhs, c_rhs=None):
     #allowedeliminations(reset=True)
     while any(eigvals < 0):
 
+        break
+
         # indexing updates
         assert isinstance(dimremaining, int), "bug"
         assert isinstance(toelim, int), "bug"
@@ -552,7 +554,8 @@ if EFF_MASS:
         while 1<2:
             eigvals_mean_t = get_eigvals(cmat_lhs_t_mean, mean_crhs)
             try:
-                checkgteq0(eigvals_mean_t)
+                pass
+                #checkgteq0(eigvals_mean_t)
                 break
             except AssertionError:
                 print("negative eigenvalues found")
@@ -563,13 +566,13 @@ if EFF_MASS:
 
         #eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
         eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
-        checkgteq0(eigvals_mean_tp1)
+        #checkgteq0(eigvals_mean_tp1)
         #eigvals_mean_tp2 = get_eigvals(cmat_lhs_tp2_mean, mean_crhs)
         eigvals_mean_tp2 = [np.nan]*len(eigvals_mean_t)
-        checkgteq0(eigvals_mean_tp2)
+        #checkgteq0(eigvals_mean_tp2)
         #eigvals_mean_tp3 = get_eigvals(cmat_lhs_tp3_mean, mean_crhs)
         eigvals_mean_tp3 = [np.nan]*len(eigvals_mean_t)
-        checkgteq0(eigvals_mean_tp3)
+        #checkgteq0(eigvals_mean_tp3)
 
         avg_energies = np.array([proc_meff(
             (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
@@ -649,7 +652,8 @@ if EFF_MASS:
                 #print('avg_energies', avg_energies)
 
                 try:
-                    checkgteq0(eigvals)
+                    pass
+                    #checkgteq0(eigvals)
                 except AssertionError:
                     print("negative eigenvalues found (non-avg)")
                     print('eigvals:', eigvals)
