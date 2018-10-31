@@ -315,6 +315,7 @@ def main():
             fit_range_init = str(latfit.config.FIT_EXCL)
             try:
                 print("Trying second test fit.")
+                print("fit excl:", fit_range_init)
                 retsingle_save = singlefit(input_f,
                                             meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
                 print("Test fit succeeded.")
@@ -602,16 +603,29 @@ def toosmallp(meta, excl):
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.xstep)) != len(excl):
         ret = True
+    ret = False if ISOSPIN == 0 else True
     return ret
 
 def print_phaseshift(result_min):
     """Print the phase shift info from a single fit range"""
     for i in range(MULT):
         if CALC_PHASE_SHIFT:
-            print("phase shift of state #",
-                  i, gvar.gvar(
-                      result_min.phase_shift[i],
-                      result_min.phase_shift_err[i]))
+            if np.isreal(result_min.phase_shift[i]):
+                print("phase shift of state #",
+                      i, gvar.gvar(
+                          result_min.phase_shift[i],
+                          result_min.phase_shift_err[i]))
+            else:
+                temperr = result_min.phase_shift_err[i]
+                try:
+                    assert np.isreal(result_min.phase_shift_err[i]),\
+                        "phase shift error is not real"
+                except AssertionError:
+                    temperr = np.imag(result_min.phase_shift_err[i])
+                print("phase shift of state #",
+                      i, gvar.gvar(
+                          np.imag(result_min.phase_shift[i]),
+                          temperr), 'j')
 
 def cutresult(result_min, min_arr, overfit_arr, param_err):
     """Check if result of fit to a
@@ -674,11 +688,12 @@ def find_mean_and_err(min_arr):
                 for i in min_arr], axis=0))
 
             # dump the results to file
-            dump_fit_range(min_arr, avgname,
-                           res_mean, err_check)
+            if ISOSPIN != 0:
+                dump_fit_range(min_arr, avgname,
+                               res_mean, err_check)
 
             # error propagation
-            result_min[name] = np.sqrt(np.sum([
+            result_min[name] = np.sum([
                 jack_mean_err(
                     divbychisq(
                         getattr(
@@ -692,7 +707,21 @@ def find_mean_and_err(min_arr):
                                 j[0],
                                 'pvalue_arr')/weight_sum),
                     nosqrt=True)[1]
-                for i in min_arr for j in min_arr], axis=0))
+                for i in min_arr for j in min_arr], axis=0)
+            try:
+                result_min[name] = np.sqrt(result_min[name])
+            except FloatingPointError:
+                print("floating point error")
+                if hasattr(result_min[name], '__iter__'):
+                    for i, res in enumerate(result_min[name]):
+                        if np.isreal(res):
+                            if res < 0:
+                                result_min[name][i] = np.nan
+                else:
+                    if np.isreal(result_min[name]):
+                        if res < 0:
+                            result_min[name] = np.nan
+                result_min[name] = np.sqrt(result_min[name])
 
             # perform the comparison
             try:
@@ -704,7 +733,14 @@ def find_mean_and_err(min_arr):
                         " error.")
                 print(result_min[name])
                 print(err_check)
-                sys.exit(1)
+                if hasattr(err_check, '__iter__'):
+                    for i, ress in enumerate(zip(
+                            result_min[name], err_check)):
+                        res1, res2 = ress
+                        print(res1, res2, np.allclose(res1,res2, rtol=1e-8))
+                        if not np.allclose(res1, res2, rtol=1e-8):
+                            result_min[name][i] = np.nan
+                            err_check[i] = np.nan
 
         # process this when we find the error name instead
         elif '_arr' in name:

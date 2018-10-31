@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -61,9 +61,9 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'T_1_MINUS'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom1'
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -73,12 +73,12 @@ MAX_ITER = 1000
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 20
+MAX_RESULTS = 5
 
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
-ONLY_SMALL_FIT_RANGES = True
 ONLY_SMALL_FIT_RANGES = False
+ONLY_SMALL_FIT_RANGES = True
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -164,6 +164,8 @@ FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [[], [], [], [9,10,11,12], [9,10,11,12]]
+#FIT_EXCL= [[4.0, 9.0, 10.0], [ 12.0, 13, 14, 15.0, 16.0], [9.0, 13,14, 15.0,16], [9, 10, 11, 12, 13.0, 14.0, 16.0], [9, 10, 11, 12, 13.0, 14.0, 15.0, 16.0]]
 
 # if true, do not loop over fit ranges.
 NOLOOP = True
@@ -360,7 +362,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-5
+DECREASE_VAR = 1e-0
 
 # precision to display, number of decimal places
 

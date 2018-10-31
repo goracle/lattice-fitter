@@ -464,7 +464,11 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     # (redundant prefactor multiplies, but perhaps clearer)
     err = overall_prefactor*(errsloppy/sloppy_prefactor+\
                              errexact*exact_prefactor_inv)
-    err = err if nosqrt else np.sqrt(err)
+    try:
+        err = err if nosqrt else np.sqrt(err)
+        flag = False
+    except FloatingPointError:
+        flag = True
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean
@@ -474,11 +478,15 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
         assert not np.isnan(mean), "mean is nan"
     else:
         assert not any(np.isnan(mean)), "mean is nan"
-    if isinstance(err, numbers.Number):
-        err = float(err)
-        assert not np.isnan(err), "err is nan"
+    if not flag:
+        if isinstance(err, numbers.Number):
+            err = float(err)
+            assert not np.isnan(err), "err is nan"
+        else:
+            assert not any(np.isnan(err)), "err is nan"
     else:
-        assert not any(np.isnan(err)), "err is nan"
+        mean = np.nan
+        err = np.nan
 
     return mean, err
 
