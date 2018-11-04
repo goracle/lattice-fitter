@@ -19,7 +19,7 @@ from latfit.config import FIT
 from latfit.config import START_PARAMS
 from latfit.config import ADD_CONST
 from latfit.config import STYPE
-from latfit.config import FITS
+from latfit.config import FITS, LOGFORM
 from latfit.config import PIONRATIO
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import METHOD
@@ -166,16 +166,23 @@ elif EFF_MASS_METHOD == 4:
         #if any(np.isnan(np.array(corrs, dtype=np.complex)[:2])):
         #    sol = np.nan
         #else:
-        try:
-            sol = FITS['ratio'](corrs, times) if index is None else FITS.f[
-                'ratio'][ADD_CONST_VEC[index]](corrs, times)
-            assert not np.isnan(sol) or any(np.isnan(np.array(
-                corrs, dtype=np.complex))),\
-                "solution to energy from eval is unexpectedly nan."+str(
-                    corrs)
-        except NegLogArgument:
-            errstr = "bad time/op"+\
-                    "combination in fit range. (time, op index)=("+str(times[0])+","+str(index)+")"
+        if not LOGFORM:
+            try:
+                sol = FITS['ratio'](
+                    corrs, times) if index is None else FITS.f[
+                        'ratio'][ADD_CONST_VEC[
+                            index]](corrs, times)
+                assert not np.isnan(sol) or any(np.isnan(np.array(
+                    corrs, dtype=np.complex))),\
+                    "solution to energy from eval is unexpectedly nan."+str(
+                        corrs)
+            except NegLogArgument:
+                sol = np.nan
+        else:
+            sol = corrs[0]
+        if np.isnan(sol):
+            errstr = "bad time/op combination in fit range."+\
+                " (time, op index)=("+str(times[0])+","+str(index)+")"
             if FIT:
                 if not(times and times[0] in latfit.config.FIT_EXCL[index]):
                     latfit.config.FIT_EXCL[index].append(times[0])
@@ -231,6 +238,7 @@ elif EFF_MASS_METHOD == 4:
         if test and not PIONRATIO:
             ratioval = FITS.f['ratio'] if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
+            ratioval = corrs[0] if LOGFORM else ratioval
             sol = np.array(sol)
             tryfun = (EFF_MASS_TOMIN[index](
                 -1*sol, times[0], ratioval) - fun)
@@ -242,6 +250,7 @@ elif EFF_MASS_METHOD == 4:
                     tryfun)
             else:
                 print("***ERROR***\nnegative energy found:", sol, times)
+                print(corrs[0], fun, tryfun)
                 print(EFF_MASS_TOMIN[index](sol, times[0], ratioval))
                 print(EFF_MASS_TOMIN[index](-sol, times[0], ratioval))
                 sys.exit(1)

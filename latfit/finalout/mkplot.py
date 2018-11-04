@@ -305,7 +305,13 @@ def get_coord(coords, cov, error2=None):
         if errstate == 'raise':
             np.seterr(invalid='warn')
         arg = testcoordarg(res, ycoord)
-        root_s_var.append(np.sqrt(arg))
+        try:
+            root_s_var.append(np.sqrt(arg))
+        except ZeroDivisionError:
+            print('zero division error')
+            print(arg)
+            print(i, j, k)
+            root_s_var.append(np.array([np.nan]*len(arg)))
         np.seterr(errstate)
     for i, xc1 in enumerate(xcoord):
         print(xc1, "E(lattice units) =", var[i])

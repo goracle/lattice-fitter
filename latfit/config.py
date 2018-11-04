@@ -1,7 +1,7 @@
 """Config for lattice fitter."""
 import sys
 import re
-from math import sqrt, pi
+from math import sqrt, pi, exp
 from collections import namedtuple
 from copy import copy
 import numpy as np
@@ -163,18 +163,20 @@ FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [[], [], [], [9,10,11,12], [9,10,11,12]]
-#FIT_EXCL= [[4.0, 9.0, 10.0], [ 12.0, 13, 14, 15.0, 16.0], [9.0, 13,14, 15.0,16], [9, 10, 11, 12, 13.0, 14.0, 16.0], [9, 10, 11, 12, 13.0, 14.0, 15.0, 16.0]]
 
 # if true, do not loop over fit ranges.
-NOLOOP = True
 NOLOOP = False
+NOLOOP = True
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
 # so it's usually safer to start with this option turned off
 USE_LATE_TIMES = False
 USE_LATE_TIMES = True
+
+# log form (take log of GEVP matrices)
+LOGFORM = True
+LOGFORM = False
 
 # hints to eliminate
 HINTS_ELIM = {}
@@ -204,6 +206,7 @@ if ISOSPIN == 1:
     HINTS_ELIM[16] = [(4,0), (3,0), (2,0)]
     HINTS_ELIM[11] = [(4,0)]
     HINTS_ELIM[12] = [(4,3), (3,2)]
+HINTS_ELIM = {}
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
@@ -423,8 +426,8 @@ ERROR_BAR_METHOD = 'avgcov'
 # other internals will need to be edited if you change this
 # it's probably not a good idea
 
-METHOD = 'Nelder-Mead'
 METHOD = 'L-BFGS-B'
+METHOD = 'Nelder-Mead'
 
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed

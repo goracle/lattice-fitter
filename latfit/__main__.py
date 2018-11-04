@@ -950,14 +950,6 @@ def dof_check(lenfit, dimops, excl):
         ret = False
     return ret
 
-# dof check (broken)
-# if not dof_check(lenfit, len(START_PARAMS), excl):
-#    print("dof < 1 for excluded times:", excl,
-#          "\nSkipping:", str(idx)+"/"+str(lenprod))
-#    continue
-
-
-
 def powerset(iterable):
     """powerset([1, 2, 3]) -->
     () (1, ) (2, ) (3, ) (1, 2) (1, 3) (2, 3) (1, 2, 3)"""

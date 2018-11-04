@@ -20,7 +20,7 @@ from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import NORMS, GEVP_DEBUG, USE_LATE_TIMES
-from latfit.config import BINNUM
+from latfit.config import BINNUM, LOGFORM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
@@ -102,17 +102,66 @@ def removerowcol(cmat, idx):
     """Delete the idx'th row and column"""
     return np.delete(np.delete(cmat, idx, axis=0), idx, axis=1)
 
+def is_pos_semidef(x):
+    return np.all(np.linalg.eigvals(x) >= 0)
+
+def log_matrix(cmat, check=False):
+    if check:
+        try:
+            assert is_pos_semidef(cmat), \
+                "input matrix is not positive semi-definite."
+        except AssertionError:
+            print(cmat)
+            print("matrix is not positive semi-definite.")
+            sys.exit(1)
+    ret = scipy.linalg.logm(cmat)
+    assert np.allclose(cmat, scipy.linalg.expm(ret), rtol=1e-8)
+    return ret
+
 def calleig(c_lhs, c_rhs=None):
     """Actual call to scipy.linalg.eig"""
+    flag = False
+    if c_rhs is not None and LOGFORM:
+        rhs = log_matrix(c_rhs)
+        lhs = log_matrix(c_lhs)
+        c_lhs = rhs-lhs
+        assert np.allclose(c_lhs+lhs, rhs, rtol=1e-12)
+        c_rhs = None
+        flag = True
+    elif LOGFORM:
+        c_lhs = -1*log_matrix(c_lhs, check=True)
+        flag = True
+    if LOGFORM:
+        assert is_pos_semidef(c_lhs), "not positive semi-definite."
+        c_lhs = enforce_hermiticity(c_lhs)
+        assert is_pos_semidef(c_lhs), "not positive semi-definite."
     eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                            overwrite_b=False, check_finite=True)
+                                        overwrite_b=False, check_finite=True)
+    if flag:
+        if all(np.imag(eigenvals) < 1e-8):
+            pass
+        else:
+            print("non-negligible imaginary eigenvalues found")
+            print("eigenvals:")
+            print(eigenvals)
+            print("log lhs:")
+            print(lhs)
+            print("log rhs:")
+            print(rhs)
+            sys.exit(0)
+        eigenvals = np.real(eigenvals)
+        try:
+            assert all(eigenvals >= 0), "uh-oh"
+        except AssertionError:
+            print(eigenvals)
+            sys.exit(1)
     eigenvals = sortevals(eigenvals)
     return eigenvals, evecs
 
 def sortevals(evals):
     """Sort eigenvalues in order of increasing energy"""
     evals = list(evals)
-    evals = np.array(sorted(evals, reverse=True))
+    evals = np.array(sorted(evals, reverse=False if LOGFORM else True))
     return evals
 
 def makeneg(val):
@@ -479,6 +528,15 @@ def propagate_nans(blk):
         blk[config] += nandim
     return blk
 
+def callprocmeff(eigvals, timeij, delta_t):
+    """Call processing function for effective mass"""
+    dimops = len(eigvals[0])
+    toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
+    energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
+    energies =  energies/delta_t if not LOGFORM else energies
+    #avg_energies = eigvals_mean_t/delta_t
+    return energies
+
 
 if EFF_MASS:
     def getblock_gevp(file_tup, delta_t, timeij=None,
@@ -576,10 +634,8 @@ if EFF_MASS:
             checkgteq0(eigvals_mean_tp2)
             checkgteq0(eigvals_mean_tp3)
 
-        avg_energies = np.array([proc_meff(
-            (1/eigvals_mean_t[op], 1, eigvals_mean_tp2[op],
-             eigvals_mean_tp3[op]), index=op, time_arr=timeij)
-                         for op in range(dimops)])/delta_t
+        avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp2,
+                                     eigvals_mean_tp3], timeij, delta_t)
 
         return avg_energies, eigvals_mean_t
 
@@ -695,18 +751,11 @@ if EFF_MASS:
             
             # process the eigenvalues
             
+            energies = callprocmeff([eigvals, eigvals3, eigvals4],
+                                    timeij, delta_t)
             if solve_gevp.mean is None:
-                result = variance_reduction(np.array([proc_meff(
-                    (1/eigvals[op], 1,
-                     eigvals3[op], eigvals4[op]),
-                    index=op, time_arr=timeij) for op in range(
-                        dimops)])/delta_t, avg_energies, 1/decrease_var)
-            else:
-                result = np.array([proc_meff((1/eigvals[op],
-                                              1, eigvals3[op],
-                                              eigvals4[op]),
-                                             index=op, time_arr=timeij)
-                                   for op in range(dimops)])/delta_t
+                result = variance_reduction(energies,
+                                            avg_energies, 1/decrease_var)
             if num == 0:
                 check_variance = []
                 retblk = deque()
