@@ -206,10 +206,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 result_min_jack.fun, result_min.dof)
 
             # print results for this config
-            #print("config", config_num, ":", result_min_jack.x,
-            #      "chisq/dof=", result_min_jack.fun/result_min.dof,
-            #      "p-value=", result_min.pvalue[config_num],
-            #      'dof=', result_min.dof)
+            print("config", config_num, ":", result_min_jack.x,
+                  "chisq/dof=", result_min_jack.fun/result_min.dof,
+                  "p-value=", result_min.pvalue[config_num],
+                  'dof=', result_min.dof)
 
             assert not np.isnan(result_min.pvalue[
                 config_num]), "pvalue is nan"

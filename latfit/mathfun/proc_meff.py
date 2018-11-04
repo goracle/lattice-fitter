@@ -192,10 +192,10 @@ elif EFF_MASS_METHOD == 4:
                     print('operator index=', index)
                     print("times=", times)
                     proc_meff4.badtimes.append(times[0])
-            sol = np.nan
+
         index = 0 if index is None else index
         try:
-            if ORIGL > 1:
+            if ORIGL > 2:
                 assert None, "This method is not supported and is based on flawed assumptions."
                 sol = minimize(EFF_MASS_TOMIN[index], START_PARAMS,
                                args=(times[0], sol),

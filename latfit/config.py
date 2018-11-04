@@ -246,7 +246,7 @@ USE_FIXED_MASS = True
 
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
-    START_PARAMS = [.5]
+    START_PARAMS = [.5, .5]
     if PIONRATIO:
         START_PARAMS = [.05, 0.0005]
 else:
@@ -561,7 +561,8 @@ ORIGL = len(START_PARAMS)
 if EFF_MASS:
 
     # check len of start params
-    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO:
+    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO and not (
+            ORIGL == 2 and EFF_MASS_METHOD == 4):
         print("***ERROR***")
         print("dimension of GEVP matrix and start params do not match")
         print("(or for non-gevp fits, the start_param len>1)")
@@ -569,11 +570,21 @@ if EFF_MASS:
 
     # select fit function
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
-        if RESCALE != 1.0:
-            def prefit_func(_, trial_params):
-                """eff mass method 1, fit func, single const fit
-                """
-                return trial_params
+        if RESCALE == 1.0:
+            if len(START_PARAMS) == 1:
+                def prefit_func(_, trial_params):
+                    """eff mass method 1, fit func, single const fit
+                    """
+                    return trial_params
+            else:
+                START_PARAMS.append(.1)
+                assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
+                def prefit_func(ctime, trial_params):
+                    """eff mass method 1, fit func, single const fit
+                    """
+                    return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
+                        trial_params[-1]-trial_params[2*i])*ctime)
+                            for i in range(int((len(START_PARAMS)-1)/2))]
         else:
             if len(START_PARAMS) == 1:
                 def prefit_func(_, trial_params):
@@ -697,7 +708,12 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
     " function exists for pion ratio method."
 assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 " not supported for pion ratio method."
-START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
+if len(START_PARAMS) % 2 == 1:
+    START_PARAMS = list(START_PARAMS[:-1])*MULT
+    START_PARAMS.append(.1)
+    START_PARAMS = START_PARAMS*2**NUM_PENCILS
+else:
+    START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 UP.tstep = TSTEP # revert back
 # MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
