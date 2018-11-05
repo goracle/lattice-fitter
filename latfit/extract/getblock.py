@@ -150,19 +150,22 @@ def calleig(c_lhs, c_rhs=None):
             print(rhs)
             sys.exit(0)
         eigenvals = np.real(eigenvals)
-        try:
-            assert all(eigenvals >= 0), "uh-oh"
-        except AssertionError:
-            print(eigenvals)
-            sys.exit(1)
     eigenvals = sortevals(eigenvals)
     return eigenvals, evecs
 
 def sortevals(evals):
     """Sort eigenvalues in order of increasing energy"""
     evals = list(evals)
-    evals = np.array(sorted(evals, reverse=False if LOGFORM else True))
-    return evals
+    ret = evals
+    ind = []
+    for i, val in enumerate(evals):
+        if val < 0 and LOGFORM:
+            ret[i] += np.inf
+            ind.append(i)
+    ret = np.array(sorted(ret, reverse=False if LOGFORM else True))
+    for i, _ in enumerate(ind):
+        ret[-(i+1)] = -1
+    return ret
 
 def makeneg(val):
     """make a value negative"""

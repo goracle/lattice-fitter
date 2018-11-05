@@ -180,6 +180,7 @@ elif EFF_MASS_METHOD == 4:
                 sol = np.nan
         else:
             sol = corrs[0]
+            sol = np.nan if sol < 0 else sol
         if np.isnan(sol):
             errstr = "bad time/op combination in fit range."+\
                 " (time, op index)=("+str(times[0])+","+str(index)+")"
