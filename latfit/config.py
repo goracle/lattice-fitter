@@ -63,7 +63,7 @@ IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'T_1_MINUS'
+IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -231,9 +231,9 @@ RESCALE = 1.0
 # T0 behavior for GEVP (t/2 or t-1)
 
 T0 = 'TMINUS1' # t-1
-T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
+T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
