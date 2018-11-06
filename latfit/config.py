@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -67,18 +67,18 @@ IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
+# only loop over fit ranges with one or two time slices
+# (useful for error optimization after a full fit range loop)
+ONLY_SMALL_FIT_RANGES = True
+ONLY_SMALL_FIT_RANGES = False
+
 # how many loop iterations until we start using random samples
-MAX_ITER = 1000
+MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
 MAX_RESULTS = 5
-
-# only loop over fit ranges with one or two time slices
-# (useful for error optimization after a full fit range loop)
-ONLY_SMALL_FIT_RANGES = False
-ONLY_SMALL_FIT_RANGES = True
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -165,8 +165,8 @@ FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 # if true, do not loop over fit ranges.
-NOLOOP = False
 NOLOOP = True
+NOLOOP = False
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -206,7 +206,6 @@ if ISOSPIN == 1:
     HINTS_ELIM[16] = [(4,0), (3,0), (2,0)]
     HINTS_ELIM[11] = [(4,0)]
     HINTS_ELIM[12] = [(4,3), (3,2)]
-HINTS_ELIM = {}
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
@@ -246,7 +245,7 @@ USE_FIXED_MASS = True
 
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
-    START_PARAMS = [.5, .5]
+    START_PARAMS = [.5, .2]
     if PIONRATIO:
         START_PARAMS = [.05, 0.0005]
 else:
@@ -254,7 +253,7 @@ else:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
-
+DELTA_ENERGY_GUESS = 0.2
 
 
 # modify the configs used and bin
@@ -403,7 +402,10 @@ if EFF_MASS_METHOD < 3:
 # for use with L-BFGS-B
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
 BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
-BINDS = tuple((None,None) for _ in range(DIM))
+BINDS = [[-1, 1] for _ in range(2*DIM+1)]
+BINDS = [tuple(bind) for bind in BINDS]
+BINDS = tuple(BINDS)
+
 # BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
 # fineness of scale to plot (higher is more fine)
@@ -426,8 +428,8 @@ ERROR_BAR_METHOD = 'avgcov'
 # other internals will need to be edited if you change this
 # it's probably not a good idea
 
-METHOD = 'L-BFGS-B'
 METHOD = 'Nelder-Mead'
+METHOD = 'L-BFGS-B'
 
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed
@@ -577,7 +579,7 @@ if EFF_MASS:
                     """
                     return trial_params
             else:
-                START_PARAMS.append(.1)
+                START_PARAMS.append(DELTA_ENERGY_GUESS)
                 assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
                 def prefit_func(ctime, trial_params):
                     """eff mass method 1, fit func, single const fit
@@ -710,7 +712,7 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 " not supported for pion ratio method."
 if len(START_PARAMS) % 2 == 1:
     START_PARAMS = list(START_PARAMS[:-1])*MULT
-    START_PARAMS.append(.1)
+    START_PARAMS.append(DELTA_ENERGY_GUESS)
     START_PARAMS = START_PARAMS*2**NUM_PENCILS
 else:
     START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS

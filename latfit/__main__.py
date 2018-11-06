@@ -363,6 +363,7 @@ def main():
                 # get one fit range, check it
                 excl, checked = get_one_fit_range(meta, prod, idx, sorted_fit_ranges, checked)
                 if excl is None or toosmallp(meta, excl):
+                    print('excl:', excl, 'is too small')
                     continue
 
                 # update global info about excluded points
@@ -583,8 +584,8 @@ def toosmallp(meta, excl):
     ret = False
     # each energy should be included
     if max([len(i) for i in excl]) == meta.fitwindow[1]-meta.fitwindow[0]+meta.xstep:
-        #print("skipped all the data points for a GEVP dim, "+\
-        #        "so continuing.")
+        print("skipped all the data points for a GEVP dim, "+\
+                "so continuing.")
         ret = True
 
     # each fit curve should be to more than one data point
@@ -595,15 +596,16 @@ def toosmallp(meta, excl):
     if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.xstep > 0 and\
         not ONLY_SMALL_FIT_RANGES:
         if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
-            #print("warning: only two data points in fit curve")
+            print("warning: only two data points in fit curve")
             # allow for very noisy excited states in I=0
             if ISOSPIN != 0 or not GEVP:
                 ret = True
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.xstep)) != len(excl):
+        print("not an arithmetic sequence")
         ret = True
-    ret = False if ISOSPIN == 0 else True
+    ret = False if ISOSPIN == 0 else ret
     return ret
 
 def print_phaseshift(result_min):

@@ -284,7 +284,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute phase shift and error in phase shift
         if CALC_PHASE_SHIFT:
             phase_shift_data, scattering_length_data = phase_shift_scatter_len_avg(
-                min_arr, result_min.phase_shift)
+                min_arr, result_min.phase_shift, params)
 
             result_min =  unpack_min_data(
                 result_min, phase_shift_data, scattering_length_data)
@@ -355,7 +355,16 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
     return result_min
 
 
-def phase_shift_scatter_len_avg(min_arr, phase_shift):
+def getenergies(params, arr):
+    """Get the energies from an array
+    (array may contain other parameters)
+    """
+    arr = np.asarray(arr)
+    if len(arr) != params.dimops:
+        ret = arr[0::2][:-1]
+    return ret
+
+def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
     """Average the phase shift results, calc scattering length"""
     if not GEVP:
         try:
@@ -365,6 +374,7 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift):
                 min_arr = min_arr[:, 0]
             except IndexError:
                 sys.exit(1)
+    energies = np.array([getenergies(i, params) for i in min_arr])
 
     # get rid of configs were phase shift calculation failed
     # (good for debug only)
@@ -378,7 +388,7 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift):
         # calculate scattering length via energy, phase shift
         scattering_length = -1.0*np.tan(
             phase_shift)/np.sqrt(
-                (min_arr**2/4-PION_MASS**2).astype(complex))
+                (energies**2/4-PION_MASS**2).astype(complex))
 
         scattering_length_arr = np.array(scattering_length)
         phase_shift_arr = np.array(phase_shift)
@@ -580,6 +590,10 @@ def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
     try:
         if params.dimops > 1:
+            if params.dimops != len(epipi_arr):
+                # slice away the systematic error estimates
+                # (could be more general?)
+                epipi_arr = getenergies(params, epipi_arr)
             retlist = [zeta(epipi) for epipi in epipi_arr]
         else:
             retlist = zeta(epipi_arr)

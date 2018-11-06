@@ -71,9 +71,17 @@ def mkmin(covinv, coords):
             options = {}
         else:
             options = {}
-        res_min = minimize(chi_sq, start_params, (covinv, coords),
-                           method=METHOD, bounds=BINDS,
-                           options=options)
+        try:
+            res_min = minimize(chi_sq, start_params, (covinv, coords),
+                               method=METHOD, bounds=BINDS,
+                               options=options)
+        except FloatingPointError:
+            print('floating point error')
+            print('covinv:')
+            print(covinv)
+            print('coords')
+            print(coords)
+            sys.exit(1)
         
     # print "minimized params = ", res_min.x
     if not JACKKNIFE_FIT:
