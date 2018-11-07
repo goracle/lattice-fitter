@@ -165,8 +165,8 @@ WRITEBLOCK = []
 WRITEBLOCK = ['pioncorrChk_mom000']
 WRITEBLOCK = fill_write_block(FNDEF)
 # only write the single particle correlators
-WRITE_INDIVIDUAL = True
 WRITE_INDIVIDUAL = False
+WRITE_INDIVIDUAL = True
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 
 # debug rows/columns slicing

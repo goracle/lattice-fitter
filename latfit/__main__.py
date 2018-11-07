@@ -31,7 +31,7 @@ from latfit.singlefit import singlefit
 import latfit.singlefit
 import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, NOLOOP
-from latfit.config import FIT
+from latfit.config import FIT, METHOD
 from latfit.config import ISOSPIN, MOMSTR
 from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
@@ -310,16 +310,17 @@ def main():
             prod = meta.length_fit(prod, sampler)
 
             # cut late time points from the fit range
-            cut_on_errsize()
+            samerange = cut_on_errsize()
 
             fit_range_init = str(latfit.config.FIT_EXCL)
             try:
-                print("Trying second test fit.")
-                print("fit excl:", fit_range_init)
-                retsingle_save = singlefit(input_f,
-                                            meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
-                print("Test fit succeeded.")
-                test_success = True
+                if not samerange:
+                    print("Trying second test fit.")
+                    print("fit excl:", fit_range_init)
+                    retsingle_save = singlefit(input_f,
+                                               meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+                    print("Test fit succeeded.")
+                    test_success = True
             except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                     BadJackknifeDist, DOFNonPos,
                     BadChisqJackknife, ZetaError) as _:
@@ -438,10 +439,11 @@ def main():
                     print("fit excluded points (indices):",
                           latfit.config.FIT_EXCL)
 
-                if not (meta.skiploop and latfit.config.MINTOL):
-                    latfit.config.MINTOL = True
-                    retsingle = singlefit(input_f, meta.fitwindow,
-                                          meta.xmin, meta.xmax, meta.xstep)
+                if not (meta.skiploop and latfit.config.MINTOL)\
+                   and METHOD == 'Nelder-Mead':
+                        latfit.config.MINTOL = True
+                        retsingle = singlefit(input_f, meta.fitwindow,
+                                              meta.xmin, meta.xmax, meta.xstep)
                 else:
                     retsingle = retsingle_save
                 result_min_close, param_err_close, \
@@ -456,8 +458,11 @@ def main():
                 mkplot(plotdata, input_f, result_min, param_err, meta.fitwindow)
         else:
             if MPIRANK == 0:
-                retsingle = singlefit(input_f, meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
-                plotdata.coords, plotdata.cov = retsingle
+                if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
+                    retsingle = singlefit(input_f, meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+                    plotdata.coords, plotdata.cov = retsingle
+                else:
+                    plotdata.coords, plotdata.cov = retsingle_save
                 mkplot(plotdata, input_f)
     else:
         list_fit_params = []
@@ -862,6 +867,7 @@ def cut_on_errsize():
     coords = singlefit.coords_full
     assert singlefit.error2 is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(err.shape)+" "+str(coords.shape)
+    start = str(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
         if MULT > 1:
@@ -881,6 +887,11 @@ def cut_on_errsize():
                 latfit.config.FIT_EXCL[0].append(excl_add)
                 latfit.config.FIT_EXCL[0] = list(set(
                     latfit.config.FIT_EXCL[0]))
+    if start == str(latfit.config.FIT_EXCL):
+        ret = True
+    else:
+        ret = False
+    return ret
 
 def closest_fit_to_avg(result_min_avg, min_arr):
     """Find closest fit to average fit

@@ -23,7 +23,7 @@ from latfit.config import XLABEL
 from latfit.config import YLABEL
 from latfit.config import UNCORR
 from latfit.config import FIT
-from latfit.config import METHOD
+from latfit.config import METHOD, DECREASE_VAR
 from latfit.config import BINDS
 from latfit.config import START_PARAMS
 from latfit.config import NOLOOP
@@ -202,8 +202,8 @@ def get_dimops(cov, result_min, coords):
     coords = np.array(coords)
     if FIT:
         dimops_chk = len(fit_func(
-            coords[0][0], result_min.x)) if not isinstance(fit_func(
-                coords[0][0], result_min.x), Number) else 1
+            coords[0][0], START_PARAMS)) if not isinstance(fit_func(
+                coords[0][0], START_PARAMS), Number) else 1
         if dimops != dimops_chk:
             print("***ERROR***")
             print("Fit function length does not match cov. mat.")
@@ -374,11 +374,16 @@ def print_messages(result_min, param_err, param_chisq):
             result_min.x, separator=', '))
         print("Error in params :", np.array2string(np.array(param_err),
                                                    separator=', '))
+    result_min.systematic = gvar.gvar(result_min.systematic,
+                                      result_min.systematic_err)
+    print("systematics:", np.array2string(result_min.systematic,
+                                          separator=', '))
     chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
     print("chi^2 minimized = ", chisq_str)
     print("degrees of freedom = ", param_chisq.dof)
+    print("epsilon (inflation/deflation of GEVP parameter)", DECREASE_VAR)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
        JACKKNIFE == 'YES':
         print("avg p-value = ", gvar.gvar(result_min.pvalue,
@@ -507,6 +512,17 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
         plt.errorbar(xcoord, ycoord, yerr=error2,
                      linestyle='None', ms=3.75, marker='o')
 
+def interleave_energies_systematic(result_min):
+    """Combine the energies and systematic parameters for final result"""
+    print(result_min.x, result_min.systematic)
+    syst = [i.val for i in result_min.systematic]
+    ret = np.zeros(len(result_min.x)+len(syst))
+    if syst:
+        ret[0::2] = [*result_min.x, syst[-1]]
+        ret[1::2] = syst[:-1]
+    else:
+        ret = result_min.x
+    return ret
 
 def plot_fit(xcoord, result_min, dimops):
     """Plot fit function
@@ -520,15 +536,16 @@ def plot_fit(xcoord, result_min, dimops):
     else:
         pass
     xfit = get_xfit(dimops, xcoord)
+    min_params = interleave_energies_systematic(result_min)
     for curve_num in range(dimops):
         # result_min.x is is the array of minimized fit params
         if dimops > 1:
             yfit = np.array([
-                fit_func(xfit[curve_num][i], result_min.x)[
+                fit_func(xfit[curve_num][i], min_params)[
                     curve_num] for i in range(len(xfit[curve_num]))])
         else:
             yfit = np.array([
-                fit_func(xfit[curve_num][i], result_min.x)
+                fit_func(xfit[curve_num][i], min_params)
                 for i in range(len(xfit[curve_num]))])
         if np.nan in yfit:
             continue

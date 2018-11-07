@@ -143,11 +143,15 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         coords_jack = np.copy(coords)
 
         # storage for fit by fit optimized fit params
-        min_arr = np.zeros((params.num_configs, len(START_PARAMS)))
+        min_arr = np.zeros((params.num_configs, len(START_PARAMS)
+                            if not GEVP else params.dimops))
 
         # storage for fit by fit chi^2
         chisq_min_arr = np.zeros(params.num_configs)
 
+        # storage for systematic errors
+        result_min.systematic_arr = np.zeros((params.num_configs, len(
+            START_PARAMS)-params.dimops*(1 if GEVP else 0)))
 
         # fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
@@ -198,18 +202,21 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store the result
             min_arr[config_num] = getenergies(params, result_min_jack.x)
+            result_min.systematic_arr[config_num] = getsystematic(
+                params, result_min_jack.x)
 
             # compute phase shift, if necessary
             if CALC_PHASE_SHIFT:
                 result_min.phase_shift[config_num] = phase_shift_jk(
-                    params, result_min_jack.x)
+                    params, min_arr[config_num])
 
             # compute p value for this fit
             result_min.pvalue[config_num] = 1 - stats.chi2.cdf(
                 result_min_jack.fun, result_min.dof)
 
             # print results for this config
-            print("config", config_num, ":", result_min_jack.x,
+            print("config", config_num, ":", min_arr[config_num],
+                  result_min.systematic_arr[config_num][-1],
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num],
                   'dof=', result_min.dof)
@@ -279,6 +286,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the mean, error on the params
         result_min.x, param_err = jack_mean_err(min_arr)
         result_min.x_err = np.array(param_err)
+
+        # compute the systematics and errors
+        result_min.systematic, result_min.systematic_err =\
+            jack_mean_err(result_min.systematic_arr)
 
         # average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
@@ -357,6 +368,14 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
         result_min.scattering_length_arr = scattering_length_data
     return result_min
 
+def getsystematic(params, arr):
+    """Get the fit parameters which are not the energies"""
+    arr = np.asarray(arr)
+    if len(arr) != params.dimops:
+        ret = list(arr[1::2])
+        ret.append(arr[-1])
+        ret = np.array(ret)
+    return ret
 
 def getenergies(params, arr):
     """Get the energies from an array
@@ -365,6 +384,8 @@ def getenergies(params, arr):
     arr = np.asarray(arr)
     if len(arr) != params.dimops:
         ret = arr[0::2][:-1]
+    else:
+        ret = arr
     return ret
 
 def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
@@ -377,7 +398,6 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
                 min_arr = min_arr[:, 0]
             except IndexError:
                 sys.exit(1)
-    energies = np.array([getenergies(params, i) for i in min_arr])
 
     # get rid of configs were phase shift calculation failed
     # (good for debug only)
@@ -391,7 +411,7 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
         # calculate scattering length via energy, phase shift
         scattering_length = -1.0*np.tan(
             phase_shift)/np.sqrt(
-                (energies**2/4-PION_MASS**2).astype(complex))
+                (min_arr**2/4-PION_MASS**2).astype(complex))
 
         scattering_length_arr = np.array(scattering_length)
         phase_shift_arr = np.array(phase_shift)
@@ -593,10 +613,6 @@ def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
     try:
         if params.dimops > 1:
-            if params.dimops != len(epipi_arr):
-                # slice away the systematic error estimates
-                # (could be more general?)
-                epipi_arr = getenergies(params, epipi_arr)
             retlist = [zeta(epipi) for epipi in epipi_arr]
         else:
             retlist = zeta(epipi_arr)

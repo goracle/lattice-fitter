@@ -163,10 +163,11 @@ FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 
 # if true, do not loop over fit ranges.
-NOLOOP = True
 NOLOOP = False
+NOLOOP = True
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -253,7 +254,7 @@ else:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
-DELTA_ENERGY_GUESS = 0.2
+SYS_ENERGY_GUESS = 1.2
 
 
 # modify the configs used and bin
@@ -352,15 +353,15 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # phase shift error cut, absolute, in degrees.
 # if the error is bigger than this, skip this fit range
-PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN != 0 else np.inf
+PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
 
 # skip fit range if parameter (energy) errors greater than 100%
 SKIP_LARGE_ERRORS = False
-SKIP_LARGE_ERRORS = True if ISOSPIN != 0 else SKIP_LARGE_ERRORS
+SKIP_LARGE_ERRORS = True if ISOSPIN == 2 else SKIP_LARGE_ERRORS
 
 # box plot (for effective mass tolerance display)?
-BOX_PLOT = False
 BOX_PLOT = True
+BOX_PLOT = False if ISOSPIN == 1 else BOX_PLOT
 
 # dispersive lines
 PLOT_DISPERSIVE = True
@@ -368,7 +369,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
-DECREASE_VAR = 1e-5
+DECREASE_VAR = 1e-4
 
 # delete operators which plausibly give rise to negative eigenvalues
 DELETE_NEGATIVE_OPERATORS = False
@@ -402,8 +403,11 @@ if EFF_MASS_METHOD < 3:
 # for use with L-BFGS-B
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
 BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
-BINDS = [[-1, 1] for _ in range(2*DIM+1)]
-BINDS[-1] = [0, 2]
+BINDS = [[0, 2] for _ in range(2*DIM+1)]
+# try to set bounds for the systematic error
+BINDS[1::2] = [[-1, 1] for _ in enumerate(BINDS[1::2])]
+BINDS = [[None, None] for _ in range(ORIGL*DIM+(
+    1 if SYS_ENERGY_GUESS is not None else 0))]
 BINDS = [tuple(bind) for bind in BINDS]
 BINDS = tuple(BINDS)
 
@@ -580,7 +584,7 @@ if EFF_MASS:
                     """
                     return trial_params
             else:
-                START_PARAMS.append(DELTA_ENERGY_GUESS)
+                START_PARAMS.append(SYS_ENERGY_GUESS)
                 assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
                 def prefit_func(ctime, trial_params):
                     """eff mass method 1, fit func, single const fit
@@ -713,7 +717,7 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 " not supported for pion ratio method."
 if len(START_PARAMS) % 2 == 1:
     START_PARAMS = list(START_PARAMS[:-1])*MULT
-    START_PARAMS.append(DELTA_ENERGY_GUESS)
+    START_PARAMS.append(SYS_ENERGY_GUESS)
     START_PARAMS = START_PARAMS*2**NUM_PENCILS
 else:
     START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
