@@ -52,7 +52,7 @@ if CALC_PHASE_SHIFT:
             else:
                 gamma = epipi/sqrt(
                     epipi**2-4*np.sin(np.pi/L_BOX)**2*np.dot(comp, comp))
-        except ValueError:
+        except (ValueError, FloatingPointError):
             print("zeta.py, bad gamma value for epipi=", epipi)
             print("center of mass momentum=", comp)
             print("Length of box=", L_BOX)
