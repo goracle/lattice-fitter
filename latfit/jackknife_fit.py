@@ -45,6 +45,9 @@ class ResultMin:
         self.x_err = None
         self.fun = None
         self.status = None
+        self.systematics = None
+        self.systematics_arr = None
+        self.systematics_err = None
         self.pvalue = None
         self.pvalue_err = None
         self.pvalue_arr = None
@@ -194,7 +197,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                      if FIT_SPACING_CORRECTION else 0)
 
             # store the result
-            min_arr[config_num] = result_min_jack.x
+            min_arr[config_num] = getenergies(params, result_min_jack.x)
 
             # compute phase shift, if necessary
             if CALC_PHASE_SHIFT:
@@ -374,7 +377,7 @@ def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
                 min_arr = min_arr[:, 0]
             except IndexError:
                 sys.exit(1)
-    energies = np.array([getenergies(i, params) for i in min_arr])
+    energies = np.array([getenergies(params, i) for i in min_arr])
 
     # get rid of configs were phase shift calculation failed
     # (good for debug only)

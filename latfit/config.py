@@ -78,7 +78,7 @@ MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 5
+MAX_RESULTS = 1
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -403,6 +403,7 @@ if EFF_MASS_METHOD < 3:
 BINDS = ((SCALE*.1, 10*SCALE), (.4, .6), (.01*SCALE, .03*SCALE))
 BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
 BINDS = [[-1, 1] for _ in range(2*DIM+1)]
+BINDS[-1] = [0, 2]
 BINDS = [tuple(bind) for bind in BINDS]
 BINDS = tuple(BINDS)
 
