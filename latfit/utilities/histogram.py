@@ -91,9 +91,9 @@ def make_hist(fname):
             median = gvar.gvar(freq_median, sys_err.val)
             for i,pval in median_err:
                 median_diff = i-median
-                median_diff = gvar.gvar(median_diff.val, max(i.sdev, median.sdev))
+                median_diff = gvar.gvar(abs(median_diff.val), max(i.sdev, median.sdev))
                 avg_diff = i-avg[dim]
-                avg_diff = gvar.gvar(avg_diff.val, max(i.sdev, avg[dim].sdev))
+                avg_diff = gvar.gvar(abs(avg_diff.val), max(i.sdev, avg[dim].sdev))
                 if abs(avg_diff.val)>abs(avg_diff.sdev) or abs(median_diff.val)>abs(median_diff.sdev):
                     print(i, pval, median_diff, avg_diff)
                 else:
