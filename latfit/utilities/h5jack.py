@@ -699,7 +699,8 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         if rows is not None and cols is not None:
             outarr = outarr[rows, cols]
         if avgtsrc:
-            np.mean(TSTEP*outarr, axis=0, out=blk[i])
+            np.mean((TSTEP if 'pioncorrChk' not in base else 1)*outarr,
+                    axis=0, out=blk[i])
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
