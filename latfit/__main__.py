@@ -998,10 +998,14 @@ def update_num_configs(num_configs=None, input_f=None):
         infile = input_f if input_f is not None else latfit.config.GEVP_DIRS[0][0]
         fn1 = h5py.File(infile, 'r')
         for i in fn1:
-            for j in fn1[i]:
+            if GEVP:
+                for j in fn1[i]:
+                    latfit.finalout.mkplot.NUM_CONFIGS = np.array(
+                        fn1[i+'/'+j]).shape[0]
+                    break
+            else:
                 latfit.finalout.mkplot.NUM_CONFIGS = np.array(
-                    fn1[i+'/'+j]).shape[0]
-                break
+                    fn1[i]).shape[0]
             break
     elif num_configs != -1:
         latfit.finalout.mkplot.NUM_CONFIGS = num_configs

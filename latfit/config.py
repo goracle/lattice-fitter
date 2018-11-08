@@ -16,13 +16,13 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # Plot Effective Mass? True or False
 
