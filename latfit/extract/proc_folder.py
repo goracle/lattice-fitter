@@ -9,7 +9,15 @@ import linecache
 from latfit.config import GEVP
 from latfit.config import STYPE
 from latfit.config import GROUP_LIST
+from latfit.config import BINNUM
 import latfit.config
+
+def binout(out):
+    """Reduce the number of used configs
+    """
+    while len(out)%BINNUM != 0:
+        out = out[:-1]
+    return out
 
 if STYPE == 'hdf5':
     def open_dataset(prefix, hdf5_file, ctime, fn1):
@@ -49,6 +57,7 @@ if STYPE == 'hdf5':
                     print("dataset name:",
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
+        out = binout(out)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]

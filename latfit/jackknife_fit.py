@@ -295,7 +295,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # compute the systematics and errors
         if SYS_ENERGY_GUESS is not None:
-            result_min.systematic, result_min.systematics_err =\
+            result_min.systematics, result_min.systematics_err =\
                 jack_mean_err(result_min.systematics_arr)
 
         # average the point by point error bars
@@ -378,7 +378,7 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
 def getsystematic(params, arr):
     """Get the fit parameters which are not the energies"""
     arr = np.asarray(arr)
-    if len(arr) != params.dimops and arr:
+    if len(arr) != params.dimops and len(arr):
         ret = list(arr[1::2])
         ret.append(arr[-1])
         ret = np.array(ret)

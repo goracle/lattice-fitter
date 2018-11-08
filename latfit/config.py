@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -74,11 +74,13 @@ ONLY_SMALL_FIT_RANGES = False
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
+MAX_ITER = 100 if ISOSPIN == 1 else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 1
+MAX_RESULTS = 16
+MAX_RESULTS = 1 if ISOSPIN == 1 else MAX_RESULTS
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -162,12 +164,12 @@ FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
-FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 
 # if true, do not loop over fit ranges.
-NOLOOP = True
 NOLOOP = False
+NOLOOP = True
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -768,3 +770,4 @@ if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
 #assert not FIT_SPACING_CORRECTION
+assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
