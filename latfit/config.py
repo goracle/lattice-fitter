@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 1
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -162,12 +162,12 @@ FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 # if true, do not loop over fit ranges.
-NOLOOP = False
 NOLOOP = True
+NOLOOP = False
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -255,6 +255,8 @@ else:
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
 SYS_ENERGY_GUESS = 1.2
+SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
 
 # modify the configs used and bin
@@ -406,7 +408,7 @@ BINDS_LSQ = ([-np.inf, -np.inf, -9e08], [np.inf, np.inf, -6e08])
 BINDS = [[0, 2] for _ in range(2*DIM+1)]
 # try to set bounds for the systematic error
 BINDS[1::2] = [[-1, 1] for _ in enumerate(BINDS[1::2])]
-BINDS = [[None, None] for _ in range(ORIGL*DIM+(
+BINDS = [[None, None] for _ in range(len(START_PARAMS)*DIM+(
     1 if SYS_ENERGY_GUESS is not None else 0))]
 BINDS = [tuple(bind) for bind in BINDS]
 BINDS = tuple(BINDS)
@@ -584,14 +586,20 @@ if EFF_MASS:
                     """
                     return trial_params
             else:
-                START_PARAMS.append(SYS_ENERGY_GUESS)
-                assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
-                def prefit_func(ctime, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
-                        trial_params[-1]-trial_params[2*i])*ctime)
-                            for i in range(int((len(START_PARAMS)-1)/2))]
+                if SYS_ENERGY_GUESS is not None:
+                    START_PARAMS.append(SYS_ENERGY_GUESS)
+                    assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
+                    def prefit_func(ctime, trial_params):
+                        """eff mass method 1, fit func, single const fit
+                        """
+                        return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
+                            trial_params[-1]-trial_params[2*i])*ctime)
+                                for i in range(int((len(START_PARAMS)-1)/2))]
+                else:
+                    def prefit_func(_, trial_params):
+                        """eff mass method 1, fit func, single const fit
+                        """
+                        return trial_params
         else:
             if len(START_PARAMS) == 1:
                 def prefit_func(_, trial_params):
@@ -715,7 +723,7 @@ assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
     " function exists for pion ratio method."
 assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
 " not supported for pion ratio method."
-if len(START_PARAMS) % 2 == 1:
+if len(START_PARAMS) % 2 == 1 and ORIGL > 1:
     START_PARAMS = list(START_PARAMS[:-1])*MULT
     START_PARAMS.append(SYS_ENERGY_GUESS)
     START_PARAMS = START_PARAMS*2**NUM_PENCILS

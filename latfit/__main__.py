@@ -237,7 +237,11 @@ class FitRangeMetaData:
                 " vs. expected length."
         return prod
 
-
+    def actual_range(self):
+        """Return the actual range spanned by the fit window"""
+        ret = np.arange(self.fitwindow[0], self.fitwindow[1]+self.xstep, self.xstep)
+        ret = list(ret)
+        return ret
 
 
 
@@ -310,7 +314,7 @@ def main():
             prod = meta.length_fit(prod, sampler)
 
             # cut late time points from the fit range
-            samerange = cut_on_errsize()
+            samerange = cut_on_errsize(meta)
 
             fit_range_init = str(latfit.config.FIT_EXCL)
             try:
@@ -439,8 +443,8 @@ def main():
                     print("fit excluded points (indices):",
                           latfit.config.FIT_EXCL)
 
-                if not (meta.skiploop and latfit.config.MINTOL)\
-                   and METHOD == 'Nelder-Mead':
+                if (not (meta.skiploop and latfit.config.MINTOL)\
+                   and METHOD == 'Nelder-Mead') or not test_success:
                         latfit.config.MINTOL = True
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax, meta.xstep)
@@ -584,9 +588,22 @@ def collapse_filter(arr):
     arr = getuniqueres(arr)
     return arr
 
+def excl_inrange(meta, excl):
+    """Find the excluded points in the actual fit window"""
+    ret = []
+    fullrange = meta.actual_range()
+    for i, exc in enumerate(excl):
+        newexc = []
+        for point in exc:
+            if point in fullrange:
+                newexc.append(point)
+        ret.append(newexc)
+    return ret
+
 def toosmallp(meta, excl):
     """Skip a fit range if it has too few points"""
     ret = False
+    excl = excl_inrange(meta, excl)
     # each energy should be included
     if max([len(i) for i in excl]) == meta.fitwindow[1]-meta.fitwindow[0]+meta.xstep:
         print("skipped all the data points for a GEVP dim, "+\
@@ -861,7 +878,7 @@ def convert_to_namedtuple(dictionary):
     return namedtuple('min', dictionary.keys())(**dictionary)
 
 
-def cut_on_errsize():
+def cut_on_errsize(meta):
     """Cut on the size of the error bars on individual points"""
     err = singlefit.error2
     coords = singlefit.coords_full
@@ -870,6 +887,9 @@ def cut_on_errsize():
     start = str(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
+        actual_range = meta.actual_range()
+        if excl_add not in actual_range:
+            continue
         if MULT > 1:
             for j in range(len(coords[0][1])):
                 if err[i][j]/coords[i][1][j] > ERR_CUT:

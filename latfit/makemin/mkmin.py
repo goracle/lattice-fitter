@@ -16,7 +16,6 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
 
-
 def mkmin(covinv, coords):
     """Minimization of chi^2 section of fitter.
     Return minimized result.

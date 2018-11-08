@@ -18,7 +18,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
-from latfit.config import UNCORR
+from latfit.config import UNCORR, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
@@ -61,6 +61,13 @@ class ResultMin:
         self.scattering_length_arr = None
         self.scattering_length_err = None
         self.phase_shift_arr = None
+
+    def alloc_sys_arr(self, params):
+        """alloc array for systematics"""
+        syslength = len(START_PARAMS)-params.dimops*(1 if GEVP else 0)
+        syslength = max(1, syslength)
+        self.systematics_arr = np.zeros((params.num_configs, syslength))
+
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -139,6 +146,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         #phase shift
         result_min.phase_shift = alloc_phase_shift(params)
 
+        # allocate systematics array
+        result_min.alloc_sys_arr(params)
+
         # allocate storage for jackknifed x,y coordinates
         coords_jack = np.copy(coords)
 
@@ -148,10 +158,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
         # storage for fit by fit chi^2
         chisq_min_arr = np.zeros(params.num_configs)
-
-        # storage for systematic errors
-        result_min.systematic_arr = np.zeros((params.num_configs, len(
-            START_PARAMS)-params.dimops*(1 if GEVP else 0)))
 
         # fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
@@ -202,7 +208,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store the result
             min_arr[config_num] = getenergies(params, result_min_jack.x)
-            result_min.systematic_arr[config_num] = getsystematic(
+            result_min.systematics_arr[config_num] = getsystematic(
                 params, result_min_jack.x)
 
             # compute phase shift, if necessary
@@ -216,7 +222,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # print results for this config
             print("config", config_num, ":", min_arr[config_num],
-                  result_min.systematic_arr[config_num][-1],
+                  result_min.systematics_arr[config_num][-1],
                   "chisq/dof=", result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num],
                   'dof=', result_min.dof)
@@ -288,8 +294,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.x_err = np.array(param_err)
 
         # compute the systematics and errors
-        result_min.systematic, result_min.systematic_err =\
-            jack_mean_err(result_min.systematic_arr)
+        if SYS_ENERGY_GUESS is not None:
+            result_min.systematic, result_min.systematics_err =\
+                jack_mean_err(result_min.systematics_arr)
 
         # average the point by point error bars
         result_min.error_bars = np.mean(result_min.error_bars, axis=0)
@@ -371,10 +378,12 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
 def getsystematic(params, arr):
     """Get the fit parameters which are not the energies"""
     arr = np.asarray(arr)
-    if len(arr) != params.dimops:
+    if len(arr) != params.dimops and arr:
         ret = list(arr[1::2])
         ret.append(arr[-1])
         ret = np.array(ret)
+    else:
+        ret = None
     return ret
 
 def getenergies(params, arr):

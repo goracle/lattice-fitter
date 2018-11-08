@@ -374,10 +374,11 @@ def print_messages(result_min, param_err, param_chisq):
             result_min.x, separator=', '))
         print("Error in params :", np.array2string(np.array(param_err),
                                                    separator=', '))
-    result_min.systematic = gvar.gvar(result_min.systematic,
-                                      result_min.systematic_err)
-    print("systematics:", np.array2string(result_min.systematic,
-                                          separator=', '))
+    if hasattr(result_min, 'systematics'):
+        result_min.systematics = gvar.gvar(result_min.systematics,
+                                           result_min.systematics_err)
+        print("systematics:", np.array2string(result_min.systematics,
+                                              separator=', '))
     chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
@@ -514,8 +515,10 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
 
 def interleave_energies_systematic(result_min):
     """Combine the energies and systematic parameters for final result"""
-    print(result_min.x, result_min.systematic)
-    syst = [i.val for i in result_min.systematic]
+    if hasattr(result_min, 'systematics'):
+        syst = [i.val for i in result_min.systematics]
+    else:
+        syst = []
     ret = np.zeros(len(result_min.x)+len(syst))
     if syst:
         ret[0::2] = [*result_min.x, syst[-1]]
