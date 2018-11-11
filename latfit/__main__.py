@@ -53,7 +53,7 @@ from latfit.finalout.mkplot import mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
-from latfit.jackknife_fit import DOFNonPos, BadChisqJackknife
+from latfit.jackknife_fit import DOFNonPos, BadChisq
 from latfit.jackknife_fit import BadJackknifeDist, NoConvergence
 from latfit.config import MULT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
@@ -274,10 +274,12 @@ def main():
         print("Trying initial test fit.")
         test_success = False
         try:
-            retsingle_save = singlefit(input_f, meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+            retsingle_save = singlefit(input_f, meta.fitwindow,
+                                       meta.xmin, meta.xmax, meta.xstep)
             test_success = True
             print("Test fit succeeded.")
-            # do the fit range key processing here since the initial fit augments the list
+            # do the fit range key processing here
+            # since the initial fit augments the list
             fit_range_init = str(list(latfit.config.FIT_EXCL))
         except XmaxError as err:
             fit_range_init = None
@@ -295,7 +297,7 @@ def main():
             plotdata.fitcoord = meta.fit_coord()
         except (NegChisq, RelGammaError, NoConvergence,
                 np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                DOFNonPos, BadChisq, ZetaError) as _:
             pass
         # update the known exclusion information with plot points
         # which are nan (not a number) or
@@ -321,19 +323,24 @@ def main():
                 if not samerange:
                     print("Trying second test fit.")
                     print("fit excl:", fit_range_init)
-                    retsingle_save = singlefit(input_f,
-                                               meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+                    retsingle_save = singlefit(input_f, meta.fitwindow,
+                                               meta.xmin, meta.xmax,
+                                               meta.xstep)
                     print("Test fit succeeded.")
                     test_success = True
             except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                     BadJackknifeDist, DOFNonPos,
-                    BadChisqJackknife, ZetaError) as _:
-                print("Test fit failed, "+\
-                        " but in an acceptable way. Continuing.")
+                    BadChisq, ZetaError) as err:
+                print("fit failed (acceptably) with error:",
+                      err.__class__.__name__)
                 fit_range_init = None
             if test_success:
                 result_min, param_err, _, _ = retsingle_save
-                if not cutresult(result_min, min_arr, overfit_arr, param_err):
+                printerr(result_min.x, param_err)
+                if CALC_PHASE_SHIFT:
+                    print_phaseshift(result_min)
+                if not cutresult(result_min, min_arr,
+                                 overfit_arr, param_err):
                     result = [result_min, list(param_err),
                               list(latfit.config.FIT_EXCL)]
                     if result_min.fun/result_min.dof >= 1: # don't overfit
@@ -353,7 +360,8 @@ def main():
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
-            print("starting loop of max length:"+str(meta.lenprod), "random fit:", meta.random_fit)
+            print("starting loop of max length:"+str(
+                meta.lenprod), "random fit:", meta.random_fit)
             for idx in range(meta.lenprod):
 
                 # parallelize loop
@@ -366,10 +374,12 @@ def main():
                     break
 
                 # get one fit range, check it
-                excl, checked = get_one_fit_range(meta, prod, idx, sorted_fit_ranges, checked)
-                if excl is None or toosmallp(meta, excl):
-                    print('excl:', excl, 'is too small')
+                excl, checked = get_one_fit_range(
+                    meta, prod, idx, sorted_fit_ranges, checked)
+                if excl is None:
                     continue
+                if toosmallp(meta, excl):
+                    print('excl:', excl, 'is too small')
 
                 # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
@@ -380,21 +390,25 @@ def main():
                       latfit.config.FIT_EXCL, "fit:",
                       str(idx+1)+"/"+str(meta.lenprod))
                 print("number of results:", len(min_arr),
-                      "number of overfit", len(overfit_arr), "rank:", MPIRANK)
+                      "number of overfit", len(overfit_arr),
+                      "rank:", MPIRANK)
                 assert len(latfit.config.FIT_EXCL) == MULT, "bug"
-                if keyexcl(excl) == fit_range_init: # retsingle_save needs a cut on error size
+                # retsingle_save needs a cut on error size
+                if keyexcl(excl) == fit_range_init:
                     continue
                 else:
                     try:
                         retsingle = singlefit(input_f, meta.fitwindow,
-                                              meta.xmin, meta.xmax, meta.xstep)
+                                              meta.xmin, meta.xmax,
+                                              meta.xstep)
                     except (NegChisq, RelGammaError, OverflowError,
                             NoConvergence,
                             BadJackknifeDist,
-                            DOFNonPos, BadChisqJackknife, ZetaError) as _:
+                            DOFNonPos, BadChisq, ZetaError) as err:
                         # skip on any error
                         print("fit failed for this selection"+\
-                              " excluded points=", excl)
+                              " excluded points=", excl, "with error:",
+                              err.__class__.__name__)
                         continue
                 result_min, param_err, plotdata.coords, \
                     plotdata.cov = retsingle
@@ -447,7 +461,8 @@ def main():
                    and METHOD == 'Nelder-Mead') or not test_success:
                         latfit.config.MINTOL = True
                         retsingle = singlefit(input_f, meta.fitwindow,
-                                              meta.xmin, meta.xmax, meta.xstep)
+                                              meta.xmin, meta.xmax,
+                                              meta.xstep)
                 else:
                     retsingle = retsingle_save
                 result_min_close, param_err_close, \
@@ -459,11 +474,13 @@ def main():
                     meta.skiploop, param_err, param_err_close)
 
                 # plot the result
-                mkplot(plotdata, input_f, result_min, param_err, meta.fitwindow)
+                mkplot(plotdata, input_f, result_min,
+                       param_err, meta.fitwindow)
         else:
             if MPIRANK == 0:
                 if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
-                    retsingle = singlefit(input_f, meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+                    retsingle = singlefit(input_f, meta.fitwindow,
+                                          meta.xmin, meta.xmax, meta.xstep)
                     plotdata.coords, plotdata.cov = retsingle
                 else:
                     plotdata.coords, plotdata.cov = retsingle_save
@@ -473,8 +490,9 @@ def main():
         for ctime in range(trials):
             ifile = proc_folder(input_f, ctime, "blk")
             ninput = os.path.join(input_f, ifile)
-            result_min, param_err, plotdata.coords, plotdata.cov = singlefit(
-                ninput, meta.fitwindow, meta.xmin, meta.xmax, meta.xstep)
+            result_min, param_err, plotdata.coords, plotdata.cov =\
+                singlefit(ninput, meta.fitwindow,
+                          meta.xmin, meta.xmax, meta.xstep)
             list_fit_params.append(result_min.x)
         printerr(*get_fitparams_loc(list_fit_params, trials))
         sys.exit(0)
@@ -605,14 +623,16 @@ def toosmallp(meta, excl):
     ret = False
     excl = excl_inrange(meta, excl)
     # each energy should be included
-    if max([len(i) for i in excl]) == meta.fitwindow[1]-meta.fitwindow[0]+meta.xstep:
+    if max([len(i) for i in excl]) == meta.fitwindow[
+            1]-meta.fitwindow[0]+meta.xstep:
         print("skipped all the data points for a GEVP dim, "+\
                 "so continuing.")
         ret = True
 
     # each fit curve should be to more than one data point
-    if not ret and meta.fitwindow[1]-meta.fitwindow[0] in [len(i) for i in excl] and\
-        not ONLY_SMALL_FIT_RANGES:
+    if not ret and meta.fitwindow[1]-meta.fitwindow[0] in [
+            len(i) for i in excl] and\
+            not ONLY_SMALL_FIT_RANGES:
         print("only one data point in fit curve, continuing")
         ret = True
     if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.xstep > 0 and\
@@ -821,7 +841,8 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
     avgname = 'fun' if avgname == 'chisq' else avgname
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
-    pickl_res = np.array([getattr(i[0], avgname) for i in min_arr], dtype=object)
+    pickl_res = np.array([
+        getattr(i[0], avgname) for i in min_arr], dtype=object)
     pickl_res = np.array([res_mean, err_check, pickl_res], dtype=object)
     pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
@@ -852,23 +873,27 @@ def divbychisq(param_arr, pvalue_arr):
             str(pvalue_arr.shape)+", "+str(param_arr.shape)
         for i in range(len(ret[0])):
             try:
-                assert not any(np.isnan(param_arr[:, i])), "parameter array contains nan"
+                assert not any(np.isnan(param_arr[:, i])),\
+                    "parameter array contains nan"
             except AssertionError:
                 print("found nan in dimension :", i)
                 for j in param_arr:
                     print(j)
                 sys.exit(1)
             ret[:, i] *= pvalue_arr
-            assert not any(np.isnan(ret[:, i])), "parameter array contains nan"
+            assert not any(np.isnan(ret[:, i])),\
+                "parameter array contains nan"
     else:
         try:
-            assert not any(np.isnan(param_arr)), "parameter array contains nan"
+            assert not any(np.isnan(param_arr)),\
+                "parameter array contains nan"
         except AssertionError:
             for i in param_arr:
                 print(i)
             sys.exit(1)
         ret *= pvalue_arr
-    assert ret.shape == param_arr.shape, "return shape does not match input shape"
+    assert ret.shape == param_arr.shape,\
+        "return shape does not match input shape"
     return ret
 
 
@@ -883,7 +908,8 @@ def cut_on_errsize(meta):
     err = singlefit.error2
     coords = singlefit.coords_full
     assert singlefit.error2 is not None, "Bug in the acquiring error bars"
-    #assert GEVP, "other versions not supported yet"+str(err.shape)+" "+str(coords.shape)
+    #assert GEVP, "other versions not supported yet"+str(
+    # err.shape)+" "+str(coords.shape)
     start = str(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
@@ -995,7 +1021,8 @@ def update_num_configs(num_configs=None, input_f=None):
     """
     num_configs = -1 if num_configs is None else num_configs
     if not FIT and STYPE == 'hdf5' and num_configs == -1:
-        infile = input_f if input_f is not None else latfit.config.GEVP_DIRS[0][0]
+        infile = input_f if input_f is not None else\
+            latfit.config.GEVP_DIRS[0][0]
         fn1 = h5py.File(infile, 'r')
         for i in fn1:
             if GEVP:

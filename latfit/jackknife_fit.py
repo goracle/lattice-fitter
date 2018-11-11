@@ -253,7 +253,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                             0+SUPERJACK_CUTOFF])<5*np.sqrt(2*result_min.dof/(
                                 params.num_configs-1))
                     if skip_range:
-                        raise BadChisqJackknife(
+                        raise BadChisq(
                             chisq=result_min_jack.fun/result_min.dof,
                             dof=result_min.dof)
                     elif len(skip_votes) > 0:
@@ -895,13 +895,13 @@ class DOFNonPos(Exception):
         self.dof = dof
         self.message = message
 
-class BadChisqJackknife(Exception):
+class BadChisq(Exception):
     """Exception for bad chi^2"""
     def __init__(self, chisq=None, message='', dof=None):
         print("***ERROR***")
         print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
               chisq, "dof =", dof)
-        super(BadChisqJackknife, self).__init__(message)
+        super(BadChisq, self).__init__(message)
         self.chisq = chisq
         self.dof = dof
         self.message = message
