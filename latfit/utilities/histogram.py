@@ -22,7 +22,7 @@ def make_hist(fname):
         dat = pickle.load(fn1)
         dat = np.array(dat)
         dat = np.real(dat)
-        avg, err, freqarr = dat
+        avg, err, freqarr, exclarr = dat
         avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
 
@@ -56,16 +56,17 @@ def make_hist(fname):
         with PdfPages(save_str) as pdf:
             title_dim = title+' state:'+str(dim)
             freq = np.array([np.real(i) for i in freqarr[:, dim]])
-            print("val(err); pvalue; median difference; avg difference")
+            print("val(err); pvalue; median difference;",
+                  " avg difference; fit excl")
             pdat_median = np.median(pdat_freqarr)
             median_diff = np.inf
             median_diff2 = np.inf
             half = 0
             errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
-            loop = sorted(zip(freq, pdat_freqarr, errlooparr),
+            loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                           key = lambda elem: elem[2], reverse=True)
             median_err = []
-            for i, j, k in loop:
+            for i, j, k, l in loop:
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
                     freq_median = i
@@ -87,17 +88,21 @@ def make_hist(fname):
             # print(hist)
             center = (bins[:-1] + bins[1:]) / 2
             width = 0.7 * (bins[1] - bins[0])
-            erronerrmedianstr = str(gvar.gvar(freq_median, sys_err.sdev)).split('(')[1]
+            erronerrmedianstr = str(gvar.gvar(freq_median,
+                                              sys_err.sdev)).split('(')[1]
             median = gvar.gvar(freq_median, sys_err.val)
             for i,pval in median_err:
                 median_diff = i-median
-                median_diff = gvar.gvar(abs(median_diff.val), max(i.sdev, median.sdev))
+                median_diff = gvar.gvar(abs(median_diff.val),
+                                        max(i.sdev, median.sdev))
                 avg_diff = i-avg[dim]
-                avg_diff = gvar.gvar(abs(avg_diff.val), max(i.sdev, avg[dim].sdev))
-                if abs(avg_diff.val)>abs(avg_diff.sdev) or abs(median_diff.val)>abs(median_diff.sdev):
-                    print(i, pval, median_diff, avg_diff)
+                avg_diff = gvar.gvar(abs(avg_diff.val),
+                                     max(i.sdev, avg[dim].sdev))
+                if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
+                        median_diff.val)>abs(median_diff.sdev):
+                    print(i, pval, median_diff, avg_diff, l)
                 else:
-                    print(i, pval)
+                    print(i, pval, l)
             print('p-value weighted median =', str(median))
             print("p-value weighted mean =", avg[dim])
             plt.ylabel('count')
@@ -134,8 +139,7 @@ def getxerr(freq, center, errdat_dim):
         assert flag, "bug"
     return err
 
-                
-            
+
 
 
 def gettitle(fname):

@@ -221,7 +221,7 @@ def all0imag_ignorenan(vals):
         if np.imag(val) != 0 and not np.isnan(val):
             ret = False
     return ret
-                
+
 
 def solve_gevp(c_lhs, c_rhs=None):
     """Solve the GEVP"""

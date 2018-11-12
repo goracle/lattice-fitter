@@ -196,7 +196,8 @@ class FitRangeMetaData:
     def generate_combinations(self):
         """Generate all possible fit ranges"""
         posexcl = powerset(
-            np.arange(self.fitwindow[0], self.fitwindow[1]+self.xstep, self.xstep))
+            np.arange(self.fitwindow[0],
+                      self.fitwindow[1]+self.xstep, self.xstep))
         sampler = filter_sparse(posexcl, self.fitwindow, self.xstep)
         sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
         posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
@@ -217,12 +218,15 @@ class FitRangeMetaData:
 
     def fit_coord(self):
         """Get xcoord to plot fit function."""
-        return np.arange(self.fitwindow[0], self.fitwindow[1]+self.xstep, self.xstep)
+        return np.arange(self.fitwindow[0],
+                         self.fitwindow[1]+self.xstep, self.xstep)
 
 
     def length_fit(self, prod, sampler):
         """Get length of fit window data"""
-        self.lenfit = len(np.arange(self.fitwindow[0], self.fitwindow[1]+self.xstep, self.xstep))
+        self.lenfit = len(np.arange(self.fitwindow[0],
+                                    self.fitwindow[1]+self.xstep,
+                                    self.xstep))
         assert self.lenfit > 0 or not FIT, "length of fit range not > 0"
         self.lenprod = len(sampler)**(MULT)
         if NOLOOP:
@@ -239,7 +243,8 @@ class FitRangeMetaData:
 
     def actual_range(self):
         """Return the actual range spanned by the fit window"""
-        ret = np.arange(self.fitwindow[0], self.fitwindow[1]+self.xstep, self.xstep)
+        ret = np.arange(self.fitwindow[0],
+                        self.fitwindow[1]+self.xstep, self.xstep)
         ret = list(ret)
         return ret
 
@@ -843,10 +848,12 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = np.array([
         getattr(i[0], avgname) for i in min_arr], dtype=object)
-    pickl_res = np.array([res_mean, err_check, pickl_res], dtype=object)
+    pickl_excl = np.array([i[2] for i in min_arr], dtype=object)
+    pickl_res = np.array([res_mean, err_check,
+                          pickl_res, pickl_excl], dtype=object)
     pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
-        str(pickl_res_err.shape)+str(pickl_res.shape)
+        str(pickl_res_err.shape)+str(pickl_res[2].shape)
     avgname = 'chisq' if avgname == 'fun' else avgname
     if not GEVP:
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
@@ -857,7 +864,7 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
         filename = avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)
         filename_err = errname+"_"+MOMSTR+'_I'+str(ISOSPIN)
     print("writing file", filename)
-    assert len(pickl_res) == 3, "bad result length"
+    assert len(pickl_res) == 4, "bad result length"
     pickle.dump(pickl_res, open(filename+'.p', "wb"))
     print("writing file", filename_err)
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
@@ -868,7 +875,8 @@ def divbychisq(param_arr, pvalue_arr):
     assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
     ret = np.array(param_arr)
     if len(ret.shape) > 1:
-        assert param_arr[:, 0].shape == pvalue_arr.shape, "Mismatch between pvalue_arr"+\
+        assert param_arr[:, 0].shape == pvalue_arr.shape,\
+            "Mismatch between pvalue_arr"+\
             " and parameter array (should be the number of configs):"+\
             str(pvalue_arr.shape)+", "+str(param_arr.shape)
         for i in range(len(ret[0])):
@@ -920,7 +928,8 @@ def cut_on_errsize(meta):
             for j in range(len(coords[0][1])):
                 if err[i][j]/coords[i][1][j] > ERR_CUT:
                     print("err =", err[i][j], "coords =", coords[i][1][j])
-                    print("cutting dimension", j, "for time slice", excl_add)
+                    print("cutting dimension", j,
+                          "for time slice", excl_add)
                     print("err/coords > ERR_CUT =", ERR_CUT)
                     latfit.config.FIT_EXCL[j].append(excl_add)
                     latfit.config.FIT_EXCL[j] = list(set(

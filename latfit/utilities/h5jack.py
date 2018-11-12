@@ -168,6 +168,9 @@ WRITEBLOCK = fill_write_block(FNDEF)
 WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
+AVGTSRC = True
+AVGTSRC = False
+AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 
 # debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -332,6 +335,7 @@ def dojackknife(blk):
 def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
     """h5write block.
     """
+    extension = '_unsummed'+extension if not AVGTSRC else extension
     outh5 = outfile+extension
     if os.path.isfile(outh5):
         print("File", outh5, "exists. Skipping.")
@@ -640,7 +644,7 @@ def fold_time(outblk, base=''):
             tsep = 0
     else:
         tsep = TSEP
-    if FOLD:
+    if FOLD and AVGTSRC:
         if ANTIPERIODIC:
             retblk = [1/2 * (outblk[:, t] - outblk[:, (LT-t-2 * tsep) % LT])
                       for t in range(LT)]
@@ -698,9 +702,9 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     #        continue
         if rows is not None and cols is not None:
             outarr = outarr[rows, cols]
+        outarr *= TSTEP if 'pioncorrChk' not in base else 1
         if avgtsrc:
-            np.mean((TSTEP if 'pioncorrChk' not in base else 1)*outarr,
-                    axis=0, out=blk[i])
+            np.mean(outarr, axis=0, out=blk[i])
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
@@ -714,7 +718,8 @@ def getmostblks(basl, trajl, openlist):
     for base in basl:
         if not check_key(base):
             continue
-        blk = getgenconblk(base, trajl, avgtsrc=True, openlist=openlist)
+        avgtsrc = True if not WRITE_INDIVIDUAL else AVGTSRC
+        blk = getgenconblk(base, trajl, avgtsrc=avgtsrc, openlist=openlist)
         if TESTKEY2:
             print("Printing non-averaged-over-tsrc data")
             printblk(TESTKEY2, blk)
@@ -1243,9 +1248,14 @@ def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
     return the consistency-checked block lengths
     """
     blk = blknametocheck
-    len_exact, lte = exactblks[blk].shape
-    len_exact_check, lte_check = sloppysubtractionblks[blk].shape
-    len_sloppy, lts = sloppyblks[blk].shape
+    if AVGTSRC:
+        len_exact, lte = exactblks[blk].shape
+        len_exact_check, lte_check = sloppysubtractionblks[blk].shape
+        len_sloppy, lts = sloppyblks[blk].shape
+    else:
+        len_exact, lte, _ = exactblks[blk].shape
+        len_exact_check, lte_check, _ = sloppysubtractionblks[blk].shape
+        len_sloppy, lts, _ = sloppyblks[blk].shape
 
     # do some checks
     assert len_exact_check == len_exact, "subtraction term in correction \
@@ -1282,8 +1292,8 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
             correction = exactblks[blk] - sloppysubtractionblks[blk]
 
             # create return block (super-jackknife)
-            retblks[blk] = np.zeros((len_exact+len_sloppy, LT),
-                                    dtype=np.complex)
+            shape = (len_exact+len_sloppy, LT) if AVGTSRC else (len_exact+len_sloppy, LT, LT)
+            retblks[blk] = np.zeros(shape, dtype=np.complex)
 
             sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
             correction_central_value = np.mean(correction, axis=0)

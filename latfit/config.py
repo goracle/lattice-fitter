@@ -366,6 +366,7 @@ SKIP_LARGE_ERRORS = True if ISOSPIN == 2 else SKIP_LARGE_ERRORS
 # box plot (for effective mass tolerance display)?
 BOX_PLOT = True
 BOX_PLOT = False if ISOSPIN == 1 else BOX_PLOT
+BOX_PLOT = False if len(START_PARAMS) != 1 else BOX_PLOT
 
 # dispersive lines
 PLOT_DISPERSIVE = True
