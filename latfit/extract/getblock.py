@@ -429,6 +429,8 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
     except np.linalg.linalg.LinAlgError:
         print("unable to symmetrize problem at late times")
         skip_late = True
+        commutator_norms = 0
+        commutator_norm = 0
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
         if j.imag == 0 or np.isnan(j.imag):
@@ -775,8 +777,12 @@ if EFF_MASS:
             #(t =", timeij, ") =", np.mean(norm_comm),
             #"chi^2/dof =", chisq_bad, "p-value =", pval, "dof =", dof)
         if GEVP_DEBUG:
+            if not np.isnan(np.array(check_variance)).any():
+                error_check = jack_mean_err(np.array(check_variance))
+            else:
+                error_check = None
             print("time, avg evals, variance of evals:",
-                  timeij, jack_mean_err(np.array(check_variance)))
+                  timeij, error_check)
             if timeij == 10:
                 sys.exit(0)
         return retblk
