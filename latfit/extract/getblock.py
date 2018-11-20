@@ -783,7 +783,7 @@ if EFF_MASS:
                 error_check = None
             print("time, avg evals, variance of evals:",
                   timeij, error_check)
-            if timeij == 10:
+            if timeij == 16:
                 sys.exit(0)
         return retblk
 
