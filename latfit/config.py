@@ -464,15 +464,9 @@ REINFLATE_BEFORE_LOG = False
 # multiply both sides of the gevp matrix by norms
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
-NORMS = [[1.0/10**6, 1.0/10**3/10**(2.5),
-          1.0/10**3/10**5.5],
-         [1.0/10**3/10**2.5, 1.0/10**5,
-          1.0/10**2.5/10**5.5],
-         [1.0/10**3/10**5.5,
-          1.0/10**2.5/10**5.5, 1.0/10**11]]
+
 NORMS = [[(-1 if i ==1 else 1)*(-1 if j==1 else 1) for i in range(DIM)] for j in range(DIM)]
 NORMS = [[1 for i in range(DIM)] for j in range(DIM)]
-
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
 # more than one is supported, but probably not a good idea - see ref above)
