@@ -124,7 +124,16 @@ def calleig(c_lhs, c_rhs=None):
     if c_rhs is not None and LOGFORM:
         rhs = log_matrix(c_rhs)
         lhs = log_matrix(c_lhs)
+        c_lhs_check = np.dot(linalg.inv(c_rhs), c_lhs)
         c_lhs = rhs-lhs
+        try:
+            assert np.allclose(linalg.eigvals(c_lhs_check), linalg.eigvals(linalg.expm(-c_lhs)))
+        except AssertionError:
+            print(np.log(linalg.eigvals(c_lhs_check)))
+            print(linalg.eigvals(-c_lhs))
+            print(c_lhs_check)
+            print(linalg.expm(c_lhs))
+            sys.exit(1)
         assert np.allclose(c_lhs+lhs, rhs, rtol=1e-12)
         c_rhs = None
         flag = True
