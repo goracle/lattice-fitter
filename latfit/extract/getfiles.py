@@ -168,8 +168,8 @@ if GEVP:
         """Get files, gevp (meta)"""
         if T0 == 'ROUND':
             time2 = roundup(time, xstep, xmin)
-        elif T0 == 'TMINUS1':
-            time2 = time-xstep
+        elif 'TMINUS' in T0:
+            time2 = time-xstep*int(T0[6:])
         elif isinstance(T0, int):
             time2 = T0
         elif T0 == 'LOOP':
