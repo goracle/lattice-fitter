@@ -402,6 +402,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
     #checkgteq0(eigvals)
     dimops = len(c_lhs)
     late = False if all0imag_ignorenan(eigvals) else True
+    assert not late, "imaginary eigenvalues found."
     skip_late = False
     try:
         c_rhs_inv = linalg.inv(c_rhs)
