@@ -21,8 +21,8 @@ FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # Plot Effective Mass? True or False
 
@@ -52,7 +52,7 @@ SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 1
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -171,12 +171,6 @@ FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 1
 NOLOOP = False
 NOLOOP = True
 
-# use very late time slices in the GEVP.
-# these may have very large error bars and be numerically less well behaved,
-# so it's usually safer to start with this option turned off
-USE_LATE_TIMES = False
-USE_LATE_TIMES = True
-
 # log form (take log of GEVP matrices)
 LOGFORM = True
 LOGFORM = False
@@ -235,7 +229,7 @@ RESCALE = 1.0
 T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS1' if ISOSPIN == 2 else 'ROUND'
+T0 = 'TMINUS1'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -364,6 +358,7 @@ SKIP_LARGE_ERRORS = False
 SKIP_LARGE_ERRORS = True if ISOSPIN == 2 else SKIP_LARGE_ERRORS
 
 # box plot (for effective mass tolerance display)?
+# doesn't look good with large systematics (no plateau)
 BOX_PLOT = True
 BOX_PLOT = False if ISOSPIN == 1 else BOX_PLOT
 BOX_PLOT = False if len(START_PARAMS) != 1 else BOX_PLOT
@@ -457,6 +452,12 @@ NO_PLOT = True
 NO_PLOT = False
 
 # -------BEGIN POSSIBLY OBSOLETE------#
+
+# use very late time slices in the GEVP.
+# these may have very large error bars and be numerically less well behaved,
+# so it's usually safer to start with this option turned off
+USE_LATE_TIMES = True
+USE_LATE_TIMES = False
 
 REINFLATE_BEFORE_LOG = True
 REINFLATE_BEFORE_LOG = False
@@ -766,3 +767,6 @@ if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
 #assert not FIT_SPACING_CORRECTION
 assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
+assert not USE_LATE_TIMES, "method is based on flawed assumptions."
+assert not T0 == "ROUND", "bad systematic errors result from this option"
+assert not BIASED_SPEEDUP, "it is biased.  do not use."
