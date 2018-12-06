@@ -68,6 +68,7 @@ LT = 64 if not TEST44 else 4
 LT = LT if not TEST24C else 64
 TSEP = 3 if not TEST44 else 1
 TSEP = TSEP if not TEST24C else 3
+TSEP = 4 if not TEST44 else 1
 # format for files; don't change
 STYPE = 'hdf5'
 # precomputed indexing matrices; DON'T CHANGE
@@ -88,9 +89,11 @@ THERMNUM = THERMNUM if not TEST24C else 0
 #assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
+TSTEP = 10 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 # max time distance between (inner) particles
 TDIS_MAX = 64
 TDIS_MAX = 16
+TDIS_MAX = 22
 
 
 # DO NOT CHANGE IF NOT DEBUGGING
@@ -131,13 +134,14 @@ TESTKEY2 = ''
 TSLICE = 0
 
 # ama correction
-DOAMA = False
 DOAMA = True
+DOAMA = False
 #EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
 EXACT_CONFIGS = [1130, 1250, 1370]
 EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250, 1370, 1390]
+EXACT_CONFIGS = []
 
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
