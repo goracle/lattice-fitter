@@ -117,6 +117,7 @@ GEVP_DEBUG = False
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = True if L_BOX == 32 else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
