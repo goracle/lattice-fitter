@@ -118,6 +118,12 @@ def log_matrix(cmat, check=False):
     assert np.allclose(cmat, scipy.linalg.expm(ret), rtol=1e-8)
     return ret
 
+def bracket(evec, cmat):
+    """
+    form v* . cmat . v
+    """
+    return np.dot(np.dot(np.conj(evec), cmat), evec)
+
 def calleig(c_lhs, c_rhs=None):
     """Actual call to scipy.linalg.eig"""
     flag = False
@@ -146,6 +152,15 @@ def calleig(c_lhs, c_rhs=None):
         assert is_pos_semidef(c_lhs), "not positive semi-definite."
     eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
                                         overwrite_b=False, check_finite=True)
+    for eval, evec in zip(eigenvals, evecs):
+        try:
+            assert np.allclose(bracket(evec,clhs)/bracket(evec,crhs), eval, rtol=1e-10)
+        except AssertionError:
+            print("Eigenvalue consistency check failed.  ratio and eigenvalue not equal.")
+            print("bracket lhs, bracket rhs, ratio, eval")
+            print(bracket(evec,clhs), bracket(evec,crhs),
+                  bracket(evec,clhs)/bracket(evec,crhs), eval)
+            sys.exit(1)
     if flag:
         if all(np.imag(eigenvals) < 1e-8):
             pass
