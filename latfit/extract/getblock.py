@@ -95,7 +95,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
 
 def checkherm(carr):
     """Check hermiticity of gevp matrix"""
-    assert np.allclose(np.matrix(carr).H, carr, rtol=1e-8),\
+    assert np.allclose(np.matrix(carr).H, carr, rtol=1e-12),\
         "hermiticity enforcement failed."
 
 def removerowcol(cmat, idx):
@@ -150,16 +150,26 @@ def calleig(c_lhs, c_rhs=None):
         assert is_pos_semidef(c_lhs), "not positive semi-definite."
         c_lhs = enforce_hermiticity(c_lhs)
         assert is_pos_semidef(c_lhs), "not positive semi-definite."
-    eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs, overwrite_a=False,
-                                        overwrite_b=False, check_finite=True)
-    for eval, evec in zip(eigenvals, evecs):
+        eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs,
+                                            overwrite_a=False,
+                                            overwrite_b=False,
+                                            check_finite=True)
+    else:
+        checkherm(c_lhs)
+        checkherm(c_rhs)
+        eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs,
+                                            overwrite_a=False,
+                                            overwrite_b=False,
+                                            check_finite=True)
+    for i, (eval1, evec) in enumerate(zip(eigenvals, evecs.T)):
+        eval_check = bracket(evec,c_lhs)/bracket(evec, c_rhs)
         try:
-            assert np.allclose(bracket(evec,clhs)/bracket(evec,crhs), eval, rtol=1e-10)
+            assert np.allclose(eval_check, eval1, rtol=1e-10)
         except AssertionError:
             print("Eigenvalue consistency check failed.  ratio and eigenvalue not equal.")
             print("bracket lhs, bracket rhs, ratio, eval")
-            print(bracket(evec,clhs), bracket(evec,crhs),
-                  bracket(evec,clhs)/bracket(evec,crhs), eval)
+            print(bracket(evec,c_lhs), bracket(evec,c_rhs),
+                  bracket(evec,c_lhs)/bracket(evec,c_rhs), eval1)
             sys.exit(1)
     if flag:
         if all(np.imag(eigenvals) < 1e-8):
