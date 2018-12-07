@@ -48,11 +48,11 @@ SYSTEMATIC_EST = False
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 7
+SUPERJACK_CUTOFF = 0
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -84,9 +84,10 @@ MAX_RESULTS = 1 if ISOSPIN == 1 else MAX_RESULTS
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
-L_BOX = 24
-AINVERSE = 1.015
-PION_MASS = 0.13975*AINVERSE
+L_BOX = 32
+AINVERSE = 1.4
+#PION_MASS = 0.13975*AINVERSE
+PION_MASS = 0.13975 # what is 32c mass?
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
@@ -167,6 +168,7 @@ FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 # if true, do not loop over fit ranges.
 NOLOOP = False

@@ -66,7 +66,7 @@ def correct_epipi(energies, irr=None, uncorrect=False):
         if uncorrect:
             correction *= -1
         if BOX_LENGTH == 32: # assume 32c has good dispersion relation for now.
-            correction = 0
+            correction *= 0
     return correction
 
 def uncorrect_epipi(epipi, irr=None):
