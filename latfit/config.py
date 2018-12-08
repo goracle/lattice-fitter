@@ -255,6 +255,7 @@ else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
 SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
 
@@ -373,6 +374,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
 DECREASE_VAR = 1e-4
+DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues
 DELETE_NEGATIVE_OPERATORS = False
