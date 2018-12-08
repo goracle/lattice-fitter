@@ -34,13 +34,20 @@ def make_hist(fname):
         pdat = pickle.load(fn1)
         pdat = np.array(pdat)
         pdat = np.real(pdat)
-        pdat_avg, pdat_err, pdat_freqarr = pdat
+        try:
+            pdat_avg, pdat_err, pdat_freqarr, pdat_excl = pdat
+        except ValueError:
+            print("not the right number of values to unpack.  expected 3")
+            print("but shape is", pdat.shape)
+            print("failing on file", pvalfn)
+            sys.exit(1)
 
     # get file name for error
-    if 'mom' not in fname:
+    if 'I' not in fname:
         errfn = fname.replace('_', "_err_", 1)
     else:
         errfn = re.sub('_mom', '_err_mom', fname)
+    print("file with stat errors:", errfn)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
         errdat = np.real(np.array(errdat))
@@ -78,7 +85,7 @@ def make_hist(fname):
             if median_diff != 0:
                 freq_median = (freq_median+half)/2
             try:
-                sys_err = np.std(np.array(median_err), ddof=1)
+                sys_err = np.std(freq, ddof=1)
             except ZeroDivisionError:
                 print("zero division error:")
                 print(np.array(median_err))
@@ -88,16 +95,17 @@ def make_hist(fname):
             # print(hist)
             center = (bins[:-1] + bins[1:]) / 2
             width = 0.7 * (bins[1] - bins[0])
-            erronerrmedianstr = str(gvar.gvar(freq_median,
-                                              sys_err.sdev)).split('(')[1]
-            median = gvar.gvar(freq_median, sys_err.val)
-            for i,pval in median_err:
+            # erronerrmedianstr = str(gvar.gvar(freq_median,
+            #                                   sys_err.sdev)).split('(')[1]
+            median = gvar.gvar(freq_median, sys_err)
+            for j,(i,pval) in enumerate(median_err):
                 median_diff = i-median
                 median_diff = gvar.gvar(abs(median_diff.val),
                                         max(i.sdev, median.sdev))
                 avg_diff = i-avg[dim]
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
+                l = exclarr[j]
                 if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                         median_diff.val)>abs(median_diff.sdev):
                     print(i, pval, median_diff, avg_diff, l)
