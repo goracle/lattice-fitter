@@ -312,6 +312,7 @@ if GEVP:
 
 else:
     TITLE_PREFIX = '24c '
+    TITLE_PREFIX = '32c '
 
 if SUPERJACK_CUTOFF:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
