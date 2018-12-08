@@ -859,7 +859,8 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = np.array([
         getattr(i[0], avgname) for i in min_arr], dtype=object)
-    pickl_excl = np.array([inverse_excl(meta, i[2]) for i in min_arr], dtype=object)
+    pickl_excl = np.array([inverse_excl(meta, i[2])
+                           for i in min_arr], dtype=object)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
     pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
