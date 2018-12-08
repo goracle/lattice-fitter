@@ -455,7 +455,7 @@ def main():
                 min_arr = loop_result(min_arr, overfit_arr)
                 if not meta.skiploop:
 
-                    result_min = find_mean_and_err(min_arr)
+                    result_min = find_mean_and_err(meta, min_arr)
 
                     # do the best fit again, with good stopping condition
                     # latfit.config.FIT_EXCL = min_excl(min_arr)
@@ -712,7 +712,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                 ret = True
     return ret
 
-def find_mean_and_err(min_arr):
+def find_mean_and_err(meta, min_arr):
     """Find the mean and error from results of fit"""
     result_min = {}
     weight_sum = np.sum([getattr(
@@ -740,7 +740,7 @@ def find_mean_and_err(min_arr):
 
             # dump the results to file
             if ISOSPIN != 0:
-                dump_fit_range(min_arr, avgname,
+                dump_fit_range(meta, min_arr, avgname,
                                res_mean, err_check)
 
             # error propagation
@@ -839,7 +839,16 @@ def getuniqueres(min_arr):
             keys.add(key)
     return ret
 
-def dump_fit_range(min_arr, avgname, res_mean, err_check):
+def inverse_excl(meta, excl):
+    """Get the included fit points from excluded points"""
+    full = meta.actual_range()
+    ret = [np.array(full) for _ in range(len(excl))]
+    for i, excldim in enumerate(excl):
+        inds = [full.index(i) for i in excldim]
+        ret[i] = list(np.delete(ret[i], inds))
+    return ret
+
+def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
     #print("starting arg:", avgname)
@@ -850,7 +859,7 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = np.array([
         getattr(i[0], avgname) for i in min_arr], dtype=object)
-    pickl_excl = np.array([i[2] for i in min_arr], dtype=object)
+    pickl_excl = np.array([inverse_excl(meta, i[2]) for i in min_arr], dtype=object)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
     pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
@@ -862,6 +871,8 @@ def dump_fit_range(min_arr, avgname, res_mean, err_check):
             avgname = avgname+'_'+dump_fit_range.fn1
         avgname = re.sub('.jkdat', '', avgname)
         errname = avgname.replace('_', "_err_", 1)
+        filename = avgname
+        filename_err = errname
     else:
         filename = avgname+"_"+MOMSTR+'_I'+str(ISOSPIN)
         filename_err = errname+"_"+MOMSTR+'_I'+str(ISOSPIN)
