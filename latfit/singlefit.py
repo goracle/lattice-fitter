@@ -31,8 +31,10 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
     # process the file(s)
     if singlefit.reuse is None:
-        singlefit.coords_full, singlefit.cov_full, singlefit.reuse = extract(input_f, xmin, xmax, xstep)
-    coords_full, cov_full, reuse = singlefit.coords_full, singlefit.cov_full, singlefit.reuse
+        singlefit.coords_full, singlefit.cov_full, singlefit.reuse = extract(
+            input_f, xmin, xmax, xstep)
+    coords_full, cov_full, reuse = singlefit.coords_full,\
+        singlefit.cov_full, singlefit.reuse
 
     # Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs',
@@ -71,17 +73,25 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
     if GEVP:
         singlefit.error2 = np.array([np.sqrt(np.diag(cov_full[i][i])
-        ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2
+        ) for i in range(len(
+            coords_full))]) if singlefit.error2 is None else singlefit.error2
         #print("(Rough) scale of errors in data points = ",
         #np.sqrt(np.diag(cov[0][0])))
     else:
         singlefit.error2 = np.array([np.sqrt(cov_full[i][i]
-        ) for i in range(len(coords_full))]) if singlefit.error2 is None else singlefit.error2
+        ) for i in range(len(
+            coords_full))]) if singlefit.error2 is None else singlefit.error2
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
     if FIT:
         # compute inverse of covariance matrix
-        covinv = covinv_avg(cov, params.dimops)
+        try:
+            covinv = covinv_avg(cov, params.dimops)
+        except np.linalg.linalg.LinAlgError:
+            covinv = np.zeros(cov.shape)
+            for i in range(len(covinv)):
+                for j in range(len(covinv)):
+                    covinv[i][j] = np.nan
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
             result_min, param_err = jackknife_fit(params, reuse,
                                                   coords, covinv)

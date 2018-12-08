@@ -6,6 +6,13 @@ import numpy as np
 
 from latfit.mathfun.maptomat import maptomat
 
+class AvgCovSingular(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, message=''):
+        print("***ERROR***")
+        print("Average covariance matrix is singular")
+        super(AvgCovSingular, self).__init__(message)
+        self.message = message
 
 def covinv_avg(cov, dimops=1):
     """Return the inverse of the average covariance matrix.
@@ -19,10 +26,14 @@ def covinv_avg(cov, dimops=1):
             # swap axes, take inverse, swap back
             covinv = swap(tensorinv(swap(cov, 1, 2)), 1, 2)
     except np.linalg.linalg.LinAlgError as err:
-        if err == 'Singular matrix':
-            print("Covariance matrix is singular.")
+        if str(err) == 'Singular matrix':
+            print("Average covariance matrix is singular.")
             print("Check to make sure plot range does",
                   "not contain a mirror image.")
+        raise
+    return covinv
+
+"""
             retcov = maptomat(cov, dimops)
             if dimops > 1:
                 try:
@@ -41,6 +52,5 @@ def covinv_avg(cov, dimops=1):
                                 np.transpose(retcov)[i], separator=', '))
                         print("det=", det(retcov))
             sys.exit(1)
-        else:
-            raise
-    return covinv
+
+"""
