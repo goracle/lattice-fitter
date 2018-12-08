@@ -73,7 +73,7 @@ def make_hist(fname):
             loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                           key = lambda elem: elem[2], reverse=True)
             median_err = []
-            for i, j, k, l in loop:
+            for i, j, k, _ in loop:
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
                     freq_median = i
@@ -105,7 +105,7 @@ def make_hist(fname):
                 avg_diff = i-avg[dim]
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
-                l = exclarr[j]
+                l = exclarr[list(freq).index(i.val)]
 
                 ind_diff = diff_ind(i, np.array(median_err)[:,0])
 
