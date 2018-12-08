@@ -106,9 +106,14 @@ def make_hist(fname):
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
                 l = exclarr[j]
+
+                ind_diff = diff_ind(i, np.array(median_err)[:,0])
+
                 if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                         median_diff.val)>abs(median_diff.sdev):
-                    print(i, pval, median_diff, avg_diff, l)
+                    print(i, pval, ind_diff, median_diff, avg_diff, l)
+                elif ind_diff.val or ind_diff.sdev:
+                    print(i, pval, ind_diff, l)
                 else:
                     print(i, pval, l)
             print('p-value weighted median =', str(median))
@@ -131,6 +136,23 @@ def make_hist(fname):
             print("xerr =", xerr)
             pdf.savefig()
             plt.show()
+
+def diff_ind(res, arr):
+    """Find the maximum difference between fit range result i
+    and all the other fit ranges
+    """
+    maxdiff = 0
+    maxerr = 0
+    for gres in arr:
+        diff = abs(res.val-gres.val)
+        maxdiff = max(diff, maxdiff)
+        if maxdiff == diff:
+            maxerr = max(res.sdev, gres.sdev)
+            if maxerr >= maxdiff:
+                maxdiff = 0
+                maxerr = 0
+    return gvar.gvar(maxdiff, maxerr)
+                
 
 def getxerr(freq, center, errdat_dim):
     """Get horiz. error bars"""
