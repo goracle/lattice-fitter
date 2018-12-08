@@ -475,7 +475,7 @@ def main():
                 result_min_close, param_err_close, \
                     plotdata.coords, plotdata.cov = retsingle
 
-                print_fit_results(min_arr)
+                print_fit_results(meta, min_arr)
                 result_min, param_err = combine_results(
                     result_min, result_min_close,
                     meta.skiploop, param_err, param_err_close)
@@ -816,13 +816,13 @@ def find_mean_and_err(meta, min_arr):
         "A parameter error is not a number (nan)"
     return result_min
 
-def print_fit_results(min_arr):
+def print_fit_results(meta, min_arr):
     """ Print the fit results
     """
-    print("Fit results:  red. chisq, excl, pvalue")
+    print("Fit results:  pvalue, energies, err on energies, included fit points")
     res = []
     for i in min_arr:
-        res.append((getattr(i[0], "pvalue"), i[1:]))
+        res.append((getattr(i[0], "pvalue"), getattr(i[0], 'x'), i[1], inverse_excl(meta, i[2])))
     res = sorted(res, key=lambda x: x[0])
     for i in res:
         print(i)
