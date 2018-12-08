@@ -302,7 +302,9 @@ def main():
             plotdata.fitcoord = meta.fit_coord()
         except (NegChisq, RelGammaError, NoConvergence,
                 np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                DOFNonPos, BadChisq, ZetaError) as _:
+                DOFNonPos, BadChisq, ZetaError) as err:
+            print("fit failed (acceptably) with error:",
+                  err.__class__.__name__)
             pass
         # update the known exclusion information with plot points
         # which are nan (not a number) or
