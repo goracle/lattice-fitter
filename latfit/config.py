@@ -414,8 +414,10 @@ BINDS = [[0, 2] for _ in range(2*DIM+1)]
 BINDS[1::2] = [[-1, 1] for _ in enumerate(BINDS[1::2])]
 BINDS = [[None, None] for _ in range(len(START_PARAMS)*DIM+(
     1 if SYS_ENERGY_GUESS is not None else 0))]
+BINDS = [[None, None]] if not BINDS else BINDS
 BINDS = [tuple(bind) for bind in BINDS]
 BINDS = tuple(BINDS)
+print("Bounds on fit parameters:", BINDS)
 
 # BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 
