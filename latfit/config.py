@@ -474,8 +474,8 @@ REINFLATE_BEFORE_LOG = False
 
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 
-NORMS = [[(-1 if i ==1 else 1)*(-1 if j==1 else 1) for i in range(DIM)] for j in range(DIM)]
-NORMS = [[1 for i in range(DIM)] for j in range(DIM)]
+OPERATOR_NORMS = [1e-6, 1e-2, 1e-5, 1e-5]
+OPERATOR_NORMS = [1 for i in range(DIM)]
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
 # more than one is supported, but probably not a good idea - see ref above)
