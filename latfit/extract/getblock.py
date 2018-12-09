@@ -2,6 +2,8 @@
 import sys
 from collections import deque
 from math import fsum
+from sympy import exp, N, S
+from sympy.matrices import Matrix
 import scipy
 import scipy.linalg
 from scipy import linalg
@@ -19,7 +21,7 @@ from latfit.jackknife_fit import jack_mean_err
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
-from latfit.config import NORMS, GEVP_DEBUG, USE_LATE_TIMES
+from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM, LOGFORM
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
@@ -29,6 +31,13 @@ from latfit.config import HINTS_ELIM
 from latfit.config import REINFLATE_BEFORE_LOG
 
 from mpi4py import MPI
+
+NORMS = [[1 for _ in range(len(OPERATOR_NORMS))]
+         for _ in range(len(OPERATOR_NORMS))]
+
+for i, norm in enumerate(OPERATOR_NORMS):
+    for j, norm2 in enumerate(OPERATOR_NORMS):
+        NORMS[i][j] = norm*norm2
 
 MPIRANK = MPI.COMM_WORLD.rank
 
@@ -118,11 +127,67 @@ def log_matrix(cmat, check=False):
     assert np.allclose(cmat, scipy.linalg.expm(ret), rtol=1e-8)
     return ret
 
+# from here
+# https://github.com/numpy/numpy/issues/8786
+def kahan_sum(a, axis=0):
+    a = np.asarray(a)
+    s = np.zeros(a.shape[:axis] + a.shape[axis+1:])
+    c = np.zeros(s.shape)
+    for i in range(a.shape[axis]):
+        # http://stackoverflow.com/a/42817610/353337
+        y = a[(slice(None), ) * axis + (i, )] - c
+        t = s + y
+        c = (t - s) - y
+        s = t.copy()
+    return s
+
+def cmatdot(cmat, vec, transp=False):
+    cmat = np.asarray(cmat)
+    cmat = cmat.T if transp else cmat
+    vec = np.asarray(vec)
+    ret = np.zeros(vec.shape)
+    for i, row in enumerate(cmat):
+        tosum = []
+        for j, item in enumerate(row):
+            tosum.append(item*vec[j])
+        ret[i] = kahan_sum(tosum)
+    return ret
+
 def bracket(evec, cmat):
+    """ form v* . cmat . v """
+    checkherm(cmat)
+    right = cmatdot(cmat, evec)
+    retsum = []
+    for i,j in zip(np.conj(evec), right):
+        retsum.append(i*j/2)
+        retsum.append(np.conj(i*j)/2)
+    ret = kahan_sum(retsum)
+    return ret
+
+def convtosmat(cmat):
+    """Convert numpy matrix to sympy matrix
+    for high precision calculation
     """
-    form v* . cmat . v
-    """
-    return np.dot(np.dot(np.conj(evec), cmat), evec)
+    ll1 = len(cmat)
+    smat=[[S(str(cmat[i][j])) for i in range(ll1)] for j in range(ll1)]
+    mmat = Matrix(smat)
+    return mmat
+
+def sym_evals_gevp(c_lhs, c_rhs):
+    """Do high precision solve of GEVP"""
+    c_lhs = convtosmat(c_lhs)
+    c_rhs = convtosmat(c_rhs)
+    res = (c_rhs**-1*c_lhs).eigenvals()
+    rres = []
+    for i in res:
+        rres.append(N(i))
+    nums = []
+    for num in rres:
+        nums.append(np.complex(num))
+    for i, num in enumerate(nums):
+        if np.abs(np.imag(num)) < 1e-8:
+            nums[i] = np.real(num)
+    return nums
 
 def calleig(c_lhs, c_rhs=None):
     """Actual call to scipy.linalg.eig"""
@@ -133,7 +198,8 @@ def calleig(c_lhs, c_rhs=None):
         c_lhs_check = np.dot(linalg.inv(c_rhs), c_lhs)
         c_lhs = rhs-lhs
         try:
-            assert np.allclose(linalg.eigvals(c_lhs_check), linalg.eigvals(linalg.expm(-c_lhs)))
+            assert np.allclose(linalg.eigvals(c_lhs_check),
+                               linalg.eigvals(linalg.expm(-c_lhs)))
         except AssertionError:
             print(np.log(linalg.eigvals(c_lhs_check)))
             print(linalg.eigvals(-c_lhs))
@@ -162,11 +228,27 @@ def calleig(c_lhs, c_rhs=None):
                                             overwrite_b=False,
                                             check_finite=True)
     for i, (eval1, evec) in enumerate(zip(eigenvals, evecs.T)):
-        eval_check = bracket(evec,c_lhs)/bracket(evec, c_rhs)
+        for j,k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
+            try:
+                assert np.allclose(eval1, j/k, rtol=1e-8)
+            except AssertionError:
+                print("GEVP solution does not solve GEVP")
+                print(j,k,j/k,eval1)
+                print("lhs, rhs")
+                print(np.array2string(c_lhs, separator=','))
+                print(np.array2string(c_rhs, separator=','))
+                print('trying symbolic extended precision calc of eigenvalues')
+                sevals = sym_evals_gevp(c_lhs, c_rhs)
+                print(sevals)
+                print(eigenvals)
+                # assert np.allclose(sortevals(eigenvals), sevals, rtol=1e-8)
+                sys.exit(1)
+        eval_check = bracket(evec, c_lhs)/bracket(evec, c_rhs)
         try:
             assert np.allclose(eval_check, eval1, rtol=1e-10)
         except AssertionError:
-            print("Eigenvalue consistency check failed.  ratio and eigenvalue not equal.")
+            print("Eigenvalue consistency check failed."+\
+                  "  ratio and eigenvalue not equal.")
             print("bracket lhs, bracket rhs, ratio, eval")
             print(bracket(evec,c_lhs), bracket(evec,c_rhs),
                   bracket(evec,c_lhs)/bracket(evec,c_rhs), eval1)
@@ -347,7 +429,8 @@ def solve_gevp(c_lhs, c_rhs=None):
     else:
         allowedeliminations(eliminated_operators)
     try:
-        assert len(eliminated_operators) == dimops_orig-dimops or dimops == 0
+        assert len(eliminated_operators) == \
+            dimops_orig-dimops or dimops == 0
     except AssertionError:
         print("deletion count is wrong.")
         print('dimops, dimops_orig, eliminated_operators:')
@@ -505,7 +588,7 @@ def checkgteq0(eigfin):
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^\dagger)/2"""
-    return (np.conj(gevp_mat).T+gevp_mat)/2
+    return kahan_sum([np.conj(gevp_mat).T, gevp_mat])/2
 
 
 class ImaginaryEigenvalue(Exception):
