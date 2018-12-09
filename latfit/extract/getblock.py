@@ -175,8 +175,12 @@ def convtosmat(cmat):
 
 def sym_evals_gevp(c_lhs, c_rhs):
     """Do high precision solve of GEVP"""
-    c_lhs = convtosmat(c_lhs)
-    c_rhs = convtosmat(c_rhs)
+    c_lhs = np.asarray(c_lhs)
+    c_rhs = np.asarray(c_rhs)
+    c_lhs = convtosmat(0.5*c_lhs)
+    c_rhs = convtosmat(0.5*c_rhs)
+    c_lhs = c_lhs+c_lhs.T
+    c_rhs = c_rhs+c_rhs.T
     res = (c_rhs**-1*c_lhs).eigenvals()
     rres = []
     for i in res:

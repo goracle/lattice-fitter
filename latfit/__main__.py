@@ -848,10 +848,34 @@ def inverse_excl(meta, excl):
         ret[i] = list(np.delete(ret[i], inds))
     return ret
 
+def dump_min_err_jackknife_blocks(min_arr, mindim=None):
+    """Dump the jackknife blocks for the energy with minimum errors"""
+    errname = 'x_err'
+    err = np.array([getattr(i[0], errname) for i in min_arr])
+    dimops = err.shape[1]
+    if dimops == 1:
+        err = err[:,0]
+        print("dumping jackknife energies with error:", min(err))
+        ind = list(err).index(min(err))
+    else:
+        assert mindim is not None, "needs specification of operator"+\
+            " dimension to write min error jackknife blocks (unsupported)."
+        ind = list(err).index(min(err[:, mindim]))
+    arr = getattr(min_arr[ind][0], 'x_arr')
+    try:
+        assert min(err) == np.std(arr)*np.sqrt(len(arr-1))
+    except AssertionError:
+        print("error check failed")
+        print(min(err), np.std(arr)*np.sqrt(len(arr-1)))
+    fname = "x_min.jkdat"
+    pickle.dump(arr, open(fname+'.p', "wb"))
+
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
     #print("starting arg:", avgname)
+    if 'x_arr' in avgname: # no clobber (only do this once)
+        dump_min_err_jackknife_blocks(min_arr)
     errname = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname

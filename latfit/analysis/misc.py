@@ -21,6 +21,13 @@ P111 = 0.4715
 #P0 = 0.13957(19)
 P0 = 0.13975
 
+try:
+    fn1 = open('x_min.jkdat.p', 'rb')
+    P0 = pickle.load(fn1)
+except FileNotFoundError:
+    pass
+
+
 IRREP = None
 CONTINUUM = True
 

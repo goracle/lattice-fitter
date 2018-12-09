@@ -78,9 +78,9 @@ MAX_ITER = 100 if ISOSPIN == 1 else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
-MAX_RESULTS = np.inf
 MAX_RESULTS = 16
-MAX_RESULTS = 1 if ISOSPIN == 1 else MAX_RESULTS
+MAX_RESULTS = np.inf
+MAX_RESULTS = 1 if ISOSPIN == 1 and GEVP else MAX_RESULTS
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
