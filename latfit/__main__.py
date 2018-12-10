@@ -36,7 +36,7 @@ from latfit.config import ISOSPIN, MOMSTR
 from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
-from latfit.config import GEVP, STYPE
+from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF
 from latfit.config import MAX_ITER, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.jackknife_fit import jack_mean_err
@@ -850,6 +850,9 @@ def inverse_excl(meta, excl):
 
 def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     """Dump the jackknife blocks for the energy with minimum errors"""
+    fname = "x_min"
+    if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
+        fname = fname + '_'+dump_fit_range.fn1
     errname = 'x_err'
     err = np.array([getattr(i[0], errname) for i in min_arr])
     dimops = err.shape[1]
@@ -857,17 +860,30 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
         err = err[:,0]
         print("dumping jackknife energies with error:", min(err))
         ind = list(err).index(min(err))
+        arr = getattr(min_arr[ind][0], 'x_arr')
     else:
         assert mindim is not None, "needs specification of operator"+\
             " dimension to write min error jackknife blocks (unsupported)."
-        ind = list(err).index(min(err[:, mindim]))
-    arr = getattr(min_arr[ind][0], 'x_arr')
-    try:
-        assert min(err) == np.std(arr)*np.sqrt(len(arr-1))
-    except AssertionError:
-        print("error check failed")
-        print(min(err), np.std(arr)*np.sqrt(len(arr-1)))
-    fname = "x_min.jkdat"
+        print(err.shape)
+        ind = list(err[:, mindim]).index(min(err[:, mindim]))
+        fname = fname+'_mindim'+str(mindim)
+        arr = np.asarray(getattr(min_arr[ind][0], 'x_arr')[:, mindim])
+    fname = fname+'.jkdat'
+    print(err.shape)
+    print(arr.shape)
+    errcheck = np.std(arr)*np.sqrt(len(arr-1))
+    if not SUPERJACK_CUTOFF:
+        try:
+            if mindim is None:
+                assert min(err) == errcheck
+            else:
+                assert min(err[:, mindim]) == errcheck
+        except AssertionError:
+            print("error check failed")
+            if mindim is None:
+                print(min(err), errcheck)
+            else:
+                print(min(err[:, mindim]), errcheck)
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
@@ -875,7 +891,11 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     """
     #print("starting arg:", avgname)
     if 'x_arr' in avgname: # no clobber (only do this once)
-        dump_min_err_jackknife_blocks(min_arr)
+        if MULT > 1:
+            for i in range(len(res_mean)):
+                dump_min_err_jackknife_blocks(min_arr, mindim=i)
+        else:
+            dump_min_err_jackknife_blocks(min_arr)
     errname = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname

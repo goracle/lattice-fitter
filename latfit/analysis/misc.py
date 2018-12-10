@@ -35,7 +35,7 @@ def fitepi(norm):
     """Select the right E_pi"""
     ret = None
     if norm == 0:
-        ret = P0
+        ret = MASS
     elif norm == 1:
         ret = P1
     elif norm == 2:
