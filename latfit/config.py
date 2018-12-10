@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -40,19 +40,15 @@ EFF_MASS = True if GEVP else EFF_MASS
 
 EFF_MASS_METHOD = 4
 
-# estimate systematic error with function in chi_sq.py (not working yet)
-SYSTEMATIC_EST = True
-SYSTEMATIC_EST = False
-
 # METHODS/PARAMS
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 7
 SUPERJACK_CUTOFF = 0
+SUPERJACK_CUTOFF = 7
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 1
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -60,9 +56,9 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -72,22 +68,33 @@ MOMSTR = opc.get_comp_str(IRREP)
 ONLY_SMALL_FIT_RANGES = True
 ONLY_SMALL_FIT_RANGES = False
 
-# how many loop iterations until we start using random samples
-MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
-MAX_ITER = 100 if ISOSPIN == 1 else MAX_ITER
-# MAX_RESULTS is the max number of usable fit ranges to average over
-# (useful for random fitting; the fitter will otherwise take a long time)
-# set this to np.inf to turn off
-MAX_RESULTS = 16
-MAX_RESULTS = np.inf
-MAX_RESULTS = 1 if ISOSPIN == 1 and GEVP else MAX_RESULTS
+# if true, do not loop over fit ranges.
+NOLOOP = True
+NOLOOP = False
+
+# lattice ensemble to take gauge config average over
+
+LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
+
+# take derivative of GEVP eigenvalues
+GEVP_DERIV = False
+GEVP_DERIV = True
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
-L_BOX = 32
-AINVERSE = 1.4
-#PION_MASS = 0.13975*AINVERSE
-PION_MASS = 0.10470*AINVERSE
+if LATTICE_ENSEMBLE == '32c':
+    L_BOX = 32
+    AINVERSE = 1.3784
+    PION_MASS = 0.10470*AINVERSE
+    LT = 64
+    assert SUPERJACK_CUTOFF == 0, "0 exact configs exist for 32c"
+elif LATTICE_ENSEMBLE == '24c':
+    L_BOX = 24
+    AINVERSE = 1.015 
+    PION_MASS = 0.13975*AINVERSE
+    LT = 64
+    assert SUPERJACK_CUTOFF == 7, "7 exact configs exist for 24c"
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
@@ -108,7 +115,6 @@ TSEP_VEC = [0]
 TSEP_VEC = [3, 3]
 TSEP_VEC = [3, 0, 3]
 TSEP_VEC = [3 for _ in range(DIM)] if GEVP else [0]
-LT = 64
 
 # print raw gevp info (for debugging source construction)
 
@@ -118,7 +124,7 @@ GEVP_DEBUG = False
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
-FIT_SPACING_CORRECTION = True if L_BOX == 32 else FIT_SPACING_CORRECTION
+FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c' else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
@@ -158,6 +164,12 @@ DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION\
 DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
     else DELTA_E2_AROUND_THE_WORLD
 
+# change this if the slowest pion is not stationary
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
+
+
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[], [2, 5, 6, 7, 8]]
@@ -169,14 +181,6 @@ FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-
-# if true, do not loop over fit ranges.
-NOLOOP = False
-NOLOOP = True
-
-# log form (take log of GEVP matrices)
-LOGFORM = True
-LOGFORM = False
 
 # hints to eliminate
 HINTS_ELIM = {}
@@ -253,11 +257,22 @@ else:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
+
 SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
+# how many loop iterations until we start using random samples
+MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
+MAX_ITER = 100 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
+# MAX_RESULTS is the max number of usable fit ranges to average over
+# (useful for random fitting; the fitter will otherwise take a long time)
+# set this to np.inf to turn off
+MAX_RESULTS = np.inf
+MAX_RESULTS = 16
+MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
+MAX_RESULTS = 3
 
 # modify the configs used and bin
 
@@ -311,8 +326,10 @@ if GEVP:
             r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
 
 else:
-    TITLE_PREFIX = '24c '
-    TITLE_PREFIX = '32c '
+    if LATTICE_ENSEMBLE == '24c':
+        TITLE_PREFIX = '24c '
+    elif LATTICE_ENSEMBLE == '32c':
+        TITLE_PREFIX = '32c '
 
 if SUPERJACK_CUTOFF:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
@@ -356,16 +373,18 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 
 # phase shift error cut, absolute, in degrees.
 # if the error is bigger than this, skip this fit range
+# I=2 is not very noisy
 PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
 
 # skip fit range if parameter (energy) errors greater than 100%
+# I=2 is not very noisy
 SKIP_LARGE_ERRORS = False
 SKIP_LARGE_ERRORS = True if ISOSPIN == 2 else SKIP_LARGE_ERRORS
 
 # box plot (for effective mass tolerance display)?
 # doesn't look good with large systematics (no plateau)
 BOX_PLOT = True
-BOX_PLOT = False if ISOSPIN == 1 else BOX_PLOT
+BOX_PLOT = False if SYS_ENERGY_GUESS is not None and GEVP else BOX_PLOT
 BOX_PLOT = False if len(START_PARAMS) != 1 else BOX_PLOT
 
 # dispersive lines
@@ -378,8 +397,8 @@ DECREASE_VAR = 1e-4
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues
-DELETE_NEGATIVE_OPERATORS = False
 DELETE_NEGATIVE_OPERATORS = True
+DELETE_NEGATIVE_OPERATORS = False
 DELETE_NEGATIVE_OPERATORS = False if ISOSPIN != 1 else DELETE_NEGATIVE_OPERATORS
 
 # precision to display, number of decimal places
@@ -460,6 +479,14 @@ NO_PLOT = True
 NO_PLOT = False
 
 # -------BEGIN POSSIBLY OBSOLETE------#
+
+# log form (take log of GEVP matrices)
+LOGFORM = True
+LOGFORM = False
+
+# estimate systematic error with function in chi_sq.py (not working yet)
+SYSTEMATIC_EST = True
+SYSTEMATIC_EST = False
 
 # use very late time slices in the GEVP.
 # these may have very large error bars and be numerically less well behaved,
@@ -561,6 +588,7 @@ UP.pionmass = misc.MASS
 UP.pionratio = PIONRATIO
 UP.lent = LT
 UP.gevp = GEVP
+UP.deltat = -1 if GEVP_DERIV else int(T0[6:])
 FITS.select(UP)
 
 # END DO NOT MODIFY
@@ -746,10 +774,6 @@ if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
         RESCALE = 1.0
-# change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
-if DELTA_E2_AROUND_THE_WORLD is not None:
-    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 print("Assuming slowest around the world term particle is stationary.  Emin=",
       DELTA_E_AROUND_THE_WORLD)
 print("2nd order around the world term, delta E=",
@@ -765,7 +789,8 @@ assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
-FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
+assert not FIT_SPACING_CORRECTION or ISOSPIN == 2, "isospin 2 is the only user of this"+\
+    " lattice spacing correction method"
 if FIT_SPACING_CORRECTION:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
     DELTA_E2_AROUND_THE_WORLD= misc.uncorrect_epipi(
