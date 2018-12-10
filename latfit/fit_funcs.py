@@ -1,5 +1,5 @@
 """Library of fit functions to use"""
-
+import sys
 from math import log, cosh, sinh, tanh
 from numbers import Number
 import numpy as np
@@ -39,6 +39,7 @@ class FitFunctions:
         TSTEP2 = upd.tstep2
         PION_MASS = upd.pionmass
         PIONRATIO = upd.pionratio
+        DELTAT = upd.deltat
         self._fitfuncadd.update(upd)
         self._fitfunc.update(upd)
         self._update_f()
@@ -68,6 +69,7 @@ PIONRATIO = False
 USE_FIXED_MASS = True
 TRHS = None
 GEVP = False
+DELTAT = 1
 
 class FitFuncAdd:
     """Exponential fit functions with additive constant"""
@@ -79,6 +81,7 @@ class FitFuncAdd:
         self._c = C
         self._tstep = TSTEP
         self._tstep2 = TSTEP2
+        self._deltat = DELTAT
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
@@ -91,6 +94,7 @@ class FitFuncAdd:
         self._tstep = upd.tstep
         self._tstep2 = upd.tstep2
         self._pionmass = upd.pionmass
+        self._deltat = upd.deltat
         self._pionratio = upd.pionratio
         self._gevp = upd.gevp
 
@@ -123,6 +127,12 @@ class FitFuncAdd:
         if not nocheck:
             testsol(sol, corrs, times)
         sol = log(sol) if self._log else sol
+        try:
+            assert sol >= 0 or np.isnan(sol)
+        except AssertionError:
+            print("bad ratio.  should be 1/ratio")
+            print(sol)
+            sys.exit(1)
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
@@ -177,16 +187,25 @@ class FitFuncAdd:
         lent = self._lent if lent is None else lent
         tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
         tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
-        corrs_num = [exp(-trial_params[0]*(ctime+i*tstep+j*tstep2)) +
-                     exp(-trial_params[0]*(lent-(ctime+i*tstep+j*tstep2)))
+        deltat = self._deltat
+        corrs_num = [exp(-trial_params[0]*(ctime-deltat+i*tstep+j*tstep2)) +
+                     exp(-trial_params[0]*(lent-(ctime-deltat+i*tstep+j*tstep2)))
                      for j in range(2) for i in range(2)]
         corrs_num[2:] = [0, 0] if tstep2 is None else [*corrs_num[2:]]
         corrs_num[2:] = [0, 0] if not self._gevp else corrs_num[2:]
-        corrs_denom = [exp(-trial_params[0]*(ctime+1+i*tstep+j*tstep2)) +
-                       exp(-trial_params[0]*(lent-(ctime+1+i*tstep+j*tstep2)))
+        corrs_denom = [exp(-trial_params[0]*(ctime+i*tstep+j*tstep2)) +
+                       exp(-trial_params[0]*(lent-(ctime+i*tstep+j*tstep2)))
                        for j in range(2) for i in range(2)]
         corrs_denom[2:] = [0, 0] if tstep2 is None else [*corrs_denom[2:]]
         corrs_denom[2:] = [0, 0] if not self._gevp else corrs_denom[2:]
+        if deltat < 0:
+            corrs_num, corrs_denom = corrs_denom, corrs_num
+        try:
+            assert corrs_num[0] >= corrs_denom[0]
+        except AssertionError:
+            print("bug.  bad ratio")
+            print(corrs_num[0], corrs_denom[0])
+            sys.exit(1)
         corrs = [*corrs_num, *corrs_denom]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
@@ -237,6 +256,7 @@ class FitFunc:
         self._c = C
         self._tstep = TSTEP
         self._tstep2 = TSTEP2
+        self._deltat = DELTAT
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
@@ -248,6 +268,7 @@ class FitFunc:
         self._c = upd.c
         self._tstep = upd.tstep
         self._tstep2 = upd.tstep2
+        self._deltat = upd.deltat
         self._pionmass = upd.pionmass
         self._pionratio = upd.pionratio
         self._gevp = upd.gevp
@@ -281,6 +302,12 @@ class FitFunc:
         if not nocheck:
             testsol(sol, corrs, times)
         sol = log(sol) if self._log else sol
+        try:
+            assert sol >= 0 or np.isnan(sol)
+        except AssertionError:
+            print("bad ratio.  should be 1/ratio")
+            print(sol)
+            sys.exit(1)
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
@@ -332,6 +359,7 @@ class FitFunc:
         """
         tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
         tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        deltat = self._deltat
         lent = self._lent if lent is None else lent
         corrs = [exp(-trial_params[0]*(ctime+i*tstep)) +
                  exp(-trial_params[0]*(lent-(ctime+i*tstep)))

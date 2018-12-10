@@ -23,6 +23,7 @@ from latfit.config import XLABEL
 from latfit.config import YLABEL
 from latfit.config import UNCORR
 from latfit.config import FIT
+from latfit.config import GEVP_DERIV, T0
 from latfit.config import METHOD, DECREASE_VAR
 from latfit.config import BINDS
 from latfit.config import START_PARAMS
@@ -355,7 +356,9 @@ def print_messages(result_min, param_err, param_chisq):
     print("Model includes additive constant:", ADD_CONST)
     if EFF_MASS:
         print("Effective mass method:", EFF_MASS_METHOD)
-    print("Assisted Fit:", ASSISTED_FIT)
+    # print("Assisted Fit:", ASSISTED_FIT)
+    print("GEVP derivative taken:", GEVP_DERIV)
+    print("GEVP delta t:", int(T0[6:]))
     print("Minimizer (of chi^2) method:", METHOD)
     if METHOD == 'L-BFGS-B':
         print("Bounds:", BINDS)

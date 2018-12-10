@@ -22,7 +22,7 @@ from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
-from latfit.config import BINNUM, LOGFORM
+from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
 from latfit.config import STYPE
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
@@ -659,8 +659,11 @@ def callprocmeff(eigvals, timeij, delta_t):
     """Call processing function for effective mass"""
     dimops = len(eigvals[0])
     toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
-    energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
-    energies =  energies/delta_t if not LOGFORM else energies
+    if GEVP_DERIV:
+        energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op], eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
+    else:
+        energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
+    # energies =  energies/delta_t if not LOGFORM else energies
     #avg_energies = eigvals_mean_t/delta_t
     return energies
 
@@ -750,8 +753,11 @@ if EFF_MASS:
                       allowedeliminations())
 
 
-        #eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
-        eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
+        if GEVP_DERIV:
+            eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
+            checkgteq0(eigvals_mean_tp1)
+        else:
+            eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
         #eigvals_mean_tp2 = get_eigvals(cmat_lhs_tp2_mean, mean_crhs)
         eigvals_mean_tp2 = [np.nan]*len(eigvals_mean_t)
         #eigvals_mean_tp3 = get_eigvals(cmat_lhs_tp3_mean, mean_crhs)
@@ -761,7 +767,8 @@ if EFF_MASS:
             checkgteq0(eigvals_mean_tp2)
             checkgteq0(eigvals_mean_tp3)
 
-        avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp2,
+        avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
+                                     eigvals_mean_tp2,
                                      eigvals_mean_tp3], timeij, delta_t)
 
         return avg_energies, eigvals_mean_t
@@ -849,8 +856,11 @@ if EFF_MASS:
 
                 tprob = None if not EFF_MASS else tprob
 
-                #eigvals2 = get_eigvals(cmat_lhs_tp1[num], cmat_rhs[num])
-                eigvals2 = [np.nan]*len(eigvals)
+                if GEVP_DERIV:
+                    eigvals2 = get_eigvals(cmats_lhs[1][num], cmat_rhs[num])
+                    checkgteq0(eigvals2)
+                else:
+                    eigvals2 = [np.nan]*len(eigvals)
 
                 #eigvals3 = get_eigvals(cmat_lhs_tp2[num], cmat_rhs[num])
                 eigvals3 = [np.nan]*len(eigvals)
@@ -878,7 +888,8 @@ if EFF_MASS:
             
             # process the eigenvalues
             
-            energies = callprocmeff([eigvals, eigvals3, eigvals4],
+            energies = callprocmeff([eigvals, eigvals2,
+                                     eigvals3, eigvals4],
                                     timeij, delta_t)
             if solve_gevp.mean is None:
                 result = variance_reduction(energies,
