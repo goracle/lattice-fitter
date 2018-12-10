@@ -5,7 +5,6 @@ import numpy as np
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 
-MASS = 0
 BOX_LENGTH = 1
 
 #p1
@@ -19,14 +18,13 @@ P11 = 0.39461
 P111 = 0.4715
 #p0
 #P0 = 0.13957(19)
-P0 = 0.13975
+MASS = 0
 
 try:
-    fn1 = open('x_min.jkdat.p', 'rb')
-    P0 = pickle.load(fn1)
+    fn1 = open('x_min_pioncorrChk_mom000.jkdat.p', 'rb')
+    MASS = pickle.load(fn1)
 except FileNotFoundError:
     pass
-
 
 IRREP = None
 CONTINUUM = True
