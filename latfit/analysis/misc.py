@@ -18,13 +18,30 @@ P11 = 0.39461
 P111 = 0.4715
 #p0
 #P0 = 0.13957(19)
+LATTICE = None
 MASS = 0
 
 try:
-    fn1 = open('x_min_pioncorrChk_mom000.jkdat.p', 'rb')
+    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_mom000.jkdat.p', 'rb')
     MASS = pickle.load(fn1)
 except FileNotFoundError:
     pass
+try:
+    fn1 = open('x_min_'+LATTICE+'pioncorrChk_p111.jkdat.p', 'rb')
+    P111 = pickle.load(fn1)
+except FileNotFoundError:
+    pass
+try:
+    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p11.jkdat.p', 'rb')
+    P11 = pickle.load(fn1)
+except FileNotFoundError:
+    pass
+try:
+    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p1.jkdat.p', 'rb')
+    P1 = pickle.load(fn1)
+except FileNotFoundError:
+    pass
+
 
 IRREP = None
 CONTINUUM = True

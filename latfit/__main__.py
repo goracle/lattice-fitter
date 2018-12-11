@@ -38,7 +38,7 @@ from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF
 from latfit.config import MAX_ITER, BIASED_SPEEDUP, MAX_RESULTS
-from latfit.config import CALC_PHASE_SHIFT
+from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.jackknife_fit import jack_mean_err
 import latfit.extract.getblock
 
@@ -850,7 +850,7 @@ def inverse_excl(meta, excl):
 
 def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     """Dump the jackknife blocks for the energy with minimum errors"""
-    fname = "x_min"
+    fname = "x_min_"+str(LATTICE_ENSEMBLE)
     if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
         fname = fname + '_'+dump_fit_range.fn1
     errname = 'x_err'
@@ -868,7 +868,6 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
         ind = list(err[:, mindim]).index(min(err[:, mindim]))
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'x_arr')[:, mindim])
-    fname = fname+'.jkdat'
     print(err.shape)
     print(arr.shape)
     errcheck = np.std(arr)*np.sqrt(len(arr-1))
