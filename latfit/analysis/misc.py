@@ -6,42 +6,81 @@ from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 
 BOX_LENGTH = 1
+MASS = 0
+LATTICE = None
 
+
+P1 = None
+P11 = None
+P111 = None
 #p1
 #P1 = 0.29641(25)
-P1 = 0.29641
 #p11
 #P11 = 0.39461(38)
-P11 = 0.39461
 #p111
 #P111 = 0.4715(11)
-P111 = 0.4715
 #p0
 #P0 = 0.13957(19)
-LATTICE = None
-MASS = 0
 
-try:
-    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_mom000.jkdat.p', 'rb')
-    MASS = pickle.load(fn1)
-except FileNotFoundError:
-    pass
-try:
-    fn1 = open('x_min_'+LATTICE+'pioncorrChk_p111.jkdat.p', 'rb')
-    P111 = pickle.load(fn1)
-except FileNotFoundError:
-    pass
-try:
-    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p11.jkdat.p', 'rb')
-    P11 = pickle.load(fn1)
-except FileNotFoundError:
-    pass
-try:
-    fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p1.jkdat.p', 'rb')
-    P1 = pickle.load(fn1)
-except FileNotFoundError:
-    pass
+def mass():
+    if misc.MASS == 0:
+        try:
+            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_mom000.jkdat.p', 'rb')
+            misc.MASS = pickle.load(fn1)
+        except FileNotFoundError:
+            pass
+    return misc.MASS
 
+def p1():
+    """E_pi(|p|=1)"""
+    if LATTICE == '24c':
+        ret = 0.29641
+    elif LATTICE == '32c':
+        ret = 0.22248
+    if p1.P1 is None:
+        try:
+            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p1.jkdat.p', 'rb')
+            P1 = pickle.load(fn1)
+        except FileNotFoundError:
+            pass
+    if p1.P1 is not None:
+        ret = P1
+    return ret
+p1.P1 = None
+
+def p11():
+    """E_pi(|p|=11)"""
+    if LATTICE == '24c':
+        ret = 0.39461
+    elif LATTICE == '32c':
+        ret = 0.2971
+    if p11.P11 is None:
+        try:
+            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p11.jkdat.p', 'rb')
+            p11.P11 = pickle.load(fn1)
+        except FileNotFoundError:
+            pass
+    if p11.P11 is not None:
+        ret = P11
+    return ret
+p11.P11 = None
+
+def p111():
+    """E_pi(|p|=11)"""
+    if LATTICE == '24c':
+        ret = 0.4715
+    elif LATTICE == '32c':
+        ret = 0.3514
+    if p111.P111 is None:
+        try:
+            fn1 = open('x_min_'+LATTICE+'pioncorrChk_p111.jkdat.p', 'rb')
+            p111.P111 = pickle.load(fn1)
+        except FileNotFoundError:
+            pass
+    if p111.P111 is not None:
+        ret = p111.P111
+    return ret
+p111.P111 = None
 
 IRREP = None
 CONTINUUM = True
@@ -52,11 +91,11 @@ def fitepi(norm):
     if norm == 0:
         ret = MASS
     elif norm == 1:
-        ret = P1
+        ret = p1()
     elif norm == 2:
-        ret = P11
+        ret = p11()
     elif norm == 3:
-        ret = P111
+        ret = p111()
     else:
         assert ret is not None, ""
     return ret
