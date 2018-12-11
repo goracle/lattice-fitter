@@ -806,3 +806,4 @@ assert not BIASED_SPEEDUP, "it is biased.  do not use."
 assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
+assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP)

@@ -31,7 +31,7 @@ from latfit.singlefit import singlefit
 import latfit.singlefit
 import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, NOLOOP
-from latfit.config import FIT, METHOD
+from latfit.config import FIT, METHOD, T0
 from latfit.config import ISOSPIN, MOMSTR
 from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
@@ -212,7 +212,7 @@ class FitRangeMetaData:
         if DELTA_E2_AROUND_THE_WORLD is not None:
             delta += DELTA_T2_MATRIX_SUBTRACTION
         if GEVP and MATRIX_SUBTRACTION:
-            if self.xmin < delta:
+            if self.xmin < delta + int(T0[6:]):
                 ret = delta + self.xstep
         self.xmin = ret
 

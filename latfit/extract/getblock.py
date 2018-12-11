@@ -799,8 +799,8 @@ if EFF_MASS:
         files_tup[3] is the t+2 lhs
         C(t)v = Eigval*C(t_0)v
         """
-        if timeij == 3.0:
-            assert delta_t == 1, "bug:"+str(delta_t)
+        #if timeij == 3.0:
+        #    assert delta_t == 1, "bug:"+str(delta_t)
         assert delta_t is not None, "delta_t is None"
         if not delta_t:
             delta_t = 1.0

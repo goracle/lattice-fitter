@@ -132,7 +132,7 @@ class FitFuncAdd:
         except AssertionError:
             print("bad ratio.  should be 1/ratio")
             print(sol)
-            sys.exit(1)
+            raise
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
@@ -205,7 +205,7 @@ class FitFuncAdd:
         except AssertionError:
             print("bug.  bad ratio")
             print(corrs_num[0], corrs_denom[0])
-            sys.exit(1)
+            raise
         corrs = [*corrs_num, *corrs_denom]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
@@ -307,7 +307,7 @@ class FitFunc:
         except AssertionError:
             print("bad ratio.  should be 1/ratio")
             print(sol)
-            sys.exit(1)
+            raise
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
