@@ -647,14 +647,14 @@ def toosmallp(meta, excl):
         if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
             print("warning: only two data points in fit curve")
             # allow for very noisy excited states in I=0
-            if ISOSPIN != 0 or not GEVP:
+            if not (ISOSPIN == 0 and GEVP):
                 ret = True
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.xstep)) != len(excl):
         print("not an arithmetic sequence")
         ret = True
-    ret = False if ISOSPIN == 0 else ret
+    ret = False if ISOSPIN == 0 and GEVP else ret
     return ret
 
 def print_phaseshift(result_min):
@@ -706,7 +706,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                     :-1] < PHASE_SHIFT_ERR_CUT):
                 print("warning: phase shift errors on "+\
                         "last state very large")
-                ret = True if ISOSPIN == 2 else ret
+                ret = True if ISOSPIN == 2 and GEVP else ret
             else:
                 print("phase shift errors too large")
                 ret = True
@@ -739,7 +739,7 @@ def find_mean_and_err(meta, min_arr):
                 for i in min_arr], axis=0))
 
             # dump the results to file
-            if ISOSPIN != 0:
+            if not (ISOSPIN == 0 and GEVP):
                 dump_fit_range(meta, min_arr, avgname,
                                res_mean, err_check)
 
@@ -884,12 +884,13 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
                 print(min(err), errcheck)
             else:
                 print(min(err[:, mindim]), errcheck)
+    print("writing", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result
     """
-    #print("starting arg:", avgname)
+    print("starting arg:", avgname)
     if 'x_arr' in avgname: # no clobber (only do this once)
         if MULT > 1:
             for i in range(len(res_mean)):

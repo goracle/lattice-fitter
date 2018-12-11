@@ -74,12 +74,13 @@ NOLOOP = False
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = False
 GEVP_DERIV = True
+GEVP_DERIV = False if not GEVP else GEVP_DERIV
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -124,7 +125,8 @@ GEVP_DEBUG = False
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
-FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c' else FIT_SPACING_CORRECTION
+FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
+    else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
@@ -165,7 +167,9 @@ DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
     else DELTA_E2_AROUND_THE_WORLD
 
 # change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
+    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP\
+    and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 
@@ -179,7 +183,9 @@ FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
 FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0], [6,7,12.0, 13.0, 14.0, 15.0, 16.0], [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
+FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0],
+            [6,7,12.0, 13.0, 14.0, 15.0, 16.0],
+            [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 
 # hints to eliminate
