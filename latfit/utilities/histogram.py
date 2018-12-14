@@ -15,6 +15,15 @@ def main():
     for fname in sys.argv[1:]:
         make_hist(fname)
 
+def trunc(val):
+    """Truncate the precision of a number
+    using gvar"""
+    if isinstance(val, int):
+        ret = val
+    else:
+        ret = float(str(gvar.gvar(val))[:-3])
+    return ret
+
 def make_hist(fname):
     """Make histograms
     """
@@ -63,8 +72,8 @@ def make_hist(fname):
         with PdfPages(save_str) as pdf:
             title_dim = title+' state:'+str(dim)
             freq = np.array([np.real(i) for i in freqarr[:, dim]])
-            print("val(err); pvalue; median difference;",
-                  " avg difference; fit excl")
+            print("val(err); pvalue; ind diff; median difference;",
+                  " avg difference; fit range")
             pdat_median = np.median(pdat_freqarr)
             median_diff = np.inf
             median_diff2 = np.inf
@@ -99,6 +108,7 @@ def make_hist(fname):
             #                                   sys_err.sdev)).split('(')[1]
             median = gvar.gvar(freq_median, sys_err)
             for j,(i,pval) in enumerate(median_err):
+                pval = trunc(pval)
                 median_diff = i-median
                 median_diff = gvar.gvar(abs(median_diff.val),
                                         max(i.sdev, median.sdev))
@@ -106,6 +116,8 @@ def make_hist(fname):
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
                 l = exclarr[list(freq).index(i.val)]
+                if len(l.shape) > 1:
+                    l = l[dim]
 
                 ind_diff = diff_ind(i, np.array(median_err)[:,0])
 
