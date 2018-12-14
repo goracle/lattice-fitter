@@ -74,13 +74,20 @@ NOLOOP = False
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '24c'
 LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
 
 # take derivative of GEVP eigenvalues
-GEVP_DERIV = False
 GEVP_DERIV = True
+GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
+
+# T0 behavior for GEVP (t/2 or t-1)
+
+T0 = 'TMINUS1' # t-1
+T0 = 'ROUND' # ceil(t/2)
+T0 = 'LOOP' # ceil(t/2)
+T0 = 'TMINUS4'
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -89,13 +96,14 @@ if LATTICE_ENSEMBLE == '32c':
     AINVERSE = 1.3784
     PION_MASS = 0.10470*AINVERSE
     LT = 64
-    assert SUPERJACK_CUTOFF == 0, "0 exact configs exist for 32c"
+    SUPERJACK_CUTOFF = 0 # , "0 exact configs exist for 32c"
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
     AINVERSE = 1.015 
     PION_MASS = 0.13975*AINVERSE
     LT = 64
-    assert SUPERJACK_CUTOFF == 7, "7 exact configs exist for 24c"
+    SUPERJACK_CUTOFF = 7 # , "0 exact configs exist for 32c"
+    #assert SUPERJACK_CUTOFF == 7, "7 exact configs exist for 24c"
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
@@ -237,13 +245,6 @@ MINTOL = False
 # rescale the fit function by factor RESCALE
 RESCALE = 1e12
 RESCALE = 1.0
-
-# T0 behavior for GEVP (t/2 or t-1)
-
-T0 = 'TMINUS1' # t-1
-T0 = 'ROUND' # ceil(t/2)
-T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS1'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.

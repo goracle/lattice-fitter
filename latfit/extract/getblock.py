@@ -162,6 +162,7 @@ def bracket(evec, cmat):
         retsum.append(i*j/2)
         retsum.append(np.conj(i*j)/2)
     ret = kahan_sum(retsum)
+    assert ret != 0
     return ret
 
 def convtosmat(cmat):
@@ -663,8 +664,7 @@ def callprocmeff(eigvals, timeij, delta_t):
         energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op], eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
     else:
         energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
-    # energies =  energies/delta_t if not LOGFORM else energies
-    #avg_energies = eigvals_mean_t/delta_t
+        energies =  energies/delta_t if not LOGFORM else energies
     return energies
 
 
