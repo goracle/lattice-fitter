@@ -661,9 +661,9 @@ def print_phaseshift(result_min):
     """Print the phase shift info from a single fit range"""
     for i in range(MULT):
         if CALC_PHASE_SHIFT:
+            print("phase shift of state #")
             if np.isreal(result_min.phase_shift[i]):
-                print("phase shift of state #",
-                      i, gvar.gvar(
+                  print(i, gvar.gvar(
                           result_min.phase_shift[i],
                           result_min.phase_shift_err[i]))
             else:
@@ -673,10 +673,11 @@ def print_phaseshift(result_min):
                         "phase shift error is not real"
                 except AssertionError:
                     temperr = np.imag(result_min.phase_shift_err[i])
-                print("phase shift of state #",
-                      i, gvar.gvar(
-                          np.imag(result_min.phase_shift[i]),
-                          temperr), 'j')
+                print(result_min.phase_shift[i], "+/-")
+                print(result_min.phase_shift_err[i])
+                #print(i, gvar.gvar(
+                #          np.imag(result_min.phase_shift[i]),
+                #          temperr), 'j')
 
 def cutresult(result_min, min_arr, overfit_arr, param_err):
     """Check if result of fit to a
