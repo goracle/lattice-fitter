@@ -95,8 +95,8 @@ misc.IRREP = IRREP
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
-#print(misc.dispersive([1, 1, 1]))
-#sys.exit(0)
+# print(misc.dispersive([1, 1, 1]))
+# sys.exit(0)
 
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
@@ -137,19 +137,23 @@ DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
-ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP)  # no need to modify
+ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
 DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
     [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
         [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
-#DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
+# DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(
     IRREP)[0], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
         opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
-DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION) if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
-print("2nd order momenta for around the world:", opc.mom2ndorder('A1_mom1'), opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
+DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(
+    rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)\
+    if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
+print("2nd order momenta for around the world:",
+      opc.mom2ndorder('A1_mom1'),
+      opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0\
@@ -174,7 +178,8 @@ FIT_EXCL = [[], [], []]
 FIT_EXCL = [[5], [5, 6], [5, 6], []]
 FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
             [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0], [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
+FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0],
+            [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0],
             [6,7,12.0, 13.0, 14.0, 15.0, 16.0],
@@ -588,7 +593,8 @@ UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep',
 UP.add_const = ADD_CONST
 UP.log = LOG
 UP.c = C
-# make global tstep equal to delta t so fit functions below will be setup correctly
+# make global tstep equal to delta t
+# so fit functions below will be setup correctly
 UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
 UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
@@ -629,7 +635,8 @@ if EFF_MASS:
             else:
                 if SYS_ENERGY_GUESS is not None:
                     START_PARAMS.append(SYS_ENERGY_GUESS)
-                    assert not (len(START_PARAMS)-1) % 2, "bad start parameter spec."
+                    assert not (
+                        len(START_PARAMS)-1) % 2, "bad start parameter spec."
                     def prefit_func(ctime, trial_params):
                         """eff mass method 1, fit func, single const fit
                         """
@@ -686,7 +693,8 @@ else:
         if RESCALE != 1.0:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
-                return [RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
+                return [
+                    RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
                     ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
                         for j in range(MULT)]
         else:
@@ -719,12 +727,14 @@ else:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
                         exponential fit function."""
-                        return FITS._select['pion_ratio'](ctime, trial_params)
+                        return FITS._select['pion_ratio'](
+                            ctime, trial_params)
                 else:
                     def prefit_func(ctime, trial_params):
                         """Prefit function, copy of
                         exponential fit function."""
-                        return FITS._select['fit_func_exp'](ctime, trial_params)
+                        return FITS._select[
+                            'fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
@@ -755,7 +765,8 @@ print(GEVP_DIRS)
 MULT = len(GEVP_DIRS) if GEVP else 1
 if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
-assert not(LOG and PIONRATIO), "Taking a log is improper when doing a pion ratio fit."
+assert not(LOG and PIONRATIO),\
+    "Taking a log is improper when doing a pion ratio fit."
 assert len(LT_VEC) == MULT, "Must set time separation separately for"+\
     " each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or"+\
@@ -796,7 +807,8 @@ assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
-assert not FIT_SPACING_CORRECTION or ISOSPIN == 2, "isospin 2 is the only user of this"+\
+assert not FIT_SPACING_CORRECTION or ISOSPIN == 2,\
+    "isospin 2 is the only user of this"+\
     " lattice spacing correction method"
 if FIT_SPACING_CORRECTION:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
