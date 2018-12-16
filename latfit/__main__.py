@@ -211,9 +211,10 @@ class FitRangeMetaData:
         delta = DELTA_T_MATRIX_SUBTRACTION
         if DELTA_E2_AROUND_THE_WORLD is not None:
             delta += DELTA_T2_MATRIX_SUBTRACTION
-        if GEVP and MATRIX_SUBTRACTION:
+        delta = 0 if not MATRIX_SUBTRACTION else delta
+        if GEVP:
             if self.xmin < delta + int(T0[6:]):
-                ret = delta + self.xstep
+                ret = (delta + int(T0[6:]) + 1)* self.xstep
         self.xmin = ret
 
     def fit_coord(self):

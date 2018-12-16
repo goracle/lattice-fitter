@@ -16,39 +16,18 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
 GEVP = False
 GEVP = True
 
-# Plot Effective Mass? True or False
-
-EFF_MASS = False
-EFF_MASS = True
-EFF_MASS = True if GEVP else EFF_MASS
-
-# EFF_MASS_METHOD 1: analytic for arg to acosh
-# (good for when additive const = 0, but noiser than 3 and 4)
-# EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
-# (bad for all cases; DO NOT USE.  It doesn't converge very often.)
-# EFF_MASS_METHOD 3: one param fit
-# EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
-# traditional effective mass method), typically a fast version of 3 (3 may have better different error properties, though)
-
-EFF_MASS_METHOD = 4
-
 # METHODS/PARAMS
 
-# super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
-# variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 0
-SUPERJACK_CUTOFF = 7
-
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -57,25 +36,16 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom11'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
-# only loop over fit ranges with one or two time slices
-# (useful for error optimization after a full fit range loop)
-ONLY_SMALL_FIT_RANGES = True
-ONLY_SMALL_FIT_RANGES = False
-
-# if true, do not loop over fit ranges.
-NOLOOP = True
-NOLOOP = False
-
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = True
@@ -87,7 +57,21 @@ GEVP_DERIV = False if not GEVP else GEVP_DERIV
 T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS4'
+T0 = 'TMINUS3'
+
+# if true, do not loop over fit ranges.
+NOLOOP = True
+NOLOOP = False
+
+# only loop over fit ranges with one or two time slices
+# (useful for error optimization after a full fit range loop)
+ONLY_SMALL_FIT_RANGES = True
+ONLY_SMALL_FIT_RANGES = False
+
+# super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
+# variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
+SUPERJACK_CUTOFF = 7
+SUPERJACK_CUTOFF = 0
 
 # automatically generate free energies, no need to modify if GEVP
 # (einstein dispersion relation sqrt(m^2+p^2))
@@ -255,6 +239,22 @@ PIONRATIO = False
 USE_FIXED_MASS = False
 USE_FIXED_MASS = True
 
+# Plot Effective Mass? True or False
+
+EFF_MASS = False
+EFF_MASS = True
+EFF_MASS = True if GEVP else EFF_MASS
+
+# EFF_MASS_METHOD 1: analytic for arg to acosh
+# (good for when additive const = 0, but noiser than 3 and 4)
+# EFF_MASS_METHOD 2: numeric solve system of three transcendental equations
+# (bad for all cases; DO NOT USE.  It doesn't converge very often.)
+# EFF_MASS_METHOD 3: one param fit
+# EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
+# traditional effective mass method), typically a fast version of 3 (3 may have better different error properties, though)
+
+EFF_MASS_METHOD = 4
+
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5, .2]
@@ -280,7 +280,6 @@ MAX_ITER = 100 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 MAX_RESULTS = np.inf
 MAX_RESULTS = 16
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
-MAX_RESULTS = 3
 
 # modify the configs used and bin
 

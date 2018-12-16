@@ -242,11 +242,13 @@ def calleig(c_lhs, c_rhs=None):
                 print("lhs, rhs")
                 print(np.array2string(c_lhs, separator=','))
                 print(np.array2string(c_rhs, separator=','))
-                print('trying symbolic extended precision calc of eigenvalues')
+                print('trying symbolic extended precision',
+                      'calc of eigenvalues')
                 sevals = sym_evals_gevp(c_lhs, c_rhs)
                 print(sevals)
                 print(eigenvals)
-                # assert np.allclose(sortevals(eigenvals), sevals, rtol=1e-8)
+                # assert np.allclose(sortevals(
+                # eigenvals), sevals, rtol=1e-8)
                 sys.exit(1)
         eval_check = bracket(evec, c_lhs)/bracket(evec, c_rhs)
         try:
@@ -380,7 +382,8 @@ def solve_gevp(c_lhs, c_rhs=None):
         count = 0
         dimdeldict = {}
 
-        # try to eliminate different operators to remove negative eigenvalues
+        # try to eliminate different operators
+        # to remove negative eigenvalues
         loop = list(range(dimops+1))
         if len(loop) > 3:
             pass
@@ -484,7 +487,8 @@ def nexthint(idx=None):
         if len(solve_gevp.hint) > nexthint.idx+1:
             nexthint.idx += 1
     else:
-        assert solve_gevp.hint is None, "inconsistency in assigning variable"
+        assert solve_gevp.hint is None,\
+            "inconsistency in assigning variable"
     dimremaining, toelim = ret
     assert toelim < dimremaining, "index error"
     assert isinstance(dimremaining, int), "bug"
@@ -661,10 +665,15 @@ def callprocmeff(eigvals, timeij, delta_t):
     dimops = len(eigvals[0])
     toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
     if GEVP_DERIV:
-        energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op], eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
+        energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op],
+                                        eigvals[1][op], eigvals[2][op]),
+                                       index=op, time_arr=timeij)
+                             for op in range(dimops)])
     else:
-        energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op], eigvals[2][op]), index=op, time_arr=timeij) for op in range(dimops)])
-        energies =  energies/delta_t if not LOGFORM else energies
+        energies = np.array([proc_meff((toproc[op], 1, eigvals[1][op],
+                                        eigvals[2][op]), index=op,
+                                       time_arr=timeij)
+                             for op in range(dimops)])
     return energies
 
 
