@@ -361,8 +361,8 @@ class FitFunc:
         tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
         deltat = self._deltat
         lent = self._lent if lent is None else lent
-        corrs = [exp(-trial_params[0]*(ctime+i*tstep)) +
-                 exp(-trial_params[0]*(lent-(ctime+i*tstep)))
+        corrs = [exp(-trial_params[0]*(ctime+i*tstep*deltat)) +
+                 exp(-trial_params[0]*(lent-(ctime+i*tstep*deltat)))
                  for i in range(2)]
         return self.ratio_exp(corrs, ctime, nocheck=True)
 
