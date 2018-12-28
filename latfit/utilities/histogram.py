@@ -79,6 +79,7 @@ def make_hist(fname):
             median_diff2 = np.inf
             half = 0
             errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
+            print(freqarr[:, dim], errlooparr)
             loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                           key = lambda elem: elem[2], reverse=True)
             median_err = []
