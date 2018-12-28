@@ -87,13 +87,25 @@ THERMNUM = 0  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST44 else 4539  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
 #assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
+TSTEP = 10 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
-TSTEP = 10 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 # max time distance between (inner) particles
 TDIS_MAX = 64
-TDIS_MAX = 16
 TDIS_MAX = 22
+TDIS_MAX = 16
+
+# 32c
+TSEP = 4
+TDIS_MAX = 22
+TSTEP = 10
+
+
+# 24c
+TSEP = 3
+TDIS_MAX = 16
+TSTEP = 8
+
 
 
 # DO NOT CHANGE IF NOT DEBUGGING
@@ -174,7 +186,6 @@ def fill_write_block(fndef=FNDEF):
 
 WRITEBLOCK = []
 WRITEBLOCK = ['pioncorrChk_mom000']
-WRITEBLOCK = fill_write_block(FNDEF)
 # only write the single particle correlators
 WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
