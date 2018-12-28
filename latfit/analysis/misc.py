@@ -137,6 +137,7 @@ def uncorrect_epipi(epipi, irr=None):
     else:
         energies = [epipi]
         ret = correct_epipi(energies, irr, uncorrect=True)[0]
+        ret += energies[0]
     return ret
 
 def norm2(mom):
