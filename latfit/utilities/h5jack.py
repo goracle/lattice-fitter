@@ -1402,7 +1402,7 @@ def main(fixn=False):
             avg_irreps()
 
 @PROFILE
-def avg_irreps():
+def avg_irreps(ext='.jkdat'):
     """Average irreps"""
     if MPIRANK == 0:
         for isostr in ('I0', 'I1', 'I2'):
@@ -1411,14 +1411,14 @@ def avg_irreps():
                 # extract the complete operator list from all the irrep rows
                 for example_row in AVG_ROWS[irrep]:
                     for op1 in glob.glob(isostr+'/'+'*'+example_row+\
-                                         '.jkdat'):
-                        op_list.add(re.sub(example_row+'.jkdat',
+                                         ext):
+                        op_list.add(re.sub(example_row+ext,
                                            '', re.sub(isostr+'/', '', op1)))
                 for op1 in list(op_list):
-                    avg_hdf5.OUTNAME = isostr+'/'+op1+irrep+'.jkdat'
+                    avg_hdf5.OUTNAME = isostr+'/'+op1+irrep+ext
                     avg_list = []
                     for row in AVG_ROWS[irrep]:
-                        avg_list.append(isostr+'/'+op1+row+'.jkdat')
+                        avg_list.append(isostr+'/'+op1+row+ext)
                     avg_hdf5.main(*avg_list)
 
 @PROFILE
