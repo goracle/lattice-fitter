@@ -1,6 +1,7 @@
 """"Get the data block."""
 import sys
 from collections import deque
+import re
 from math import fsum
 from sympy import exp, N, S
 from sympy.matrices import Matrix
@@ -8,6 +9,7 @@ import scipy
 import scipy.linalg
 from scipy import linalg
 from scipy import stats
+import math
 from matplotlib.mlab import PCA
 import numpy as np
 import h5py
@@ -16,6 +18,7 @@ from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
+from latfit.extract.proc_folder import proc_folder
 from latfit.jackknife_fit import jack_mean_err
 
 from latfit.config import EFF_MASS
@@ -23,12 +26,16 @@ from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
-from latfit.config import STYPE
+from latfit.config import STYPE, ISOSPIN, GEVP_DIRS
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DECREASE_VAR
-from latfit.config import HINTS_ELIM
+from latfit.config import HINTS_ELIM, DISP_ENERGIES
 from latfit.config import REINFLATE_BEFORE_LOG
+from latfit.config import DELTA_E_AROUND_THE_WORLD
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
+from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+from latfit.config import DELTA_T_MATRIX_SUBTRACTION
 
 from mpi4py import MPI
 
@@ -46,6 +53,7 @@ if MATRIX_SUBTRACTION and GEVP:
 
 XMAX = 999
 
+"""
 if PIONRATIO and GEVP:
     PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+\
                ('s' if i != 1 else '') for i in range(2)]
@@ -55,6 +63,7 @@ if PIONRATIO and GEVP:
         GN1 = h5py.File(istr+'.jkdat', 'r')
         PION.append(np.array(GN1[istr]))
     PION = np.array(PION)
+"""
 
 #if STYPE == 'hdf5':
 def getline_loc(filetup, num):
@@ -114,6 +123,16 @@ def removerowcol(cmat, idx):
 def is_pos_semidef(x):
     return np.all(np.linalg.eigvals(x) >= 0)
 
+def defsign(x):
+    if np.all(np.linalg.eigvals(x) > 0):
+        ret = 1
+    elif np.all(np.linalg.eigvals(x) < 0):
+        ret = -1
+    else:
+        ret = False
+    return ret
+
+
 def log_matrix(cmat, check=False):
     if check:
         try:
@@ -156,6 +175,7 @@ def cmatdot(cmat, vec, transp=False):
 def bracket(evec, cmat):
     """ form v* . cmat . v """
     checkherm(cmat)
+    cmat += np.eye(len(cmat))*1e-11
     right = cmatdot(cmat, evec)
     retsum = []
     for i,j in zip(np.conj(evec), right):
@@ -170,6 +190,7 @@ def convtosmat(cmat):
     for high precision calculation
     """
     ll1 = len(cmat)
+    cmat += np.eye(ll1)*1e-6
     smat=[[S(str(cmat[i][j])) for i in range(ll1)] for j in range(ll1)]
     mmat = Matrix(smat)
     return mmat
@@ -228,6 +249,11 @@ def calleig(c_lhs, c_rhs=None):
     else:
         checkherm(c_lhs)
         checkherm(c_rhs)
+        signlhs = defsign(c_lhs)
+        signrhs = defsign(c_rhs)
+        #assert signrhs
+        #assert signlhs
+        #assert signlhs == signrhs
         eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs,
                                             overwrite_a=False,
                                             overwrite_b=False,
@@ -236,23 +262,27 @@ def calleig(c_lhs, c_rhs=None):
         for j,k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
             try:
                 assert np.allclose(eval1, j/k, rtol=1e-8)
+                flag_nosolve = False
             except AssertionError:
-                print("GEVP solution does not solve GEVP")
-                print(j,k,j/k,eval1)
-                print("lhs, rhs")
-                print(np.array2string(c_lhs, separator=','))
-                print(np.array2string(c_rhs, separator=','))
-                print('trying symbolic extended precision',
-                      'calc of eigenvalues')
-                sevals = sym_evals_gevp(c_lhs, c_rhs)
-                print(sevals)
-                print(eigenvals)
+                flag_nosolve = True
+                #print("GEVP solution does not solve GEVP")
+                #print(j,k,j/k,eval1)
+                #print("evec=", evec)
+                #print("lhs, rhs")
+                #print(np.array2string(c_lhs, separator=','))
+                #print(np.array2string(c_rhs, separator=','))
+                #print('trying symbolic extended precision',
+                      #'calc of eigenvalues')
+                #sevals = sym_evals_gevp(c_lhs, c_rhs)
+                #print(sevals)
+                #print(eigenvals)
                 # assert np.allclose(sortevals(
                 # eigenvals), sevals, rtol=1e-8)
-                sys.exit(1)
+        eigenvals[i] = -1 if flag_nosolve else eigenvals[i]
         eval_check = bracket(evec, c_lhs)/bracket(evec, c_rhs)
         try:
-            assert np.allclose(eval_check, eval1, rtol=1e-10)
+            if not flag_nosolve:
+                assert np.allclose(eval_check, eval1, rtol=1e-10)
         except AssertionError:
             print("Eigenvalue consistency check failed."+\
                   "  ratio and eigenvalue not equal.")
