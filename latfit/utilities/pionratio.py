@@ -86,18 +86,24 @@ def piondirect():
             top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
             top2 = np.mean(top2, axis=1)
 
+            # for use in I=1
+            top3 = -1*top2
+
             assert top2[0][0] > 100
-            momstr = 'mom1src'+rf.ptostr(momf)+\
+            momstr = 'sep'+str(TSEP)+'_mom1src'+rf.ptostr(momf)+\
                 '_mom2src'+rf.ptostr(momg)+'_mom1snk'
             key1 = addfigd(momstr)+rf.ptostr(momf)
+            key3halves = addfigdvec(momstr)+rf.ptostr(momf)
             key2 = addfigd(momstr)+rf.ptostr(momg)
+            key3 = addfigdvec(momstr)+rf.ptostr(momg)
             if 'mom1src000_mom2src001_mom1snk001' in key1:
                 pass
                 #print(fname, gname)
             if 'mom1src000_mom2src001_mom1snk001' in key2:
                 pass
                 #print(fname, gname, '2')
-            if 'mom1src000_mom2src001_mom1snk001' in key1 or 'mom1src000_mom2src001_mom1snk001' in key2:
+            if 'mom1src000_mom2src001_mom1snk001' in key1 or\
+               'mom1src000_mom2src001_mom1snk001' in key2:
                 #print(save1)
                 #print(save2)
                 temp = np.mean(top2,axis=0)
@@ -114,13 +120,25 @@ def piondirect():
                 count[key1] = 1
             else:
                 count[key1] += 1
+            if key3halves not in allblks:
+                allblks[key3halves] = np.zeros((len(toppi), LT), dtype=np.complex)
+                count[key3halves] = 1
+            else:
+                count[key3halves] += 1
             if key2 not in allblks:
                 allblks[key2] = np.zeros((len(toppi), LT), dtype=np.complex)
                 count[key2] = 1
             else:
                 count[key2] += 1
+            if key3 not in allblks:
+                allblks[key3] = np.zeros((len(toppi), LT), dtype=np.complex)
+                count[key3] = 1
+            else:
+                count[key3] += 1
             allblks[key1] += top1/2
+            allblks[key3halves] += top1/2
             allblks[key2] += top2/2
+            allblks[key3] += top3/2
 
     for i in allblks:
         try:
@@ -130,7 +148,6 @@ def piondirect():
             print("topologies used:", count[i])
             print(i)
     temp = opc.op_list(stype=STYPE)
-    assert 'FigureD_mom1src011_mom2src100_mom1snk011' in allblks
     ocs = overall_coeffs(
         isoproj(False, 0, dlist=list(
             allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
@@ -181,7 +198,10 @@ def directratio(allblks, deltat_matrix=3):
         assert abs(allblks[blk][0][13]) < 1
     return allblks
 
-
+def addfigdvec(strin):
+    """Add figure D vec to string"""
+    return 'FigureD_vec_'+strin
+ 
 
 def addfigd(strin):
     """Add figure D to string"""
