@@ -1330,7 +1330,7 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
 
 
 @PROFILE
-def main(fixn=True):
+def main(fixn=False):
     """Run this when making jackknife diagrams from raw hdf5 files"""
     #avg_irreps()
     print('start of main.')
