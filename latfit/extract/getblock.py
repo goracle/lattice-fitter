@@ -656,6 +656,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     nanindices = []
     if hasattr(orig, '__iter__'):
         assert hasattr(avg, '__iter__'), "dimension mismatch"
+        orig = np.asarray(orig)
         if len(orig.shape) == 1:
             for i,j in enumerate(zip(orig, avg)):
                     if any(np.isnan(j)):
