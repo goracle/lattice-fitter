@@ -172,8 +172,8 @@ WRITEBLOCK = fill_write_block(FNDEF)
 WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
-AVGTSRC = False
 AVGTSRC = True
+AVGTSRC = False
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 
 # debug rows/columns slicing
