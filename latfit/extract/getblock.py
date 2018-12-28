@@ -893,6 +893,9 @@ if EFF_MASS:
 
         if GEVP_DERIV:
             eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
+            for i, eva1 in enumerate(eigvals_mean_tp1):
+                if eva1 < 0:
+                    eigvals_mean_tp1[i] = np.nan
             checkgteq0(eigvals_mean_tp1)
         else:
             eigvals_mean_tp1 = [np.nan]*len(eigvals_mean_t)
@@ -996,6 +999,9 @@ if EFF_MASS:
 
                 if GEVP_DERIV:
                     eigvals2 = get_eigvals(cmats_lhs[1][num], cmat_rhs[num])
+                    for i, eva1 in enumerate(eigvals2):
+                        if eva1 < 0:
+                            eigvals2[i] = np.nan
                     checkgteq0(eigvals2)
                 else:
                     eigvals2 = [np.nan]*len(eigvals)
