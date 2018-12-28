@@ -116,9 +116,10 @@ def getfiles_gevp_singlerhs(time, time2, xstep):
                     sub[timeidx] = pencil_shift_rhs(timeidx)
 
     # do matrix subtraction to eliminate leading order around the world term
-    files = matsub(files, sub, dt1) if MATRIX_SUBTRACTION else files
-    files = matsub(files, sub, dt2, 'Two') if MATRIX_SUBTRACTION and\
-        DELTA_E2_AROUND_THE_WORLD is not None else files
+    if MATRIX_SUBTRACTION:
+        files, sub = matsub(files, sub, dt1)
+        if DELTA_E2_AROUND_THE_WORLD is not None:
+            files, sub = matsub(files, sub, dt2, 'Two')
 
     if EFF_MASS:
         ret = (files[time], files[time2], files[time+xstep],
@@ -149,7 +150,8 @@ def matsub(files, sub, dt1, dt12='One'):
     for timeidx in files:
         subtraction = copy.deepcopy(subterm[timeidx])
         files[timeidx] -= subterm[timeidx]
-    return files
+    assert isinstance(files, dict)
+    return (files, sub)
     
 
 def roundup(time, xstep, xmin):
