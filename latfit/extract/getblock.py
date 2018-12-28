@@ -691,9 +691,107 @@ def propagate_nans(blk):
         blk[config] += nandim
     return blk
 
+def aroundworld_energies():
+    """Add around the delta world energies"""
+    exp = DELTA_E_AROUND_THE_WORLD
+    exp2 = DELTA_E2_AROUND_THE_WORLD
+    return exp+exp2
+
+def aroundtheworld_pionratio(diag_name, timeij):
+    """Do around the world subtraction for the 1x1 pion ratio GEVP"""
+    name = diag_name
+    ret = proc_folder(name, timeij)
+    if MATRIX_SUBTRACTION:
+        exp = DELTA_E_AROUND_THE_WORLD
+        exp2 = DELTA_E2_AROUND_THE_WORLD
+        if exp is not None:
+            ret *= math.exp(exp*timeij)
+            sub = proc_folder(name, timeij-DELTA_T_MATRIX_SUBTRACTION)
+            sub *= math.exp(exp*(timeij-DELTA_T_MATRIX_SUBTRACTION))
+            ret -= sub
+        if exp2 is not None:
+            ret *= math.exp(exp2*timeij)
+            time2 = timeij-DELTA_T2_MATRIX_SUBTRACTION
+            sub2 = proc_folder(name, time2)
+            time3 = timeij-DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
+            sub3 = proc_folder(name, time3)
+            ret -= sub2*math.exp((exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
+    return ret
+
+def evals_pionratio(timeij):
+    """Get the non-interacting eigenvalues"""
+    ret = []
+    for i, diag in enumerate(GEVP_DIRS):
+        name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
+        ret.append(aroundtheworld_pionratio(name, timeij))
+    ret = np.swapaxes(ret, 0, 1)
+    ret = np.real(ret)
+    ret = variance_reduction(ret, np.mean(ret, axis=0))
+    return np.asarray(ret)
+
+def energies_pionratio(timeij, delta_t):
+    """Find non-interacting energies"""
+    lhs = evals_pionratio(timeij)
+    lhs_p1 = evals_pionratio(timeij+1)
+    rhs = evals_pionratio(timeij-delta_t)
+    avglhs = np.mean(lhs, axis=0)
+    avglhs_p1 = np.mean(lhs_p1, axis=0)
+    avgrhs = np.mean(rhs, axis=0)
+    try:
+        pass
+        #assert all(abs(rhs[0]/rhs[0]) > 1)
+    except AssertionError:
+        print("(abs) lhs not greater than rhs in pion ratio")
+        print("example config value of lhs, rhs:")
+        print(lhs[10],rhs[10])
+        sys.exit(1)
+    energies = []
+    arg1 = np.asarray(lhs/rhs)
+    arg2 = np.asarray(lhs_p1/rhs)
+    for i in range(len(lhs)):
+        assert all(arg1[i] > 0), "negative evals found"
+        assert all(arg2[i] > 0), "negative evals found"
+        app = callprocmeff([arg1[i], arg2[i]],
+                           timeij, delta_t)
+        energies.append(app)
+    avg_energies = callprocmeff([
+        (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t)
+    energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
+    assert all(energies[0] != energies[1]), "same energy found."
+    energies = np.array(energies)
+    energies_pionratio.store[(timeij, delta_t)] = energies
+    return energies
+energies_pionratio.store = {}
+
+if PIONRATIO:
+    def modenergies(energies_interacting, timeij, delta_t):
+        """modify energies for pion ratio
+        noise cancellation"""
+        if (timeij, delta_t) not in energies_pionratio.store:
+            energies_noninteracting = energies_pionratio(timeij, delta_t)
+        else:
+            energies_noninteracting = energies_pionratio.store[
+                (timeij, delta_t)]
+        enint = np.asarray(energies_interacting)
+        ennon = np.asarray(energies_noninteracting)
+        deltae = energies_interacting - energies_noninteracting
+        newe = deltae + DISP_ENERGIES - aroundworld_energies()
+        return newe
+else:
+    def modenergies(energies, *unused):
+        """pass"""
+        return energies
+
 def callprocmeff(eigvals, timeij, delta_t):
     """Call processing function for effective mass"""
     dimops = len(eigvals[0])
+    if len(eigvals) == 2:
+        eigvals = list(eigvals)
+        eigvals.append(np.zeros(dimops)*np.nan)
+        eigvals.append(np.zeros(dimops)*np.nan)
+        assert len(eigvals) == 4
+    for i in range(4):
+        eigvals[i] = sortevals(eigvals[i])
     toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
     if GEVP_DERIV:
         energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op],
@@ -909,17 +1007,6 @@ if EFF_MASS:
                 # cmat_rhs[num], overb=True)
                 eigvals4 = [np.nan]*len(eigvals)
 
-                if PIONRATIO:
-                    div = np.array([np.real(
-                        PION[i][num][int(timeij)]**2-PION[i][num][int(
-                        timeij)+1]**2) for i in range(dimops)])/1e10
-                    eigvals /= div
-                    eigvals2 /= div
-                    eigvals3 /= div
-                    eigvals4 /= div
-                    for i, j in enumerate(ADD_CONST_VEC):
-                        eigvals[i] -= eigvals2[i]*j
-                        eigvals2[i] -= eigvals3[i]*j
             except ImaginaryEigenvalue:
                 #print(num, file_tup)
                 print('config_num:', num, 'time:', tprob)
@@ -940,6 +1027,8 @@ if EFF_MASS:
             check_variance.append(eigvals)
             retblk.append(result)
             num += 1
+        retblk = modenergies(retblk, timeij, delta_t)
+        retblk = deque(retblk)
         assert len(retblk) == num_configs,\
             "number of configs should be the block length"
         #retblk = propagate_nans(retblk)
@@ -982,6 +1071,20 @@ else:
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk
+
+"""
+if PIONRATIO:
+div = np.array([np.real(
+    PION[i][num][int(timeij)]**2-PION[i][num][int(
+    timeij)+1]**2) for i in range(dimops)])/1e10
+eigvals /= div
+eigvals2 /= div
+eigvals3 /= div
+eigvals4 /= div
+for i, j in enumerate(ADD_CONST_VEC):
+    eigvals[i] -= eigvals2[i]*j
+    eigvals2[i] -= eigvals3[i]*j
+"""
 
 # obsolete; only works if GEVP matrix vector space shifts a lot from time slice to time slice
 # weak consistency check

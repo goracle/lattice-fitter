@@ -123,6 +123,10 @@ FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
+# Pion ratio?  Put single pion correlators in the denominator
+# of the eff mass equation to get better statistics.
+PIONRATIO = False
+PIONRATIO = True
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -140,6 +144,7 @@ ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
+
 DELTA_E2_AROUND_THE_WORLD = None
 DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
     [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
@@ -167,6 +172,7 @@ DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
     MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP\
     and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 
@@ -235,11 +241,6 @@ MINTOL = False
 RESCALE = 1e12
 RESCALE = 1.0
 
-# Pion ratio?  Put single pion correlators in the denominator
-# of the eff mass equation to get better statistics.
-PIONRATIO = True
-PIONRATIO = False
-
 # use fixed pion mass in ratio fits?
 USE_FIXED_MASS = False
 USE_FIXED_MASS = True
@@ -263,8 +264,8 @@ EFF_MASS_METHOD = 4
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5, .2]
-    if PIONRATIO:
-        START_PARAMS = [.05, 0.0005]
+#    if PIONRATIO:
+#        START_PARAMS = [.05, 0.0005]
 else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
@@ -300,7 +301,7 @@ PVALUE_MIN = 0.1
 
 LOG = False
 LOG = True
-LOG = False if PIONRATIO else LOG
+#LOG = False if PIONRATIO else LOG
 
 # Jackknife fit? (keep double for correctness, others not supported)
 
@@ -598,7 +599,7 @@ UP.c = C
 UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
 UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
 UP.pionmass = misc.MASS
-UP.pionratio = PIONRATIO
+UP.pionratio = False
 UP.lent = LT
 UP.gevp = GEVP
 UP.deltat = -1 if GEVP_DERIV else int(T0[6:])
@@ -617,7 +618,8 @@ ORIGL = len(START_PARAMS)
 if EFF_MASS:
 
     # check len of start params
-    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO and not (
+    #if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO and not (
+    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not (
             ORIGL == 2 and EFF_MASS_METHOD == 4):
         print("***ERROR***")
         print("dimension of GEVP matrix and start params do not match")
@@ -712,29 +714,30 @@ else:
                 sys.exit(1)
             # select fit function
             if RESCALE != 1.0:
-                if PIONRATIO:
-                    def prefit_func(ctime, trial_params):
-                        """Pion ratio"""
-                        return RESCALE*FITS.f[
-                            'pion_ratio'](ctime, trial_params)
-                else:
-                    def prefit_func(ctime, trial_params):
-                        """Rescaled exp fit function."""
-                        return RESCALE*FITS.f[
-                            'fit_func_exp'](ctime, trial_params)
+
+#                if PIONRATIO:
+#                    def prefit_func(ctime, trial_params):
+#                        """Pion ratio"""
+#                        return RESCALE*FITS.f[
+#                            'pion_ratio'](ctime, trial_params)
+#                else:
+                def prefit_func(ctime, trial_params):
+                    """Rescaled exp fit function."""
+                    return RESCALE*FITS.f[
+                        'fit_func_exp'](ctime, trial_params)
             else:
-                if PIONRATIO:
-                    def prefit_func(ctime, trial_params):
-                        """Prefit function, copy of
-                        exponential fit function."""
-                        return FITS._select['pion_ratio'](
-                            ctime, trial_params)
-                else:
-                    def prefit_func(ctime, trial_params):
-                        """Prefit function, copy of
-                        exponential fit function."""
-                        return FITS._select[
-                            'fit_func_exp'](ctime, trial_params)
+#                if PIONRATIO:
+#                    def prefit_func(ctime, trial_params):
+#                        """Prefit function, copy of
+#                        exponential fit function."""
+#                        return FITS._select['pion_ratio'](
+#                            ctime, trial_params)
+                #else:
+                def prefit_func(ctime, trial_params):
+                    """Prefit function, copy of
+                    exponential fit function."""
+                    return FITS._select[
+                        'fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
@@ -761,20 +764,21 @@ else:
 if ISOSPIN != 0:
     SIGMA = False
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
-print(GEVP_DIRS)
+#GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=1)
+#GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=0)
 MULT = len(GEVP_DIRS) if GEVP else 1
 if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
-assert not(LOG and PIONRATIO),\
-    "Taking a log is improper when doing a pion ratio fit."
+#assert not(LOG and PIONRATIO),\
+#    "Taking a log is improper when doing a pion ratio fit."
 assert len(LT_VEC) == MULT, "Must set time separation separately for"+\
     " each diagonal element of GEVP matrix"
 assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or"+\
     " not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
-assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
-    " function exists for pion ratio method."
-assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
-" not supported for pion ratio method."
+#assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
+#    " function exists for pion ratio method."
+#assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
+#" not supported for pion ratio method."
 if len(START_PARAMS) % 2 == 1 and ORIGL > 1:
     START_PARAMS = list(START_PARAMS[:-1])*MULT
     START_PARAMS.append(SYS_ENERGY_GUESS)
@@ -786,8 +790,12 @@ UP.tstep = TSTEP # revert back
 # MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
 FITS.select(UP)
 #NOLOOP = True if not GEVP else NOLOOP
-if PIONRATIO:
-    FITS.test()
+#if PIONRATIO:
+if FIT_SPACING_CORRECTION:
+    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
+    DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
+        DELTA_E2_AROUND_THE_WORLD)
+#    FITS.test()
 if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
         print("rescale set to 1.0")
@@ -810,10 +818,6 @@ assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
 assert not FIT_SPACING_CORRECTION or ISOSPIN == 2,\
     "isospin 2 is the only user of this"+\
     " lattice spacing correction method"
-if FIT_SPACING_CORRECTION:
-    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
-    DELTA_E2_AROUND_THE_WORLD= misc.uncorrect_epipi(
-        DELTA_E2_AROUND_THE_WORLD)
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
@@ -825,4 +829,6 @@ assert not BIASED_SPEEDUP, "it is biased.  do not use."
 assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
-assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP)
+assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP and not PIONRATIO)
+assert not PIONRATIO or ISOSPIN == 2
+#assert MATRIX_SUBTRACTION or not PIONRATIO
