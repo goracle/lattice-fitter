@@ -151,6 +151,13 @@ assert JACKBUB, "not correct.  we need to jackknife the bubbles.  if debugging, 
 
 # Individual diagram's jackknife block to write
 
+def fill_fndefs():
+    """Fill in the trajectories to bootstrap diagram list from"""
+    alist = []
+    for i in glob.glob(PREFIX+'*'+'.'+EXTENSION):
+        alist.append(i)
+    return (alist[0], alist[1], alist[2])
+
 def fill_write_block(fndef=FNDEF):
     """compose list of names of the individual diagrams to write"""
     fn1 = h5py.File(fndef, 'r')
@@ -1416,6 +1423,8 @@ def printblk(basename, blk):
 
 
 if __name__ == '__main__':
+    FNDEF, GNDEF, HNDEF = fill_fndefs()
+    WRITEBLOCK = fill_write_block(FNDEF)
     FIXN = None
     if MPIRANK == 0:
         # FIXN = input("Need fix norms before summing? True/False?")
