@@ -44,13 +44,18 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '24c'
 LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
 
 # take derivative of GEVP eigenvalues
-GEVP_DERIV = True
 GEVP_DERIV = False
+GEVP_DERIV = True
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
+
+# Pion ratio?  Put single pion correlators in the denominator
+# of the eff mass equation to get better statistics.
+PIONRATIO = True
+PIONRATIO = False
 
 # T0 behavior for GEVP (t/2 or t-1)
 
@@ -122,11 +127,6 @@ FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
     else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
-
-# Pion ratio?  Put single pion correlators in the denominator
-# of the eff mass equation to get better statistics.
-PIONRATIO = False
-PIONRATIO = True
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -516,6 +516,10 @@ REINFLATE_BEFORE_LOG = False
 
 OPERATOR_NORMS = [1e-6, 1e-2, 1e-5, 1e-5]
 OPERATOR_NORMS = [1 for i in range(DIM)]
+if ISOSPIN == 1:
+    OPERATOR_NORMS[0] = complex(0+1j)
+    OPERATOR_NORMS[2] = complex(0+1j)
+    OPERATOR_NORMS[3] = complex(0+1j)
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
 # more than one is supported, but probably not a good idea - see ref above)
@@ -764,6 +768,7 @@ else:
 if ISOSPIN != 0:
     SIGMA = False
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
+print("GEVP directories:", GEVP_DIRS)
 #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=1)
 #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=0)
 MULT = len(GEVP_DIRS) if GEVP else 1
@@ -830,5 +835,5 @@ assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
 assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP and not PIONRATIO)
-assert not PIONRATIO or ISOSPIN == 2
+#assert not PIONRATIO or ISOSPIN == 2
 #assert MATRIX_SUBTRACTION or not PIONRATIO
