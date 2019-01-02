@@ -727,7 +727,8 @@ def aroundworld_energies():
     """Add around the delta world energies"""
     exp = DELTA_E_AROUND_THE_WORLD
     exp2 = DELTA_E2_AROUND_THE_WORLD
-    return exp+exp2
+    ret = exp+exp2 if exp2 is not None else exp
+    return ret
 
 def aroundtheworld_pionratio(diag_name, timeij):
     """Do around the world subtraction for the 1x1 pion ratio GEVP"""
