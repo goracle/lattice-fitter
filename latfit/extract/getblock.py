@@ -83,7 +83,7 @@ def getline_loc(filetup, num):
         print("Expecting an array; in getblock")
         print(filetup[num-1], "should be array of floats")
         sys.exit(1)
-    return filetup[num-1]
+    return np.complex(filetup[num-1])
 #else:
 if 1 > 2:
     def getline_loc_bad(filetup, num):
@@ -102,13 +102,15 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
     """
     decrease_var = 0 if decrease_var is None else decrease_var
     dimops = len(file_tup)
-    cmat = np.zeros((num_configs, dimops, dimops), dtype=float)
+    cmat = np.zeros((num_configs, dimops, dimops), dtype=complex)
     for num in range(num_configs):
         for opa in range(dimops):
             for opb in range(dimops):
-                cmat[num][opa][opb] = proc_line(
-                    getline_loc(file_tup[opa][opb], num+1),
-                    file_tup[opa][opb])*NORMS[opa][opb]
+                corr = getline_loc(
+                    file_tup[opa][opb], num+1)*NORMS[opa][opb]
+                assert isinstance(corr, np.complex) or \
+                    isinstance(corr, str)
+                cmat[num][opa][opb] = proc_line(corr, file_tup[opa][opb])
         cmat[num] = enforce_hermiticity(cmat[num])
         checkherm(cmat[num])
     mean = np.mean(cmat, axis=0)
