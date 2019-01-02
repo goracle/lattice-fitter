@@ -223,7 +223,10 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
         "Must choose one or the other."
     trajl = set()
     suffix = '_exact' if getexactconfigs else ''
-    for fn1 in glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION):
+    globex = glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION)
+    lenexact = len(globex)
+    assert len(EXACT_CONFIGS) == lenexact
+    for fn1 in globex:
 
         try:
             toadd = int(re.sub(suffix+'.'+EXTENSION, '',
@@ -244,7 +247,8 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
                 if not check:
                     continue
             elif getexactconfigs:
-                assert check, "found an exact config not in list:"+str(toadd)
+                assert check, "found an exact config not in list:"+str(
+                    toadd)
             else: # sloppy samples
                 if check:
                     continue
@@ -945,11 +949,14 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         src = np.delete(bubbles[srckey],
                                         excl, axis=0)-sub[srckey][excl]
                         snk = conjbub(np.delete(
-                            bubbles[snkkey], excl, axis=0)-sub[snkkey][excl])
-                        # test 44 is over a single config, so this won't be correct,
+                            bubbles[snkkey], excl, axis=0)-sub[
+                                snkkey][excl])
+                        # test 44 is over a single config,
+                        # so this won't be correct,
                         # but it avoids an error message.
                         outcome = np.tensordot(src, snk, axes=(0, 0))[
-                            ROWS, cols]/(len(src)*1.0 if not TEST44 else 1.0)
+                            ROWS, cols]/(len(
+                                src)*1.0 if not TEST44 else 1.0)
                         # mean is over tsrc
                         # len(src) division is average over configs
                         # (except for excluded one)
@@ -959,7 +966,8 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                 if OUTERSUB:
                     src = bubbles[srckey]
                     snk = conjbub(bubbles[snkkey])
-                    outcome = -1*np.outer(sub[srckey], sub[snkkey])[ROWS, cols]
+                    outcome = -1*np.outer(sub[srckey], sub[snkkey])[
+                        ROWS, cols]
                     for excl in range(numt):
                         outcome = outcome + np.outer(
                             src[excl], snk[excl])[ROWS, cols]
@@ -996,7 +1004,8 @@ def testkey2(outkey, outcome, flag, excl=-1):
         print("Printing averaged over tsrc disconnected diagram:", TESTKEY2)
         printblk(TESTKEY2, outcome)
     elif flag == 2:
-        print("Printing jackknife block for disconnected diagram:", TESTKEY2)
+        print("Printing jackknife block for disconnected diagram:",
+              TESTKEY2)
         printblk(TESTKEY2, outcome)
         sys.exit(0)
 
@@ -1042,7 +1051,8 @@ def aux_jack(basl, trajl, numt, openlist):
         # now do the jackknife.
         # apply -1 coefficient if doing aux to a vector T
         # (ccw/cw switch in mirror)
-        auxblks[outfn] = dojackknife(blk) *(-1.0 if rf.vecp(base) and 'FigureT' in base else 1.0)
+        auxblks[outfn] = dojackknife(blk) *(
+            -1.0 if rf.vecp(base) and 'FigureT' in base else 1.0)
     if MPIRANK == 0:
         print("Done getting the auxiliary jackknife blocks.")
     return auxblks if not NOAUX else {}
