@@ -187,8 +187,8 @@ def fill_write_block(fndef=FNDEF):
 WRITEBLOCK = []
 WRITEBLOCK = ['pioncorrChk_mom000']
 # only write the single particle correlators
-WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
+WRITE_INDIVIDUAL = False
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 AVGTSRC = True
 AVGTSRC = False
