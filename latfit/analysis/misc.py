@@ -98,6 +98,7 @@ def fitepi(norm):
         ret = p111()
     else:
         assert ret is not None, ""
+    assert not hasattr(ret, '__iter__')
     return ret
 
 def correct_epipi(energies, irr=None, uncorrect=False):
