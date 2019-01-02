@@ -21,7 +21,7 @@ from latfit.extract.proc_line import proc_line
 from latfit.extract.proc_folder import proc_folder
 from latfit.jackknife_fit import jack_mean_err
 
-from latfit.config import EFF_MASS
+from latfit.config import EFF_MASS, MULT
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
@@ -52,6 +52,12 @@ if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
 
 XMAX = 999
+
+if len(DISP_ENERGIES) != MULT and GEVP:
+    for i, dur in enumerate(GEVP_DIRS):
+        if 'rho' in dur[i] or 'sigma' in dur[i]:
+            DISP_ENERGIES = list(DISP_ENERGIES)
+            DISP_ENERGIES.insert(i, 0)
 
 """
 if PIONRATIO and GEVP:
@@ -722,8 +728,20 @@ def evals_pionratio(timeij):
     """Get the non-interacting eigenvalues"""
     ret = []
     for i, diag in enumerate(GEVP_DIRS):
-        name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
-        ret.append(aroundtheworld_pionratio(name, timeij))
+        zeroit = False 
+        idx2 = i
+        if 'rho' in diag[i] or 'sigma' in diag[i]:
+            diag = GEVP_DIRS[i-1]
+            zeroit = True
+            name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i-1])
+        else:
+            name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
+        assert 'rho' not in name
+        assert 'sigma' not in name
+        app = aroundtheworld_pionratio(name, timeij)
+        app = np.zeros(len(app), dtype=np.complex) if zeroit else app
+        assert not any(np.isnan(app))
+        ret.append(app)
     ret = np.swapaxes(ret, 0, 1)
     ret = np.real(ret)
     ret = variance_reduction(ret, np.mean(ret, axis=0))
@@ -746,11 +764,12 @@ def energies_pionratio(timeij, delta_t):
         print(lhs[10],rhs[10])
         sys.exit(1)
     energies = []
+    np.seterr(divide='ignore', invalid='ignore')
     arg1 = np.asarray(lhs/rhs)
     arg2 = np.asarray(lhs_p1/rhs)
     for i in range(len(lhs)):
-        assert all(arg1[i] > 0), "negative evals found"
-        assert all(arg2[i] > 0), "negative evals found"
+        checkgteq0(arg1[i])
+        checkgteq0(arg2[i])
         app = callprocmeff([arg1[i], arg2[i]],
                            timeij, delta_t)
         energies.append(app)
@@ -759,7 +778,12 @@ def energies_pionratio(timeij, delta_t):
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
     assert all(energies[0] != energies[1]), "same energy found."
     energies = np.array(energies)
+    for i, dim in enumerate(energies):
+        for j, en1 in enumerate(dim):
+            if np.isnan(en1):
+                energies[i][j] = 0
     energies_pionratio.store[(timeij, delta_t)] = energies
+    np.seterr(divide='raise', invalid='raise')
     return energies
 energies_pionratio.store = {}
 
@@ -775,8 +799,21 @@ if PIONRATIO:
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
         deltae = energies_interacting - energies_noninteracting
-        newe = deltae + DISP_ENERGIES - aroundworld_energies()
-        return newe
+        newe = []
+        for i in range(len(enint)):
+            try:
+                assert not any(np.isnan(ennon[i]))
+            except AssertionError:
+                print("nan found in pion ratio energies:")
+                print(ennon[i])
+                sys.exit(1)
+            newe.append([])
+            for j, en1 in enumerate(enint[i]):
+                if not j:
+                    newe[i].append(en1)
+                else:
+                    newe[i].append(deltae[i][j]+DISP_ENERGIES[j] - aroundworld_energies())
+        return np.asarray(newe)
 else:
     def modenergies(energies, *unused):
         """pass"""
