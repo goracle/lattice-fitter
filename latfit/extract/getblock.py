@@ -272,8 +272,16 @@ def calleig(c_lhs, c_rhs=None):
     for i, (eval1, evec) in enumerate(zip(eigenvals, evecs.T)):
         for j,k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
             try:
-                assert np.allclose(eval1, j/k, rtol=1e-8)
+                if j and k:
+                    assert np.allclose(eval1, j/k, rtol=1e-8)
+                else:
+                    assert j == k
                 flag_nosolve = False
+            except FloatingPointError:
+                print("invalid GEVP values found")
+                print("lhs vec, rhs vec, eval")
+                print(j, k, eval1)
+                sys.exit(1)
             except AssertionError:
                 flag_nosolve = True
                 #print("GEVP solution does not solve GEVP")
@@ -312,7 +320,7 @@ def calleig(c_lhs, c_rhs=None):
             print(lhs)
             print("log rhs:")
             print(rhs)
-            sys.exit(0)
+            sys.exit(1)
         eigenvals = np.real(eigenvals)
     eigenvals = sortevals(eigenvals)
     return eigenvals, evecs
@@ -378,11 +386,11 @@ def all0imag_ignorenan(vals):
         for i, val in enumerate(vals):
             if np.isnan(val):
                 continue
-            if np.imag(val) != 0 and not np.isnan(np.imag(val)):
+            if abs(np.imag(val)) > 1e-8 and not np.isnan(np.imag(val)):
                 ret = False
     else:
         val = vals
-        if np.imag(val) != 0 and not np.isnan(val):
+        if abs(np.imag(val)) > 1e-8 and not np.isnan(val):
             ret = False
     return ret
 
@@ -560,7 +568,20 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
     #checkgteq0(eigvals)
     dimops = len(c_lhs)
     late = False if all0imag_ignorenan(eigvals) else True
-    assert not late, "imaginary eigenvalues found."
+    try:
+        assert not late
+    except AssertionError:
+        print("imaginary eigenvalues found.")
+        print(c_lhs)
+        print(c_rhs)
+        print("determinants:")
+        print(linalg.det(c_lhs), linalg.det(c_rhs))
+        print("evals of lhs, rhs:")
+        print(linalg.eigvals(c_lhs))
+        print(linalg.eigvals(c_rhs))
+        print("GEVP evals")
+        print(eigvals)
+        sys.exit(1)
     skip_late = False
     try:
         c_rhs_inv = linalg.inv(c_rhs)
@@ -601,7 +622,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
         commutator_norm = 0
     eigfin = np.zeros((len(eigvals)), dtype=np.float)
     for i, j in enumerate(eigvals):
-        if j.imag == 0 or np.isnan(j.imag):
+        if abs(j.imag) < 1e-8 or np.isnan(j.imag):
             eigfin[i] = eigvals[i].real
         else:
             if USE_LATE_TIMES and not skip_late and late:
@@ -613,7 +634,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
                 raise ImaginaryEigenvalue
 
     for i, j in enumerate(eigvals):
-        if j.imag == 0 or np.isnan(j.imag):
+        if abs(j.imag) < 1e-8 or np.isnan(j.imag):
             eigfin[i] = eigvals[i].real
         else:
             print("Eigenvalue=", j)
