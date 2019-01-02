@@ -132,11 +132,14 @@ def is_pos_semidef(x):
     return np.all(np.linalg.eigvals(x) >= 0)
 
 def defsign(x):
-    if np.all(np.linalg.eigvals(x) > 0):
+    evals = np.linalg.eigvals(x)
+    if np.all(evals > 0):
         ret = 1
-    elif np.all(np.linalg.eigvals(x) < 0):
+    elif np.all(evals < 0):
         ret = -1
     else:
+        assert None, "eigenvalues are not all the same sign:"+\
+            str(evals)
         ret = False
     return ret
 
@@ -259,9 +262,9 @@ def calleig(c_lhs, c_rhs=None):
         checkherm(c_rhs)
         signlhs = defsign(c_lhs)
         signrhs = defsign(c_rhs)
-        #assert signrhs
-        #assert signlhs
-        #assert signlhs == signrhs
+        assert signlhs == signrhs
+        assert signrhs
+        assert signlhs
         eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs,
                                             overwrite_a=False,
                                             overwrite_b=False,
