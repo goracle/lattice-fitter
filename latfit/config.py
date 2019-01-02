@@ -27,7 +27,7 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -47,22 +47,23 @@ MOMSTR = opc.get_comp_str(IRREP)
 LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
 
-# take derivative of GEVP eigenvalues
-GEVP_DERIV = False
-GEVP_DERIV = True
-GEVP_DERIV = False if not GEVP else GEVP_DERIV
-
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
 PIONRATIO = True
 PIONRATIO = False
+
+# take derivative of GEVP eigenvalues
+GEVP_DERIV = False
+GEVP_DERIV = True
+GEVP_DERIV = False if not GEVP else GEVP_DERIV
+GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
 
 # T0 behavior for GEVP (t/2 or t-1)
 
 T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS3'
+T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
 # if true, do not loop over fit ranges.
 NOLOOP = True
