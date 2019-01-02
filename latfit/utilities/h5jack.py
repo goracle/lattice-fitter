@@ -38,6 +38,10 @@ TEST24C = True
 TEST24C = False
 TEST44 = True if TEST24C else TEST44
 
+# skip all the vector diagrams (if the I=1 data is missing)
+SKIP_VEC = False
+SKIP_VEC = True
+
 # exclude all diagrams derived from aux symmetry
 NOAUX = False
 NOAUX = True
@@ -118,7 +122,7 @@ assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True, " + \
 FOLD = True
 # Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
-CONJBUB = False
+CONJBUB = True
 # ANTIPERIODIC in time (false for mesons,
 # the true option only happens for tanh shapes of the correlator);
 # this is a bad feature, keep it false!
@@ -146,8 +150,8 @@ TESTKEY2 = ''
 TSLICE = 0
 
 # ama correction
-DOAMA = True
 DOAMA = False
+DOAMA = True
 #EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470, 1010]
 EXACT_CONFIGS = [2050, 2090, 2110, 2240, 2280, 2390, 2410, 2430, 2450, 2470]
 EXACT_CONFIGS = [1010, 2410, 2430, 2470]
@@ -155,10 +159,10 @@ EXACT_CONFIGS = [1130, 1250, 1370]
 EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250, 1370, 1390]
 EXACT_CONFIGS = []
 if DOAMA:
-    glob.glob(PREFIX+'*'+'_exact'+'.'+EXTENSION)
-    toadd = int(re.sub('_exact'+'.'+EXTENSION, '',
-                       re.sub(PREFIX, '', fn1)))
-    EXACT_CONFIGS.append(toadd)
+    for fn1 in glob.glob(PREFIX+'*'+'_exact'+'.'+EXTENSION):
+        toadd = int(re.sub('_exact'+'.'+EXTENSION, '',
+                           re.sub(PREFIX, '', fn1)))
+        EXACT_CONFIGS.append(toadd)
 print("Configs with sloppy and exact versions:", EXACT_CONFIGS)
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
@@ -228,10 +232,10 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
         "Must choose one or the other."
     trajl = set()
     suffix = '_exact' if getexactconfigs else ''
+    globex = glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION)
     if getexactconfigs:
-        globex = glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION)
         lenexact = len(globex)
-    assert len(EXACT_CONFIGS) == lenexact
+        assert len(EXACT_CONFIGS) == lenexact
     for fn1 in globex:
 
         try:
@@ -1191,6 +1195,31 @@ def individual_bases(basl):
     basl = basl_new
     return basl
 
+def prune_vec(baselist):
+    """Get rid of all I=1 (if skipping that in production)
+    """
+    ret = set()
+    for base in baselist:
+        if rf.vecp(base) or 'vecCheck' in base:
+            continue
+        ret.add(base)
+    return ret
+
+def prune_nonequal_crosspol(baselist):
+    """Get rid of vec-vec with non equal src snk polarizations
+    (from an earlier version of the production)
+    """
+    ret = set()
+    for base in baselist:
+        pol = rf.pol(base)
+        if not isinstance(pol, int) and pol is not None:
+            assert isinstance(pol[0], int)
+            if pol[0] != pol[1]:
+                continue
+        ret.add(base)
+    return ret
+
+
 @PROFILE
 def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
@@ -1199,12 +1228,17 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
     trajl = trajlist(getexactconfigs, getsloppysubtraction)
     basl = baselist()
     basl = individual_bases(basl) if WRITE_INDIVIDUAL else basl
+    basl = prune_nonequal_crosspol(basl)
+    if SKIP_VEC:
+        basl = prune_vec(basl)
     openlist = {}
-    # this speeds things up but h5py appears to be broken here (gives an error)
+    # this speeds things up but
+    # h5py appears to be broken here (gives an error)
     #for traj in trajl:
     #    print("processing traj =", traj, "into memory.")
     #    filekey = PREFIX+str(traj)+'.'+EXTENSION
-    #    openlist[filekey] = h5py.File(filekey, 'r', driver='mpio', comm=MPI.COMM_WORLD)
+    #    openlist[filekey] = h5py.File(
+    # filekey, 'r', driver='mpio', comm=MPI.COMM_WORLD)
     openlist = None
     # print("done processinge files into memory.")
 
@@ -1269,7 +1303,8 @@ def check_aux_consistency(auxblks, mostblks):
                       blk, "total unused=", count)
                 try:
                     assert np.allclose(
-                        fold_time(auxblks[blk]), fold_time(mostblks[blk]), rtol=1e-08)
+                        fold_time(auxblks[blk]),
+                        fold_time(mostblks[blk]), rtol=1e-08)
                 except AssertionError:
                     print("Auxiliary symmetry failure of diagram:"+str(blk))
                     print(fold_time(auxblks[blk]))
@@ -1297,10 +1332,12 @@ def check_ama(blknametocheck, sloppyblks, exactblks, sloppysubtractionblks):
 
     # do some checks
     assert len_exact_check == len_exact, "subtraction term in correction \
-    has unequal config amount to exact:"+str(len_exact)+", "+str(len_exact_check)
+    has unequal config amount to exact:"+str(
+        len_exact)+", "+str(len_exact_check)
     nexact = len(EXACT_CONFIGS)
     assert len_exact_check == nexact, "subtraction term in correction \
-    has unequal config amount to global exact:"+str(nexact)+", "+str(len_exact_check)
+    has unequal config amount to global exact:"+str(
+        nexact)+", "+str(len_exact_check)
     assert lte == lte_check, "subtraction term in correction\
     has unequal time extent to exact:"+str(lte)+", "+str(lte_check)
     assert lte == LT, "exact configs have unequal time extent \
@@ -1330,7 +1367,8 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
             correction = exactblks[blk] - sloppysubtractionblks[blk]
 
             # create return block (super-jackknife)
-            shape = (len_exact+len_sloppy, LT) if AVGTSRC else (len_exact+len_sloppy, LT, LT)
+            shape = (len_exact+len_sloppy, LT) if AVGTSRC else (
+                len_exact+len_sloppy, LT, LT)
             retblks[blk] = np.zeros(shape, dtype=np.complex)
 
             sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
@@ -1357,10 +1395,12 @@ def main(fixn=False):
         sloppyblks, numt, auxblks = get_data(False, False)
         sloppysubtractionblks, numt, auxblks = get_data(False, True)
         allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
-    check_diag = "FigureCv3_sep"+str(TSEP)+"_momsrc_100_momsnk000" # sanity check
+    check_diag = "FigureCv3_sep"+str(
+        TSEP)+"_momsrc_100_momsnk000" # sanity check
     check_diag = WRITEBLOCK[0] if WRITE_INDIVIDUAL else check_diag
     if MPIRANK == 0: # write only needs one process, is fast
-        assert check_diag in allblks, "sanity check not passing, missing:"+str(check_diag)
+        assert check_diag in allblks,\
+            "sanity check not passing, missing:"+str(check_diag)
         print('check_diag shape=', allblks[check_diag].shape)
     if MPIRANK == 0: # write only needs one process, is fast
         if WRITEBLOCK and not (
@@ -1384,7 +1424,8 @@ def main(fixn=False):
                 print(i)
             check_count_of_diagrams(ocs, "I0")
             check_count_of_diagrams(ocs, "I2")
-            check_count_of_diagrams(ocs, "I1")
+            if not SKIP_VEC:
+                check_count_of_diagrams(ocs, "I1")
             check_match_oplist(ocs)
             check_inner_outer(
                 ocs, allblks.keys() | set(), auxblks.keys() | set())
