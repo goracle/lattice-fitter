@@ -154,7 +154,12 @@ EXACT_CONFIGS = [1010, 2410, 2430, 2470]
 EXACT_CONFIGS = [1130, 1250, 1370]
 EXACT_CONFIGS = [1090, 1110, 1130, 1230, 1250, 1370, 1390]
 EXACT_CONFIGS = []
-
+if DOAMA:
+    glob.glob(PREFIX+'*'+'_exact'+'.'+EXTENSION)
+    toadd = int(re.sub('_exact'+'.'+EXTENSION, '',
+                       re.sub(PREFIX, '', fn1)))
+    EXACT_CONFIGS.append(toadd)
+print("Configs with sloppy and exact versions:", EXACT_CONFIGS)
 #assert not TEST44, "test option on"
 #assert not TEST24C, "test option on"
 
@@ -223,8 +228,9 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
         "Must choose one or the other."
     trajl = set()
     suffix = '_exact' if getexactconfigs else ''
-    globex = glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION)
-    lenexact = len(globex)
+    if getexactconfigs:
+        globex = glob.glob(PREFIX+'*'+suffix+'.'+EXTENSION)
+        lenexact = len(globex)
     assert len(EXACT_CONFIGS) == lenexact
     for fn1 in globex:
 
