@@ -39,7 +39,7 @@ from latfit.config import DELTA_T_MATRIX_SUBTRACTION
 
 from mpi4py import MPI
 
-NORMS = [[1 for _ in range(len(OPERATOR_NORMS))]
+NORMS = [[(1+0j) for _ in range(len(OPERATOR_NORMS))]
          for _ in range(len(OPERATOR_NORMS))]
 
 for i, norm in enumerate(OPERATOR_NORMS):
