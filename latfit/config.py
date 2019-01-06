@@ -36,16 +36,16 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -60,10 +60,13 @@ GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
 
 # T0 behavior for GEVP (t/2 or t-1)
 
-T0 = 'TMINUS1' # t-1
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+T0 = 'TMINUS3' # t-1
+if LATTICE_ENSEMBLE == '24c':
+    T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+elif LATTICE_ENSEMBLE == '32c':
+    T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 
 # if true, do not loop over fit ranges.
 NOLOOP = True
@@ -86,7 +89,7 @@ if LATTICE_ENSEMBLE == '32c':
     AINVERSE = 1.3784
     PION_MASS = 0.10470*AINVERSE
     LT = 64
-    SUPERJACK_CUTOFF = 0 # , "0 exact configs exist for 32c"
+    SUPERJACK_CUTOFF = 8 # , "0 exact configs exist for 32c"
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
     AINVERSE = 1.015 
@@ -137,8 +140,12 @@ MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
-DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
-DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+if LATTICE_ENSEMBLE == '24c':
+    DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+if LATTICE_ENSEMBLE == '32c':
+    DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
@@ -279,7 +286,7 @@ SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
 # how many loop iterations until we start using random samples
-MAX_ITER = 3000 if not ONLY_SMALL_FIT_RANGES else np.inf
+MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
 MAX_ITER = 100 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
