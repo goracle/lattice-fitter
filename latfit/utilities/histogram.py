@@ -124,9 +124,11 @@ def make_hist(fname):
 
                 if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                         median_diff.val)>abs(median_diff.sdev):
-                    print(i, pval, ind_diff, median_diff, avg_diff, l)
+                    print(i, pval, l)
+                    print("diffs", ind_diff, median_diff, avg_diff)
                 elif ind_diff.val or ind_diff.sdev:
-                    print(i, pval, ind_diff, l)
+                    print(i, pval, l)
+                    print(ind_diff)
                 else:
                     print(i, pval, l)
             print('p-value weighted median =', str(median))

@@ -99,16 +99,16 @@ TDIS_MAX = 64
 TDIS_MAX = 22
 TDIS_MAX = 16
 
-# 32c
-TSEP = 4
-TDIS_MAX = 22
-TSTEP = 10
-
 
 # 24c
 TSEP = 3
 TDIS_MAX = 16
 TSTEP = 8
+
+# 32c
+TSEP = 4
+TDIS_MAX = 22
+TSTEP = 10
 
 
 
@@ -122,7 +122,7 @@ assert(not(OUTERSUB and JACKBUB)), "Not supported!  new:JACKBUB = True, " + \
 FOLD = True
 # Print isospin and irrep projection coefficients of operator to be written
 PRINT_COEFFS = True
-CONJBUB = True
+CONJBUB = False
 # ANTIPERIODIC in time (false for mesons,
 # the true option only happens for tanh shapes of the correlator);
 # this is a bad feature, keep it false!
@@ -202,6 +202,7 @@ TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 AVGTSRC = True
 AVGTSRC = False
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
+assert AVGTSRC
 
 # debug rows/columns slicing
 DEBUG_ROWS_COLS = False
@@ -1364,7 +1365,10 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
                                               sloppysubtractionblks)
 
             # compute correction
+            check_dup_configs([exactblks[blk]])
+            check_dup_configs([sloppysubtractionblks[blk]])
             correction = exactblks[blk] - sloppysubtractionblks[blk]
+            check_dup_configs([correction])
 
             # create return block (super-jackknife)
             shape = (len_exact+len_sloppy, LT) if AVGTSRC else (
@@ -1382,22 +1386,58 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
 
     return retblks
 
+def check_dup_configs(blks):
+    """Check for the same config being written twice for some reason"""
+    if blks is not None:
+        if hasattr(blks, '__iter__'):
+            for i in blks:
+                try:
+                    if isinstance(blks, dict):
+                        assert blks[i][0,0] != blks[i][1,0]
+                    else:
+                        assert i[0,0] != i[1,0]
+                except AssertionError:
+                    print("config index 0 same as config",
+                        "index 1 for block with name:")
+                    if isinstance(blks, dict):
+                        print(i)
+                    else:
+                        print(None)
+                    sys.exit(1)
+        else:
+            blk = blks
+            try:
+                assert blk[0,0] != blk[1,0]
+            except AssertionError:
+                print("config index 0 same as config",
+                    "index 1 for block with name:")
+                print(i)
+                sys.exit(1)
 
 @PROFILE
 def main(fixn=False):
     """Run this when making jackknife diagrams from raw hdf5 files"""
     #avg_irreps()
     print('start of main.')
-    if not DOAMA:
-        allblks, numt, auxblks = get_data()
-    else:
-        exactblks, numt, auxblks = get_data(True, False)
-        sloppyblks, numt, auxblks = get_data(False, False)
-        sloppysubtractionblks, numt, auxblks = get_data(False, True)
-        allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
     check_diag = "FigureCv3_sep"+str(
         TSEP)+"_momsrc_100_momsnk000" # sanity check
     check_diag = WRITEBLOCK[0] if WRITE_INDIVIDUAL else check_diag
+    if not DOAMA:
+        allblks, numt, auxblks = get_data()
+        check_dup_configs(allblks)
+    else:
+        exactblks, numt, auxblks = get_data(True, False)
+        check_dup_configs(exactblks)
+        if MPIRANK == 0: # write only needs one process, is fast
+            assert check_diag in exactblks,\
+                "sanity check not passing, missing:"+str(check_diag)
+            print('check_diag shape=', exactblks[check_diag].shape)
+        sloppyblks, numt, auxblks = get_data(False, False)
+        check_dup_configs(sloppyblks)
+        sloppysubtractionblks, numt, auxblks = get_data(False, True)
+        check_dup_configs(sloppysubtractionblks)
+        allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
+        check_dup_configs(allblks)
     if MPIRANK == 0: # write only needs one process, is fast
         assert check_diag in allblks,\
             "sanity check not passing, missing:"+str(check_diag)
