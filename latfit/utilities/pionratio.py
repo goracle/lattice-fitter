@@ -260,6 +260,23 @@ def anticipate(fn):
         data = i
     return np.array(fn[group+'/'+i]), group
 
+PIONCORRS = ['pioncorrChk_mom000.jkdat',
+             'pioncorrChk_p1.jkdat',
+             'pioncorrChk_p11.jkdat',
+             'pioncorrChk_p111.jkdat']
+
+def divide_multiply(tplat=10):
+    """Divide the diagonal elements by the result of piondirect()
+    then multiply by the asymptotic pion correlator squared
+    which is assumed plateaued at t=tplat
+    """
+    base = '*_pisq.jkdat'
+    baseglob = glob.glob(base)
+    for fn1 in baseglob:
+        numerator_part2 = re.sub('_pisq', '', fn1)
+        mommag = rf.norm2(numerator_part2)
+        numerator_part1 = h5py.File(numerator_part1, 'r')
+        numerator_part2 = h5py.File(numerator_part2, 'r')
         
 
 if __name__ == '__main__':

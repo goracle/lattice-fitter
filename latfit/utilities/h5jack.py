@@ -39,8 +39,8 @@ TEST24C = False
 TEST44 = True if TEST24C else TEST44
 
 # skip all the vector diagrams (if the I=1 data is missing)
-SKIP_VEC = False
 SKIP_VEC = True
+SKIP_VEC = False
 
 # exclude all diagrams derived from aux symmetry
 NOAUX = False
