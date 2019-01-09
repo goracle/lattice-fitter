@@ -10,7 +10,8 @@ from latfit.config import GEVP
 from latfit.config import STYPE
 from latfit.config import GROUP_LIST
 from latfit.config import BINNUM
-import latfit.config
+from latfit.config import HALF, SUPERJACK_CUTOFF
+from latfit.config import SLOPPYONLY
 
 def binout(out):
     """Reduce the number of used configs
@@ -58,9 +59,41 @@ if STYPE == 'hdf5':
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
         out = binout(out)
+        out = halftotal(out)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
+
+    def halftotal(out):
+        """First half second half analysis
+        """
+        sloppy = out[SUPERJACK_CUTOFF:]
+        sloppy = half(sloppy)
+        exact = out[:SUPERJACK_CUTOFF]
+        exact = half(exact)
+        if SLOPPYONLY:
+            ret = np.asarray([*exact, *sloppy])
+        else:
+            ret = np.asarray(sloppy)
+        return ret
+
+    def intceil(num):
+        """Numpy returns a float when it should return an int for ceiling"""
+        return int(np.ceil(num))
+
+    def half(arr):
+        """Take half of the array"""
+        larr = len(arr)
+        if HALF == 'full':
+            ret = arr
+        elif HALF == 'first half':
+            ret = arr[:intceil(larr/2)]
+        elif HALF == 'second half':
+            ret = arr[intceil(larr/2):]
+        else:
+            print("bad spec for HALF:", HALF)
+            sys.exit(1)
+        return ret
 
     def test_prefix(hdf5_file, ctime, fn1, alts=None):
         """Test hdf5 group name,

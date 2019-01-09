@@ -124,6 +124,16 @@ TSEP_VEC = [3 for _ in range(DIM)] if GEVP else [0]
 GEVP_DEBUG = True
 GEVP_DEBUG = False
 
+# halve the data to check for consistencies
+HALF = 'second half'
+HALF = 'full'
+HALF = 'first half'
+
+# only look at the sloppy part
+SLOPPYONLY = False
+SLOPPYONLY = True
+
+
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
@@ -351,11 +361,15 @@ else:
         TITLE_PREFIX = '24c '
     elif LATTICE_ENSEMBLE == '32c':
         TITLE_PREFIX = '32c '
-
+if GEVP:
+    TITLE_PREFIX = TITLE_PREFIX + 't-t0=' + T0[6:] + " "
 if SUPERJACK_CUTOFF:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
-    TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
+    if LATTICE_ENSEMBLE == '24c':
+        TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
+    elif LATTICE_ENSEMBLE == '32c':
+        TITLE_PREFIX = TITLE_PREFIX + '(sloppy) '
 if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
         str(DELTA_T_MATRIX_SUBTRACTION)+', '+\
@@ -834,6 +848,8 @@ assert not FIT_SPACING_CORRECTION or ISOSPIN == 2,\
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
     assert DELTA_E_AROUND_THE_WORLD == 0.0, "only 1 constant in COMP frame"
     assert DELTA_E2_AROUND_THE_WORLD is None, "only 1 constant in COMP frame"
+if GEVP:
+    print("GEVP derivative being taken:", GEVP_DERIV)
 #assert not FIT_SPACING_CORRECTION
 assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
 assert not USE_LATE_TIMES, "method is based on flawed assumptions."

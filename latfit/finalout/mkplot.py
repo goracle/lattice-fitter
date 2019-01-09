@@ -38,7 +38,7 @@ from latfit.config import GEVP
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
 from latfit.config import PREC_DISP
-from latfit.config import STYPE
+from latfit.config import STYPE, HALF
 from latfit.config import ADD_CONST
 from latfit.config import ERROR_BAR_METHOD
 from latfit.config import CALC_PHASE_SHIFT
@@ -54,6 +54,11 @@ import latfit.config
 rcParams.update({'figure.autolayout': True})
 
 NUM_CONFIGS = -1
+
+if HALF == 'first half':
+    SUPERJACK_CUTOFF = int(np.ceil(SUPERJACK_CUTOFF/2))
+elif HALF == 'second half':
+    SUPERJACK_CUTOFF = int(np.floor(SUPERJACK_CUTOFF/2))
 
 def update_result_min_nofit(plotdata):
     """Update the result with around the world shift in energy
