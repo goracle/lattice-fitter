@@ -89,7 +89,7 @@ if LATTICE_ENSEMBLE == '32c':
     AINVERSE = 1.3784
     PION_MASS = 0.10470*AINVERSE
     LT = 64
-    SUPERJACK_CUTOFF = 8 # , "0 exact configs exist for 32c"
+    SUPERJACK_CUTOFF = 8
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
     AINVERSE = 1.015 
