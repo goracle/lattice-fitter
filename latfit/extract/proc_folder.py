@@ -94,9 +94,15 @@ if STYPE == 'hdf5':
         if HALF == 'full':
             ret = arr
         elif HALF == 'first half':
-            ret = arr[:intceil(larr/2)]
+            excl = np.array(range(len(arr)))[intceil(larr/2):]
+            excl = list(excl)
+            ret = elim_jkconfigs(arr, excl)
+            # ret = arr[:intceil(larr/2)]
         elif HALF == 'second half':
-            ret = arr[intceil(larr/2):]
+            excl = np.array(range(len(arr)))[:intceil(larr/2)]
+            excl = list(excl)
+            ret = elim_jkconfigs(arr, excl)
+            # ret = arr[intceil(larr/2):]
         else:
             print("bad spec for HALF:", HALF)
             sys.exit(1)
