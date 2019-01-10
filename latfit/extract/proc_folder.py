@@ -12,12 +12,19 @@ from latfit.config import GROUP_LIST
 from latfit.config import BINNUM
 from latfit.config import HALF, SUPERJACK_CUTOFF
 from latfit.config import SLOPPYONLY
+from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 
 def binout(out):
     """Reduce the number of used configs
     """
+    lout = len(out)
+    
     while len(out)%BINNUM != 0:
-        out = out[:-1]
+        out = elim_jkconfigs(out, [len(out)-1])
+        lout = len(out)
+        assert lout > SUPERJACK_CUTOFF,\
+            "total amount of configs must be >= exact configs"
+        #out = out[:-1]
     return out
 
 if STYPE == 'hdf5':
@@ -58,8 +65,8 @@ if STYPE == 'hdf5':
                     print("dataset name:",
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
-        out = binout(out)
         out = halftotal(out)
+        out = binout(out)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
@@ -72,9 +79,9 @@ if STYPE == 'hdf5':
         exact = out[:SUPERJACK_CUTOFF]
         exact = half(exact)
         if SLOPPYONLY:
-            ret = np.asarray([*exact, *sloppy])
-        else:
             ret = np.asarray(sloppy)
+        else:
+            ret = np.asarray([*exact, *sloppy])
         return ret
 
     def intceil(num):
@@ -169,6 +176,8 @@ elif STYPE == 'ascii':
             ret = np.array(ret)
         else:
             ret = retname
+        ret = halftotal(ret)
+        ret = binout(ret)
         return ret
 
     def lookat_dir(folder, my_regex, regex_reject, temp4, retname):

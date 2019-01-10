@@ -1267,6 +1267,5 @@ def getblock(file_tup, reuse, timeij=None, delta_t=None):
                                     delta_t=delta_t))
     if ELIM_JKCONF_LIST:
         retblk = elim_jkconfigs(retblk)
-    if BINNUM != 1:
-        retblk = binconf(retblk)
+    retblk = binconf(retblk)
     return retblk

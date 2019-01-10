@@ -6,6 +6,7 @@ import numpy as np
 
 from latfit.config import BINNUM
 from latfit.config import JACKKNIFE
+import latfit.finalout.mkplot
 
 
 def binconf(jkblk):
@@ -17,16 +18,19 @@ def binconf(jkblk):
         print("but jackknife correction to covariance matrix is not enabled.")
         sys.exit(1)
     if BINNUM == 1:
-        return jkblk
+        ret = jkblk
 
-    assert len(jkblk)%BINNUM == 0,\
-        "non divisible BINNUM not supported:"+str(len(jkblk))
-    inv = np.sum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
-    inv2 = np.array([np.mean(inv[j*BINNUM:(j+1)*BINNUM],
-                             axis=0) for j in range(int(len(jkblk)/BINNUM))])
-    newblk = np.array([np.mean(np.delete(inv2, j, axis=0), axis=0)
-                       for j in range(len(inv2))])
-    return newblk
+    else:
+        assert len(jkblk)%BINNUM == 0,\
+            "non divisible BINNUM not supported:"+str(len(jkblk))
+        inv = np.sum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
+        inv2 = np.array([np.mean(inv[j*BINNUM:(j+1)*BINNUM],
+                                 axis=0) for j in range(int(
+                                     len(jkblk)/BINNUM))])
+        ret = np.array([np.mean(np.delete(inv2, j, axis=0), axis=0)
+                        for j in range(len(inv2))])
+    latfit.finalout.mkplot.NUM_CONFIGS = len(ret)
+    return ret
 
 
 #    first_len = len(jkblk)

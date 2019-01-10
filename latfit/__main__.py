@@ -273,7 +273,8 @@ def main():
     latfit.config.TSTEP = meta.xstep
     plotdata.fitcoord = meta.fit_coord()
     trials = trials_err(options.trials)
-    update_num_configs(input_f=(input_f if not GEVP else None))
+    if STYPE != 'hdf5':
+        update_num_configs(input_f=(input_f if not GEVP else None))
 
     if trials == -1:
         # try an initial plot, shrink the xmax if it's too big

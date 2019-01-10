@@ -36,8 +36,8 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_mom11'
+IRREP = 'A_1PLUS_mom000'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -67,6 +67,7 @@ if LATTICE_ENSEMBLE == '24c':
     T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
+#T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
 # if true, do not loop over fit ranges.
 NOLOOP = True
@@ -126,13 +127,15 @@ GEVP_DEBUG = False
 
 # halve the data to check for consistencies
 HALF = 'second half'
-HALF = 'full'
 HALF = 'first half'
+HALF = 'full'
 
 # only look at the sloppy part
-SLOPPYONLY = False
 SLOPPYONLY = True
+SLOPPYONLY = False
 
+# dynamic binning of configs.  BINNUM is number of configs per bin.
+BINNUM = 4
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
@@ -244,9 +247,6 @@ if ISOSPIN == 1:
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 ELIM_JKCONF_LIST = []
-
-# dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
 
 # Cut fit points when the relative error in the error bar is > ERR_CUT
 ERR_CUT = 0.20
@@ -851,7 +851,8 @@ if rf.norm2(rf.procmom(MOMSTR)) == 0:
 if GEVP:
     print("GEVP derivative being taken:", GEVP_DERIV)
 #assert not FIT_SPACING_CORRECTION
-assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
+#assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
+print("Binning configs.  Bin size =", BINNUM)
 assert not USE_LATE_TIMES, "method is based on flawed assumptions."
 assert not T0 == "ROUND", "bad systematic errors result from this option"
 assert not BIASED_SPEEDUP, "it is biased.  do not use."
@@ -859,5 +860,7 @@ assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
 assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP and not PIONRATIO)
+assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
+assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
 #assert not PIONRATIO or ISOSPIN == 2
 #assert MATRIX_SUBTRACTION or not PIONRATIO
