@@ -135,7 +135,7 @@ SLOPPYONLY = True
 SLOPPYONLY = False
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 4
+BINNUM = 1
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = False
