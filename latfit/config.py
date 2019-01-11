@@ -126,8 +126,8 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 
 # halve the data to check for consistencies
-HALF = 'second half'
 HALF = 'first half'
+HALF = 'second half'
 HALF = 'full'
 
 # only look at the sloppy part
@@ -157,7 +157,10 @@ if LATTICE_ENSEMBLE == '24c':
     DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 if LATTICE_ENSEMBLE == '32c':
-    DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+    if IRREP == 'A_1PLUS_mom000':
+        DELTA_T_MATRIX_SUBTRACTION = 4 if not GEVP_DEBUG else 0
+    else:
+        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
