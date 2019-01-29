@@ -632,6 +632,7 @@ UP.pionratio = False
 UP.lent = LT
 UP.gevp = GEVP
 UP.deltat = -1 if GEVP_DERIV else int(T0[6:])
+UP.deltat = -1 if not GEVP else UP.deltat
 FITS.select(UP)
 
 # END DO NOT MODIFY
