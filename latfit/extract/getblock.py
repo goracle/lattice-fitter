@@ -1208,9 +1208,13 @@ if EFF_MASS:
             zipfs = zip(file_tup[0], file_tup[1], file_tup[2], file_tup[3])
         for line, line2, line3, line4 in zipfs:
             if line+line2+line3 not in reuse:
-                reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = proc_meff(
-                    (line, line2, line3, line4),
+                line = np.real(line)
+                line2 = np.real(line2)
+                line3 = np.real(line3)
+                line4 = np.real(line4)
+                toapp = proc_meff((line, line2, line3, line4),
                     files=file_tup, time_arr=timeij)
+                reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = toapp
             if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
                 raise Exception("Something has gone wrong.")
             retblk.append(reuse[str(line)+'@'+str(line2)+'@'+str(line3)])
