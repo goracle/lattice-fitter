@@ -53,8 +53,8 @@ PIONRATIO = True
 PIONRATIO = False
 
 # take derivative of GEVP eigenvalues
-GEVP_DERIV = False
 GEVP_DERIV = True
+GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
 GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
 
