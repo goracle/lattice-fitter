@@ -71,6 +71,19 @@ TRHS = None
 GEVP = False
 DELTAT = 1
 
+def takelog(sol):
+    """more permissive form of log"""
+    try:
+        sol = log(sol)
+    except ValueError:
+        if not sol:
+            sol = -1*np.inf
+        else:
+            print("Math domain error in taking log of:")
+            print(sol)
+            sys.exit(1)
+    return sol
+
 class FitFuncAdd:
     """Exponential fit functions with additive constant"""
 
@@ -126,7 +139,8 @@ class FitFuncAdd:
         )
         if not nocheck:
             testsol(sol, corrs, times)
-        sol = log(sol) if self._log else sol
+        if self._log:
+            sol = takelog(sol)
         try:
             assert sol >= 0 or np.isnan(sol)
         except AssertionError:
@@ -305,7 +319,8 @@ class FitFunc:
         sol = (corrs[0])/(corrs[1])
         if not nocheck:
             testsol(sol, corrs, times)
-        sol = log(sol) if self._log else sol
+        if self._log:
+            sol = takelog(sol)
         try:
             assert sol >= 0 or np.isnan(sol)
         except AssertionError:
