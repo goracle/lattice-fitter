@@ -12,6 +12,7 @@ from latfit.extract.proc_folder import proc_folder
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
 from latfit.config import GEVP, T0
+from latfit.config import IRREP
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION, DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
@@ -118,7 +119,10 @@ def getfiles_gevp_singlerhs(time, time2, xstep):
     # do matrix subtraction to eliminate leading order around the world term
     if MATRIX_SUBTRACTION:
         files, sub = matsub(files, sub, dt1)
+        assert 'mom' in IRREP, "no subtraction for I=1"
         if DELTA_E2_AROUND_THE_WORLD is not None:
+            assert 'mom000' not in IRREP,\
+                "only one subtraction required for center of mass frame"
             files, sub = matsub(files, sub, dt2, 'Two')
 
     if EFF_MASS:

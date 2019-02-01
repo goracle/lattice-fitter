@@ -375,7 +375,7 @@ else:
         TITLE_PREFIX = TITLE_PREFIX + '(sloppy) '
 if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
-        str(DELTA_T_MATRIX_SUBTRACTION)+', '+\
+        str(DELTA_T_MATRIX_SUBTRACTION)+','+\
         str(DELTA_T2_MATRIX_SUBTRACTION)+' '
 elif MATRIX_SUBTRACTION and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
