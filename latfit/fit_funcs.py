@@ -202,17 +202,21 @@ class FitFuncAdd:
         lent = self._lent if lent is None else lent
         tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
         tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        if tstep_arr[0] is None:
+            assert not self._tstep
+        if tstep_arr[1] is None:
+            assert not self._tstep2
         deltat = self._deltat
         corrs_num = [exp(-trial_params[0]*(ctime-deltat+i*tstep+j*tstep2)) +
                      exp(-trial_params[0]*(lent-(
                          ctime-deltat+i*tstep+j*tstep2)))
                      for j in range(2) for i in range(2)]
-        corrs_num[2:] = [0, 0] if tstep2 is None else [*corrs_num[2:]]
+        corrs_num[2:] = [0, 0] if not tstep2 else [*corrs_num[2:]]
         corrs_num[2:] = [0, 0] if not self._gevp else corrs_num[2:]
         corrs_denom = [exp(-trial_params[0]*(ctime+i*tstep+j*tstep2)) +
                        exp(-trial_params[0]*(lent-(ctime+i*tstep+j*tstep2)))
                        for j in range(2) for i in range(2)]
-        corrs_denom[2:] = [0, 0] if tstep2 is None else [*corrs_denom[2:]]
+        corrs_denom[2:] = [0, 0] if not tstep2 else [*corrs_denom[2:]]
         corrs_denom[2:] = [0, 0] if not self._gevp else corrs_denom[2:]
         if deltat < 0:
             corrs_num, corrs_denom = corrs_denom, corrs_num

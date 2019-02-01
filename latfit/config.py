@@ -627,6 +627,7 @@ UP.c = C
 # so fit functions below will be setup correctly
 UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
 UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
+UP.tstep2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else UP.tstep2
 UP.pionmass = misc.MASS
 UP.pionratio = False
 UP.lent = LT
