@@ -222,8 +222,15 @@ class FitFuncAdd:
             print("bug.  bad ratio")
             print(corrs_num[0], corrs_denom[0])
             raise
-        corrs = [*corrs_num, *corrs_denom]
-        return self.ratio_exp(corrs, ctime, nocheck=True)
+        ret = None
+        try:
+            assert corrs_denom[0] != corrs_denom[1] or corrs_denom[2] != corrs_denom[3]
+        except AssertionError:
+            ret = np.inf
+        if ret is None:
+            corrs = [*corrs_num, *corrs_denom]
+            ret = self.ratio_exp(corrs, ctime, nocheck=True)
+        return ret
 
     def pion_ratio(self, ctime, trial_params, _):
         """Include pions in the denominator of eff mass ratio."""
