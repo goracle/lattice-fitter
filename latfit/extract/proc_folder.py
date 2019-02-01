@@ -13,6 +13,7 @@ from latfit.config import BINNUM
 from latfit.config import HALF, SUPERJACK_CUTOFF
 from latfit.config import SLOPPYONLY
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
+import latfit
 
 def binout(out):
     """Reduce the number of used configs
