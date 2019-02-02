@@ -168,7 +168,7 @@ def plot_dispersive(xcoord):
     for i, energy in enumerate(DISP_ENERGIES):
         # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),
-                 label='Dispersive('+str(i)+')')
+                 label='Disp('+str(trunc_prec(energy))+')')
     plt.legend(loc='lower left')
 
 # """
