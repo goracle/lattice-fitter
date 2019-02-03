@@ -410,6 +410,8 @@ def main():
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax,
                                               meta.xstep)
+                        print("fit succeeded for this selection"+\
+                              " excluded points=", excl)
                     except (NegChisq, RelGammaError, OverflowError,
                             NoConvergence,
                             BadJackknifeDist,
