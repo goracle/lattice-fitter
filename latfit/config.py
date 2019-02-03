@@ -69,10 +69,6 @@ elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
-# if true, do not loop over fit ranges.
-NOLOOP = True
-NOLOOP = False
-
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
 ONLY_SMALL_FIT_RANGES = True
@@ -218,7 +214,6 @@ FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0],
             [6,7,12.0, 13.0, 14.0, 15.0, 16.0],
             [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [[15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0], [16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0], [18,19,20,21.0, 22.0]]
 assert len(FIT_EXCL) == DIM or not GEVP
 
 # if true, do not loop over fit ranges.
