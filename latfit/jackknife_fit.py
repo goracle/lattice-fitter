@@ -628,6 +628,7 @@ def phase_shift_jk(params, epipi_arr):
             retlist = zeta(epipi_arr)
     except ZetaError:
         retlist = None
+        raise
     return retlist
 
 def copy_block_no_sidefx(params, blk):
