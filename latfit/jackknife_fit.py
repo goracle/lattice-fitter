@@ -196,20 +196,21 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
 
-            # we shifted the GEVP energy spectrum down
-            # to fix the leading order around the world term so shift it back
-
-            result_min_jack.x = np.asarray(result_min_jack.x)+\
-                (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
-                    DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
-                    is not None else 0)+\
-                    (misc.correct_epipi(result_min_jack.x)
-                     if FIT_SPACING_CORRECTION else 0)
-
             # store the result
             min_arr[config_num] = getenergies(params, result_min_jack.x)
             result_min.systematics_arr[config_num] = getsystematic(
                 params, result_min_jack.x)
+
+            # we shifted the GEVP energy spectrum down
+            # to fix the leading order around the world term so shift it back
+            min_arr[config_num] = np.asarray(min_arr[config_num])+\
+                (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
+                    DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
+                    is not None else 0)+\
+                    (misc.correct_epipi(min_arr[config_num])
+                     if FIT_SPACING_CORRECTION else 0)
+
+
 
             # compute phase shift, if necessary
             if CALC_PHASE_SHIFT:
