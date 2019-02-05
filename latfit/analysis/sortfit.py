@@ -38,7 +38,7 @@ def score_excl(excl1d, tsorted, lenfit, inversescore=True):
     """
     score = 0
     dof = lenfit-ORIGL-len(excl1d)
-    assert dof != 0, "Degrees of freedom for sortfit < 1"
+    assert dof > 0, "Degrees of freedom for sortfit < 1"
     for _, ttup in enumerate(tsorted):
         time, chisq = ttup
         if time in excl1d:
