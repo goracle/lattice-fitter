@@ -379,7 +379,6 @@ class FitFunc:
     def fit_func_1p(self, ctime, trial_params,
                     lent=None, tstep_arr=(None, None)):
         """Meta function for effective mass."""
-        assert None, "currently suspect there's a bug here"
         ret = self.fit_func_1p_pionratio(
             ctime, trial_params, lent) if self._pionratio\
             else self.fit_func_1p_exp(
