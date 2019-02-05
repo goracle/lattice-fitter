@@ -222,8 +222,8 @@ FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 assert len(FIT_EXCL) == DIM or not GEVP
 
 # if true, do not loop over fit ranges.
-NOLOOP = False
 NOLOOP = True
+NOLOOP = False
 
 # hints to eliminate
 HINTS_ELIM = {}
