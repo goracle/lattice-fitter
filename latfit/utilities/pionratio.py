@@ -8,6 +8,7 @@ C_pi^2(t)-C_pi^2(t+1)
 where C_pi is the single pion correlator with the same center of mass
 
 """
+import os
 import sys
 import re
 import copy
@@ -18,6 +19,7 @@ import read_file as rf
 from sum_blks import isoproj
 from h5jack import TSEP, LT, overall_coeffs, h5sum_blks, avg_irreps
 import op_compose as opc
+import os.path
 
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
@@ -54,7 +56,7 @@ def main():
 
 def piondirect():
     """Do pion ratio unsummed."""
-    base = 'pioncorrChk_*_unsummed.jkdat'
+    base = 'pioncorr_*_unsummed.jkdat'
     baseglob = glob.glob(base)
     allblks = {}
     count = {}
@@ -121,7 +123,8 @@ def piondirect():
             else:
                 count[key1] += 1
             if key3halves not in allblks:
-                allblks[key3halves] = np.zeros((len(toppi), LT), dtype=np.complex)
+                allblks[key3halves] = np.zeros((len(toppi), LT),
+                                               dtype=np.complex)
                 count[key3halves] = 1
             else:
                 count[key3halves] += 1
@@ -217,7 +220,7 @@ def do_ratio(ptotstr, dosub):
     fn1 = h5py.File(filename, 'r')
     data, group = anticipate(fn1)
     pionstr = 'pioncorr_mom'+ptotstr
-    pionstr = 'pioncorrChk_mom'+ptotstr
+    pionstr = 'pioncorr_mom'+ptotstr
     print("using pion correlator:", pionstr)
     gn1 = h5py.File(pionstr+'.jkdat', 'r')
     pion = np.array(gn1[pionstr])
@@ -260,10 +263,34 @@ def anticipate(fn):
         data = i
     return np.array(fn[group+'/'+i]), group
 
-PIONCORRS = ['pioncorrChk_mom000.jkdat',
-             'pioncorrChk_p1.jkdat',
-             'pioncorrChk_p11.jkdat',
-             'pioncorrChk_p111.jkdat']
+PIONCORRS = ['pioncorr_mom000.jkdat',
+             'pioncorr_p1.jkdat',
+             'pioncorr_p11.jkdat',
+             'pioncorr_p111.jkdat']
+
+for i in range(len(PIONCORRS)):
+    assert os.path.isfile(PIONCORRS[i])
+    DATAN = re.sub('.jkdat', '', PIONCORRS[i])
+    assert h5py.File(PIONCORRS[i], 'r')
+    tostore = np.array(h5py.File(PIONCORRS[i], 'r')[DATAN])
+    assert isinstance(PIONCORRS, list)
+    PIONCORRS[i] = tostore
+
+def jkdatrm(fstr):
+    """Remove .jkdat from the end of a filename
+    since the datasets are traditionally just the file name
+    """
+    fstr = re.sub('.jkdat', '', fstr)
+    return fstr
+
+def datasetname(filen):
+    """Build the dataset name from the parent directory
+    """
+    parentdir = os.path.abspath(os.path.join('.', os.pardir))
+    parentdir = parentdir.split('/')[-1]
+    ret = parentdir + '/' + filen
+    ret = jkdatrm(ret)
+    return ret
 
 def divide_multiply(tplat=10):
     """Divide the diagonal elements by the result of piondirect()
@@ -273,11 +300,37 @@ def divide_multiply(tplat=10):
     base = '*_pisq.jkdat'
     baseglob = glob.glob(base)
     for fn1 in baseglob:
-        numerator_part2 = re.sub('_pisq', '', fn1)
-        mommag = rf.norm2(numerator_part2)
-        numerator_part1 = h5py.File(numerator_part1, 'r')
-        numerator_part2 = h5py.File(numerator_part2, 'r')
-        
+        numerator_part1 = re.sub('_pisq', '', fn1)
+        try:
+            numerator_part1 = np.asarray(h5py.File(numerator_part1, 'r')[datasetname(numerator_part1)])
+        except KeyError:
+            print(datasetname(numerator_part1))
+            sys.exit(1)
+        assert numerator_part1
+
+        denom = np.asarray(h5py.File(fn1, 'r')[datasetname(fn1)])
+        assert denom
+
+        # momentum magnitude, find the pion correlator
+        mommag = rf.norm2(rf.mom(numerator_part2))
+        numerator_part2 = PIONCORRS[i][:, tplat]
+        num = numerator_part1*numerator_part2
+        assert num
+
+        # write
+        writestring = re.sub('.jkdat', '_pionratio.jkdat', fn1)
+        if os.path.isfile(writestring):
+            continue
+        gn1 = h5py.File(writestring, 'w')
+        gn1[datasetname(writestring)] = num/denom
+        gn1.close()
+
 
 if __name__ == '__main__':
     piondirect()
+    for dirn in ['I0', 'I1', 'I2']:
+        os.chdir(dirn)
+        print(os.getcwd())
+        sys.exit(0)
+        divide_multiply()
+        os.chdir('..')
