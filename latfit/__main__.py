@@ -125,7 +125,7 @@ def filter_sparse(sampler, fitwindow, xstep=1):
         if len(fdel) >= RANGE_LENGTH_MIN and ONLY_SMALL_FIT_RANGES:
             continue
         # start = fdel[0]
-        incr = xstep if len(fdel) < RANGE_LENGTH_MIN else fdel[1]-fdel[0]
+        incr = xstep if len(fdel) < 2 else fdel[1]-fdel[0]
         skip = False
         for i, timet in enumerate(fdel):
             if i == 0:
