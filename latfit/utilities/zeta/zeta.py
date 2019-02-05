@@ -159,7 +159,8 @@ def plotcrosscurves(plot_both=False):
     """
     points = 1e3 # Number of points
     xmin, xmax = 0, 1.1
-    xlist = list(map(lambda x: float(xmax - xmin)*1.0*x/(points*1.0), list(np.arange(points+1))))
+    xlist = list(map(lambda x: float(xmax - xmin)*1.0*x/(
+        points*1.0), list(np.arange(points+1))))
     #ylist_pheno_minus = list(map(lambda y: -pheno(y), xlist))
     #plt.plot(xlist, ylist_pheno_minus, label='pheno-')
     #plt.plot(xlist, ylist_pheno_plus, label='pheno+')
