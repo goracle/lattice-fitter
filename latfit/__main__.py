@@ -55,7 +55,7 @@ from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisq
 from latfit.jackknife_fit import BadJackknifeDist, NoConvergence
-from latfit.config import MULT
+from latfit.config import MULT, RANGE_LENGTH_MIN 
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
 from latfit.config import ONLY_SMALL_FIT_RANGES
@@ -120,12 +120,12 @@ def filter_sparse(sampler, fitwindow, xstep=1):
     for excl in sampler:
         excl = list(excl)
         fdel = list(filter(lambda a, sk=excl: a not in sk, frange))
-        if len(fdel) < 3 and not ONLY_SMALL_FIT_RANGES:
+        if len(fdel) < RANGE_LENGTH_MIN and not ONLY_SMALL_FIT_RANGES:
             continue
-        if len(fdel) > 2 and ONLY_SMALL_FIT_RANGES:
+        if len(fdel) >= RANGE_LENGTH_MIN and ONLY_SMALL_FIT_RANGES:
             continue
         # start = fdel[0]
-        incr = fdel[1]-fdel[0] if not ONLY_SMALL_FIT_RANGES else xstep
+        incr = xstep if len(fdel) < RANGE_LENGTH_MIN else fdel[1]-fdel[0]
         skip = False
         for i, timet in enumerate(fdel):
             if i == 0:

@@ -69,10 +69,15 @@ elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
+# set the minimum number of points to qualify a data subset as a fit range
+RANGE_LENGTH_MIN = 3
+RANGE_LENGTH_MIN = 0
+
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
 ONLY_SMALL_FIT_RANGES = True
 ONLY_SMALL_FIT_RANGES = False
+ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
@@ -871,5 +876,7 @@ assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
 assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP and not PIONRATIO)
 assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
 assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
+# we can't fit to 0 length subsets
+assert not ONLY_SMALL_FIT_RANGES or RANGE_LENGTH_MIN
 #assert not PIONRATIO or ISOSPIN == 2
 #assert MATRIX_SUBTRACTION or not PIONRATIO
