@@ -36,7 +36,7 @@ from latfit.config import ISOSPIN, MOMSTR
 from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
-from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF
+from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_ITER, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.jackknife_fit import jack_mean_err
@@ -868,20 +868,22 @@ if EFF_MASS:
         to errarr"""
         errlist = []
         arrlist = []
+        xcoord = list(singlefit.coords_full[:, 0])
         assert mindim is None or isinstance(mindim, int),\
             "type check failed"
         for i, time in enumerate(singlefit.reuse):
-            if not isinstance(time, int):
+            if not isinstance(time, int) and not isinstance(time, float):
                 continue
             if mindim is None:
                 arr = singlefit.reuse[time]
-                err = singlefit.error2[time]
+                err = singlefit.error2[xcoord.index(time)]
             else:
                 arr = singlefit.reuse[time][:, mindim]
-                err = singlefit.error2[time][mindim]
+                err = singlefit.error2[xcoord.index(time)][mindim]
             arrlist.append(arr)
             errlist.append(err)
         err = min(errlist)
+        assert isinstance(err, float), "index bug"
         arr = arrlist[errlist.index(err)]
         return arr, err
 else:
@@ -895,7 +897,7 @@ def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
     the errors on subsets of effective mass points
     and the error on the points themselves.
     """
-    erreff, arreff = min_eff_mass_errors(mindim)
+    arreff, erreff = min_eff_mass_errors(mindim)
     if errmin == erreff:
         arr = arreff
     else:
@@ -937,7 +939,7 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
         ind = list(err[:, mindim]).index(errmin)
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'x_arr')[:, mindim])
-    arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=None)
+    arr, errmin = compare_eff_mass_to_range(arr, err, errmin, mindim=None)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))

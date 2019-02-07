@@ -69,9 +69,16 @@ elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
+# Plot Effective Mass? True or False
+
+EFF_MASS = False
+EFF_MASS = True
+EFF_MASS = True if GEVP else EFF_MASS
+
 # set the minimum number of points to qualify a data subset as a fit range
 RANGE_LENGTH_MIN = 0
 RANGE_LENGTH_MIN = 3
+RANGE_LENGTH_MIN = 2 if not GEVP and EFF_MASS else RANGE_LENGTH_MIN
 
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
@@ -274,12 +281,6 @@ RESCALE = 1.0
 # use fixed pion mass in ratio fits?
 USE_FIXED_MASS = False
 USE_FIXED_MASS = True
-
-# Plot Effective Mass? True or False
-
-EFF_MASS = False
-EFF_MASS = True
-EFF_MASS = True if GEVP else EFF_MASS
 
 # EFF_MASS_METHOD 1: analytic for arg to acosh
 # (good for when additive const = 0, but noiser than 3 and 4)
