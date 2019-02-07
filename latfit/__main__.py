@@ -862,6 +862,60 @@ def inverse_excl(meta, excl):
         ret[i] = list(np.delete(ret[i], inds))
     return ret
 
+if EFF_MASS:
+    def min_eff_mass_errors(mindim=None):
+        """Append the errors of the effective mass points
+        to errarr"""
+        errlist = []
+        arrlist = []
+        assert mindim is None or isinstance(mindim, int),\
+            "type check failed"
+        for i, time in enumerate(singlefit.reuse):
+            if not isinstance(time, int):
+                continue
+            if mindim is None:
+                arr = singlefit.reuse[time]
+                err = singlefit.error2[time]
+            else:
+                arr = singlefit.reuse[time][:, mindim]
+                err = singlefit.error2[time][mindim]
+            arrlist.append(arr)
+            errlist.append(err)
+        err = min(errlist)
+        arr = arrlist[errlist.index(err)]
+        return arr, err
+else:
+    def min_eff_mass_errors(mindim=None):
+        """blank"""
+        return (None, np.inf)
+
+def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
+    """Compare the error of err to the effective mass errors.
+    In other words, find the minimum error of
+    the errors on subsets of effective mass points
+    and the error on the points themselves.
+    """
+    erreff, arreff = min_eff_mass_errors(mindim)
+    if errmin == erreff:
+        arr = arreff
+    else:
+        errmin = min(errmin, erreff)
+        if errmin == erreff:
+            arr = arreff
+            err = erreff
+    # the error is not going to be a simple np.std if we do sample AMA
+    # so skip the check in this case
+    if not SUPERJACK_CUTOFF:
+        errcheck = np.std(arr)*np.sqrt(len(arr-1))
+        try:
+            assert np.allclose(errcheck, errmin, rtol=1e-6)
+        except AssertionError:
+            print("error check failed")
+            print(errmin, errcheck)
+            sys.exit(1)
+    return arr, errmin
+    
+
 def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     """Dump the jackknife blocks for the energy with minimum errors"""
     fname = "x_min_"+str(LATTICE_ENSEMBLE)
@@ -872,37 +926,49 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     dimops = err.shape[1]
     if dimops == 1:
         err = err[:,0]
-        print("dumping jackknife energies with error:", min(err))
+        errmin = min(err)
         ind = list(err).index(min(err))
         arr = getattr(min_arr[ind][0], 'x_arr')
     else:
         assert mindim is not None, "needs specification of operator"+\
             " dimension to write min error jackknife blocks (unsupported)."
         print(err.shape)
-        ind = list(err[:, mindim]).index(min(err[:, mindim]))
+        errmin = min(err[:, mindim])
+        ind = list(err[:, mindim]).index(errmin)
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'x_arr')[:, mindim])
-    print(err.shape)
-    print(arr.shape)
-    errcheck = np.std(arr)*np.sqrt(len(arr-1))
-    if not SUPERJACK_CUTOFF:
-        try:
-            if mindim is None:
-                assert min(err) == errcheck
-            else:
-                assert min(err[:, mindim]) == errcheck
-        except AssertionError:
-            print("error check failed")
-            if mindim is None:
-                print(min(err), errcheck)
-            else:
-                print(min(err[:, mindim]), errcheck)
-    print("writing", fname+'.p')
+    arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=None)
+    print("dumping jackknife energies with error:", errmin,
+          "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
 
-def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
-    """Pickle the fit range result
+def pickle_res(avgname, min_arr):
+    """Return the fit range results to be pickled,
+    append the effective mass points
     """
+    ret = [getattr(i[0], avgname) for i in min_arr]
+    ret = np.array(ret, dtype=object)
+    return ret
+
+def pickle_excl(meta, min_arr):
+    """Get the fit ranges to be pickled
+    append the effective mass points
+    """
+    ret = [inverse_excl(meta, i[2]) for i in min_arr]
+    ret = np.array(ret, dtype=object)
+    return ret
+
+def pickle_res_err(errname, min_arr):
+    """Append the effective mass errors to the """
+    ret = [getattr(i[0], errname) for i in min_arr]
+    if GEVP:
+        assert np.array(ret).shape[1] ==\
+            np.asarray(singlefit.error2).shape[1]
+    ret = np.array([*ret, *singlefit.error2])
+    return ret
+
+def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
+    """Pickle the fit range result"""
     print("starting arg:", avgname)
     if 'x_arr' in avgname: # no clobber (only do this once)
         if MULT > 1:
@@ -915,13 +981,11 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     avgname = 'fun' if avgname == 'chisq' else avgname
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
-    pickl_res = np.array([
-        getattr(i[0], avgname) for i in min_arr], dtype=object)
-    pickl_excl = np.array([inverse_excl(meta, i[2])
-                           for i in min_arr], dtype=object)
+    pickl_res = pickle_res(avgname, min_arr)
+    pickl_excl = pickle_excl(meta, min_arr)
+    pickl_res_err = pickle_res_err(errname, min_arr)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
-    pickl_res_err = np.array([getattr(i[0], errname) for i in min_arr])
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
         str(pickl_res_err.shape)+str(pickl_res[2].shape)
     avgname = 'chisq' if avgname == 'fun' else avgname
