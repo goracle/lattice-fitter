@@ -70,8 +70,8 @@ elif LATTICE_ENSEMBLE == '32c':
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
 # set the minimum number of points to qualify a data subset as a fit range
-RANGE_LENGTH_MIN = 3
 RANGE_LENGTH_MIN = 0
+RANGE_LENGTH_MIN = 3
 
 # only loop over fit ranges with one or two time slices
 # (useful for error optimization after a full fit range loop)
@@ -482,6 +482,7 @@ BINDS = [[None, None] for _ in range(len(START_PARAMS)*DIM+(
     1 if SYS_ENERGY_GUESS is not None else 0))]
 BINDS = [[None, None]] if not BINDS else BINDS
 BINDS = [tuple(bind) for bind in BINDS]
+BINDS[-1] = (None, 100) if SYS_ENERGY_GUESS is not None else BINDS[-1]
 BINDS = tuple(BINDS)
 print("Bounds on fit parameters:", BINDS)
 
