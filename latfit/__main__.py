@@ -925,6 +925,7 @@ if EFF_MASS:
         assert mindim is None or isinstance(mindim, int),\
             "type check failed"
         times = []
+        dimops = None
         for key in singlefit.reuse.keys():
             if not isinstance(key, float) and not isinstance(key, int):
                 continue
@@ -938,16 +939,32 @@ if EFF_MASS:
                 arr = singlefit.reuse[time]
                 err = singlefit.error2[xcoord.index(time)]
             else:
-                arr = singlefit.reuse[time][:, mindim]
-                err = singlefit.error2[xcoord.index(time)][mindim]
+                dimops = len(singlefit.reuse[time][0])\
+                    if dimops is None else dimops
+                assert dimops == len(singlefit.reuse[time][0])
+                if not getavg:
+                    arr = singlefit.reuse[time][:, mindim]
+                    err = singlefit.error2[xcoord.index(time)][mindim]
+                else:
+                    arr = singlefit.reuse[time]
+                    err = singlefit.error2[xcoord.index(time)]
             arrlist.append(arr)
             errlist.append(err)
-        if isinstance(errlist[0], float) and not getavg:
+        assert isinstance(errlist[0], float)
+        if not getavg:
             err = min(errlist)
             arr = arrlist[errlist.index(err)]
         else:
             err = np.asarray(errlist)
             arr = np.mean(np.asarray(arrlist), axis=1)
+            if isinstance(arr[0], float):
+                # add structure in arr for backwards compatibility
+                arr = np.asarray([[i] for i in arr])
+                assert isinstance(err[0], float),\
+                    "error array does not have same structure as eff mass array"
+                err = np.asarray([[i] for i in err])
+            assert len(arr.shape) == 2, "first dim is time, second dim is operator"
+            assert len(err.shape) == 2, "first dim is time, second dim is operator"
             assert len(err) == len(arr)
             assert mindim is None
         assert isinstance(err, float) or mindim is None, "index bug"
@@ -989,16 +1006,18 @@ def pickle_res_err(errname, min_arr):
     print("original error length (err):", origl, "final error length:", flen)
     return ret
 
-def pickle_excl(avgname, meta, min_arr):
+def pickle_excl(meta, min_arr):
     """Get the fit ranges to be pickled
     append the effective mass points
     """
     ret = [inverse_excl(meta, i[2]) for i in min_arr]
-    if 'x' in avgname:
+    print("original number of fit ranges before effective mass append:", len(ret))
+    if EFF_MASS:
         xcoord = list(singlefit.coords_full[:, 0])
         xcoordapp = [[i] for i in xcoord]
         ret = [*ret, *xcoordapp]
     ret = np.array(ret, dtype=object)
+    print("final fit range amount:", len(ret))
     return ret
 
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
@@ -1017,7 +1036,7 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = pickle_res(avgname, min_arr)
     pickl_res_err = pickle_res_err(errname, min_arr)
-    pickl_excl = pickle_excl(avgname, meta, min_arr)
+    pickl_excl = pickle_excl(meta, min_arr)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
