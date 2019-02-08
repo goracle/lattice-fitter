@@ -862,35 +862,6 @@ def inverse_excl(meta, excl):
         ret[i] = list(np.delete(ret[i], inds))
     return ret
 
-if EFF_MASS:
-    def min_eff_mass_errors(mindim=None):
-        """Append the errors of the effective mass points
-        to errarr"""
-        errlist = []
-        arrlist = []
-        xcoord = list(singlefit.coords_full[:, 0])
-        assert mindim is None or isinstance(mindim, int),\
-            "type check failed"
-        for i, time in enumerate(singlefit.reuse):
-            if not isinstance(time, int) and not isinstance(time, float):
-                continue
-            if mindim is None:
-                arr = singlefit.reuse[time]
-                err = singlefit.error2[xcoord.index(time)]
-            else:
-                arr = singlefit.reuse[time][:, mindim]
-                err = singlefit.error2[xcoord.index(time)][mindim]
-            arrlist.append(arr)
-            errlist.append(err)
-        err = min(errlist)
-        assert isinstance(err, float), "index bug"
-        arr = arrlist[errlist.index(err)]
-        return arr, err
-else:
-    def min_eff_mass_errors(mindim=None):
-        """blank"""
-        return (None, np.inf)
-
 def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
     """Compare the error of err to the effective mass errors.
     In other words, find the minimum error of
@@ -944,29 +915,90 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
 
+if EFF_MASS:
+    def min_eff_mass_errors(mindim=None, getavg=False):
+        """Append the errors of the effective mass points
+        to errarr"""
+        errlist = []
+        arrlist = []
+        xcoord = list(singlefit.coords_full[:, 0])
+        assert mindim is None or isinstance(mindim, int),\
+            "type check failed"
+        times = []
+        for key in singlefit.reuse.keys():
+            if not isinstance(key, float) and not isinstance(key, int):
+                continue
+            if int(key) == key:
+                times.append(key)
+        times = sorted(times)
+        for i, time in enumerate(times):
+            if not isinstance(time, int) and not isinstance(time, float):
+                continue
+            if mindim is None:
+                arr = singlefit.reuse[time]
+                err = singlefit.error2[xcoord.index(time)]
+            else:
+                arr = singlefit.reuse[time][:, mindim]
+                err = singlefit.error2[xcoord.index(time)][mindim]
+            arrlist.append(arr)
+            errlist.append(err)
+        if isinstance(errlist[0], float) and not getavg:
+            err = min(errlist)
+            arr = arrlist[errlist.index(err)]
+        else:
+            err = np.asarray(errlist)
+            arr = np.mean(np.asarray(arrlist), axis=1)
+            assert len(err) == len(arr)
+            assert mindim is None
+        assert isinstance(err, float) or mindim is None, "index bug"
+        return arr, err
+else:
+    def min_eff_mass_errors(mindim=None):
+        """blank"""
+        return (None, np.inf)
+
 def pickle_res(avgname, min_arr):
     """Return the fit range results to be pickled,
     append the effective mass points
     """
     ret = [getattr(i[0], avgname) for i in min_arr]
-    ret = np.array(ret, dtype=object)
-    return ret
-
-def pickle_excl(meta, min_arr):
-    """Get the fit ranges to be pickled
-    append the effective mass points
-    """
-    ret = [inverse_excl(meta, i[2]) for i in min_arr]
-    ret = np.array(ret, dtype=object)
+    origlshape = np.asarray(ret, dtype=object).shape
+    print("res shape", origlshape)
+    origl = len(ret)
+    if 'x' in avgname:
+        arreff, _ = min_eff_mass_errors(mindim=None, getavg=True)
+        ret = [*ret, *arreff]
+    ret = np.asarray(ret, dtype=object)
+    assert len(origlshape) == len(ret.shape), str(origlshape)+","+str(ret.shape)
+    flen = len(ret)
+    print("original error length (res):", origl, "final error length:", flen)
     return ret
 
 def pickle_res_err(errname, min_arr):
     """Append the effective mass errors to the """
     ret = [getattr(i[0], errname) for i in min_arr]
+    origl = len(ret)
     if GEVP:
         assert np.array(ret).shape[1] ==\
             np.asarray(singlefit.error2).shape[1]
-    ret = np.array([*ret, *singlefit.error2])
+    if 'x' in errname:
+        _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
+        ret = np.array([*ret, *erreff])
+    ret = np.asarray(ret)
+    flen = len(ret)
+    print("original error length (err):", origl, "final error length:", flen)
+    return ret
+
+def pickle_excl(avgname, meta, min_arr):
+    """Get the fit ranges to be pickled
+    append the effective mass points
+    """
+    ret = [inverse_excl(meta, i[2]) for i in min_arr]
+    if 'x' in avgname:
+        xcoord = list(singlefit.coords_full[:, 0])
+        xcoordapp = [[i] for i in xcoord]
+        ret = [*ret, *xcoordapp]
+    ret = np.array(ret, dtype=object)
     return ret
 
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
@@ -984,8 +1016,8 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = pickle_res(avgname, min_arr)
-    pickl_excl = pickle_excl(meta, min_arr)
     pickl_res_err = pickle_res_err(errname, min_arr)
+    pickl_excl = pickle_excl(avgname, meta, min_arr)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
