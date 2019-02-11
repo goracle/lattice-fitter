@@ -139,6 +139,7 @@ GEVP_DEBUG = False
 # halve the data to check for consistencies
 HALF = 'first half'
 HALF = 'second half'
+HALF = 'drop fourth quarter'
 HALF = 'full'
 
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
