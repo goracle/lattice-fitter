@@ -141,7 +141,9 @@ HALF = 'first half'
 HALF = 'second half'
 HALF = 'full'
 
-# only look at the sloppy part
+# If the first SUPERJACK_CUTOFF configs are exact, this simple switch
+# skips reading them in
+# and only looks at the jackknife blocks for the remaining configs
 SLOPPYONLY = True
 SLOPPYONLY = False
 
