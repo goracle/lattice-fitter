@@ -68,18 +68,19 @@ if STYPE == 'hdf5':
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
         out = halftotal(out)
+        # out = halftotal(out, 'first half')
         out = binout(out)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
 
-    def halftotal(out):
+    def halftotal(out, override=None):
         """First half second half analysis
         """
         sloppy = out[SUPERJACK_CUTOFF:]
-        sloppy = half(sloppy)
+        sloppy = half(sloppy, override)
         exact = out[:SUPERJACK_CUTOFF]
-        exact = half(exact)
+        exact = half(exact, override)
         if SLOPPYONLY:
             ret = np.asarray(sloppy)
         else:
@@ -90,23 +91,24 @@ if STYPE == 'hdf5':
         """Numpy returns a float when it should return an int for ceiling"""
         return int(np.ceil(num))
 
-    def half(arr):
+    def half(arr, override=None):
         """Take half of the array"""
         larr = len(arr)
-        if HALF == 'full':
+        halfswitch = HALF if override is None else override
+        if halfswitch == 'full':
             ret = arr
-        elif HALF == 'first half':
+        elif halfswitch == 'first half':
             excl = np.array(range(len(arr)))[intceil(larr/2):]
             excl = list(excl)
             ret = elim_jkconfigs(arr, excl)
             # ret = arr[:intceil(larr/2)]
-        elif HALF == 'second half':
+        elif halfswitch == 'second half':
             excl = np.array(range(len(arr)))[:intceil(larr/2)]
             excl = list(excl)
             ret = elim_jkconfigs(arr, excl)
             # ret = arr[intceil(larr/2):]
         else:
-            print("bad spec for HALF:", HALF)
+            print("bad spec for half switch:", halfswitch)
             sys.exit(1)
         return ret
 
