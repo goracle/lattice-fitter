@@ -78,9 +78,10 @@ if STYPE == 'hdf5':
         """
         sloppy = out[SUPERJACK_CUTOFF:]
         sloppy = half(sloppy, override)
-        exact = out[:SUPERJACK_CUTOFF]
-        exact = half(exact, override)
-        if SLOPPYONLY:
+        if SUPERJACK_CUTOFF:
+            exact = out[:SUPERJACK_CUTOFF]
+            exact = half(exact, override)
+        if SLOPPYONLY or not SUPERJACK_CUTOFF:
             ret = np.asarray(sloppy)
         else:
             ret = np.asarray([*exact, *sloppy])
@@ -116,8 +117,9 @@ if STYPE == 'hdf5':
         else:
             print("bad spec for half switch:", halfswitch)
             sys.exit(1)
-        excl = list(excl)
-        ret = elim_jkconfigs(arr, excl)
+        if halfswitch != 'full':
+            excl = list(excl)
+            ret = elim_jkconfigs(arr, excl)
         return ret
 
     def test_prefix(hdf5_file, ctime, fn1, alts=None):
