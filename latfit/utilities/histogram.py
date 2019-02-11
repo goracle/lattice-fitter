@@ -24,6 +24,16 @@ def trunc(val):
         ret = float(str(gvar.gvar(val))[:-3])
     return ret
 
+def fill_pvalue_arr(pdat_freqarr, desired_length):
+    """Extend pdat_freqarr to desired length"""
+    ext = desired_length-len(pdat_freqarr)
+    if ext > 0:
+        pdat_freqarr = list(pdat_freqarr)
+        for _ in range(ext):
+            pdat_freqarr.append(1)
+        assert len(pdat_freqarr) == desired_length
+    return np.asarray(pdat_freqarr)
+
 def make_hist(fname):
     """Make histograms
     """
@@ -50,6 +60,8 @@ def make_hist(fname):
             print("but shape is", pdat.shape)
             print("failing on file", pvalfn)
             sys.exit(1)
+
+    pdat_freqarr = fill_pvalue_arr(pdat_freqarr, len(freqarr))
 
     # get file name for error
     if 'I' not in fname:
