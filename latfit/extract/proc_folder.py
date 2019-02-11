@@ -68,7 +68,6 @@ if STYPE == 'hdf5':
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
         out = halftotal(out)
-        # out = halftotal(out, 'first half')
         out = binout(out)
         return out
     proc_folder.sent = object()
@@ -99,17 +98,26 @@ if STYPE == 'hdf5':
             ret = arr
         elif halfswitch == 'first half':
             excl = np.array(range(len(arr)))[intceil(larr/2):]
-            excl = list(excl)
-            ret = elim_jkconfigs(arr, excl)
             # ret = arr[:intceil(larr/2)]
         elif halfswitch == 'second half':
             excl = np.array(range(len(arr)))[:intceil(larr/2)]
-            excl = list(excl)
-            ret = elim_jkconfigs(arr, excl)
             # ret = arr[intceil(larr/2):]
+        elif halfswitch =='drop first quarter':
+            excl = np.array(range(len(arr)))[:intceil(larr/4)]
+        elif halfswitch =='drop second quarter':
+            excl = np.array(
+                range(len(arr)))[intceil(larr/4):2*intceil(larr/4)]
+        elif halfswitch =='drop third quarter':
+            excl = np.array(
+                range(len(arr)))[2*intceil(larr/4):3*intceil(larr/4)]
+        elif halfswitch =='drop fourth quarter':
+            excl = np.array(
+                range(len(arr)))[3*intceil(larr/4):]
         else:
             print("bad spec for half switch:", halfswitch)
             sys.exit(1)
+        excl = list(excl)
+        ret = elim_jkconfigs(arr, excl)
         return ret
 
     def test_prefix(hdf5_file, ctime, fn1, alts=None):

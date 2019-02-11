@@ -394,6 +394,8 @@ elif MATRIX_SUBTRACTION and GEVP:
         str(DELTA_T_MATRIX_SUBTRACTION)+' '
 elif True in ADD_CONST_VEC:
     TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
+if HALF != 'full':
+    TITLE_PREFIX = TITLE_PREFIX + HALF + ' '
 
 # title
 
