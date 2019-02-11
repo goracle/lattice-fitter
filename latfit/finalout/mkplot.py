@@ -44,7 +44,7 @@ from latfit.config import ERROR_BAR_METHOD
 from latfit.config import CALC_PHASE_SHIFT
 from latfit.config import ISOSPIN
 from latfit.config import PLOT_DISPERSIVE, DISP_ENERGIES
-from latfit.config import AINVERSE, SUPERJACK_CUTOFF
+from latfit.config import AINVERSE, SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD, FIT_SPACING_CORRECTION
@@ -220,7 +220,7 @@ def get_dimops(cov, result_min, coords):
 
 def superjackstring():
     """Get string for displaying the number of bias correction configs"""
-    if SUPERJACK_CUTOFF:
+    if SUPERJACK_CUTOFF and not SLOPPYONLY:
         ret = ","+str(SUPERJACK_CUTOFF)
     else:
         ret = ""

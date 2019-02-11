@@ -22,7 +22,7 @@ from latfit.config import UNCORR, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN
 from latfit.config import PICKLE
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
-from latfit.config import SUPERJACK_CUTOFF
+from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.utilities.zeta.zeta import zeta, ZetaError
@@ -30,6 +30,7 @@ import latfit.finalout.mkplot
 import latfit.config
 import latfit.analysis.misc as misc
 
+SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
 MIN = namedtuple('min',
                  ['x', 'fun', 'status',

@@ -2,6 +2,7 @@
 import sys
 from math import sqrt, pi, sin
 import numpy as np
+import pickle
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 
@@ -44,7 +45,7 @@ def p1():
         except FileNotFoundError:
             pass
     if p1.P1 is not None:
-        ret = P1
+        ret = p1.P1
     return ret
 p1.P1 = None
 
@@ -61,7 +62,7 @@ def p11():
         except FileNotFoundError:
             pass
     if p11.P11 is not None:
-        ret = P11
+        ret = p11.P11
     return ret
 p11.P11 = None
 
@@ -84,6 +85,12 @@ p111.P111 = None
 
 IRREP = None
 CONTINUUM = True
+def bintotal(ret):
+    assert None
+    return ret
+def halftotal(ret):
+    assert None
+    return ret
 
 def fitepi(norm):
     """Select the right E_pi"""
@@ -98,7 +105,9 @@ def fitepi(norm):
         ret = p111()
     else:
         assert ret is not None, ""
-    assert not hasattr(ret, '__iter__')
+    if hasattr(ret, '__iter__'):
+        ret = binout(ret)
+        ret = halftotal(ret)
     return ret
 
 def correct_epipi(energies, irr=None, uncorrect=False):

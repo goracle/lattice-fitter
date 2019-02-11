@@ -14,6 +14,7 @@ from latfit.config import HALF, SUPERJACK_CUTOFF
 from latfit.config import SLOPPYONLY
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 import latfit
+import latfit.analysis.misc as misc
 
 def binout(out):
     """Reduce the number of used configs
@@ -216,3 +217,6 @@ elif STYPE == 'ascii':
                 else:
                     debug = [root, dirs]
         return retname, flag2, debug
+
+misc.halftotal = halftotal
+misc.binout = binout

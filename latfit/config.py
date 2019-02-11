@@ -376,7 +376,7 @@ else:
         TITLE_PREFIX = '32c '
 if GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 't-t0=' + T0[6:] + " "
-if SUPERJACK_CUTOFF:
+if SUPERJACK_CUTOFF and not SLOPPYONLY:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
     if LATTICE_ENSEMBLE == '24c':
