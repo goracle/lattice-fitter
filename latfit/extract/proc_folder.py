@@ -69,6 +69,11 @@ if STYPE == 'hdf5':
                     sys.exit(1)
         out = elim_jkconfigs(out)
         out = halftotal(out, ctime=ctime)
+        #out = halftotal(out, ctime=ctime,override='first half')
+        #out = halftotal(out, ctime=ctime,override='second half')
+        #out = halftotal(out, ctime=ctime,override='first half')
+        #out = halftotal(out, ctime=ctime,override='first half')
+        #out = halftotal(out, ctime=ctime,override='first half')
         out = binout(out)
         return out
     proc_folder.sent = object()
