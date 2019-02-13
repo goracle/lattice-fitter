@@ -41,7 +41,7 @@ def elim_jkconfigs(jkblk, elim_list=None):
         # delete the blocks corresponding to the bad configs
         inner = np.delete(jkblk, elim_list, axis=0)+skip_sum
 
-        # check for tolerance violation
+        # check for precision loss, plausibly
         assert np.allclose(inner - skip_sum,
                            np.delete(jkblk, elim_list, axis=0), rtol=1e-12)
 
@@ -53,7 +53,7 @@ def elim_jkconfigs(jkblk, elim_list=None):
         # this extra being the copy which shows up in the non-deleted blocks
         final_diff = inner-k_elim*sum_blk
 
-        # check for tolerance violation
+        # check for precision loss
         assert np.allclose(final_diff + k_elim*sum_blk, inner, rtol=1e-12)
 
         # normalize
