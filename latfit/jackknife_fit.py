@@ -20,7 +20,7 @@ from latfit.config import CORRMATRIX
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import UNCORR, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN
-from latfit.config import PICKLE
+from latfit.config import PICKLE, MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
@@ -198,9 +198,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             chisq_min_arr[config_num] = result_min_jack.fun
 
             # store the result
-            min_arr[config_num] = getenergies(params, result_min_jack.x)
-            result_min.systematics_arr[config_num] = getsystematic(
+            result_min.systematics_arr[config_num], params.energyind = getsystematic(
                 params, result_min_jack.x)
+            min_arr[config_num] = getenergies(params, result_min_jack.x)
+
+            if result_min_jack.fun/result_min.dof < 10:
+                print('systematics:', result_min.systematics_arr[config_num])
 
             # we shifted the GEVP energy spectrum down
             # to fix the leading order around the world term so shift it back
@@ -380,21 +383,31 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
 def getsystematic(params, arr):
     """Get the fit parameters which are not the energies"""
     arr = np.asarray(arr)
+    params.energyind = None
     if len(arr) != params.dimops and len(arr):
-        ret = list(arr[1::2])
-        ret.append(arr[-1])
-        ret = np.array(ret)
+        temp = list(arr)
+        if not (len(START_PARAMS)-1) % 2 and MATRIX_SUBTRACTION:
+            params.energyind = 2
+        elif not (len(START_PARAMS)-1) % 3:
+            assert not MATRIX_SUBTRACTION
+            params.energyind = 3
+        elif not (len(START_PARAMS)-1) % 4:
+            assert not MATRIX_SUBTRACTION
+            params.energyind = 4
+        del temp[params.energyind-1::params.energyind]
+        ret = np.array(temp)
     else:
         ret = None
-    return ret
+    return ret, params.energyind
 
 def getenergies(params, arr):
     """Get the energies from an array
     (array may contain other parameters)
     """
+    params.energyind = 2 if params.energyind is None else params.energyind
     arr = np.asarray(arr)
     if len(arr) != params.dimops:
-        ret = arr[0::2][:-1]
+        ret = arr[0::params.energyind][:-1]
     else:
         ret = arr
     return ret

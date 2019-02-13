@@ -12,10 +12,11 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     dimops is the dimension of the GEVP matrix
     num_configs is the number of configurations to average over.
     """
-    params = namedtuple('fit_params', ['dimops', 'num_configs',
+    params = namedtuple('fit_params', ['dimops', 'num_configs', 'energyind',
                                        'prefactor', 'time_range', 'xstep'])
     params.xstep = xstep
     params.num_configs = len(reuse[xmin])
+    params.energyind = None
     try:
         params.dimops = len(cov[0][0])
     except (NameError, TypeError):

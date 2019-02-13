@@ -16,8 +16,8 @@ from latfit.utilities import op_compose as opc
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -36,8 +36,8 @@ IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom11'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -53,8 +53,8 @@ PIONRATIO = True
 PIONRATIO = False
 
 # take derivative of GEVP eigenvalues
-GEVP_DERIV = False
 GEVP_DERIV = True
+GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
 GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
 
@@ -161,8 +161,8 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
@@ -184,25 +184,43 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modif
 # set to None if only subtracting for first order or if all orders are constant
 
 DELTA_E2_AROUND_THE_WORLD = None
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
-    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
+
+#DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
+#    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
+#        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
 # DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
-DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(
-    IRREP)[0], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-        opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
-DELTA_E2_AROUND_THE_WORLD = misc.MASS-misc.dispersive(
-    rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)\
-    if IRREP == 'A1_mom1' else DELTA_E2_AROUND_THE_WORLD
+
+
+
+if IRREP == 'A1_mom1':
+    # the exception to the usual pattern for p1
+    E21 = misc.MASS
+    E22 = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)
+else:
+    # the general E2
+    E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=FIT_SPACING_CORRECTION)
+    E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
+assert E21 > 0 and E22 > 0
+DELTA_E2_AROUND_THE_WORLD = E21-E22
+MINE2 = min(E21, E22)
+
 print("2nd order momenta for around the world:",
       opc.mom2ndorder('A1_mom1'),
       opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
+
+# set to None if not GEVP
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
+
+# set to None if in the center of mass frame
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0\
     else DELTA_E2_AROUND_THE_WORLD
-DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION\
-    else DELTA_E2_AROUND_THE_WORLD
+
+# set to None if not matrix subtraction
+#DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION\
+#    else DELTA_E2_AROUND_THE_WORLD
+
+# set to None if doing Isospin = 1
 DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
     else DELTA_E2_AROUND_THE_WORLD
 
@@ -211,9 +229,10 @@ DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
     MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP\
     and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 
-if DELTA_E2_AROUND_THE_WORLD is not None:
-    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-
+if FIT_SPACING_CORRECTION:
+    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
+    DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
+        DELTA_E2_AROUND_THE_WORLD)
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -298,6 +317,12 @@ EFF_MASS_METHOD = 4
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5, .2]
+    if not MATRIX_SUBTRACTION:
+        START_PARAMS.append(10)
+        assert len(START_PARAMS) == 3
+        if DELTA_E2_AROUND_THE_WORLD is not None:
+            START_PARAMS.append(15)
+            assert len(START_PARAMS) == 4
 #    if PIONRATIO:
 #        START_PARAMS = [.05, 0.0005]
 else:
@@ -306,9 +331,9 @@ else:
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
 
-SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = 1.2
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
 # how many loop iterations until we start using random samples
@@ -668,10 +693,15 @@ if EFF_MASS:
     #if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO and not (
     if ORIGL != 1 and EFF_MASS_METHOD != 2 and not (
             ORIGL == 2 and EFF_MASS_METHOD == 4):
-        print("***ERROR***")
-        print("dimension of GEVP matrix and start params do not match")
-        print("(or for non-gevp fits, the start_param len>1)")
-        sys.exit(1)
+        if MATRIX_SUBTRACTION:
+            print("***ERROR***")
+            print("dimension of GEVP matrix and start params do not match")
+            print("(or for non-gevp fits, the start_param len>1)")
+            sys.exit(1)
+        else:
+            assert (DELTA_E2_AROUND_THE_WORLD is None and ORIGL == 3) or (
+                DELTA_E2_AROUND_THE_WORLD is not None and ORIGL == 4
+            )
 
     # select fit function
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
@@ -686,12 +716,44 @@ if EFF_MASS:
                     START_PARAMS.append(SYS_ENERGY_GUESS)
                     assert not (
                         len(START_PARAMS)-1) % 2, "bad start parameter spec."
-                    def prefit_func(ctime, trial_params):
-                        """eff mass method 1, fit func, single const fit
-                        """
-                        return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
-                            trial_params[-1]-trial_params[2*i])*ctime)
-                                for i in range(int((len(START_PARAMS)-1)/2))]
+                    if not (len(START_PARAMS)-1) % 2 and DELTA_E2_AROUND_THE_WORLD is None:
+                        def prefit_func(ctime, trial_params):
+                            """eff mass method 1, fit func, single const fit
+                            """
+                            return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
+                                trial_params[-1]-trial_params[2*i])*ctime)
+                                    for i in range(int((len(START_PARAMS)-1)/2))]
+                    elif not (len(START_PARAMS)-1) % 3:
+                        # estimate around the world via fit
+                        assert not MATRIX_SUBTRACTION
+                        assert DELTA_E2_AROUND_THE_WORLD is None
+                        def prefit_func(ctime, trial_params):
+                            """eff mass method 1, fit func, single const fit
+                            """
+                            rrl = list(range(int((len(START_PARAMS)-1)/4)))
+                            term1 = [trial_params[4*i] for i in rrl]
+                            term2 = [trial_params[4*i+1]*exp(-(trial_params[-1]-trial_params[4*i])*ctime)
+                                     for i in rrl]
+                            term3 = [trial_params[4*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*DELTA_E_AROUND_THE_WORLD)
+                                     for i in rrl]
+                            #print(term1,term2,term3)
+                            return [term1[i]+term2[i]+term3[i] for i in rrl]
+                    elif not (len(START_PARAMS)-1) % 4:
+                        # estimate around the world via fit
+                        assert not MATRIX_SUBTRACTION
+                        def prefit_func(ctime, trial_params):
+                            """eff mass method 1, fit func, single const fit
+                            """
+                            rrl = list(range(int((len(START_PARAMS)-1)/4)))
+                            term1 = [trial_params[4*i] for i in rrl]
+                            term2 = [trial_params[4*i+1]*exp(-(trial_params[-1]-trial_params[4*i])*ctime)
+                                     for i in rrl]
+                            term3 = [trial_params[4*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*DELTA_E_AROUND_THE_WORLD)
+                                     for i in rrl]
+                            term4 = [trial_params[4*i+3]*exp(-1*LT*MINE2)*exp(-1*ctime*DELTA_E2_AROUND_THE_WORLD)
+                                     for i in rrl]
+                            #print(term1,term2,term3,term4)
+                            return [term1[i]+term2[i]+term3[i]+term4[i] for i in rrl]
                 else:
                     def prefit_func(_, trial_params):
                         """eff mass method 1, fit func, single const fit
@@ -839,10 +901,6 @@ UP.tstep = TSTEP # revert back
 FITS.select(UP)
 #NOLOOP = True if not GEVP else NOLOOP
 #if PIONRATIO:
-if FIT_SPACING_CORRECTION:
-    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
-    DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
-        DELTA_E2_AROUND_THE_WORLD)
 #    FITS.test()
 if EFF_MASS:
     if EFF_MASS_METHOD in [1, 3, 4]:
@@ -880,10 +938,15 @@ assert not BIASED_SPEEDUP, "it is biased.  do not use."
 assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
-assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP and not PIONRATIO)
+assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP\
+                                  and not PIONRATIO and SYS_ENERGY_GUESS is None)
 assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
 assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
 # we can't fit to 0 length subsets
 assert not ONLY_SMALL_FIT_RANGES or RANGE_LENGTH_MIN
 #assert not PIONRATIO or ISOSPIN == 2
 #assert MATRIX_SUBTRACTION or not PIONRATIO
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
+
+

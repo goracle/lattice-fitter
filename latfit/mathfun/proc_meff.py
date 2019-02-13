@@ -196,7 +196,7 @@ elif EFF_MASS_METHOD == 4:
 
         index = 0 if index is None else index
         try:
-            if ORIGL > 2:
+            if ORIGL > 4:
                 assert None, "This method is not supported and is based on flawed assumptions."
                 sol = minimize(EFF_MASS_TOMIN[index], START_PARAMS,
                                args=(times[0], sol),
