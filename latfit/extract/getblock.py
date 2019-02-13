@@ -1269,7 +1269,7 @@ def getblock(file_tup, reuse, timeij=None, delta_t=None):
     """get the block and subtract any bad configs"""
     retblk = np.array(getblock_plus(file_tup, reuse, timeij,
                                     delta_t=delta_t))
-    if ELIM_JKCONF_LIST:
+    if ELIM_JKCONF_LIST and None:
         retblk = elim_jkconfigs(retblk)
     retblk = binconf(retblk)
     return retblk

@@ -67,25 +67,52 @@ if STYPE == 'hdf5':
                     print("dataset name:",
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
-        out = halftotal(out)
+        out = elim_jkconfigs(out)
+        out = halftotal(out, ctime=ctime)
         out = binout(out)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
 
-    def halftotal(out, override=None):
+    def roundtozero(arr, ctime):
+        """If the correlator is close to 0,
+        zero it
+        """
+        arr = np.asarray(arr)
+        larr = len(arr)
+        assert larr > 1
+        err = np.std(arr, ddof=1, axis=0)*np.sqrt(len(arr)-1)
+        avg = np.mean(arr, axis=0)
+        assert not hasattr(avg, '__iter__')
+        if abs(avg) < err:
+            ret = np.zeros(larr, dtype=np.complex), True
+            assert ret[0].shape == np.asarray(arr).shape
+        else:
+            ret = arr, False
+        return ret
+            
+
+    def halftotal(out, override=None, ctime=None):
         """First half second half analysis
         """
         sloppy = out[SUPERJACK_CUTOFF:]
         sloppy = half(sloppy, override)
+        # check the sloppy blocks since the error bar is more reliable
+        sloppy, didround = roundtozero(sloppy, ctime)
+        assert isinstance(didround, bool)
         if SUPERJACK_CUTOFF:
             exact = out[:SUPERJACK_CUTOFF]
             exact = half(exact, override)
+            exact = np.asarray(exact)
+            # if we did round down, round down the exact blocks too
+            if didround:
+                exact = np.zeros(exact.shape, np.complex)
         if SLOPPYONLY or not SUPERJACK_CUTOFF:
             ret = np.asarray(sloppy)
         else:
             ret = np.asarray([*exact, *sloppy])
         return ret
+
 
     def intceil(num):
         """Numpy returns a float when it should return an int for ceiling"""

@@ -327,7 +327,10 @@ class FitFunc:
         else:
             np.seterr(invalid='raise')
             zero_p(corrs[1], times[1])
-        sol = (corrs[0])/(corrs[1])
+        if corrs[1] == 0:
+            sol = np.nan
+        else:
+            sol = (corrs[0])/(corrs[1])
         if not nocheck:
             testsol(sol, corrs, times)
         if self._log:
@@ -337,7 +340,8 @@ class FitFunc:
         except AssertionError:
             print("bad ratio.  should be 1/ratio")
             print(sol)
-            raise
+            sol = np.nan
+            # raise
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
