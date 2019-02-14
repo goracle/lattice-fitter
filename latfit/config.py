@@ -331,9 +331,9 @@ else:
     else:
         START_PARAMS = [8.18203895e6, 4.6978036e-01]
 
+SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
-SYS_ENERGY_GUESS = 1.2
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
 
 # how many loop iterations until we start using random samples
