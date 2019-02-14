@@ -137,6 +137,8 @@ def defsign(x):
         ret = 1
     elif np.all(evals < 0):
         ret = -1
+    elif np.all(np.real(evals) == 0) and np.all(np.imag(evals) == 0):
+        ret = 0
     else:
         assert None, "eigenvalues are not all the same sign:"+\
             str(evals)
