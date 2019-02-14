@@ -939,7 +939,7 @@ assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
 assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP\
-                                  and not PIONRATIO and SYS_ENERGY_GUESS is None)
+                                  and not PIONRATIO and SYS_ENERGY_GUESS is None) or not FIT
 assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
 assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
 # we can't fit to 0 length subsets
