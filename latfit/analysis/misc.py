@@ -9,6 +9,7 @@ import latfit.utilities.read_file as rf
 BOX_LENGTH = 1
 MASS = 0
 LATTICE = None
+PIONRATIO = False
 
 
 P1 = None
@@ -23,10 +24,12 @@ P111 = None
 #p0
 #P0 = 0.13957(19)
 
+
 def mass():
+    pionstr = '_pioncorrChk_' if PIONRATIO else '_pioncorr_'
     if misc.MASS == 0:
         try:
-            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_mom000.jkdat.p', 'rb')
+            fn1 = open('x_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
             misc.MASS = pickle.load(fn1)
         except FileNotFoundError:
             pass
@@ -34,13 +37,14 @@ def mass():
 
 def p1():
     """E_pi(|p|=1)"""
+    pionstr = '_pioncorrChk_' if PIONRATIO else '_pioncorr_'
     if LATTICE == '24c':
         ret = 0.29641
     elif LATTICE == '32c':
         ret = 0.22248
     if p1.P1 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p1.jkdat.p', 'rb')
+            fn1 = open('x_min_'+LATTICE+pionstr+'p1.jkdat.p', 'rb')
             P1 = pickle.load(fn1)
         except FileNotFoundError:
             pass
@@ -51,13 +55,14 @@ p1.P1 = None
 
 def p11():
     """E_pi(|p|=11)"""
+    pionstr = '_pioncorrChk_' if PIONRATIO else '_pioncorr_'
     if LATTICE == '24c':
         ret = 0.39461
     elif LATTICE == '32c':
         ret = 0.2971
     if p11.P11 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+'_pioncorrChk_p11.jkdat.p', 'rb')
+            fn1 = open('x_min_'+LATTICE+pionstr+'p11.jkdat.p', 'rb')
             p11.P11 = pickle.load(fn1)
         except FileNotFoundError:
             pass
@@ -68,13 +73,14 @@ p11.P11 = None
 
 def p111():
     """E_pi(|p|=11)"""
+    pionstr = '_pioncorrChk_' if PIONRATIO else '_pioncorr_'
     if LATTICE == '24c':
         ret = 0.4715
     elif LATTICE == '32c':
         ret = 0.3514
     if p111.P111 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+'pioncorrChk_p111.jkdat.p', 'rb')
+            fn1 = open('x_min_'+LATTICE+pionstr+'p111.jkdat.p', 'rb')
             p111.P111 = pickle.load(fn1)
         except FileNotFoundError:
             pass

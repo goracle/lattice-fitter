@@ -110,6 +110,7 @@ misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
+misc.PIONRATIO = PIONRATIO
 DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
