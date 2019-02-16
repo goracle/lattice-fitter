@@ -18,6 +18,13 @@ import write_discon as wd
 import aux_write as aux
 import avg_hdf5
 
+
+
+# when writing pion correlators, average over tsrc or leave un-averagd
+AVGTSRC = False
+AVGTSRC = True
+
+
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 
@@ -184,7 +191,11 @@ def fill_write_block(fndef=FNDEF):
     fn1 = h5py.File(fndef, 'r')
     retlist = []
     for i in fn1:
-        if 'pioncorrChk' in i:
+        if AVGTSRC:
+            cond = 'pioncorrChk' in i
+        else:
+            cond = 'pioncorr' in i and 'Chk' not in i
+        if cond:
             spl = i.split('_')
             needed = spl[2:]
             ret = needed[0]
@@ -194,15 +205,15 @@ def fill_write_block(fndef=FNDEF):
     return retlist
 
 WRITEBLOCK = []
-WRITEBLOCK = ['pioncorrChk_mom000']
+if AVGTSRC:
+    WRITEBLOCK = ['pioncorrChk_mom000']
+else:
+    WRITEBLOCK = ['pioncorr_mom000']
 # only write the single particle correlators
-WRITE_INDIVIDUAL = True
 WRITE_INDIVIDUAL = False
+WRITE_INDIVIDUAL = True
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
-AVGTSRC = False
-AVGTSRC = True
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
-assert AVGTSRC
 
 # debug rows/columns slicing
 DEBUG_ROWS_COLS = False
