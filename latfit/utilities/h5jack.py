@@ -98,7 +98,7 @@ THERMNUM = 0  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST44 else 4539  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
 #assert not THERMNUM, "thermnum not equal to 0="+str(THERMNUM)
-TSTEP = 10 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
+TSTEP = 64/6 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
 TSTEP = TSTEP if not TEST24C else 8
 # max time distance between (inner) particles
@@ -115,7 +115,7 @@ TSTEP = 8
 # 32c
 TSEP = 4
 TDIS_MAX = 22
-TSTEP = 10
+TSTEP = 64/6
 
 
 
