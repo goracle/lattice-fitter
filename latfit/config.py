@@ -726,32 +726,36 @@ if EFF_MASS:
                                     for i in range(int((len(START_PARAMS)-1)/2))]
                     elif not (len(START_PARAMS)-1) % 3:
                         # estimate around the world via fit
+                        assert GEVP
                         assert not MATRIX_SUBTRACTION
                         assert DELTA_E2_AROUND_THE_WORLD is None
+                        assert len(range(int((len(START_PARAMS)-1)/3))) == DIM
                         def prefit_func(ctime, trial_params):
                             """eff mass method 1, fit func, single const fit
                             """
-                            rrl = list(range(int((len(START_PARAMS)-1)/4)))
-                            term1 = [trial_params[4*i] for i in rrl]
-                            term2 = [trial_params[4*i+1]*exp(-(trial_params[-1]-trial_params[4*i])*ctime)
+                            rrl = range(DIM)
+                            term1 = [trial_params[3*i] for i in rrl]
+                            term2 = [trial_params[3*i+1]*exp(-(trial_params[-1]-trial_params[3*i])*ctime)
                                      for i in rrl]
-                            term3 = [trial_params[4*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*DELTA_E_AROUND_THE_WORLD)
+                            term3 = [trial_params[3*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*DELTA_E_AROUND_THE_WORLD)
                                      for i in rrl]
                             #print(term1,term2,term3)
                             return [term1[i]+term2[i]+term3[i] for i in rrl]
                     elif not (len(START_PARAMS)-1) % 4:
                         # estimate around the world via fit
+                        assert GEVP
                         assert not MATRIX_SUBTRACTION
+                        assert len(range(int((len(START_PARAMS)-1)/4))) == DIM
                         def prefit_func(ctime, trial_params):
                             """eff mass method 1, fit func, single const fit
                             """
-                            rrl = list(range(int((len(START_PARAMS)-1)/4)))
+                            rrl = range(DIM)
                             term1 = [trial_params[4*i] for i in rrl]
                             term2 = [trial_params[4*i+1]*exp(-(trial_params[-1]-trial_params[4*i])*ctime)
                                      for i in rrl]
-                            term3 = [trial_params[4*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*DELTA_E_AROUND_THE_WORLD)
+                            term3 = [trial_params[4*i+2]*exp(-1*LT*misc.MASS)*exp(-1*ctime*(trial_params[4*i]-DELTA_E_AROUND_THE_WORLD))
                                      for i in rrl]
-                            term4 = [trial_params[4*i+3]*exp(-1*LT*MINE2)*exp(-1*ctime*DELTA_E2_AROUND_THE_WORLD)
+                            term4 = [trial_params[4*i+3]*exp(-1*LT*MINE2)*exp(-1*ctime*(trial_params[4*i]-DELTA_E_AROUND_THE_WORLD))
                                      for i in rrl]
                             #print(term1,term2,term3,term4)
                             return [term1[i]+term2[i]+term3[i]+term4[i] for i in rrl]
