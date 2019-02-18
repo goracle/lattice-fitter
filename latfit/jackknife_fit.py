@@ -16,7 +16,7 @@ from latfit.makemin.mkmin import mkmin
 
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
-from latfit.config import CORRMATRIX
+from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import UNCORR, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN
@@ -384,7 +384,7 @@ def getsystematic(params, arr):
     """Get the fit parameters which are not the energies"""
     arr = np.asarray(arr)
     params.energyind = None
-    if len(arr) != params.dimops and len(arr):
+    if len(arr) != params.dimops and len(arr) and EFF_MASS:
         temp = list(arr)
         if not (len(START_PARAMS)-1) % 2 and MATRIX_SUBTRACTION:
             params.energyind = 2
@@ -406,7 +406,7 @@ def getenergies(params, arr):
     """
     params.energyind = 2 if params.energyind is None else params.energyind
     arr = np.asarray(arr)
-    if len(arr) != params.dimops:
+    if len(arr) != params.dimops and EFF_MASS:
         ret = arr[0::params.energyind][:-1]
     else:
         ret = arr

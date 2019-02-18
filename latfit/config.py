@@ -120,6 +120,7 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
+DIM = 1 if not GEVP else DIM
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -330,12 +331,14 @@ else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
     else:
-        START_PARAMS = [8.18203895e6, 4.6978036e-01]
+        START_PARAMS = [6.28203895e6, 4.6978036e-01]
+
+print("start params:", START_PARAMS)
 
 SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
-START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None else START_PARAMS
+START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else START_PARAMS
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
@@ -511,12 +514,13 @@ BINDS = [[0, 2] for _ in range(2*DIM+1)]
 # try to set bounds for the systematic error
 BINDS[1::2] = [[-1, 1] for _ in enumerate(BINDS[1::2])]
 BINDS = [[None, None] for _ in range(len(START_PARAMS)*DIM+(
-    1 if SYS_ENERGY_GUESS is not None else 0))]
+    1 if SYS_ENERGY_GUESS is not None and EFF_MASS else 0))]
 BINDS = [[None, None]] if not BINDS else BINDS
 BINDS = [tuple(bind) for bind in BINDS]
-BINDS[-1] = (None, 100) if SYS_ENERGY_GUESS is not None else BINDS[-1]
+BINDS[-1] = (None, 100) if SYS_ENERGY_GUESS is not None and EFF_MASS else BINDS[-1]
 BINDS = tuple(BINDS)
 print("Bounds on fit parameters:", BINDS)
+
 
 # BINDS = ((scale*.01, 30*scale), (0, .8), (.01*scale*0, scale))
 

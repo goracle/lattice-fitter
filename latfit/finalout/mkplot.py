@@ -383,11 +383,14 @@ def print_messages(result_min, param_err, param_chisq):
         print("Error in params :", np.array2string(np.array(param_err),
                                                    separator=', '))
     if hasattr(result_min, 'systematics'):
-        systematics = gvar.gvar(result_min.systematics,
-                                result_min.systematics_err)
-        interleave_energies_systematic.sys = systematics
-        print("systematics:", np.array2string(systematics,
-                                              separator=', '))
+        if not result_min.systematics is None:
+            systematics = gvar.gvar(result_min.systematics,
+                                    result_min.systematics_err)
+            interleave_energies_systematic.sys = systematics
+            print("systematics:", np.array2string(systematics,
+                                                  separator=', '))
+        else:
+            print("extra systematic parameters: None.")
     chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
@@ -560,7 +563,10 @@ def plot_fit(xcoord, result_min, dimops):
     else:
         pass
     xfit = get_xfit(dimops, xcoord)
-    min_params = interleave_energies_systematic(result_min)
+    min_params = result_min.x
+    if hasattr(result_min, 'systematics'):
+        if not result_min.systematics is None:
+            min_params = interleave_energies_systematic(result_min)
     for curve_num in range(dimops):
         # result_min.x is is the array of minimized fit params
         if dimops > 1:
