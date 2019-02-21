@@ -408,6 +408,8 @@ else:
         TITLE_PREFIX = '32c '
 if GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 't-t0=' + T0[6:] + " "
+if GEVP_DERIV:
+    TITLE_PREFIX = TITLE_PREFIX + '$\partial t$,' + " "
 if SUPERJACK_CUTOFF and not SLOPPYONLY:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
