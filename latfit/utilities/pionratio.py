@@ -17,13 +17,16 @@ import numpy as np
 import h5py
 import read_file as rf
 from sum_blks import isoproj
-from h5jack import TSEP, LT, overall_coeffs, h5sum_blks, avg_irreps
+from h5jack import TSEP, LT, overall_coeffs, h5sum_blks
+from h5jack import avg_irreps
 import op_compose as opc
 import os.path
+from scipy.optimize import minimize_scalar
 
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
 
+DELTAT = 4
 
 def main():
     """Make the ratio
@@ -54,7 +57,63 @@ def main():
     for i in (True, False):
         do_ratio(ptotstr, i)
 
-def piondirect():
+def ccosh(en1, tsep):
+    return exp(-E*tsep)+exp(-E*(LT-tsep))
+
+
+
+def effparams(corr, dt1, dt2=None):
+    """Get effective amplitude and effective mass
+    from a given single particle correlator,
+    from two different time separations
+    """
+    dt2 = dt1+DELTAT if dt2 is None else dt2
+    corr = np.asarray(corr)
+    tmin = min(dt1, dt2)
+    tmax = max(dt1, dt2)
+    rconfig = log(corr[:, tmin]/corr[:, tmax])
+    energies = []
+    amplitudes = []
+    for ratio in rconfig:
+        def func(en1):
+            ratio_func = log(ccosh(en1, tmin)/ccosh(en1, tmax))
+            ret = (ratio_func-ratio)**2
+            return ret
+        minret = minimize_scalar(func)
+        eff_energy = minret.x
+        amp1 = corr[tmin]/ccosh(eff_energy, tmin)
+        amp2 = corr[tmax]/ccosh(eff_energy, tmax)
+        assert np.allclose(amp1, amp2, rtol=1e-12)
+        eff_amp = amp1
+        energies.append(eff_energy)
+        amplitudes.append(eff_amp)
+    energies = np.asarray(eff_energy)
+    amplitudes = np.asarray(eff_amp)
+    return amplitude, energy
+
+def atw_transform(pi1, pi2):
+    """Redefine the pion correlators so they propogate in one direction.
+    Thus, when they are multiplied
+    they give the non-interacting around the world terms
+    """
+    pi1 = np.asarray(pi1)
+    pi2 = np.asarray(pi2)
+    assert pi1.shape == pi2.shape
+    assert pi1.shape[1] == pi1.shape[2]
+    assert pi1.shape[1] == LT
+    newpi2 = np.zeros(pi2.shape, np.complex)
+    newpi1 = np.zeros(pi1.shape, np.complex)
+    for tsrc in range(LT):
+        for tdis in range(LT):
+            en1, amp1 = effparams(pi1[:, tsrc], tdis)
+            en2, amp2 = effparams(pi2[:, tsrc], tdis)
+            newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
+            newpi2[:, tsrc, tdis] = amp2*exp(-en2*(LT-tdis))
+    return newpi1, newpi2
+
+
+
+def piondirect(atw=False):
     """Do pion ratio unsummed."""
     base = 'pioncorr_*_unsummed.jkdat'
     baseglob = glob.glob(base)
@@ -76,6 +135,8 @@ def piondirect():
             for i in gn1:
                 bottompi = np.array(gn1[i])
                 save2 = i
+            if atw:
+                toppi, bottompi = atw_transform(toppi, bottompi)
             shiftpi = np.roll(bottompi, TSEP, axis=1)
 
             # compute the first topology
@@ -155,11 +216,12 @@ def piondirect():
         isoproj(False, 0, dlist=list(
             allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
     assert isinstance(ocs, dict)
+    suffix = '_pisq' if not atw else '_pisq_atw'
     for i in list(ocs):
-        ocs[i+'_pisq'] = ocs[i]
+        ocs[i+suffix] = ocs[i]
         del ocs[i]
     h5sum_blks(allblks, ocs, (numt, LT))
-    avg_irreps('_pisq.jkdat')
+    avg_irreps(suffix+'.jkdat')
 
 def coeffto1(ocs):
     """Set coefficients to 1"""
@@ -216,7 +278,8 @@ def do_ratio(ptotstr, dosub):
     """Make the ratio for a given ptotal string and 
     bool for whether or not to do subtraction in the numerator
     """
-    filename = sys.argv[1]+'.jkdat' if len(sys.argv[1].split('.')) == 1 else sys.argv[1]
+    filename = sys.argv[1]+'.jkdat' if len(sys.argv[1].split(
+        '.')) == 1 else sys.argv[1]
     fn1 = h5py.File(filename, 'r')
     data, group = anticipate(fn1)
     pionstr = 'pioncorr_mom'+ptotstr
