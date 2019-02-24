@@ -1404,9 +1404,15 @@ def check_dup_configs(blks):
             for i in blks:
                 try:
                     if isinstance(blks, dict):
-                        assert blks[i][0,0] != blks[i][1,0]
+                        if len(blks[i].shape) == 2:
+                            assert blks[i][0,0] != blks[i][1,0]
+                        else:
+                            assert blks[i][0,0,0] != blks[i][1,0,0]
                     else:
-                        assert i[0,0] != i[1,0]
+                        if len(i.shape) == 2:
+                            assert i[0,0] != i[1,0]
+                        else:
+                            assert i[0,0,0] != i[1,0,0]
                 except AssertionError:
                     print("config index 0 same as config",
                         "index 1 for block with name:")
@@ -1418,7 +1424,10 @@ def check_dup_configs(blks):
         else:
             blk = blks
             try:
-                assert blk[0,0] != blk[1,0]
+                if len(blk.shape) == 2:
+                    assert blk[0,0] != blk[1,0]
+                else:
+                    assert blk[0,0,0] != blk[1,0,0]
             except AssertionError:
                 print("config index 0 same as config",
                     "index 1 for block with name:")

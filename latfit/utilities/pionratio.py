@@ -18,10 +18,12 @@ import h5py
 import read_file as rf
 from sum_blks import isoproj
 from h5jack import TSEP, LT, overall_coeffs, h5sum_blks
-from h5jack import avg_irreps
+from h5jack import avg_irreps, TSTEP
+from numpy import log, exp
 import op_compose as opc
 import os.path
 from scipy.optimize import minimize_scalar
+import h5jack
 
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
@@ -58,68 +60,212 @@ def main():
         do_ratio(ptotstr, i)
 
 def ccosh(en1, tsep):
-    return exp(-E*tsep)+exp(-E*(LT-tsep))
+    return exp(-en1*tsep)+exp(-en1*(LT-tsep))
 
 
+def agree(arr1, arr2):
+    err1 = np.std(arr1, axis=0)*np.sqrt(len(arr1)-1)
+    err2 = np.std(arr2, axis=0)*np.sqrt(len(arr2)-1)
+    assert len(arr1) == len(arr2)
+    diff = np.abs(np.real(arr1)-np.real(arr2))
+    diff = np.mean(diff, axis=0)
+    ret = True
+    assert err1.shape == err2.shape
+    assert diff.shape == err1.shape
+    ret = np.all(diff<=err1 or diff<=err2)
+    err = ""
+    if not ret:
+        err = "disagreement: diff, err1, err2:"+str(
+            diff)+","+str(err1)+","+str(err2)
+    return ret, err
 
-def effparams(corr, dt1, dt2=None):
+def foldt(dt1):
+    """Find distance from tsrc in non-mod framework"""
+    dt1 = dt1 % LT
+    if dt1 > LT/2:
+        dt1 = LT-dt1
+    return dt1
+
+def foldpioncorr(corr):
+    """Fold the pion correlator about the midpoint
+    """
+    ret = np.zeros(corr.shape, dtype=np.complex)
+    for i in range(LT):
+        ret[:, i] = 0.5*(corr[:, i]+corr[:, LT-i-1])
+    return ret
+
+def effparams(corrorig, dt1, dt2=None, tsrc=None):
     """Get effective amplitude and effective mass
     from a given single particle correlator,
     from two different time separations
     """
-    dt2 = dt1+DELTAT if dt2 is None else dt2
-    corr = np.asarray(corr)
-    tmin = min(dt1, dt2)
-    tmax = max(dt1, dt2)
-    rconfig = log(corr[:, tmin]/corr[:, tmax])
+    corr = np.array(corrorig, dtype=np.complex)
+    # corr = foldpioncorr(corrorig)
+    np.seterr(over='raise')
+    np.seterr(invalid='raise')
+    assert LT == len(corr[0])
+
+    # find the tmin and tmax
+    dt1 = dt1 % LT
+    dt2 = dt2 % LT
+    tmod1 = foldt(dt1)
+    tmod2 = foldt(dt2)
+    tmin = dt1
+    tmax = dt2
+    if tmod1 > tmod2:
+        tmin, tmax = tmax, tmin
+    # if distance to tsrc is the same, set all ATW terms to 0
+    if tmod1 == tmod2:
+        gflag = 1
+    else:
+        gflag = 0
+
+    # take the ratio of the correlator at different time slices
+    try:
+        rconfig = log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
+    except FloatingPointError:
+        #print('floating point error in correlator log.')
+        #print("args:")
+        for ind, rat in enumerate(np.real(corr[:, tmin])/np.real(
+                corr[:, tmax])):
+            # if imaginary energy set amps to 0
+            if rat < 0:
+                gflag = 1
+        if not gflag:
+            rconfig = log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
+        else:
+            rconfig = np.zeros(len(corr), dtype=np.complex)+1
+    try:
+        if tmod2 < LT/4 and tmod1 < LT/4 and tmod1 != tmod2:
+            assert rconfig[0] > 0
+    except AssertionError:
+        print('correlator ratio < 1')
+        print(tmin, tmax, corr[0, tmin], corr[0, tmax])
+        print(dt1, dt2)
+        print(tmod1, tmod2)
+        print(tmin, tmax)
+        print(tsrc)
+        sys.exit(1)
+
+    # lists containing all the configs and time separations
     energies = []
-    amplitudes = []
-    for ratio in rconfig:
+    amps1 = []
+    amps2 = []
+
+    for num, ratio in enumerate(rconfig):
+        assert len(amps1) == num
+        assert len(amps2) == num
         def func(en1):
-            ratio_func = log(ccosh(en1, tmin)/ccosh(en1, tmax))
+            if not ratio:
+                ratio_func = 0
+            else:
+                ratio_func = log(ccosh(en1, tmin)/ccosh(en1, tmax))
             ret = (ratio_func-ratio)**2
             return ret
-        minret = minimize_scalar(func)
-        eff_energy = minret.x
-        amp1 = corr[tmin]/ccosh(eff_energy, tmin)
-        amp2 = corr[tmax]/ccosh(eff_energy, tmax)
-        assert np.allclose(amp1, amp2, rtol=1e-12)
-        eff_amp = amp1
-        energies.append(eff_energy)
-        amplitudes.append(eff_amp)
-    energies = np.asarray(eff_energy)
-    amplitudes = np.asarray(eff_amp)
-    return amplitude, energy
 
-def atw_transform(pi1, pi2):
+        np.seterr(over='warn')
+        np.seterr(invalid='warn')
+        minret = minimize_scalar(func)
+        np.seterr(over='raise')
+        np.seterr(invalid='raise')
+
+        eff_energy = minret.x
+        flag = 0 if not gflag else gflag
+        if eff_energy < 0 and func(-eff_energy) < 1e-12:
+            eff_energy *= -1
+        elif eff_energy < 0 and abs(eff_energy) > 1e-8:
+            #print("negative energy found")
+            #print(eff_energy)
+            #print(func(eff_energy))
+            #print(dt1, dt2)
+            flag = 1
+        if not ratio:
+            flag = 1
+        if flag:
+            amp1 = np.nan*(1+1j)
+            amp2 = np.nan*(1+1j)
+        else:
+            amp1 = corr[num, tmin]/ccosh(eff_energy, tmin)
+            amp2 = corr[num, tmax]/ccosh(eff_energy, tmax)
+        assert isinstance(amp1, np.complex), str(
+            corr[num,tmin])+" "+str(ccosh(eff_energy,tmin))+" "+str(amp1)
+        assert isinstance(amp2, np.complex)
+        assert (not amp1 and not amp2) or eff_energy > 0 or abs(
+            eff_energy) < 1e-8
+        amps1.append(amp1)
+        amps2.append(amp2)
+        energies.append(eff_energy)
+    amps1 = np.array(amps1)
+    amps2 = np.array(amps2)
+    energies = np.asarray(energies)
+    assert len(amps1) and len(amps2)
+    try:
+        agreement, errstr = agree(amps1, amps2)
+        assert agreement
+    except AssertionError:
+        if np.mean(energies, axis=0) < 5 and np.mean(
+                energies, axis=0) > 1e-8 and not np.isnan(np.mean(amps1))\
+                and not np.isnan(np.mean(amps2)):
+            print("amplitudes of cosh do not agree:")
+            print(errstr)
+            print("times:", dt1, dt2)
+            print(np.mean(amps1, axis=0),
+                  np.mean(amps2, axis=0),
+                  np.mean(energies, axis=0))
+            print("setting amplitudes to NaN")
+        amps1 = np.nan*np.zeros(len(amps1), dtype=np.complex)
+        amps2 = np.nan*np.zeros(len(amps2), dtype=np.complex)
+        energies = np.nan*energies
+    amplitudes = np.asarray(amps1)
+    return amplitudes, energies
+
+def atw_transform(pi1, forwardbackward=False, reverseatw=False):
     """Redefine the pion correlators so they propogate in one direction.
     Thus, when they are multiplied
     they give the non-interacting around the world terms
     """
     pi1 = np.asarray(pi1)
-    pi2 = np.asarray(pi2)
-    assert pi1.shape == pi2.shape
-    assert pi1.shape[1] == pi1.shape[2]
+    #pi2 = np.asarray(pi2)
+    #assert pi1.shape == pi2.shape
+    #assert pi1.shape[1] == pi1.shape[2]
     assert pi1.shape[1] == LT
-    newpi2 = np.zeros(pi2.shape, np.complex)
+    #newpi2 = np.zeros(pi2.shape, np.complex)
     newpi1 = np.zeros(pi1.shape, np.complex)
-    for tsrc in range(LT):
-        for tdis in range(LT):
-            en1, amp1 = effparams(pi1[:, tsrc], tdis)
-            en2, amp2 = effparams(pi2[:, tsrc], tdis)
-            newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
-            newpi2[:, tsrc, tdis] = amp2*exp(-en2*(LT-tdis))
-    return newpi1, newpi2
+    for tdis in range(LT):
+        zeroit = False
+        for tsrc in range(LT):
+            dt2 = tdis+DELTAT if reverseatw else tdis-DELTAT
+            #print(tsrc, tdis)
+            if zeroit:
+                amp1, en1 = (np.nan, np.nan)
+            else:
+                amp1, en1 = effparams(np.array(pi1[:, tsrc]), tdis, dt2, tsrc)
+                if np.any(np.isnan(amp1)):
+                    zeroit = True
+            #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
+            try:
+                newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
+                #newpi2[:, tsrc, tdis] = amp2*exp(-en2*(LT-tdis))
+            except FloatingPointError:
+                print("floating point error")
+                print('energies', en1[0], en2[0])
+                print("tdis:", tdis)
+                print("tsrc:", tsrc)
+                sys.exit(1)
+    return newpi1
+    #return newpi1, newpi2
 
 
 
-def piondirect(atw=False):
+def piondirect(atw=False, reverseatw=False):
     """Do pion ratio unsummed."""
-    base = 'pioncorr_*_unsummed.jkdat'
+    if reverseatw: assert atw
+    base = 'pioncorrChk_*_unsummed.jkdat'
     baseglob = glob.glob(base)
     allblks = {}
     count = {}
     numt = None
+    atwdict = {}
     for num1, fname in enumerate(baseglob):
         fn1 = h5py.File(fname, 'r')
         momf = np.asarray(rf.mom(fname))
@@ -128,26 +274,53 @@ def piondirect(atw=False):
         for i in fn1:
             toppi = np.array(fn1[i])
             save1 = i
+        if atw:
+            if fname not in atwdict:
+                toppi = atw_transform(
+                    toppi, forwardbackward=False, reverseatw=reverseatw)
+                atwdict[fname] = toppi
+            else:
+                toppi = atwdict[fname]
         for num2, gname in enumerate(baseglob):
             momg = np.asarray(rf.mom(gname))
             assert numt == len(momg), "inconsistent config number"
             gn1 = h5py.File(gname, 'r')
+            print(gname)
             for i in gn1:
                 bottompi = np.array(gn1[i])
                 save2 = i
             if atw:
-                toppi, bottompi = atw_transform(toppi, bottompi)
+                if gname not in atwdict:
+                    bottompi = atw_transform(bottompi,
+                                             forwardbackward=True,
+                                             reverseatw=reverseatw)
+                    atwdict[gname] = bottompi
+                else:
+                    bottompi = atwdict[gname]
             shiftpi = np.roll(bottompi, TSEP, axis=1)
 
             # compute the first topology
             top1 = shiftpi*toppi
             top1 = np.roll(top1, -1*TSEP, axis=2)
-            top1 = np.mean(top1, axis=1)
-            assert top1[0][0] > 100
+            top1 = np.mean(top1, axis=1)*TSTEP
+            if not atw:
+                try:
+                    assert top1[0][0] > 100
+                except AssertionError:
+                    print("top1 is (likely) too small")
+                    print(toppi[0,0])
+                    print(bottompi[0,0])
+                    print(shiftpi[0,0])
+                    print('top1[0,0]=', top1[0][0])
+                    for i,row in enumerate(top1):
+                        for j, col in enumerate(row):
+                            print(i,j, col)
+                        break
+                    sys.exit(1)
 
             # compute the second topology
             top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
-            top2 = np.mean(top2, axis=1)
+            top2 = np.mean(top2, axis=1)*TSTEP
 
             # for use in I=1
             top3 = -1*top2
@@ -217,6 +390,8 @@ def piondirect(atw=False):
             allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
     assert isinstance(ocs, dict)
     suffix = '_pisq' if not atw else '_pisq_atw'
+    if atw and reverseatw:
+        suffix = suffix + 'R'
     for i in list(ocs):
         ocs[i+suffix] = ocs[i]
         del ocs[i]
@@ -282,8 +457,8 @@ def do_ratio(ptotstr, dosub):
         '.')) == 1 else sys.argv[1]
     fn1 = h5py.File(filename, 'r')
     data, group = anticipate(fn1)
-    pionstr = 'pioncorr_mom'+ptotstr
-    pionstr = 'pioncorr_mom'+ptotstr
+    pionstr = 'pioncorrChk_mom'+ptotstr
+    pionstr = 'pioncorrChk_mom'+ptotstr
     print("using pion correlator:", pionstr)
     gn1 = h5py.File(pionstr+'.jkdat', 'r')
     pion = np.array(gn1[pionstr])
@@ -326,10 +501,10 @@ def anticipate(fn):
         data = i
     return np.array(fn[group+'/'+i]), group
 
-PIONCORRS = ['pioncorr_mom000.jkdat',
-             'pioncorr_p1.jkdat',
-             'pioncorr_p11.jkdat',
-             'pioncorr_p111.jkdat']
+PIONCORRS = ['pioncorrChk_mom000.jkdat',
+             'pioncorrChk_p1.jkdat',
+             'pioncorrChk_p11.jkdat',
+             'pioncorrChk_p111.jkdat']
 
 for i in range(len(PIONCORRS)):
     assert os.path.isfile(PIONCORRS[i])
@@ -365,7 +540,8 @@ def divide_multiply(tplat=10):
     for fn1 in baseglob:
         numerator_part1 = re.sub('_pisq', '', fn1)
         try:
-            numerator_part1 = np.asarray(h5py.File(numerator_part1, 'r')[datasetname(numerator_part1)])
+            numerator_part1 = np.asarray(h5py.File(numerator_part1, 'r')[
+                datasetname(numerator_part1)])
         except KeyError:
             print(datasetname(numerator_part1))
             sys.exit(1)
@@ -390,6 +566,9 @@ def divide_multiply(tplat=10):
 
 
 if __name__ == '__main__':
+    h5jack.AVGTSRC = True # hack to get file names right.
+    piondirect(atw=True)
+    piondirect(atw=True, reverseatw=True)
     piondirect()
     for dirn in ['I0', 'I1', 'I2']:
         os.chdir(dirn)
