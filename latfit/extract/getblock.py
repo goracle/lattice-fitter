@@ -122,8 +122,16 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
 
 def checkherm(carr):
     """Check hermiticity of gevp matrix"""
-    assert np.allclose(np.matrix(carr).H, carr, rtol=1e-12),\
-        "hermiticity enforcement failed."
+    try:
+        assert np.allclose(np.matrix(carr).H, carr, rtol=1e-12)
+    except AssertionError:
+        print("hermiticity enforcement failed.")
+        print(carr)
+        sys.exit(1)
+    except TypeError:
+        print("hermiticity enforcement failed.")
+        print(carr)
+        sys.exit(1)
 
 def removerowcol(cmat, idx):
     """Delete the idx'th row and column"""
@@ -384,6 +392,7 @@ def subtract_nonint_atw(cmat, timeij, reverseatw=False):
     """Subtract the atw vacuum saturation single pion correlators
     (non-interacting around the world term, single pion correlator squared)
     """
+    origshape = cmat.shape
     if not MATRIX_SUBTRACTION:
         suffix = r'_pisq_atwR.jkdat' if reverseatw else r'_pisq_atw.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
@@ -395,24 +404,27 @@ def subtract_nonint_atw(cmat, timeij, reverseatw=False):
                 name = re.sub(r'.jkdat', suffix, diag[i-1])
             else:
                 name = re.sub(r'.jkdat', suffix, diag[i])
-            print(diag, name)
-            sys.exit(0)
+            #print(diag, name)
             assert 'rho' not in name
             assert 'sigma' not in name
             tosub = proc_folder(name, timeij)
+            tosub = variance_reduction(tosub,
+                                       np.mean(tosub, axis=0))
             tosub = np.real(tosub)
-            if len(cmat) != MULT:
+            if len(cmat.shape) != 2:
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
-                cmat[:, i, i] -= tosub
-                for i in cmat:
-                    print(i)
-                sys.exit(0)
+                #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
+                cmat[:, i, i] = cmat[:, i, i]-tosub
+                #cmat[:, i, i] -= tosub
+                assert cmat[:, i, i].shape == tosub.shape
+                # for i in cmat:
+                #   print(i)
             else:
                 cmat[i, i] -= np.mean(tosub, axis=0)
                 assert not np.mean(tosub, axis=0).shape
-                print(cmat)
-                sys.exit(0)
+                #print(cmat)
+    assert cmat.shape == origshape
     return cmat
 
 def all0imag_ignorenan(vals):
@@ -723,15 +735,15 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
     apply y->(y_i-<y>)*decrease_var+<y>
     """
+    orig = np.asarray(orig)
     nanindices = []
     if hasattr(orig, '__iter__'):
-        assert hasattr(avg, '__iter__'), "dimension mismatch"
-        orig = np.asarray(orig)
+        assert hasattr(avg, '__iter__') or len(orig.shape)==1, "dimension mismatch"
         if len(orig.shape) == 1:
-            for i,j in enumerate(zip(orig, avg)):
-                    if any(np.isnan(j)):
-                        orig[i] = np.nan
-                        avg[i] = np.nan
+            for i,j in enumerate(orig):
+                if np.isnan(j):
+                    orig[i] = np.nan
+                    avg = np.nan
     else:
         assert not np.isnan(orig+avg), "nan found"
     ret = (orig-avg)*decrease_var+avg
@@ -1062,6 +1074,7 @@ if EFF_MASS:
         # subtract the non-interacting around the world piece
         assert pionratio.DELTAT == delta_t, "weak check of delta_t failed"
         for i, mean in enumerate(mean_cmats_lhs):
+            assert mean_cmats_lhs[i].shape == mean.shape
             mean_cmats_lhs[i] = subtract_nonint_atw(mean, timeij+i)
             cmats_lhs[i] = subtract_nonint_atw(cmats_lhs[i], timeij+i)
         mean_cmats_rhs = subtract_nonint_atw(
