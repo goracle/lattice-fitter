@@ -195,6 +195,7 @@ def fill_write_block(fndef=FNDEF):
             cond = 'pioncorrChk' in i
         else:
             cond = 'pioncorr' in i and 'Chk' not in i
+            cond = 'pioncorrChk' in i
         if cond:
             spl = i.split('_')
             needed = spl[2:]
@@ -209,6 +210,7 @@ if AVGTSRC:
     WRITEBLOCK = ['pioncorrChk_mom000']
 else:
     WRITEBLOCK = ['pioncorr_mom000']
+    WRITEBLOCK = ['pioncorrChk_mom000']
 # only write the single particle correlators
 WRITE_INDIVIDUAL = False
 WRITE_INDIVIDUAL = True
