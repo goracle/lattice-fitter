@@ -18,12 +18,17 @@ import h5py
 import read_file as rf
 from sum_blks import isoproj
 from h5jack import TSEP, LT, overall_coeffs, h5sum_blks
-from h5jack import avg_irreps, TSTEP
+from h5jack import avg_irreps, TSTEP, fold_time
 from numpy import log, exp
 import op_compose as opc
 import os.path
 from scipy.optimize import minimize_scalar
 import h5jack
+from h5jack import getwork, gatherdicts
+from mpi4py import MPI
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
 
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
@@ -283,6 +288,7 @@ def piondirect(atw=False, reverseatw=False):
     count = {}
     numt = None
     atwdict = {}
+    baseglob = getwork(list(baseglob))
     for num1, fname in enumerate(baseglob):
         fn1 = h5py.File(fname, 'r')
         momf = np.asarray(rf.mom(fname))
@@ -325,7 +331,7 @@ def piondirect(atw=False, reverseatw=False):
             else:
                 top1 = shiftpi*toppi
             top1 = np.roll(top1, -1*TSEP, axis=2)
-            top1 = np.mean(top1, axis=1)*TSTEP
+            top1 = np.mean(top1, axis=1)
             if not atw:
                 try:
                     assert top1[0][0] > 100
@@ -347,7 +353,7 @@ def piondirect(atw=False, reverseatw=False):
                     shiftpi2, -2*TSEP, axis=2)*toppi1
             else:
                 top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
-            top2 = np.mean(top2, axis=1)*TSTEP
+            top2 = np.mean(top2, axis=1)
 
             # for use in I=1
             top3 = -1*top2
@@ -403,27 +409,29 @@ def piondirect(atw=False, reverseatw=False):
             allblks[key3halves] += top1/2
             allblks[key2] += top2/2
             allblks[key3] += top3/2
+    allblks = gatherdicts(allblks)
 
-    for i in allblks:
-        try:
-            assert count[i] == 2
-        except AssertionError:
-            assert count[i] == 1
-            print("topologies used:", count[i])
-            print(i)
-    temp = opc.op_list(stype=STYPE)
-    ocs = overall_coeffs(
-        isoproj(False, 0, dlist=list(
-            allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
-    assert isinstance(ocs, dict)
-    suffix = '_pisq' if not atw else '_pisq_atw'
-    if atw and reverseatw:
-        suffix = suffix + 'R'
-    for i in list(ocs):
-        ocs[i+suffix] = ocs[i]
-        del ocs[i]
-    h5sum_blks(allblks, ocs, (numt, LT))
-    avg_irreps(suffix+'.jkdat')
+    if not MPIRANK:
+        for i in allblks:
+            try:
+                assert count[i] == 2
+            except AssertionError:
+                assert count[i] == 1
+                print("topologies used:", count[i])
+                print(i)
+        temp = opc.op_list(stype=STYPE)
+        ocs = overall_coeffs(
+            isoproj(False, 0, dlist=list(
+                allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+        assert isinstance(ocs, dict)
+        suffix = '_pisq' if not atw else '_pisq_atw'
+        if atw and reverseatw:
+            suffix = suffix + 'R'
+        for i in list(ocs):
+            ocs[i+suffix] = ocs[i]
+            del ocs[i]
+        h5sum_blks(allblks, ocs, (numt, LT))
+        avg_irreps(suffix+'.jkdat')
 
 @PROFILE
 def coeffto1(ocs):
