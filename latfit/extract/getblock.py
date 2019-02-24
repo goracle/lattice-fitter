@@ -20,6 +20,7 @@ from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.extract.proc_folder import proc_folder
 from latfit.jackknife_fit import jack_mean_err
+from latfit.utilities import pionratio
 
 from latfit.config import EFF_MASS, MULT
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
@@ -378,6 +379,29 @@ def propnan(vals):
         if np.isnan(vals) and np.imag(vals) != 0:
             vals = np.nan+2j*np.nan
     return vals
+
+def subtract_nonint_atw(cmat, timeij, reverseatw=False):
+    """Subtract the atw vacuum saturation single pion correlators
+    (non-interacting around the world term, single pion correlator squared)
+    """
+    if not MATRIX_SUBTRACTION:
+        suffix = r'_pisq_atwR.jkdat' if reverseatw else r'_pisq_atw.jkdat'
+        for i, diag in enumerate(GEVP_DIRS):
+            zeroit = False 
+            idx2 = i
+            if 'rho' in diag[i] or 'sigma' in diag[i]:
+                diag = GEVP_DIRS[i-1]
+                zeroit = True
+                name = re.sub(r'.jkdat', suffix, diag[i-1])
+            else:
+                name = re.sub(r'.jkdat', suffix, diag[i])
+            assert 'rho' not in name
+            assert 'sigma' not in name
+            tosub = proc_folder(name, timeij)
+            assert len(cmat) == len(tosub),\
+                "number of configs mismatch:"+str(len(cmat))
+            cmat[:, i, i] -= tosub
+    return cmat
 
 def all0imag_ignorenan(vals):
     """check if all values
@@ -1022,6 +1046,16 @@ if EFF_MASS:
         # get the gevp matrices
         cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = getlhsrhs(
             file_tup, num_configs)
+
+        # subtract the non-interacting around the world piece
+        assert pionratio.DELTAT == delta_t, "weak check of delta_t failed"
+        for i, mean in mean_cmats_lhs:
+            mean_cmats_lhs[i] = subtract_nonint_atw(mean, timeij+i)
+            cmats_lhs[i] = subtract_nonint_atw(cmats_lhs[i], timeij+i)
+        mean_cmats_rhs = subtract_nonint_atw(
+            mean_crhs, timeij-delta_t, reverseatw=True)
+        cmat_rhs = subtract_nonint_atw(
+            cmat_rhs, timeij-delta_t, reverseatw=True)
 
         norm_comm = []
         norms_comm = []
