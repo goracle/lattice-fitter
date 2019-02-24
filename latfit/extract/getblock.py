@@ -395,12 +395,24 @@ def subtract_nonint_atw(cmat, timeij, reverseatw=False):
                 name = re.sub(r'.jkdat', suffix, diag[i-1])
             else:
                 name = re.sub(r'.jkdat', suffix, diag[i])
+            print(diag, name)
+            sys.exit(0)
             assert 'rho' not in name
             assert 'sigma' not in name
             tosub = proc_folder(name, timeij)
-            assert len(cmat) == len(tosub),\
-                "number of configs mismatch:"+str(len(cmat))
-            cmat[:, i, i] -= tosub
+            tosub = np.real(tosub)
+            if len(cmat) != MULT:
+                assert len(cmat) == len(tosub),\
+                    "number of configs mismatch:"+str(len(cmat))
+                cmat[:, i, i] -= tosub
+                for i in cmat:
+                    print(i)
+                sys.exit(0)
+            else:
+                cmat[i, i] -= np.mean(tosub, axis=0)
+                assert not np.mean(tosub, axis=0).shape
+                print(cmat)
+                sys.exit(0)
     return cmat
 
 def all0imag_ignorenan(vals):
@@ -1049,7 +1061,7 @@ if EFF_MASS:
 
         # subtract the non-interacting around the world piece
         assert pionratio.DELTAT == delta_t, "weak check of delta_t failed"
-        for i, mean in mean_cmats_lhs:
+        for i, mean in enumerate(mean_cmats_lhs):
             mean_cmats_lhs[i] = subtract_nonint_atw(mean, timeij+i)
             cmats_lhs[i] = subtract_nonint_atw(cmats_lhs[i], timeij+i)
         mean_cmats_rhs = subtract_nonint_atw(

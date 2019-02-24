@@ -24,6 +24,10 @@ import avg_hdf5
 AVGTSRC = False
 AVGTSRC = True
 
+# only write the single particle correlators
+WRITE_INDIVIDUAL = True
+WRITE_INDIVIDUAL = False
+
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -211,9 +215,6 @@ if AVGTSRC:
 else:
     WRITEBLOCK = ['pioncorr_mom000']
     WRITEBLOCK = ['pioncorrChk_mom000']
-# only write the single particle correlators
-WRITE_INDIVIDUAL = False
-WRITE_INDIVIDUAL = True
 TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 

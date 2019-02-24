@@ -30,6 +30,15 @@ STYPE = 'hdf5'
 
 DELTAT = 4
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
+@PROFILE
 def main():
     """Make the ratio
 
@@ -59,10 +68,12 @@ def main():
     for i in (True, False):
         do_ratio(ptotstr, i)
 
+@PROFILE
 def ccosh(en1, tsep):
     return exp(-en1*tsep)+exp(-en1*(LT-tsep))
 
 
+@PROFILE
 def agree(arr1, arr2):
     err1 = np.std(arr1, axis=0)*np.sqrt(len(arr1)-1)
     err2 = np.std(arr2, axis=0)*np.sqrt(len(arr2)-1)
@@ -79,6 +90,7 @@ def agree(arr1, arr2):
             diff)+","+str(err1)+","+str(err2)
     return ret, err
 
+@PROFILE
 def foldt(dt1):
     """Find distance from tsrc in non-mod framework"""
     dt1 = dt1 % LT
@@ -86,6 +98,7 @@ def foldt(dt1):
         dt1 = LT-dt1
     return dt1
 
+@PROFILE
 def foldpioncorr(corr):
     """Fold the pion correlator about the midpoint
     """
@@ -94,6 +107,7 @@ def foldpioncorr(corr):
         ret[:, i] = 0.5*(corr[:, i]+corr[:, LT-i-1])
     return ret
 
+@PROFILE
 def effparams(corrorig, dt1, dt2=None, tsrc=None):
     """Get effective amplitude and effective mass
     from a given single particle correlator,
@@ -219,7 +233,8 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     amplitudes = np.asarray(amps1)
     return amplitudes, energies
 
-def atw_transform(pi1, forwardbackward=False, reverseatw=False):
+@PROFILE
+def atw_transform(pi1, reverseatw=False):
     """Redefine the pion correlators so they propogate in one direction.
     Thus, when they are multiplied
     they give the non-interacting around the world terms
@@ -229,8 +244,8 @@ def atw_transform(pi1, forwardbackward=False, reverseatw=False):
     #assert pi1.shape == pi2.shape
     #assert pi1.shape[1] == pi1.shape[2]
     assert pi1.shape[1] == LT
-    #newpi2 = np.zeros(pi2.shape, np.complex)
     newpi1 = np.zeros(pi1.shape, np.complex)
+    newpi2 = np.zeros(pi1.shape, np.complex)
     for tdis in range(LT):
         zeroit = False
         for tsrc in range(LT):
@@ -239,24 +254,26 @@ def atw_transform(pi1, forwardbackward=False, reverseatw=False):
             if zeroit:
                 amp1, en1 = (np.nan, np.nan)
             else:
-                amp1, en1 = effparams(np.array(pi1[:, tsrc]), tdis, dt2, tsrc)
+                amp1, en1 = effparams(np.array(
+                    pi1[:, tsrc]), tdis, dt2, tsrc)
                 if np.any(np.isnan(amp1)):
                     zeroit = True
             #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
             try:
                 newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
-                #newpi2[:, tsrc, tdis] = amp2*exp(-en2*(LT-tdis))
+                newpi2[:, tsrc, tdis] = amp1*exp(-en1*(LT-tdis))
             except FloatingPointError:
                 print("floating point error")
                 print('energies', en1[0], en2[0])
                 print("tdis:", tdis)
                 print("tsrc:", tsrc)
                 sys.exit(1)
-    return newpi1
+    return newpi1, newpi2
     #return newpi1, newpi2
 
 
 
+@PROFILE
 def piondirect(atw=False, reverseatw=False):
     """Do pion ratio unsummed."""
     if reverseatw: assert atw
@@ -276,11 +293,10 @@ def piondirect(atw=False, reverseatw=False):
             save1 = i
         if atw:
             if fname not in atwdict:
-                toppi = atw_transform(
-                    toppi, forwardbackward=False, reverseatw=reverseatw)
-                atwdict[fname] = toppi
+                toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
+                atwdict[fname] = (toppi1, toppi2)
             else:
-                toppi = atwdict[fname]
+                toppi1, toppi2 = atwdict[fname]
         for num2, gname in enumerate(baseglob):
             momg = np.asarray(rf.mom(gname))
             assert numt == len(momg), "inconsistent config number"
@@ -291,16 +307,23 @@ def piondirect(atw=False, reverseatw=False):
                 save2 = i
             if atw:
                 if gname not in atwdict:
-                    bottompi = atw_transform(bottompi,
-                                             forwardbackward=True,
-                                             reverseatw=reverseatw)
-                    atwdict[gname] = bottompi
+                    bottompi1,bottompi2 = atw_transform(
+                        bottompi, reverseatw=reverseatw)
+                    atwdict[gname] = (bottompi1, bottompi2)
                 else:
-                    bottompi = atwdict[gname]
-            shiftpi = np.roll(bottompi, TSEP, axis=1)
+                    bottompi1, bottompi2 = atwdict[gname]
+            if atw:
+                shiftpi1 = np.roll(bottompi1, TSEP, axis=1)
+                shiftpi2 = np.roll(bottompi2, TSEP, axis=1)
+            else:
+                shiftpi = np.roll(bottompi, TSEP, axis=1)
 
             # compute the first topology
-            top1 = shiftpi*toppi
+            # each topology has two around the world terms, so add in pairs
+            if atw:
+                top1 = shiftpi1*toppi2+shiftpi2*toppi1
+            else:
+                top1 = shiftpi*toppi
             top1 = np.roll(top1, -1*TSEP, axis=2)
             top1 = np.mean(top1, axis=1)*TSTEP
             if not atw:
@@ -319,7 +342,11 @@ def piondirect(atw=False, reverseatw=False):
                     sys.exit(1)
 
             # compute the second topology
-            top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
+            if atw:
+                top2 = np.roll(shiftpi1, -2*TSEP, axis=2)*toppi2+np.roll(
+                    shiftpi2, -2*TSEP, axis=2)*toppi1
+            else:
+                top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
             top2 = np.mean(top2, axis=1)*TSTEP
 
             # for use in I=1
@@ -398,6 +425,7 @@ def piondirect(atw=False, reverseatw=False):
     h5sum_blks(allblks, ocs, (numt, LT))
     avg_irreps(suffix+'.jkdat')
 
+@PROFILE
 def coeffto1(ocs):
     """Set coefficients to 1"""
     for opa in ocs:
@@ -406,6 +434,7 @@ def coeffto1(ocs):
             ocs[opa][i] = (base, 1.0)
     return ocs
 
+@PROFILE
 def aroundworldsubtraction(allblks, deltat=3):
     """Around the world subtraction (by 3)"""
     for blk in allblks:
@@ -421,6 +450,7 @@ def aroundworldsubtraction(allblks, deltat=3):
         allblks[blk] = copy.deepcopy(retblk)
     return allblks
 
+@PROFILE
 def directratio(allblks, deltat_matrix=3):
     """Take ratio of two directo diagrams
     (1x1 GEVP)
@@ -438,17 +468,20 @@ def directratio(allblks, deltat_matrix=3):
         assert abs(allblks[blk][0][13]) < 1
     return allblks
 
+@PROFILE
 def addfigdvec(strin):
     """Add figure D vec to string"""
     return 'FigureD_vec_'+strin
  
 
+@PROFILE
 def addfigd(strin):
     """Add figure D to string"""
     return 'FigureD_'+strin
             
 
 
+@PROFILE
 def do_ratio(ptotstr, dosub):
     """Make the ratio for a given ptotal string and 
     bool for whether or not to do subtraction in the numerator
@@ -491,6 +524,7 @@ def do_ratio(ptotstr, dosub):
     return
 
 
+@PROFILE
 def anticipate(fn):
     """Anticipate the hdf5 structure: one dataset in one group"""
     group = ''
@@ -514,6 +548,7 @@ for i in range(len(PIONCORRS)):
     assert isinstance(PIONCORRS, list)
     PIONCORRS[i] = tostore
 
+@PROFILE
 def jkdatrm(fstr):
     """Remove .jkdat from the end of a filename
     since the datasets are traditionally just the file name
@@ -521,6 +556,7 @@ def jkdatrm(fstr):
     fstr = re.sub('.jkdat', '', fstr)
     return fstr
 
+@PROFILE
 def datasetname(filen):
     """Build the dataset name from the parent directory
     """
@@ -530,6 +566,7 @@ def datasetname(filen):
     ret = jkdatrm(ret)
     return ret
 
+@PROFILE
 def divide_multiply(tplat=10):
     """Divide the diagonal elements by the result of piondirect()
     then multiply by the asymptotic pion correlator squared
@@ -566,10 +603,12 @@ def divide_multiply(tplat=10):
 
 
 if __name__ == '__main__':
+    print("start")
     h5jack.AVGTSRC = True # hack to get file names right.
     piondirect(atw=True)
     piondirect(atw=True, reverseatw=True)
     piondirect()
+    print("end")
     for dirn in ['I0', 'I1', 'I2']:
         os.chdir(dirn)
         print(os.getcwd())
