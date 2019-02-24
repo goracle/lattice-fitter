@@ -139,6 +139,7 @@ getfiles_gevp_singlerhs.mats = {}
 def matsub(files, sub, dt1, dt12='One'):
     """Do the around the world subtraction"""
     subterm = {}
+    assert MATRIX_SUBTRACTION
     delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else DELTA_E2_AROUND_THE_WORLD
     for timeidx in sub:
         sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))

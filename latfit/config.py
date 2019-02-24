@@ -236,6 +236,9 @@ if FIT_SPACING_CORRECTION:
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
         DELTA_E2_AROUND_THE_WORLD)
 
+if not MATRIX_SUBTRACTION:
+    DELTA_E2_AROUND_THE_WORLD = None
+
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[], [2, 5, 6, 7, 8]]
