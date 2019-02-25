@@ -228,7 +228,8 @@ class FitFuncAdd:
             raise
         ret = None
         try:
-            assert corrs_denom[0] != corrs_denom[1] or corrs_denom[2] != corrs_denom[3]
+            assert corrs_denom[0] != corrs_denom[
+                1] or corrs_denom[2] != corrs_denom[3]
         except AssertionError:
             ret = np.inf
         if ret is None:
