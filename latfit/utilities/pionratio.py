@@ -80,6 +80,10 @@ def ccosh(en1, tsep):
 
 @PROFILE
 def agree(arr1, arr2):
+    """Check if measurements
+    in array 1 and array 2
+    agree within errors
+    """
     err1 = np.std(arr1, axis=0)*np.sqrt(len(arr1)-1)
     err2 = np.std(arr2, axis=0)*np.sqrt(len(arr2)-1)
     assert len(arr1) == len(arr2)
@@ -88,7 +92,7 @@ def agree(arr1, arr2):
     ret = True
     assert err1.shape == err2.shape
     assert diff.shape == err1.shape
-    ret = np.all(diff<=err1 or diff<=err2)
+    ret = np.all(diff<=2*err1 or diff<=2*err2)
     err = ""
     if not ret:
         err = "disagreement: diff, err1, err2:"+str(
@@ -133,12 +137,16 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     tmax = dt2
     if tmod1 > tmod2:
         tmin, tmax = tmax, tmin
-    # if distance to tsrc is the same, set all ATW terms to 0
+    # if distance to tsrc is the same, set all ATW terms to NaN
     if tmod1 == tmod2:
-        gflag = 1
-    else:
-        gflag = 0
+        tmax = min(dt1, dt2)
+        tmin = 0
+        dt2 = 0
+        tmod1 = foldt(dt1)
+        tmod2 = foldt(0)
+        assert dt1 and tmod1 and tmax
 
+    gflag = 0 # 0 if no errors detected
     # take the ratio of the correlator at different time slices
     try:
         rconfig = log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
@@ -147,7 +155,9 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         #print("args:")
         for ind, rat in enumerate(np.real(corr[:, tmin])/np.real(
                 corr[:, tmax])):
-            # if imaginary energy set amps to 0
+            # if imaginary energy
+            # (either numerator or denominator has decayed completely)
+            # set amps to NaN
             if rat < 0:
                 gflag = 1
         if not gflag:
@@ -172,13 +182,11 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     amps2 = []
 
     for num, ratio in enumerate(rconfig):
+        assert ratio
         assert len(amps1) == num
         assert len(amps2) == num
         def func(en1):
-            if not ratio:
-                ratio_func = 0
-            else:
-                ratio_func = log(ccosh(en1, tmin)/ccosh(en1, tmax))
+            ratio_func = log(ccosh(en1, tmin)/ccosh(en1, tmax))
             ret = (ratio_func-ratio)**2
             return ret
 
@@ -189,7 +197,10 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         np.seterr(invalid='raise')
 
         eff_energy = minret.x
+
+        # collect NaN information
         flag = 0 if not gflag else gflag
+
         if eff_energy < 0 and func(-eff_energy) < 1e-12:
             eff_energy *= -1
         elif eff_energy < 0 and abs(eff_energy) > 1e-8:
@@ -197,8 +208,6 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
             #print(eff_energy)
             #print(func(eff_energy))
             #print(dt1, dt2)
-            flag = 1
-        if not ratio:
             flag = 1
         if flag:
             amp1 = np.nan*(1+1j)
@@ -276,6 +285,18 @@ def atw_transform(pi1, reverseatw=False):
     return newpi1, newpi2
     #return newpi1, newpi2
 
+def getpi(fname, reverseatw):
+    """Get file handle"""
+    fn1 = h5py.File(fname, 'r')
+    momf = np.asarray(rf.mom(fname))
+    numt = None
+    numt = len(momf) if numt is None else numt
+    assert numt == len(momf), "inconsistent config number"
+    for i in fn1:
+        toppi = np.array(fn1[i])
+        save1 = i
+    toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
+    return (toppi1, toppi2)
 
 
 @PROFILE
@@ -288,8 +309,17 @@ def piondirect(atw=False, reverseatw=False):
     count = {}
     numt = None
     atwdict = {}
-    baseglob = getwork(list(baseglob))
+    if atw:
+        splitglob = getwork(list(baseglob))
+        for num1, fname in enumerate(splitglob):
+            print("rank", MPIRANK, "getting", fname)
+            atwdict[fname] = getpi(fname, reverseatw)
+        atwdict = gatherdicts(atwdict)
+        print("gather complete")
+        
     for num1, fname in enumerate(baseglob):
+        if MPIRANK:
+            break
         fn1 = h5py.File(fname, 'r')
         momf = np.asarray(rf.mom(fname))
         numt = len(momf) if numt is None else numt
@@ -409,9 +439,9 @@ def piondirect(atw=False, reverseatw=False):
             allblks[key3halves] += top1/2
             allblks[key2] += top2/2
             allblks[key3] += top3/2
-    allblks = gatherdicts(allblks)
 
     if not MPIRANK:
+        print("Starting write section")
         for i in allblks:
             try:
                 assert count[i] == 2
@@ -432,6 +462,7 @@ def piondirect(atw=False, reverseatw=False):
             del ocs[i]
         h5sum_blks(allblks, ocs, (numt, LT))
         avg_irreps(suffix+'.jkdat')
+        print("Finished write section")
 
 @PROFILE
 def coeffto1(ocs):
@@ -614,7 +645,9 @@ if __name__ == '__main__':
     print("start")
     h5jack.AVGTSRC = True # hack to get file names right.
     piondirect(atw=True)
+    print("after atw, rank", MPIRANK)
     piondirect(atw=True, reverseatw=True)
+    print("after reverse atw", MPIRANK)
     piondirect()
     print("end")
     for dirn in ['I0', 'I1', 'I2']:
