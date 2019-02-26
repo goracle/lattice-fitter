@@ -910,7 +910,7 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
         ind = list(err[:, mindim]).index(errmin)
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'x_arr')[:, mindim])
-    arr, errmin = compare_eff_mass_to_range(arr, err, errmin, mindim=None)
+    arr, errmin = compare_eff_mass_to_range(arr, err, errmin, mindim=mindim)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
@@ -945,13 +945,14 @@ if EFF_MASS:
                 if not getavg:
                     arr = singlefit.reuse[time][:, mindim]
                     err = singlefit.error2[xcoord.index(time)][mindim]
+                    assert isinstance(err, float), str(err)
                 else:
                     arr = singlefit.reuse[time]
                     err = singlefit.error2[xcoord.index(time)]
             arrlist.append(arr)
             errlist.append(err)
-        assert isinstance(errlist[0], float)
         if not getavg:
+            assert isinstance(errlist[0], float), str(errlist)+" "+str(singlefit.error2[xcoord.index(10)])
             err = min(errlist)
             arr = arrlist[errlist.index(err)]
         else:
@@ -994,10 +995,14 @@ def pickle_res(avgname, min_arr):
 def pickle_res_err(errname, min_arr):
     """Append the effective mass errors to the """
     ret = [getattr(i[0], errname) for i in min_arr]
+    print("debug:[getattr(i[0], errname) for i in min_arr].shape", np.asarray(ret).shape)
+    print("debug2:", np.asarray(singlefit.error2).shape)
     origl = len(ret)
     if GEVP:
-        assert np.array(ret).shape[1] ==\
-            np.asarray(singlefit.error2).shape[1]
+        if len(np.asarray(ret).shape) > 1:
+            # dimops check
+            assert (np.array(ret).shape)[1] ==\
+                (np.asarray(singlefit.error2).shape)[1], str(np.array(ret).shape)+" "+str(np.asarray(singlefit.error2))
     if 'x' in errname:
         _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
         ret = np.array([*ret, *erreff])
