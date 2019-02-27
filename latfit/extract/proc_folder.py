@@ -37,7 +37,7 @@ if STYPE == 'hdf5':
         return np.array(fn1[prefix+'/'+hdf5_file.split('.')[
             0]][:, ctime])
 
-    def proc_folder(hdf5_file, ctime, other_regex=""):
+    def proc_folder(hdf5_file, ctime, other_regex="", opdim=(None, None)):
         """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:
             pass
@@ -68,7 +68,7 @@ if STYPE == 'hdf5':
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
         out = elim_jkconfigs(out)
-        out = halftotal(out, ctime=ctime)
+        out = halftotal(out, ctime=ctime, opdim=opdim)
         #out = halftotal(out, ctime=ctime,override='first half')
         #out = halftotal(out, ctime=ctime,override='second half')
         #out = halftotal(out, ctime=ctime,override='first half')
@@ -79,7 +79,7 @@ if STYPE == 'hdf5':
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
 
-    def roundtozero(arr, ctime):
+    def roundtozero(arr, ctime, opdim=(None, None)):
         """If the correlator is close to 0,
         zero it
         """
@@ -90,6 +90,8 @@ if STYPE == 'hdf5':
         avg = np.mean(arr, axis=0)
         assert not hasattr(avg, '__iter__')
         if abs(avg) < err:
+            print("setting correlator on time slice",
+                  ctime, "with operator dimensions", opdim, "to 0.")
             ret = np.zeros(larr, dtype=np.complex), True
             assert ret[0].shape == np.asarray(arr).shape
         else:
@@ -97,13 +99,14 @@ if STYPE == 'hdf5':
         return ret
             
 
-    def halftotal(out, override=None, ctime=None):
+    def halftotal(out, override=None, ctime=None, opdim=(None, None)):
         """First half second half analysis
         """
         sloppy = out[SUPERJACK_CUTOFF:]
         sloppy = half(sloppy, override)
         # check the sloppy blocks since the error bar is more reliable
-        sloppy, didround = roundtozero(sloppy, ctime)
+        didround = False
+        sloppy, didround = roundtozero(sloppy, ctime, opdim=opdim)
         assert isinstance(didround, bool)
         if SUPERJACK_CUTOFF:
             exact = out[:SUPERJACK_CUTOFF]
@@ -228,7 +231,7 @@ elif STYPE == 'ascii':
             ret = np.array(ret)
         else:
             ret = retname
-        ret = halftotal(ret)
+        ret = halftotal(ret, opdim=opdim)
         ret = binout(ret)
         return ret
 

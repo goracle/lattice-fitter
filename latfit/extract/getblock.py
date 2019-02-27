@@ -30,7 +30,7 @@ from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
 from latfit.config import STYPE, ISOSPIN, GEVP_DIRS
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
-from latfit.config import DECREASE_VAR
+from latfit.config import DECREASE_VAR, IRREP
 from latfit.config import HINTS_ELIM, DISP_ENERGIES
 from latfit.config import REINFLATE_BEFORE_LOG
 from latfit.config import DELTA_E_AROUND_THE_WORLD
@@ -1072,7 +1072,9 @@ if EFF_MASS:
             file_tup, num_configs)
 
         # subtract the non-interacting around the world piece
-        assert pionratio.DELTAT == delta_t, "weak check of delta_t failed"
+        if '000' not in IRREP:
+            assert pionratio.DELTAT == delta_t,\
+                "weak check of delta_t failed"
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
             mean_cmats_lhs[i] = subtract_nonint_atw(mean, timeij+i)
