@@ -38,7 +38,8 @@ MPISIZE = MPI.COMM_WORLD.Get_size()
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
 
-DELTAT = 4
+# ensemble specific hack
+DELTAT = 4 if TSTEP == 10 else 3
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
