@@ -393,7 +393,7 @@ def subtract_nonint_atw(cmat, timeij, reverseatw=False):
     (non-interacting around the world term, single pion correlator squared)
     """
     origshape = cmat.shape
-    if not MATRIX_SUBTRACTION:
+    if not MATRIX_SUBTRACTION and ISOSPIN != 1:
         suffix = r'_pisq_atwR.jkdat' if reverseatw else r'_pisq_atw.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
             zeroit = False 
