@@ -89,7 +89,7 @@ if STYPE == 'hdf5':
         err = np.std(arr, ddof=1, axis=0)*np.sqrt(len(arr)-1)
         avg = np.mean(arr, axis=0)
         assert not hasattr(avg, '__iter__')
-        if abs(avg) < err:
+        if abs(avg) < err and opdim[0] == opdim[1] and opdim[0] is not None:
             print("setting correlator on time slice",
                   ctime, "with operator dimensions", opdim, "to 0.")
             ret = np.zeros(larr, dtype=np.complex), True

@@ -20,7 +20,7 @@ from latfit.config import fit_func, MOMSTR, L_BOX
 from latfit.config import FINE
 from latfit.config import TITLE
 from latfit.config import XLABEL
-from latfit.config import YLABEL
+from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR
 from latfit.config import FIT
 from latfit.config import GEVP_DERIV, T0
@@ -169,7 +169,9 @@ def plot_dispersive(xcoord):
         # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),
                  label='Disp('+str(trunc_prec(energy))+')')
-    plt.legend(loc='lower left')
+    
+    if PLOT_LEGEND:
+        plt.legend(loc='lower left')
 
 # """
 # plt.annotate(
@@ -520,7 +522,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
             plt.errorbar(xcoord, ycurve, yerr=yerr,
                          linestyle='None', ms=3.75, marker=next(marker),
-                         label='Energy('+str(curve_num)+')')
+                         )
     else:
         plt.errorbar(xcoord, ycoord, yerr=error2,
                      linestyle='None', ms=3.75, marker='o')
@@ -660,8 +662,9 @@ if GEVP:
         nplots = len(param_err)+(len(
             DISP_ENERGIES) if PLOT_DISPERSIVE else 0)
         print('nplots=', nplots)
-        plt.legend(loc='upper center',
-                   bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
+        if PLOT_LEGEND:
+            plt.legend(loc='upper center',
+                       bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
         #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
         for i, min_e in enumerate(result_min.x):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)

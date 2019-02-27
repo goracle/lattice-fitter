@@ -64,7 +64,7 @@ T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS3' # t-1
 if LATTICE_ENSEMBLE == '24c':
-    T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+    T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS1'
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
@@ -120,6 +120,7 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
 # don't include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
+DIM -= 2 if 'mom000' in IRREP and ISOSPIN == 0 else 0
 DIM = 1 if not GEVP else DIM
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
@@ -476,6 +477,10 @@ SKIP_LARGE_ERRORS = True if ISOSPIN == 2 else SKIP_LARGE_ERRORS
 BOX_PLOT = True
 BOX_PLOT = False if SYS_ENERGY_GUESS is not None and GEVP else BOX_PLOT
 BOX_PLOT = False if len(START_PARAMS) != 1 else BOX_PLOT
+
+# plot a legend?
+PLOT_LEGEND = True
+PLOT_LEGEND = False
 
 # dispersive lines
 PLOT_DISPERSIVE = True
