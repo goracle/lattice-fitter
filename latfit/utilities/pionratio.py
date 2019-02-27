@@ -27,6 +27,11 @@ import h5jack
 from h5jack import getwork, gatherdicts
 from mpi4py import MPI
 
+TSTEP = int(TSTEP)
+
+DELETE_TSRC = False
+DELETE_TSRC = True
+
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 
@@ -232,7 +237,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         assert isinstance(amp1, np.complex), str(
             corr[num,tmin])+" "+str(ccosh(eff_energy,tmin))+" "+str(amp1)
         assert isinstance(amp2, np.complex)
-        assert (not amp1 and not amp2) or eff_energy > 0 or abs(
+        assert np.all(np.isnan([amp1, amp2])) or eff_energy > 0 or abs(
             eff_energy) < 1e-8
         amps1.append(amp1)
         amps2.append(amp2)
@@ -278,6 +283,8 @@ def atw_transform(pi1, reverseatw=False):
     for tdis in range(LT):
         zeroit = False
         for tsrc in range(LT):
+            if tsrc in skiplist() and DELETE_TSRC:
+                continue
             dt2 = tdis+DELTAT if reverseatw else tdis-DELTAT
             #print(tsrc, tdis)
             if zeroit:
@@ -319,6 +326,25 @@ def getpi(fname, reverseatw):
     else:
         toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
     return (toppi1, toppi2)
+
+def skiplist():
+    """Which tsrc to skip, in list form"""
+    if int(LT/TSTEP) == LT/TSTEP:
+        ltl = [i for i in range(LT) if i % TSTEP]
+    else:
+        ltl = [i for i in range(LT) if i % TSTEP and LT-i > TSTEP]
+    return ltl
+
+
+def avgtsrc(top):
+    """Average over tsrc """
+    if DELETE_TSRC:
+        assert np.asarray(top).shape[1] == LT
+        top1 = np.delete(top, skiplist(), axis=1)
+    else:
+        top1 = top
+    ret = np.mean(top1, axis=1)
+    return ret
 
 
 @PROFILE
@@ -371,6 +397,8 @@ def piondirect(atw=False, reverseatw=False):
                     atwdict[gname] = (bottompi1, bottompi2)
                 else:
                     bottompi1, bottompi2 = atwdict[gname]
+
+            # roll the tsrc of one of the pions back by TSEP
             if atw:
                 shiftpi1 = np.roll(bottompi1, TSEP, axis=1)
                 shiftpi2 = np.roll(bottompi2, TSEP, axis=1)
@@ -383,8 +411,13 @@ def piondirect(atw=False, reverseatw=False):
                 top1 = shiftpi1*toppi2+shiftpi2*toppi1
             else:
                 top1 = shiftpi*toppi
+
+            # make the tdis the inner pion distance
             top1 = np.roll(top1, -1*TSEP, axis=2)
-            top1 = np.mean(top1, axis=1)
+
+            # average over tsrc
+            top1 = avgtsrc(top1)
+
             if not atw:
                 try:
                     assert top1[0][0] > 100
@@ -401,17 +434,25 @@ def piondirect(atw=False, reverseatw=False):
                     sys.exit(1)
 
             # compute the second topology
+            # make one of the pions 2*tsep as long in time
             if atw:
                 top2 = np.roll(shiftpi1, -2*TSEP, axis=2)*toppi2+np.roll(
                     shiftpi2, -2*TSEP, axis=2)*toppi1
             else:
                 top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
-            top2 = np.mean(top2, axis=1)
+
+            # average over tsrc
+            top2 = avgtsrc(top2)
 
             # for use in I=1
             top3 = -1*top2
 
-            assert top2[0][0] > 100
+            try:
+                assert top2[0][0] > 100, str(top2[0][0])
+            except AssertionError:
+                print("topology 2 has anomalous size")
+                print(top2)
+                sys.exit(1)
             momstr = 'sep'+str(TSEP)+'_mom1src'+rf.ptostr(momf)+\
                 '_mom2src'+rf.ptostr(momg)+'_mom1snk'
             key1 = addfigd(momstr)+rf.ptostr(momf)
