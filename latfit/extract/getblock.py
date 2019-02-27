@@ -415,13 +415,13 @@ def subtract_nonint_atw(cmat, timeij, reverseatw=False):
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
                 #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
-                cmat[:, i, i] = cmat[:, i, i]-tosub
+                cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
                 # for i in cmat:
                 #   print(i)
             else:
-                cmat[i, i] -= np.mean(tosub, axis=0)
+                cmat[i, i] -= np.mean(tosub, axis=0)*NORMS[i][i]
                 assert not np.mean(tosub, axis=0).shape
                 #print(cmat)
     assert cmat.shape == origshape
