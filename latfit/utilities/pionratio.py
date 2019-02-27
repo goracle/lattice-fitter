@@ -139,11 +139,20 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         tmin, tmax = tmax, tmin
     # if distance to tsrc is the same, set all ATW terms to NaN
     if tmod1 == tmod2:
-        tmax = min(dt1, dt2)
-        tmin = 0
-        dt2 = 0
-        tmod1 = foldt(dt1)
-        tmod2 = foldt(0)
+        if dt2 == (LT/2+DELTAT/2) % LT:
+            dt2 = LT/2
+        elif dt2 == (LT/2 - DELTAT/2) % LT:
+            dt2 = LT/2
+        elif dt2 == DELTAT/2:
+            dt2 = 0
+        elif dt2 == (-DELTAT/2) % LT:
+            dt2 = 0
+        dt2 = int(dt2)
+        tmod2 = foldt(dt2)
+        tmin = dt1
+        tmax = dt2
+        if tmod1 > tmod2:
+            tmin, tmax = tmax, tmin
         assert dt1 and tmod1 and tmax
 
     gflag = 0 # 0 if no errors detected
@@ -159,6 +168,11 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
             # (either numerator or denominator has decayed completely)
             # set amps to NaN
             if rat < 0:
+                if tmin == 13 or tmax == 13:
+                    print("ratio is less than 0")
+                    print(tmin, tmax)
+                    print('failing rank:', MPIRANK)
+                    assert None
                 gflag = 1
         if not gflag:
             rconfig = log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
@@ -204,10 +218,10 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         if eff_energy < 0 and func(-eff_energy) < 1e-12:
             eff_energy *= -1
         elif eff_energy < 0 and abs(eff_energy) > 1e-8:
-            #print("negative energy found")
-            #print(eff_energy)
-            #print(func(eff_energy))
-            #print(dt1, dt2)
+            print("negative energy found")
+            print(eff_energy)
+            print(func(eff_energy))
+            print(dt1, dt2)
             flag = 1
         if flag:
             amp1 = np.nan*(1+1j)
@@ -236,6 +250,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
                 and not np.isnan(np.mean(amps2)):
             print("amplitudes of cosh do not agree:")
             print(errstr)
+            print("failing rank:", MPIRANK)
             print("times:", dt1, dt2)
             print(np.mean(amps1, axis=0),
                   np.mean(amps2, axis=0),
@@ -272,6 +287,9 @@ def atw_transform(pi1, reverseatw=False):
                     pi1[:, tsrc]), tdis, dt2, tsrc)
                 if np.any(np.isnan(amp1)):
                     zeroit = True
+                    if tdis < LT/2-2*TSEP or tdis > LT/2+2*TSEP:
+                        print("nan'ing tdis=", tdis, 'rank=', MPIRANK)
+                        assert tdis != 17 or reverseatw, "rank:"+str(MPIRANK)
             #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
             try:
                 newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
@@ -289,13 +307,17 @@ def getpi(fname, reverseatw):
     """Get file handle"""
     fn1 = h5py.File(fname, 'r')
     momf = np.asarray(rf.mom(fname))
-    numt = None
-    numt = len(momf) if numt is None else numt
-    assert numt == len(momf), "inconsistent config number"
+    skip = False
+    if rf.norm2(momf) != 3: # debug purposes only
+        pass
+        # skip = True
     for i in fn1:
-        toppi = np.array(fn1[i])
+        toppi = np.array(fn1[i])*(2 if 'Chk' in fname else 1)
         save1 = i
-    toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
+    if skip:
+        toppi1, toppi2 = (toppi, toppi)
+    else:
+        toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
     return (toppi1, toppi2)
 
 
@@ -312,11 +334,12 @@ def piondirect(atw=False, reverseatw=False):
     if atw:
         splitglob = getwork(list(baseglob))
         for num1, fname in enumerate(splitglob):
-            print("rank", MPIRANK, "getting", fname)
+            print("rank", MPIRANK, "getting", fname,
+                  num1, "/", len(splitglob))
             atwdict[fname] = getpi(fname, reverseatw)
         atwdict = gatherdicts(atwdict)
         print("gather complete")
-        
+
     for num1, fname in enumerate(baseglob):
         if MPIRANK:
             break
@@ -325,7 +348,7 @@ def piondirect(atw=False, reverseatw=False):
         numt = len(momf) if numt is None else numt
         assert numt == len(momf), "inconsistent config number"
         for i in fn1:
-            toppi = np.array(fn1[i])
+            toppi = np.array(fn1[i])*(2 if 'Chk' in fname else 1)
             save1 = i
         if atw:
             if fname not in atwdict:
@@ -339,7 +362,7 @@ def piondirect(atw=False, reverseatw=False):
             gn1 = h5py.File(gname, 'r')
             print(gname)
             for i in gn1:
-                bottompi = np.array(gn1[i])
+                bottompi = np.array(gn1[i])*(2 if 'Chk' in gname else 1)
                 save2 = i
             if atw:
                 if gname not in atwdict:
@@ -435,10 +458,11 @@ def piondirect(atw=False, reverseatw=False):
                 count[key3] = 1
             else:
                 count[key3] += 1
-            allblks[key1] += top1/2
-            allblks[key3halves] += top1/2
-            allblks[key2] += top2/2
-            allblks[key3] += top3/2
+            normfactor = 2
+            allblks[key1] += top1/normfactor
+            allblks[key3halves] += top1/normfactor
+            allblks[key2] += top2/normfactor
+            allblks[key3] += top3/normfactor
 
     if not MPIRANK:
         print("Starting write section")
