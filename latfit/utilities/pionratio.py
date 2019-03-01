@@ -333,7 +333,7 @@ def skiplist():
     if int(LT/TSTEP) == LT/TSTEP:
         ltl = [i for i in range(LT) if i % TSTEP]
     else:
-        ltl = [i for i in range(LT) if i % TSTEP and LT-i > TSTEP]
+        ltl = [i for i in range(LT) if i % TSTEP or LT-i < TSTEP]
     return ltl
 
 
