@@ -42,6 +42,7 @@ def make_hist(fname):
         dat = np.array(dat)
         dat = np.real(dat)
         avg, err, freqarr, exclarr = dat
+        exclarr = np.asarray(exclarr)
         avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
 
@@ -129,6 +130,7 @@ def make_hist(fname):
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
                 l = exclarr[list(freq).index(i.val)]
+                l = np.asarray(l)
                 if len(l.shape) > 1:
                     l = l[dim]
 
