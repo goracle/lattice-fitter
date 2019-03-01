@@ -105,8 +105,8 @@ if STYPE == 'hdf5':
         sloppy = out[SUPERJACK_CUTOFF:]
         sloppy = half(sloppy, override)
         # check the sloppy blocks since the error bar is more reliable
+        # sloppy, didround = roundtozero(sloppy, ctime, opdim=opdim)
         didround = False
-        sloppy, didround = roundtozero(sloppy, ctime, opdim=opdim)
         assert isinstance(didround, bool)
         if SUPERJACK_CUTOFF:
             exact = out[:SUPERJACK_CUTOFF]

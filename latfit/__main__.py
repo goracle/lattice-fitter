@@ -744,9 +744,9 @@ def find_mean_and_err(meta, min_arr):
                 for i in min_arr], axis=0))
 
             # dump the results to file
-            if not (ISOSPIN == 0 and GEVP):
-                dump_fit_range(meta, min_arr, avgname,
-                               res_mean, err_check)
+            # if not (ISOSPIN == 0 and GEVP):
+            dump_fit_range(meta, min_arr, avgname,
+                           res_mean, err_check)
 
             # error propagation
             result_min[name] = np.sum([
