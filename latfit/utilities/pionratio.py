@@ -281,10 +281,11 @@ def atw_transform(pi1, reverseatw=False):
     assert pi1.shape[1] == LT
     newpi1 = np.zeros(pi1.shape, np.complex)
     newpi2 = np.zeros(pi1.shape, np.complex)
+    slist = skiplist()
     for tdis in range(LT):
         zeroit = False
         for tsrc in range(LT):
-            if tsrc in skiplist() and DELETE_TSRC:
+            if tsrc in slist and tsrc+TSEP in slist and DELETE_TSRC:
                 continue
             dt2 = tdis+DELTAT if reverseatw else tdis-DELTAT
             #print(tsrc, tdis)
