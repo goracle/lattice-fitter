@@ -162,12 +162,18 @@ FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
+
+# no around the world subtraction at all
+NOATWSUB = False
+NOATWSUB = True
+
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False
-MATRIX_SUBTRACTION = True if IRREP == 'A_1PLUS_mom000'\
-    else MATRIX_SUBTRACTION
+#MATRIX_SUBTRACTION = True if IRREP == 'A_1PLUS_mom000'\
+#    else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
@@ -489,6 +495,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
 DECREASE_VAR = 1e-4
+DECREASE_VAR = 1 if PIONRATIO else DECREASE_VAR
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues

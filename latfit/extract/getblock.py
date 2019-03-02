@@ -22,7 +22,7 @@ from latfit.extract.proc_folder import proc_folder
 from latfit.jackknife_fit import jack_mean_err
 from latfit.utilities import pionratio
 
-from latfit.config import EFF_MASS, MULT
+from latfit.config import EFF_MASS, MULT, NOATWSUB
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
@@ -388,12 +388,12 @@ def propnan(vals):
             vals = np.nan+2j*np.nan
     return vals
 
-def subtract_nonint_atw(cmat, timeij, reverseatw=False):
+def atwsub(cmat, timeij, reverseatw=False):
     """Subtract the atw vacuum saturation single pion correlators
     (non-interacting around the world term, single pion correlator squared)
     """
     origshape = cmat.shape
-    if not MATRIX_SUBTRACTION and ISOSPIN != 1:
+    if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR.jkdat' if reverseatw else r'_pisq_atw.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
             zeroit = False 
@@ -799,11 +799,9 @@ def aroundtheworld_pionratio(diag_name, timeij):
             time3 = timeij-DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
             sub3 = proc_folder(name, time3)
             ret -= sub2*math.exp((exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
-    else:
-        ret = subtract_nonint_atw(ret, timeij)
     return ret
 
-def evals_pionratio(timeij):
+def evals_pionratio(timeij, switch=False):
     """Get the non-interacting eigenvalues"""
     ret = []
     for i, diag in enumerate(GEVP_DIRS):
@@ -824,13 +822,14 @@ def evals_pionratio(timeij):
     ret = np.swapaxes(ret, 0, 1)
     ret = np.real(ret)
     ret = variance_reduction(ret, np.mean(ret, axis=0))
+    ret = atwsub(ret, timeij, reverseatw=switch)
     return np.asarray(ret)
 
 def energies_pionratio(timeij, delta_t):
     """Find non-interacting energies"""
     lhs = evals_pionratio(timeij)
     lhs_p1 = evals_pionratio(timeij+1)
-    rhs = evals_pionratio(timeij-delta_t)
+    rhs = evals_pionratio(timeij-delta_t, switch=True)
     avglhs = np.mean(lhs, axis=0)
     avglhs_p1 = np.mean(lhs_p1, axis=0)
     avgrhs = np.mean(rhs, axis=0)
@@ -860,7 +859,7 @@ def energies_pionratio(timeij, delta_t):
     for i, dim in enumerate(energies):
         for j, en1 in enumerate(dim):
             if np.isnan(en1):
-                energies[i][j] = 0
+                energies[i][j] = np.nan
     energies_pionratio.store[(timeij, delta_t)] = energies
     np.seterr(divide='raise', invalid='raise')
     return energies
@@ -1079,12 +1078,10 @@ if EFF_MASS:
                 "weak check of delta_t failed"
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
-            mean_cmats_lhs[i] = subtract_nonint_atw(mean, timeij+i)
-            cmats_lhs[i] = subtract_nonint_atw(cmats_lhs[i], timeij+i)
-        mean_cmats_rhs = subtract_nonint_atw(
-            mean_crhs, timeij-delta_t, reverseatw=True)
-        cmat_rhs = subtract_nonint_atw(
-            cmat_rhs, timeij-delta_t, reverseatw=True)
+            mean_cmats_lhs[i] = atwsub(mean, timeij+i)
+            cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i)
+        mean_cmats_rhs = atwsub(mean_crhs, timeij-delta_t, reverseatw=True)
+        cmat_rhs = atwsub(cmat_rhs, timeij-delta_t, reverseatw=True)
 
         norm_comm = []
         norms_comm = []

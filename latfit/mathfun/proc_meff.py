@@ -232,11 +232,11 @@ elif EFF_MASS_METHOD == 4:
 
     def checksol(sol, index, times, corrs, fun):
         """Check the solution."""
-        if isinstance(sol, collections.Iterable) and PIONRATIO:
+        if isinstance(sol, collections.Iterable):
             test = any(i < 0 for i in sol[1:])
         else:
             test = sol < 0
-        if test and not PIONRATIO:
+        if test:
             ratioval = FITS.f['ratio'] if index is None else FITS.f[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             ratioval = corrs[0] if LOGFORM else ratioval
