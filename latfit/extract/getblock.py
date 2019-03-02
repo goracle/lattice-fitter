@@ -799,6 +799,8 @@ def aroundtheworld_pionratio(diag_name, timeij):
             time3 = timeij-DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
             sub3 = proc_folder(name, time3)
             ret -= sub2*math.exp((exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
+    else:
+        ret = subtract_nonint_atw(ret, timeij)
     return ret
 
 def evals_pionratio(timeij):
