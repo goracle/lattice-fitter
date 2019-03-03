@@ -152,6 +152,8 @@ FILTER_OUT_CROSS_MOMENTA = False
 # TESTKEY = 'FigureHbub_scalar_mom000'
 # TESTKEY = 'FigureBub2_mom000'
 TESTKEY = 'FigureV_sep3_mom1src000_mom2src000_mom1snk000'
+TESTKEY = 'FigureD_sep4_mom1src000_mom2src000_mom1snk000'
+TESTKEY = '' if WRITE_INDIVIDUAL else TESTKEY
 TESTKEY = ''
 
 # Print out the jackknife block at t=TSLICE
@@ -215,7 +217,6 @@ if AVGTSRC:
 else:
     WRITEBLOCK = ['pioncorr_mom000']
     WRITEBLOCK = ['pioncorrChk_mom000']
-TDIS_MAX = LT-1 if WRITE_INDIVIDUAL else TDIS_MAX
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 
 # debug rows/columns slicing
@@ -224,6 +225,14 @@ DEBUG_ROWS_COLS = False
 # only save this bubble (speeds up checks involving single bubbles)
 BUBKEY = ''
 # BUBKEY = 'Figure_Vdis_sep4_mom1000_mom2000'
+
+def tdismax():
+    """Return tdis max"""
+    if WRITE_INDIVIDUAL:
+        ret = LT-1
+    else:
+        ret = TDIS_MAX
+    return ret
 
 def getindices(tsep, nmomaux):
     """Get aux indices"""
@@ -511,6 +520,7 @@ def formnum(num):
 def buberr(bubblks):
     """Show the result of different options for bubble subtraction"""
     for key in bubblks:
+        bubblks[key] = fold_time(bubblks[key])
         if key == TESTKEY:
             avg, err = jackknife_err(bubblks[key])
             print("Printing first three jackknife samples from t=0:")
@@ -737,7 +747,7 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         filekey = get_file_name(traj)
         try:
             fn1['traj_'+str(traj)+'_'+base].read_direct(
-                outarr, np.s_[:, :TDIS_MAX+1], np.s_[:, :TDIS_MAX+1])
+                outarr, np.s_[:, :tdismax()+1], np.s_[:, :tdismax()+1])
             # outarr = np.array(fn1['traj_'+str(traj)+'_'+base][
             # :, :TDIS_MAX+1])
         except:
@@ -1451,7 +1461,7 @@ def main(fixn=False):
     else:
         exactblks, numt, auxblks = get_data(True, False)
         check_dup_configs(exactblks)
-        if MPIRANK == 0: # write only needs one process, is fast
+        if MPIRANK == 0 and not (TESTKEY or TESTKEY2): # write only needs one process, is fast
             assert check_diag in exactblks,\
                 "sanity check not passing, missing:"+str(check_diag)
             print('check_diag shape=', exactblks[check_diag].shape)
@@ -1461,7 +1471,7 @@ def main(fixn=False):
         check_dup_configs(sloppysubtractionblks)
         allblks = do_ama(sloppyblks, exactblks, sloppysubtractionblks)
         check_dup_configs(allblks)
-    if MPIRANK == 0: # write only needs one process, is fast
+    if MPIRANK == 0 and not (TESTKEY or TESTKEY2): # write only needs one process, is fast
         assert check_diag in allblks,\
             "sanity check not passing, missing:"+str(check_diag)
         print('check_diag shape=', allblks[check_diag].shape)
@@ -1516,10 +1526,12 @@ def main(fixn=False):
             assert unused or count == len(unused),\
                 "Unused (non-vec) diagrams exist."
             if TESTKEY:
+                print("displaying block:", TESTKEY)
                 buberr(allblks)
                 sys.exit(0)
-            h5sum_blks(allblks, ocs, (numt, LT))
-            avg_irreps()
+            else:
+                h5sum_blks(allblks, ocs, (numt, LT))
+                avg_irreps()
 
 @PROFILE
 def avg_irreps(ext='.jkdat'):
