@@ -18,7 +18,8 @@ import h5py
 import read_file as rf
 from sum_blks import isoproj
 from h5jack import TSEP, LT, overall_coeffs, h5sum_blks
-from h5jack import avg_irreps, TSTEP, fold_time
+from h5jack import avg_irreps, TSTEP, fold_time, dojackknife
+from h5jack import tdismax
 from numpy import log, exp
 import op_compose as opc
 import os.path
@@ -117,6 +118,7 @@ def foldt(dt1):
 def foldpioncorr(corr):
     """Fold the pion correlator about the midpoint
     """
+    assert None, "should not be used (use the h5jack version)"
     ret = np.zeros(corr.shape, dtype=np.complex)
     for i in range(LT):
         ret[:, i] = 0.5*(corr[:, i]+corr[:, LT-i-1])
@@ -348,6 +350,18 @@ def avgtsrc(top):
     ret = np.mean(top1, axis=1)
     return ret
 
+def zerotdis(blk):
+    """Zero out the correlator beyond
+    the maximum tdis
+    """
+    blk = np.asarray(blk)
+    assert len(blk.shape) == 2
+    assert len(blk[0]) == LT
+    for tdis in range(LT):
+        if tdis > tdismax():
+            blk[:, tdis] = 0*(1+1j)
+    return blk
+
 
 @PROFILE
 def piondirect(atw=False, reverseatw=False):
@@ -388,7 +402,7 @@ def piondirect(atw=False, reverseatw=False):
             momg = np.asarray(rf.mom(gname))
             assert numt == len(momg), "inconsistent config number"
             gn1 = h5py.File(gname, 'r')
-            print(gname)
+            #print(gname)
             for i in gn1:
                 bottompi = np.array(gn1[i])*(2 if 'Chk' in gname else 1)
                 save2 = i
@@ -514,8 +528,14 @@ def piondirect(atw=False, reverseatw=False):
                 assert count[i] == 2
             except AssertionError:
                 assert count[i] == 1
-                print("topologies used:", count[i])
-                print(i)
+                #print("topologies used:", count[i])
+                #print(i)
+            allblks[i] = zerotdis(allblks[i])
+            if 'mom1src000_mom2src000_mom1snk000' in i:
+                assert count[i] == 2
+                #for time,val in enumerate(allblks[i][0]):
+                #    print(time, val)
+                #sys.exit(0)
         temp = opc.op_list(stype=STYPE)
         ocs = overall_coeffs(
             isoproj(False, 0, dlist=list(
@@ -711,6 +731,7 @@ def divide_multiply(tplat=10):
 if __name__ == '__main__':
     print("start")
     h5jack.AVGTSRC = True # hack to get file names right.
+    h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect(atw=True)
     print("after atw, rank", MPIRANK)
     piondirect(atw=True, reverseatw=True)
