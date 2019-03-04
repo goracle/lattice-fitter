@@ -417,9 +417,10 @@ def atwsub(cmat, timeij, reverseatw=False):
                     "number of configs mismatch:"+str(len(cmat))
                 #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
                 if not i:
-                    print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
-                    print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
-                                                np.real(tosub*NORMS[i][i])))
+                    pass
+                    #print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
+                    #print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
+                    #                            np.real(tosub*NORMS[i][i])))
                 cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
@@ -884,7 +885,7 @@ if PIONRATIO:
                 (timeij, delta_t)]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
-        print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
+        #print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
         ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
         ret += aroundworld_energies()
         print('after:', np.std(ret[:,0]), "before:", np.std(enint[:,0]))
