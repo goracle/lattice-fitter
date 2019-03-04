@@ -11,6 +11,7 @@ from scipy import linalg
 from scipy import stats
 import math
 from matplotlib.mlab import PCA
+from scipy.stats import pearsonr
 import numpy as np
 import h5py
 
@@ -415,6 +416,10 @@ def atwsub(cmat, timeij, reverseatw=False):
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
                 #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
+                if not i:
+                    print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
+                    print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
+                                                np.real(tosub*NORMS[i][i])))
                 cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
@@ -775,16 +780,19 @@ def propagate_nans(blk):
 
 def aroundworld_energies():
     """Add around the delta world energies"""
-    exp = DELTA_E_AROUND_THE_WORLD
-    exp2 = DELTA_E2_AROUND_THE_WORLD
-    ret = exp+exp2 if exp2 is not None else exp
+    if MATRIX_SUBTRACTION and not NOATWSUB:
+        exp = DELTA_E_AROUND_THE_WORLD
+        exp2 = DELTA_E2_AROUND_THE_WORLD
+        ret = exp+exp2 if exp2 is not None else exp
+    else:
+        ret = 0
     return ret
 
 def aroundtheworld_pionratio(diag_name, timeij):
     """Do around the world subtraction for the 1x1 pion ratio GEVP"""
     name = diag_name
     ret = proc_folder(name, timeij)
-    if MATRIX_SUBTRACTION:
+    if MATRIX_SUBTRACTION and not NOATWSUB:
         exp = DELTA_E_AROUND_THE_WORLD
         exp2 = DELTA_E2_AROUND_THE_WORLD
         if exp is not None:
@@ -876,7 +884,10 @@ if PIONRATIO:
                 (timeij, delta_t)]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
-        deltae = energies_interacting - energies_noninteracting
+        print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
+        ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
+        ret += aroundworld_energies()
+        print('after:', np.std(ret[:,0]), "before:", np.std(enint[:,0]))
         newe = []
         for i in range(len(enint)):
             try:
@@ -885,13 +896,9 @@ if PIONRATIO:
                 print("nan found in pion ratio energies:")
                 print(ennon[i])
                 sys.exit(1)
-            newe.append([])
-            for j, en1 in enumerate(enint[i]):
-                if not j:
-                    newe[i].append(en1)
-                else:
-                    newe[i].append(deltae[i][j]+DISP_ENERGIES[j] - aroundworld_energies())
-        return np.asarray(newe)
+        ret = np.asarray(ret)
+        print(timeij,"before:", np.std(ennon[:,0]), "vs after:", np.std(ret[:,0]))
+        return ret
 else:
     def modenergies(energies, *unused):
         """pass"""
