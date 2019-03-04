@@ -986,6 +986,6 @@ if PIONRATIO:
     assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
 if ISOSPIN == 2:
-    assert not NOTATWSUB
+    assert not NOATWSUB
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 
