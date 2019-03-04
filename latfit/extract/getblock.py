@@ -421,6 +421,8 @@ def atwsub(cmat, timeij, reverseatw=False):
                     #print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
                     #print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
                     #                            np.real(tosub*NORMS[i][i])))
+                for item in tosub:
+                    assert item and not np.isnan(item)
                 cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
