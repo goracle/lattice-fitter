@@ -783,10 +783,11 @@ def propagate_nans(blk):
 
 def aroundworld_energies():
     """Add around the delta world energies"""
+    assert None, "this is not needed."
     if MATRIX_SUBTRACTION and not NOATWSUB:
         exp = DELTA_E_AROUND_THE_WORLD
         exp2 = DELTA_E2_AROUND_THE_WORLD
-        ret = exp+exp2 if exp2 is not None else exp
+        ret = exp2-exp if exp2 is not None else exp
     else:
         ret = 0
     return ret
@@ -833,7 +834,8 @@ def evals_pionratio(timeij, switch=False):
     ret = np.swapaxes(ret, 0, 1)
     ret = np.real(ret)
     ret = variance_reduction(ret, np.mean(ret, axis=0))
-    ret = atwsub(ret, timeij, reverseatw=switch)
+    if not MATRIX_SUBTRACTION and not NOATWSUB:
+        ret = atwsub(ret, timeij, reverseatw=switch)
     return np.asarray(ret)
 
 def energies_pionratio(timeij, delta_t):
@@ -889,7 +891,6 @@ if PIONRATIO:
         ennon = np.asarray(energies_noninteracting)
         #print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
         ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
-        ret += aroundworld_energies()
         newe = []
         for i in range(len(enint)):
             try:

@@ -216,7 +216,8 @@ else:
     E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=FIT_SPACING_CORRECTION)
     E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
 assert E21 > 0 and E22 > 0
-DELTA_E2_AROUND_THE_WORLD = E21-E22
+assert E22-E21 >= 0
+DELTA_E2_AROUND_THE_WORLD = E22-E21
 MINE2 = min(E21, E22)
 
 print("2nd order momenta for around the world:",

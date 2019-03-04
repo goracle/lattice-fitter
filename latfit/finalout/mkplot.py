@@ -22,7 +22,7 @@ from latfit.config import TITLE
 from latfit.config import XLABEL
 from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR
-from latfit.config import FIT
+from latfit.config import FIT, PIONRATIO
 from latfit.config import GEVP_DERIV, T0
 from latfit.config import METHOD, DECREASE_VAR
 from latfit.config import BINDS
@@ -68,12 +68,15 @@ def update_result_min_nofit(plotdata):
         ADD_CONST_VEC), "addition of delta E makes sense only if"+\
         " matrix subtraction is being performed"
     for i, _ in enumerate(plotdata.coords):
-        plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
-        if DELTA_E2_AROUND_THE_WORLD is not None:
-            plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
+        if not PIONRATIO:
+            plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
+            if DELTA_E2_AROUND_THE_WORLD is not None:
+                plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
         if FIT_SPACING_CORRECTION:
             plotdata.coords[i][1] += misc.correct_epipi(
                 plotdata.coords[i][1])
+            print('correction at time slice index:', i, "=", misc.correct_epipi(
+                plotdata.coords[i][1]))
     return plotdata
 
 def mkplot(plotdata, input_f,
