@@ -286,6 +286,8 @@ def atw_transform(pi1, reverseatw=False):
     slist = skiplist()
     for tdis in range(LT):
         zeroit = False
+        if tdis > tdismax()+2*TSEP:
+            continue
         for tsrc in range(LT):
             if tsrc in slist and tsrc+TSEP in slist and DELETE_TSRC:
                 continue
@@ -339,6 +341,27 @@ def skiplist():
         ltl = [i for i in range(LT) if i % TSTEP or LT-i < TSTEP]
     return ltl
 
+def innerouter(top1pair, top2pair, mompair):
+    """Check to make sure inner pions have energy >= outer pions
+    (Luchang's condition)
+    """
+    top1, mom1snk1 = top1pair
+    top2, mom1snk2 = top2pair
+    mom1src, mom2src = mompair
+    assert np.all(mom1snk1 == mom2src)
+    assert np.all(mom1snk2 == mom1src)
+    assert len(top1.shape) == 2
+    assert len(top2.shape) == 2
+    assert len(mom1snk1) == len(mom1snk2)
+    assert len(mom1snk1) == 3
+    if rf.norm2(mom1src) < rf.norm2(mom2src):
+        top1 *= np.nan
+        top2 *= np.nan
+    elif rf.norm2(mom1src) > rf.norm2(mom2src):
+        top1 *= np.nan
+    ret = (top1, top2)
+    return ret
+
 
 def avgtsrc(top):
     """Average over tsrc """
@@ -350,7 +373,18 @@ def avgtsrc(top):
     ret = np.mean(top1, axis=1)
     return ret
 
-def zerotdis(blk):
+def zerosimple(blk):
+    """Zero out the correlator beyond
+    the maximum tdis
+    (simplified)
+    """
+    for tdis in range(LT):
+        if tdis > tdismax():
+            blk[:, tdis] = 0*(1+1j)
+    return blk
+    
+
+def zerotdis(blk, atw=False):
     """Zero out the correlator beyond
     the maximum tdis
     """
@@ -358,8 +392,23 @@ def zerotdis(blk):
     assert len(blk.shape) == 2
     assert len(blk[0]) == LT
     for tdis in range(LT):
-        if tdis > tdismax():
+        if not atw:
+            break
+        if tdis + TSEP >= LT or (
+                tdis-TSEP <= tdismax() and tdis > tdismax()):
+            # tdis time slices get rolled back in top1
+            # so we must explicitly zero these terms
+            # we can't skip these because we need them for top2
             blk[:, tdis] = 0*(1+1j)
+        elif tdis > tdismax():
+            assert not np.any(blk[:, tdis]) or np.all(np.isnan(blk))\
+                or np.all(np.isnan(blk[:, tdis])),\
+                "tdis="+str(tdis)+" "+str(blk[:, tdis])+" "+str(blk)
+        else:
+            assert np.all(blk[:, tdis]) or np.all(np.isnan(blk))\
+                or np.all(np.isnan(blk[:, tdis])),\
+                "tdis="+str(tdis)+" "+str(blk[:, tdis])+" "+str(blk)
+    blk = zerosimple(blk)
     return blk
 
 
@@ -436,7 +485,7 @@ def piondirect(atw=False, reverseatw=False):
 
             if not atw:
                 try:
-                    assert top1[0][0] > 100
+                    assert top1[0][0] > 100 or np.isnan(top1[0][0]), top1[0][0]
                 except AssertionError:
                     print("top1 is (likely) too small")
                     print(toppi[0,0])
@@ -460,11 +509,13 @@ def piondirect(atw=False, reverseatw=False):
             # average over tsrc
             top2 = avgtsrc(top2)
 
+            top1, top2 = innerouter((top1, momg), (top2, momf), (momf, momg))
+
             # for use in I=1
             top3 = -1*top2
 
             try:
-                assert top2[0][0] > 100, str(top2[0][0])
+                assert top2[0][0] > 100 or np.isnan(top2[0][0]), str(top2[0][0])
             except AssertionError:
                 print("topology 2 has anomalous size")
                 print(top2)
@@ -530,7 +581,7 @@ def piondirect(atw=False, reverseatw=False):
                 assert count[i] == 1
                 #print("topologies used:", count[i])
                 #print(i)
-            allblks[i] = zerotdis(allblks[i])
+            allblks[i] = zerotdis(allblks[i], atw=atw)
             if 'mom1src000_mom2src000_mom1snk000' in i:
                 assert count[i] == 2
                 #for time,val in enumerate(allblks[i][0]):
