@@ -49,8 +49,10 @@ LATTICE_ENSEMBLE = '32c'
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
-PIONRATIO = True
 PIONRATIO = False
+PIONRATIO = True
+PIONRATIO = False if IRREP != 'A_1PLUS_mom000' and ISOSPIN == 2 else PIONRATIO
+PIONRATIO = False if ISOSPIN != 2 else PIONRATIO
 
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = True
@@ -164,13 +166,15 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 
 
 # no around the world subtraction at all
-NOATWSUB = False
 NOATWSUB = True
+NOATWSUB = False
+NOATWSUB = False if ISOSPIN == 2 else NOATWSUB
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
-MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False
+MATRIX_SUBTRACTION = True
+MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' and ISOSPIN == 2 else MATRIX_SUBTRACTION
 #MATRIX_SUBTRACTION = True if IRREP == 'A_1PLUS_mom000'\
 #    else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
@@ -981,4 +985,7 @@ assert not MATRIX_SUBTRACTION or '000' in IRREP, IRREP
 if PIONRATIO:
     assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
+if ISOSPIN == 2:
+    assert not NOTATWSUB
+    assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 
