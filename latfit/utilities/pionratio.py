@@ -471,10 +471,10 @@ def piondirect(atw=False, reverseatw=False):
                 sys.exit(1)
             momstr = 'sep'+str(TSEP)+'_mom1src'+rf.ptostr(momf)+\
                 '_mom2src'+rf.ptostr(momg)+'_mom1snk'
-            key1 = addfigd(momstr)+rf.ptostr(momf)
-            key3halves = addfigdvec(momstr)+rf.ptostr(momf)
-            key2 = addfigd(momstr)+rf.ptostr(momg)
-            key3 = addfigdvec(momstr)+rf.ptostr(momg)
+            key1 = addfigd(momstr)+rf.ptostr(momg)
+            key3halves = addfigdvec(momstr)+rf.ptostr(momg)
+            key2 = addfigd(momstr)+rf.ptostr(momf)
+            key3 = addfigdvec(momstr)+rf.ptostr(momf)
             if 'mom1src000_mom2src001_mom1snk001' in key1:
                 pass
                 #print(fname, gname)
