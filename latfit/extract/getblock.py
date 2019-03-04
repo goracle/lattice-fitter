@@ -890,7 +890,6 @@ if PIONRATIO:
         #print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
         ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
         ret += aroundworld_energies()
-        print('after:', np.std(ret[:,0]), "before:", np.std(enint[:,0]))
         newe = []
         for i in range(len(enint)):
             try:
@@ -900,7 +899,7 @@ if PIONRATIO:
                 print(ennon[i])
                 sys.exit(1)
         ret = np.asarray(ret)
-        print(timeij,"before:", np.std(ennon[:,0]), "vs after:", np.std(ret[:,0]))
+        print(timeij,"before - after (diff):", np.std(enint[:,0])-np.std(ret[:,0]))
         return ret
 else:
     def modenergies(energies, *unused):
