@@ -67,16 +67,17 @@ def update_result_min_nofit(plotdata):
     assert MATRIX_SUBTRACTION or not any(
         ADD_CONST_VEC), "addition of delta E makes sense only if"+\
         " matrix subtraction is being performed"
-    for i, _ in enumerate(plotdata.coords):
-        if not PIONRATIO:
+    if not PIONRATIO:
+        for i, _ in enumerate(plotdata.coords):
             plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
             if DELTA_E2_AROUND_THE_WORLD is not None:
                 plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
-        if FIT_SPACING_CORRECTION:
-            plotdata.coords[i][1] += misc.correct_epipi(
-                plotdata.coords[i][1])
-            print('correction at time slice index:', i, "=", misc.correct_epipi(
-                plotdata.coords[i][1]))
+            if FIT_SPACING_CORRECTION:
+                plotdata.coords[i][1] += misc.correct_epipi(
+                    plotdata.coords[i][1])
+                print('correction at time slice index:',
+                      i, "=", misc.correct_epipi(
+                          plotdata.coords[i][1]))
     return plotdata
 
 def mkplot(plotdata, input_f,
