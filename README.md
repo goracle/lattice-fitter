@@ -2,6 +2,8 @@
 fit lattice qcd data
 ===================================
 
+[![DOI](https://zenodo.org/badge/42022672.svg)](https://zenodo.org/badge/latestdoi/42022672)
+
 --------------------------------------------
 how to run
 --------------------------------------------
