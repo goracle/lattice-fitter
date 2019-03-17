@@ -94,6 +94,7 @@ if CALC_PHASE_SHIFT:
                 print("unable to convert phase shift to number")
                 print("check to make sure there does not exist"+\
                       " debugging which needs to be turned off.")
+                print(out)
                 sys.exit(1)
                 # raise ZetaError("bad number conversion")
             if ISOSPIN == 0:
