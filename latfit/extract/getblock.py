@@ -150,8 +150,8 @@ def defsign(x):
     elif np.all(np.real(evals) == 0) and np.all(np.imag(evals) == 0):
         ret = 0
     else:
-        assert None, "eigenvalues are not all the same sign:"+\
-            str(evals)
+        print("eigenvalues are not all the same sign:", str(evals))
+        sys.exit(1)
         ret = False
     return ret
 
@@ -1083,7 +1083,7 @@ if EFF_MASS:
             file_tup, num_configs)
 
         # subtract the non-interacting around the world piece
-        if '000' not in IRREP:
+        if '000' not in IRREP and not NOATWSUB:
             assert pionratio.DELTAT == delta_t,\
                 "weak check of delta_t failed"
         for i, mean in enumerate(mean_cmats_lhs):
