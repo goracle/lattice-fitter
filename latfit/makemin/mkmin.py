@@ -2,16 +2,19 @@
 import sys
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
+from iminuit import Minuit
+from iminuit import minimize as minit
 import numpy as np
 
 from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS
-from latfit.config import BINDS
+from latfit.config import BINDS, NOLOOP
 from latfit.config import AUTO_FIT
 from latfit.config import ASSISTED_FIT
 from latfit.config import fit_func
 from latfit.config import JACKKNIFE_FIT
+from collections import namedtuple
 # from latfit.config import MINTOL
 from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
@@ -46,7 +49,7 @@ def mkmin(covinv, coords):
     else:
         start_params = [*START_PARAMS, *START_PARAMS,
                         *START_PARAMS] if SYSTEMATIC_EST else START_PARAMS
-    if METHOD not in set(['L-BFGS-B']):
+    if METHOD not in set(['L-BFGS-B', 'minuit']):
         if latfit.config.MINTOL:
             options = {'maxiter': 10000, 'maxfev': 10000,
                        'xatol': 0.00000001, 'fatol': 0.00000001}
@@ -83,6 +86,45 @@ def mkmin(covinv, coords):
             sys.exit(1)
         
     # print "minimized params = ", res_min.x
+    if 'minuit' in METHOD:
+        options = {}
+        try:
+            res_min = minit(chi_sq, start_params, (covinv, coords),
+                            method=METHOD, bounds=BINDS,
+                            options=options)
+            status = res_min.minuit.get_fmin().is_valid
+            status = 0 if res_min.success else 1
+            res_min.status = status
+        except RuntimeError:
+            status = 1
+            res_min = {}
+            res_min['status'] = 1
+        res_min = convert_to_namedtuple(res_min)
+        if False:
+            def func(trial_params):
+                """minimize this."""
+                return chi_sq(trial_params, covinv, coords)
+            fparams = [str(i) for i in range(len(START_PARAMS))]
+            printl = 1 if NOLOOP else 0
+            minimizer = Minuit(func,
+                            use_array_call=True,
+                            print_level=printl,
+                            pedantic=True if NOLOOP else False,
+                            forced_parameters=fparams)
+            res_min = {}
+            res_min['x'] = np.nan*np.asarray(START_PARAMS)
+            res_min['status'] = 0
+            res_min['fun'] = np.inf
+            try:
+                minimizer.migrad()
+                res_min['status'] = 0 if minimizer.get_fmin().is_valid else 1
+                vals = np.asarray(list(dict(minimizer.values).values()))
+                res_min['x'] = vals
+                res_min['fun'] = func(vals)
+            except RuntimeError:
+                res_min['status'] = 1
+            res_min = convert_to_namedtuple(res_min)
+        
     if not JACKKNIFE_FIT:
         print("number of iterations = ", res_min.nit)
         print("successfully minimized = ", res_min.success)
@@ -91,11 +133,18 @@ def mkmin(covinv, coords):
     # print "chi^2 minimized = ", res_min.fun
     # print "chi^2 minimized check = ", chi_sq(res_min.x, covinv, coords)
     # print covinv
-    if res_min.fun < 0:
-        raise NegChisq
+    if not res_min.status:
+        if res_min.fun < 0:
+            raise NegChisq
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return prune_res_min(res_min)
+
+def convert_to_namedtuple(dictionary):
+    """Convert dictionary to named tuple"""
+    return namedtuple('min', dictionary.keys())(**dictionary)
+
+
 
 if SYSTEMATIC_EST:
     def prune_res_min(res_min):
