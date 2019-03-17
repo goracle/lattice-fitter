@@ -537,7 +537,7 @@ def interleave_energies_systematic(result_min):
         syst = [i.val for i in interleave_energies_systematic.sys]
     else:
         syst = []
-    ret = np.zeros(len(result_min.x)+len(syst))
+    ret = []
     if syst:
         dimops = len(result_min.x)
         sys_per_en = len(syst[:-1])/dimops
@@ -548,6 +548,7 @@ def interleave_energies_systematic(result_min):
             ret.append(energy)
             for j in range(int(spe)):
                 ret.append(syst[spe*i+j])
+        #    print("ret(", i ,"):", ret)
         ret.append(syst[-1])
         ret = np.asarray(ret)
         #ret[0::2] = [*result_min.x, syst[-1]]
