@@ -490,8 +490,8 @@ BOX_PLOT = False if SYS_ENERGY_GUESS is not None and GEVP else BOX_PLOT
 BOX_PLOT = False if len(START_PARAMS) != 1 else BOX_PLOT
 
 # plot a legend?
-PLOT_LEGEND = True
 PLOT_LEGEND = False
+PLOT_LEGEND = True
 
 # dispersive lines
 PLOT_DISPERSIVE = True
@@ -570,6 +570,7 @@ ERROR_BAR_METHOD = 'avgcov'
 # it's probably not a good idea
 
 METHOD = 'Nelder-Mead'
+METHOD = 'minuit'
 METHOD = 'L-BFGS-B'
 
 # jackknife correction? "YES" or "NO"
@@ -745,7 +746,7 @@ if EFF_MASS:
                 if SYS_ENERGY_GUESS is not None:
                     START_PARAMS.append(SYS_ENERGY_GUESS)
                     assert not (
-                        len(START_PARAMS)-1) % 2, "bad start parameter spec."
+                        len(START_PARAMS)-1) % 2, "bad start parameter spec:"+str(START_PARAMS)
                     if not (len(START_PARAMS)-1) % 2 and DELTA_E2_AROUND_THE_WORLD is None:
                         def prefit_func(ctime, trial_params):
                             """eff mass method 1, fit func, single const fit
@@ -757,6 +758,7 @@ if EFF_MASS:
                         # estimate around the world via fit
                         assert GEVP
                         assert not MATRIX_SUBTRACTION
+                        assert NOATWSUB
                         assert DELTA_E2_AROUND_THE_WORLD is None
                         assert len(range(int((len(START_PARAMS)-1)/3))) == DIM
                         def prefit_func(ctime, trial_params):
@@ -774,6 +776,7 @@ if EFF_MASS:
                         # estimate around the world via fit
                         assert GEVP
                         assert not MATRIX_SUBTRACTION
+                        assert NOATWSUB
                         assert len(range(int((len(START_PARAMS)-1)/4))) == DIM
                         def prefit_func(ctime, trial_params):
                             """eff mass method 1, fit func, single const fit
@@ -982,7 +985,7 @@ assert not ONLY_SMALL_FIT_RANGES or RANGE_LENGTH_MIN
 #assert MATRIX_SUBTRACTION or not PIONRATIO
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-assert not MATRIX_SUBTRACTION or '000' in IRREP, IRREP
+assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0, IRREP
 if PIONRATIO:
     assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
