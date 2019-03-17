@@ -894,7 +894,7 @@ if PIONRATIO:
                 (timeij, delta_t)]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
-        #print(timeij, pearsonr(enint[:,0], ennon[:, 0]), DISP_ENERGIES)
+        print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
         ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
         newe = []
         for i in range(len(enint)):
