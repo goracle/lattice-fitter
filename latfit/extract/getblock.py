@@ -411,7 +411,10 @@ def atwsub(cmat, timeij, reverseatw=False):
             tosub = proc_folder(name, timeij)
             tosub = variance_reduction(tosub,
                                        np.mean(tosub, axis=0))
-            tosub = np.real(tosub)
+            if zeroit:
+                tosub = np.real(tosub)*0
+            else:
+                tosub = np.real(tosub)
             if len(cmat.shape) != 2:
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
@@ -422,7 +425,7 @@ def atwsub(cmat, timeij, reverseatw=False):
                     #print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
                     #                            np.real(tosub*NORMS[i][i])))
                 for item in tosub:
-                    assert item and not np.isnan(item)
+                    assert (item or zeroit) and not np.isnan(item)
                 cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
@@ -430,6 +433,8 @@ def atwsub(cmat, timeij, reverseatw=False):
                 #   print(i)
             else:
                 cmat[i, i] -= np.mean(tosub, axis=0)*NORMS[i][i]
+                #if not reverseatw:
+                    #print(i, np.mean(tosub, axis=0)/ cmat[i,i])
                 assert not np.mean(tosub, axis=0).shape
                 #print(cmat)
     assert cmat.shape == origshape
