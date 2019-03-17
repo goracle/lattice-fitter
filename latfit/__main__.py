@@ -40,6 +40,7 @@ from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_ITER, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.jackknife_fit import jack_mean_err
+from latfit.makemin.mkmin import convert_to_namedtuple
 import latfit.extract.getblock
 
 from latfit.procargs import procargs
@@ -1099,10 +1100,6 @@ def divbychisq(param_arr, pvalue_arr):
     return ret
 
 
-
-def convert_to_namedtuple(dictionary):
-    """Convert dictionary to named tuple"""
-    return namedtuple('min', dictionary.keys())(**dictionary)
 
 
 def cut_on_errsize(meta):
