@@ -999,11 +999,11 @@ def pickle_res_err(errname, min_arr):
     print("debug:[getattr(i[0], errname) for i in min_arr].shape", np.asarray(ret).shape)
     print("debug2:", np.asarray(singlefit.error2).shape)
     origl = len(ret)
-    if GEVP:
+    if GEVP and 'systematics' not in errname:
         if len(np.asarray(ret).shape) > 1:
             # dimops check
             assert (np.array(ret).shape)[1] ==\
-                (np.asarray(singlefit.error2).shape)[1], str(np.array(ret).shape)+" "+str(np.asarray(singlefit.error2))
+                (np.asarray(singlefit.error2).shape)[1], str(np.array(ret).shape)+" "+str(np.asarray(singlefit.error2))+" "+str(errname)
     if 'x' in errname:
         _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
         ret = np.array([*ret, *erreff])
