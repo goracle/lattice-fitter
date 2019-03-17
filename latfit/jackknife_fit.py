@@ -19,7 +19,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import UNCORR, SYS_ENERGY_GUESS
-from latfit.config import PVALUE_MIN
+from latfit.config import PVALUE_MIN, NOATWSUB
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
@@ -198,12 +198,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             chisq_min_arr[config_num] = result_min_jack.fun
 
             # store the result
+            temp, ind = getsystematic(params, result_min_jack.x)
+            result_min.systematics_arr[config_num] = temp
             result_min.systematics_arr[config_num], params.energyind = getsystematic(
                 params, result_min_jack.x)
             min_arr[config_num] = getenergies(params, result_min_jack.x)
 
             if result_min_jack.fun/result_min.dof < 10:
-                print('systematics:', result_min.systematics_arr[config_num])
+                print('systematics:', result_min.systematics_arr[config_num][:-1])
 
             # we shifted the GEVP energy spectrum down
             # to fix the leading order around the world term so shift it back
@@ -386,16 +388,20 @@ def getsystematic(params, arr):
     params.energyind = None
     if len(arr) != params.dimops and len(arr) and EFF_MASS:
         temp = list(arr)
-        if not (len(START_PARAMS)-1) % 2 and MATRIX_SUBTRACTION:
+        if not (len(START_PARAMS)-1) % 2 and (MATRIX_SUBTRACTION or not NOATWSUB):
             params.energyind = 2
         elif not (len(START_PARAMS)-1) % 3:
-            assert not MATRIX_SUBTRACTION
+            assert None, "no longer supported"
+            assert not MATRIX_SUBTRACTION and NOATWSUB
             params.energyind = 3
         elif not (len(START_PARAMS)-1) % 4:
-            assert not MATRIX_SUBTRACTION
+            assert None, "no longer supported"
+            assert not MATRIX_SUBTRACTION and NOATWSUB
             params.energyind = 4
         del temp[params.energyind-1::params.energyind]
-        ret = np.array(temp)
+        ret = [item for item in arr if item not in temp]
+        ret.append(arr[-1])
+        ret = np.array(ret)
     else:
         ret = None
     return ret, params.energyind
