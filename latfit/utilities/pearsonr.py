@@ -4,6 +4,7 @@ import sys
 import h5py
 import numpy as np
 from scipy.stats import pearsonr
+from scipy.stats import spearmanr
 
 
    
@@ -34,7 +35,7 @@ def rcoeff(file1, file2):
     b=np.real(b)
     LT = len(a[0])
     for i in range(LT):
-        print(i, pearsonr(a[:, i], b[:, i]))
+        print(i, pearsonr(a[:, i], b[:, i]), spearmanr(a[:, i], b[:, i]))
 
 if __name__ == '__main__':
     rcoeff(sys.argv[1], sys.argv[2])
