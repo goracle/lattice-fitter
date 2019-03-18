@@ -305,8 +305,8 @@ def atw_transform(pi1, reverseatw=False):
                         assert tdis != 17 or reverseatw, "rank:"+str(MPIRANK)
             #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
             try:
-                newpi1[:, tsrc, tdis] = amp1*exp(-en1*tdis)
-                newpi2[:, tsrc, tdis] = amp1*exp(-en1*(LT-tdis))
+                newpi1[:, tsrc, tdis], newpi2[:,tsrc, tdis] = morecorr(
+                    amp1, en1, tdis, dt2, pi1[:, tsrc, :])
             except FloatingPointError:
                 print("floating point error")
                 print('energies', en1[0], en2[0])
@@ -315,6 +315,53 @@ def atw_transform(pi1, reverseatw=False):
                 sys.exit(1)
     return newpi1, newpi2
     #return newpi1, newpi2
+
+def simpledivide(arr,pow1):
+    """
+    We have A*exp(-Et), and A*exp(-E*dt2)
+    We want A*exp(-E*(LT-t))
+    We can get this by forming
+    A*exp(-Et)*[
+
+    A*exp(-Et)/(A*exp(-E*dt2))
+
+    ]**[(LT-t)/t/(t-dt2)]
+
+    == A*exp(-E*(LT-t))
+    
+    The hypothesis is that this is more correlated than eff mass method for
+    early times.
+    """
+    ret = np.copy(arr)
+    ret = np.real(ret)
+    print(pow1)
+    print(arr)
+    sys.exit(0)
+    for i in range(LT):
+        if i:
+            try:
+                ret[:,i]=arr[:,i]**((LT-i)/pow1/i)
+            except FloatingPointError:
+                ret[:,i] = np.nan
+    return ret
+
+
+def morecorr(amp,expo,tdis, dt2, corr):
+    """Return pions which are more correlated
+    """
+    pow1 = tdis-dt2
+    corr = np.real(corr)
+    corr_ancillary = np.copy(np.roll(corr, pow1, axis=1))
+    if tdis < LT/4 and tdis > pow1 and False:
+        newpi1 = np.copy(corr)[:,tdis]
+        newpi2 = np.copy(corr*simpledivide(corr/corr_ancillary, pow1))
+        newpi2 = newpi2[:, tdis]
+        if tdis < LT/2:
+            assert newpi2[0] < newpi1[0], str(newpi2)+" "+str(newpi1)
+    else:
+        newpi1 = amp*exp(-expo*tdis)
+        newpi2 = amp*exp(-expo*(LT-tdis))
+    return newpi1, newpi2
 
 def getpi(fname, reverseatw):
     """Get file handle"""
@@ -473,7 +520,10 @@ def piondirect(atw=False, reverseatw=False):
             # compute the first topology
             # each topology has two around the world terms, so add in pairs
             if atw:
-                top1 = shiftpi1*toppi2+shiftpi2*toppi1
+                if np.all(momg == momf):
+                    top1 = shiftpi1*toppi2
+                else:
+                    top1 = shiftpi1*toppi2+shiftpi2*toppi1
             else:
                 top1 = shiftpi*toppi
 
@@ -501,8 +551,11 @@ def piondirect(atw=False, reverseatw=False):
             # compute the second topology
             # make one of the pions 2*tsep as long in time
             if atw:
-                top2 = np.roll(shiftpi1, -2*TSEP, axis=2)*toppi2+np.roll(
-                    shiftpi2, -2*TSEP, axis=2)*toppi1
+                if np.all(momf == momg):
+                    top2 = np.roll(shiftpi1, -2*TSEP, axis=2)*toppi2
+                else:
+                    top2 = np.roll(shiftpi1, -2*TSEP, axis=2)*toppi2+np.roll(
+                        shiftpi2, -2*TSEP, axis=2)*toppi1
             else:
                 top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
 
