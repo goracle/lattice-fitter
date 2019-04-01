@@ -570,8 +570,8 @@ ERROR_BAR_METHOD = 'avgcov'
 # it's probably not a good idea
 
 METHOD = 'Nelder-Mead'
-METHOD = 'minuit'
 METHOD = 'L-BFGS-B'
+METHOD = 'minuit'
 
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed
