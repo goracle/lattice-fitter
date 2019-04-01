@@ -46,7 +46,7 @@ NORMS = [[(1+0j) for _ in range(len(OPERATOR_NORMS))]
 
 for i, norm in enumerate(OPERATOR_NORMS):
     for j, norm2 in enumerate(OPERATOR_NORMS):
-        NORMS[i][j] = norm*norm2
+        NORMS[i][j] = norm*np.conj(norm2)
 
 MPIRANK = MPI.COMM_WORLD.rank
 
@@ -426,13 +426,13 @@ def atwsub(cmat, timeij, reverseatw=False):
                     #                            np.real(tosub*NORMS[i][i])))
                 for item in tosub:
                     assert (item or zeroit) and not np.isnan(item)
-                cmat[:, i, i] = cmat[:, i, i]-tosub*NORMS[i][i]
+                cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(NORMS[i][i])
                 #cmat[:, i, i] -= tosub
                 assert cmat[:, i, i].shape == tosub.shape
                 # for i in cmat:
                 #   print(i)
             else:
-                cmat[i, i] -= np.mean(tosub, axis=0)*NORMS[i][i]
+                cmat[i, i] -= np.mean(tosub, axis=0)*np.abs(NORMS[i][i])
                 #if not reverseatw:
                     #print(i, np.mean(tosub, axis=0)/ cmat[i,i])
                 assert not np.mean(tosub, axis=0).shape
