@@ -146,9 +146,9 @@ def iso1(vecp, name):
     elif name == 'T' and vecp:
         norm = 2.0
     elif name == 'R' and vecp:
-        norm = 4.0
+        norm = -4.0
     elif name == 'D' and vecp:
-        norm = 2.0
+        norm = -2.0
     else:
         norm = None
     return norm
