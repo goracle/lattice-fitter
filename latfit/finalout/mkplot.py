@@ -72,7 +72,7 @@ def update_result_min_nofit(plotdata):
             plotdata.coords[i][1] += DELTA_E_AROUND_THE_WORLD
             if DELTA_E2_AROUND_THE_WORLD is not None:
                 plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
-            if FIT_SPACING_CORRECTION:
+            if FIT_SPACING_CORRECTION and GEVP:
                 plotdata.coords[i][1] += misc.correct_epipi(
                     plotdata.coords[i][1])
                 print('correction at time slice index:',
