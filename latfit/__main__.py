@@ -1128,7 +1128,7 @@ def cut_on_errsize(meta):
         else:
             if err[i]/coords[i][1] > ERR_CUT:
                 print("err =", err[i], "coords =", coords[i][1])
-                print("cutting dimension", j, "for time slice", excl_add)
+                print("cutting dimension", 0, "for time slice", excl_add)
                 print("err/coords > ERR_CUT =", ERR_CUT)
                 latfit.config.FIT_EXCL[0].append(excl_add)
                 latfit.config.FIT_EXCL[0] = list(set(
