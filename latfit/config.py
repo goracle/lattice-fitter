@@ -53,6 +53,7 @@ PIONRATIO = False
 PIONRATIO = True
 PIONRATIO = False if IRREP != 'A_1PLUS_mom000' and ISOSPIN == 2 else PIONRATIO
 PIONRATIO = False if ISOSPIN != 2 else PIONRATIO
+PIONRATIO = False if not GEVP else PIONRATIO
 
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = True
@@ -990,7 +991,7 @@ assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0, IRREP
 if PIONRATIO:
     assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
-if ISOSPIN == 2:
+if ISOSPIN == 2 and GEVP:
     assert not NOATWSUB
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 
