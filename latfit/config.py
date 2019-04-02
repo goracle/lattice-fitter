@@ -337,11 +337,12 @@ EFF_MASS_METHOD = 4
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5, .2]
     if not MATRIX_SUBTRACTION:
-        START_PARAMS.append(10)
-        assert len(START_PARAMS) == 3
-        if DELTA_E2_AROUND_THE_WORLD is not None:
-            START_PARAMS.append(15)
-            assert len(START_PARAMS) == 4
+        pass
+        #START_PARAMS.append(10)
+        #assert len(START_PARAMS) == 3
+        #if DELTA_E2_AROUND_THE_WORLD is not None:
+        #    START_PARAMS.append(15)
+        #    assert len(START_PARAMS) == 4
 #    if PIONRATIO:
 #        START_PARAMS = [.05, 0.0005]
 else:
