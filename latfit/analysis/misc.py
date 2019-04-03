@@ -116,7 +116,7 @@ def fitepi(norm):
         ret = halftotal(ret)
     return ret
 
-def correct_epipi(energies, irr=None, uncorrect=False):
+def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
     """Correct 24c dispersion relation errors using fits
     lattice disp -> continuum
     """
@@ -124,7 +124,8 @@ def correct_epipi(energies, irr=None, uncorrect=False):
     assert irr is not None, "irrep not set."
     assert hasattr(energies, '__iter__'),\
         "corrections not supported for single correlators"
-    correction = np.zeros(np.asarray(energies).shape, np.float)
+    energies = np.asarray(energies)
+    correction = np.zeros(energies.shape, np.float)
     for dim in range(len(energies)):
         moms = freemomenta(irr, dim)
         try:
@@ -138,10 +139,30 @@ def correct_epipi(energies, irr=None, uncorrect=False):
         normb = rf.norm2(mom2)
         epi1 = fitepi(norma)
         epi2 = fitepi(normb)
-        correction[dim] = (dispersive(mom1, continuum=True)+dispersive(
-            mom2, continuum=True))-(epi1+epi2)
+        crect = ((dispersive(mom1, continuum=True)+dispersive(
+            mom2, continuum=True))-(epi1+epi2))
+        crect = np.asarray(crect)
+        origshape = crect.shape
+        if hasattr(crect, '__iter__') and\
+           crect.shape:
+            assert config_num is not None, "index bug"+str(crect)+" "+str(energies)
+            crect = crect[config_num]
+        try:
+            correction[dim] = crect
+        except ValueError:
+            print("error in lattice spacing correction function.")
+            print("correction:", crect)
+            print("energies:", energies)
+            print("crect.shape=", crect.shape)
+            print("energies.shape=", energies.shape)
+            print("config num", config_num)
+            print("orig shape", origshape)
+            raise
         if uncorrect:
             correction *= -1
+        if PIONRATIO:
+            correction = np.asarray(correction)
+            correction *= 0.0
         #if BOX_LENGTH == 32: # assume 32c has good dispersion relation for now.
         #    correction *= 0
     return correction

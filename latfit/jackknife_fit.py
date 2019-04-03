@@ -213,7 +213,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
                     DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
                     is not None else 0)+\
-                    (misc.correct_epipi(min_arr[config_num])
+                    (misc.correct_epipi(min_arr[config_num],
+                                        config_num=config_num)
                      if FIT_SPACING_CORRECTION and GEVP else 0)
 
 
