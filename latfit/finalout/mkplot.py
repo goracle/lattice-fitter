@@ -170,6 +170,9 @@ def modmissingdim(dimops, plotdata, result_min):
 def plot_dispersive(xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
+        if hasattr(energy, '__iter__'):
+            energy = np.mean(energy, axis=0)
+            assert not hasattr(energy, '__iter__'), "index bug."
         # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),
                  label='Disp('+str(trunc_prec(energy))+')')
