@@ -73,6 +73,9 @@ def update_result_min_nofit(plotdata):
             if DELTA_E2_AROUND_THE_WORLD is not None:
                 plotdata.coords[i][1] += DELTA_E2_AROUND_THE_WORLD
             if FIT_SPACING_CORRECTION and GEVP:
+                print("correcting plotted time slice ", i,
+                      " for lattice spacing errors.")
+                plotdata.coords[i][1] = np.asarray(plotdata.coords[i][1])
                 plotdata.coords[i][1] += misc.correct_epipi(
                     plotdata.coords[i][1])
                 print('correction at time slice index:',

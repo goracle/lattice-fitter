@@ -23,18 +23,27 @@ P111 = None
 #P111 = 0.4715(11)
 #p0
 #P0 = 0.13957(19)
+def dummy(*x):
+    """dummy function.  does nothing"""
+    return x
+BINOUT = dummy
+HALFTOTAL = dummy
 
 
-def mass():
+def massfunc():
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
     pionstr = '_pioncorrChk_'
-    if misc.MASS == 0:
+    if massfunc.MASS is None:
         try:
             fn1 = open('x_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
-            misc.MASS = pickle.load(fn1)
+            massfunc.MASS = pickle.load(fn1)
+            print("load of jackknifed mass successful")
         except FileNotFoundError:
+            print("jackknifed mass not found")
+            massfunc.MASS = misc.MASS
             pass
-    return misc.MASS
+    return massfunc.MASS
+massfunc.MASS = None
 
 def p1():
     """E_pi(|p|=1)"""
@@ -47,8 +56,10 @@ def p1():
     if p1.P1 is None:
         try:
             fn1 = open('x_min_'+LATTICE+pionstr+'p1.jkdat.p', 'rb')
-            P1 = pickle.load(fn1)
+            p1.P1 = pickle.load(fn1)
+            print("load of jackknifed p1 energy successful")
         except FileNotFoundError:
+            print("jackknifed p1 energy not found")
             pass
     if p1.P1 is not None:
         ret = p1.P1
@@ -67,7 +78,9 @@ def p11():
         try:
             fn1 = open('x_min_'+LATTICE+pionstr+'p11.jkdat.p', 'rb')
             p11.P11 = pickle.load(fn1)
+            print("load of jackknifed p11 energy successful")
         except FileNotFoundError:
+            print("jackknifed p11 energy not found")
             pass
     if p11.P11 is not None:
         ret = p11.P11
@@ -86,7 +99,9 @@ def p111():
         try:
             fn1 = open('x_min_'+LATTICE+pionstr+'p111.jkdat.p', 'rb')
             p111.P111 = pickle.load(fn1)
+            print("load of jackknifed p111 energy successful")
         except FileNotFoundError:
+            print("jackknifed p111 energy not found")
             pass
     if p111.P111 is not None:
         ret = p111.P111
@@ -95,18 +110,12 @@ p111.P111 = None
 
 IRREP = None
 CONTINUUM = True
-def bintotal(ret):
-    assert None
-    return ret
-def halftotal(ret):
-    assert None
-    return ret
 
 def fitepi(norm):
     """Select the right E_pi"""
     ret = None
     if norm == 0:
-        ret = MASS
+        ret = massfunc()
     elif norm == 1:
         ret = p1()
     elif norm == 2:
@@ -116,8 +125,12 @@ def fitepi(norm):
     else:
         assert ret is not None, ""
     if hasattr(ret, '__iter__'):
-        ret = binout(ret)
-        ret = halftotal(ret)
+        ret = BINOUT(ret)
+        ret = HALFTOTAL(ret)
+    ret = np.asarray(ret)
+    for i in ret.shape:
+        assert i == max(ret.shape) or i == 1
+    ret = ret.flatten()
     return ret
 
 def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
@@ -149,8 +162,12 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
         origshape = crect.shape
         if hasattr(crect, '__iter__') and\
            crect.shape:
-            assert config_num is not None, "index bug"+str(crect)+" "+str(energies)
-            crect = crect[config_num]
+            #assert config_num is not None, "index bug "+\
+            #    str(crect)+" "+str(energies[dim])
+            if config_num is None:
+                crect = np.mean(crect, axis=0)
+            else:
+                crect = crect[config_num]
         try:
             correction[dim] = crect
         except ValueError:
@@ -187,11 +204,13 @@ def norm2(mom):
 
 def dispersive(momentum, mass=None, box_length=None, continuum=False):
     """get the dispersive analysis energy == sqrt(m^2+p^2)"""
-    mass = MASS if mass is None else mass
+    mass = massfunc() if mass is None else mass
     assert continuum == CONTINUUM, "dispersion relation mismatch."
     box_length = BOX_LENGTH if box_length is None else box_length
-    ret = sqrt((mass)**2+ 4*sin(
+    ret = np.sqrt((mass)**2+ 4*np.sin(
         pi/box_length)**2*norm2(momentum)) # two pions so double the mass
-    ret = sqrt(mass**2+(2*pi/box_length)**2*norm2(
+    ret = np.sqrt(mass**2+(2*pi/box_length)**2*norm2(
         momentum)) if continuum else ret
+    ret = np.asarray(ret)
+    ret = ret.flatten()
     return ret

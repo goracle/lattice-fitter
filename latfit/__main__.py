@@ -285,7 +285,8 @@ def main():
             retsingle_save = singlefit(input_f, meta.fitwindow,
                                        meta.xmin, meta.xmax, meta.xstep)
             test_success = True
-            print("Test fit succeeded.")
+            if FIT:
+                print("Test fit succeeded.")
             # do the fit range key processing here
             # since the initial fit augments the list
             fit_range_init = str(list(latfit.config.FIT_EXCL))
@@ -330,7 +331,7 @@ def main():
 
             fit_range_init = str(latfit.config.FIT_EXCL)
             try:
-                if not samerange:
+                if not samerange and FIT:
                     print("Trying second test fit.")
                     print("fit excl:", fit_range_init)
                     retsingle_save = singlefit(input_f, meta.fitwindow,

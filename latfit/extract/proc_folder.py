@@ -265,5 +265,5 @@ elif STYPE == 'ascii':
                     debug = [root, dirs]
         return retname, flag2, debug
 
-misc.halftotal = halftotal
-misc.binout = binout
+misc.HALFTOTAL = halftotal
+misc.BINOUT = binout
