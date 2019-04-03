@@ -27,6 +27,7 @@ P111 = None
 
 def mass():
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
+    pionstr = '_pioncorrChk_'
     if misc.MASS == 0:
         try:
             fn1 = open('x_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
@@ -38,6 +39,7 @@ def mass():
 def p1():
     """E_pi(|p|=1)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
+    pionstr = '_pioncorrChk_'
     if LATTICE == '24c':
         ret = 0.29641
     elif LATTICE == '32c':
@@ -56,6 +58,7 @@ p1.P1 = None
 def p11():
     """E_pi(|p|=11)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
+    pionstr = '_pioncorrChk_'
     if LATTICE == '24c':
         ret = 0.39461
     elif LATTICE == '32c':
@@ -74,6 +77,7 @@ p11.P11 = None
 def p111():
     """E_pi(|p|=11)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
+    pionstr = '_pioncorrChk_'
     if LATTICE == '24c':
         ret = 0.4715
     elif LATTICE == '32c':
