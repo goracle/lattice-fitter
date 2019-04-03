@@ -69,7 +69,7 @@ def make_hist(fname):
         errfn = fname.replace('_', "_err_", 1)
     else:
         errfn = re.sub('_mom', '_err_mom', fname)
-    print("file with stat errors:", errfn)
+    #print("file with stat errors:", errfn)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
         errdat = np.real(np.array(errdat))
@@ -92,7 +92,7 @@ def make_hist(fname):
             median_diff2 = np.inf
             half = 0
             errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
-            print(freqarr[:, dim], errlooparr)
+            #print(freqarr[:, dim], errlooparr)
             loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                           key = lambda elem: elem[2], reverse=True)
             median_err = []
@@ -121,6 +121,7 @@ def make_hist(fname):
             # erronerrmedianstr = str(gvar.gvar(freq_median,
             #                                   sys_err.sdev)).split('(')[1]
             median = gvar.gvar(freq_median, sys_err)
+            maxdiff = 0
             for j,(i,pval) in enumerate(median_err):
                 pval = trunc(pval)
                 median_diff = i-median
@@ -139,10 +140,18 @@ def make_hist(fname):
                 if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                         median_diff.val)>abs(median_diff.sdev):
                     print(i, pval, l)
-                    print("diffs", ind_diff, median_diff, avg_diff)
+                    #print("")
+                    #print("diffs", ind_diff, median_diff, avg_diff)
+                    #print("")
                 elif ind_diff.val or ind_diff.sdev:
                     print(i, pval, l)
-                    print(ind_diff)
+                    maxdiff = max(maxdiff, np.abs(
+                        ind_diff.val-ind_diff.sdev)/ind_diff.sdev)
+                    if maxdiff == np.abs(
+                            ind_diff.val-ind_diff.sdev)/ind_diff.sdev:
+                        print("")
+                        print(ind_diff)
+                        print("")
                 else:
                     print(i, pval, l)
             print('p-value weighted median =', str(median))
