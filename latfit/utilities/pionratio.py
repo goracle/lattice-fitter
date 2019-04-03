@@ -41,6 +41,7 @@ STYPE = 'hdf5'
 
 # ensemble specific hack
 DELTAT = 4 if TSTEP == 10 else 3
+print("Using DELTAT=", DELTAT)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -176,7 +177,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
             # (either numerator or denominator has decayed completely)
             # set amps to NaN
             if rat < 0:
-                if tmin == 13 or tmax == 13:
+                if tmin == int(13*DELTAT/4) or tmax == int(13*DELTAT/4):
                     print("ratio is less than 0")
                     print(tmin, tmax)
                     print('failing rank:', MPIRANK)
@@ -245,6 +246,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         amps1.append(amp1)
         amps2.append(amp2)
         energies.append(eff_energy)
+        #print('eff_energy', eff_energy, 'amp1', amp1, 'amp2', amp2)
     amps1 = np.array(amps1)
     amps2 = np.array(amps2)
     energies = np.asarray(energies)
@@ -302,7 +304,8 @@ def atw_transform(pi1, reverseatw=False):
                     zeroit = True
                     if tdis < LT/2-2*TSEP or tdis > LT/2+2*TSEP:
                         print("nan'ing tdis=", tdis, 'rank=', MPIRANK)
-                        assert tdis != 17 or reverseatw, "rank:"+str(MPIRANK)
+                        assert tdis != int(
+                            17*DELTAT/4) or reverseatw, "rank:"+str(MPIRANK)
             #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
             try:
                 newpi1[:, tsrc, tdis], newpi2[:,tsrc, tdis] = morecorr(
@@ -535,7 +538,8 @@ def piondirect(atw=False, reverseatw=False):
 
             if not atw:
                 try:
-                    assert top1[0][0] > 100 or np.isnan(top1[0][0]), top1[0][0]
+                    assert top1[0][0] > 100 or np.isnan(
+                        top1[0][0]), top1[0][0]
                 except AssertionError:
                     print("top1 is (likely) too small")
                     print(toppi[0,0])
@@ -567,12 +571,14 @@ def piondirect(atw=False, reverseatw=False):
             # for use in I=1
             top3 = -1*top2
 
-            try:
-                assert top2[0][0] > 100 or np.isnan(top2[0][0]), str(top2[0][0])
-            except AssertionError:
-                print("topology 2 has anomalous size")
-                print(top2)
-                sys.exit(1)
+            if not atw:
+                try:
+                    assert top2[0][0] > 100 or np.isnan(
+                        top2[0][0]), str(top2[0][0])
+                except AssertionError:
+                    print("topology 2 has anomalous size (momg,momf)=", momg,momf)
+                    print(top2)
+                    sys.exit(1)
             momstr = 'sep'+str(TSEP)+'_mom1src'+rf.ptostr(momf)+\
                 '_mom2src'+rf.ptostr(momg)+'_mom1snk'
             key1 = addfigd(momstr)+rf.ptostr(momg)
@@ -667,6 +673,7 @@ def coeffto1(ocs):
 @PROFILE
 def aroundworldsubtraction(allblks, deltat=3):
     """Around the world subtraction (by 3)"""
+    assert None, "not supported"
     for blk in allblks:
         t1blk = copy.deepcopy(np.asarray(allblks[blk]))
         t2blk = copy.deepcopy(np.roll(allblks[blk], deltat, axis=1))
