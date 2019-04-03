@@ -1096,7 +1096,8 @@ if EFF_MASS:
         # subtract the non-interacting around the world piece
         if '000' not in IRREP and not NOATWSUB:
             assert pionratio.DELTAT == delta_t,\
-                "weak check of delta_t failed"
+                "weak check of delta_t failed:"+str(pionratio.DELTAT)+\
+                ","+str(delta_t)
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
             mean_cmats_lhs[i] = atwsub(mean, timeij+i)
