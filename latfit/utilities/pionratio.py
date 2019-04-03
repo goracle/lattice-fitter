@@ -40,7 +40,9 @@ MOM = [0, 0, 0]
 STYPE = 'hdf5'
 
 # ensemble specific hack
-DELTAT = 4 if TSTEP == 10 else 3
+# DELTAT is T-T0 where T,T0 are RHS, LHS time separations
+# used in the GEVP
+DELTAT = 4 if TSTEP == 10 else 1
 print("Using DELTAT=", DELTAT)
 
 try:
@@ -188,7 +190,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         else:
             rconfig = np.zeros(len(corr), dtype=np.complex)+1
     try:
-        if tmod2 < LT/4 and tmod1 < LT/4 and tmod1 != tmod2:
+        if tmod2 < LT/6 and tmod1 < LT/6 and tmod1 != tmod2:
             assert rconfig[0] > 0
     except AssertionError:
         print('correlator ratio < 1')
