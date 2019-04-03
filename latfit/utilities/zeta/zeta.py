@@ -91,7 +91,7 @@ if CALC_PHASE_SHIFT:
             try:
                 out = complex(float(out))
             except ValueError:
-                print("unable to convert phase shift to number")
+                print("unable to convert phase shift to number:", out)
                 print("check to make sure there does not exist"+\
                       " debugging which needs to be turned off.")
                 print(out)
