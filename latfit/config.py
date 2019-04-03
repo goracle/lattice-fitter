@@ -575,6 +575,9 @@ METHOD = 'Nelder-Mead'
 METHOD = 'L-BFGS-B'
 METHOD = 'minuit'
 
+if METHOD == 'minuit':
+    START_PARAMS = [0 for _ in START_PARAMS]
+
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed
 
