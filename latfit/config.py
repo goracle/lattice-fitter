@@ -170,6 +170,7 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 NOATWSUB = True
 NOATWSUB = False
 NOATWSUB = False if ISOSPIN == 2 else NOATWSUB
+NOATWSUB = True if ISOSPIN == 1 else NOATWSUB
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -1017,3 +1018,4 @@ if ISOSPIN == 2 and GEVP:
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 if not NOATWSUB:
     print("matrix subtraction:", MATRIX_SUBTRACTION)
+assert not ISOSPIN == 1 or NOATWSUB, "I=1 has no ATW terms."
