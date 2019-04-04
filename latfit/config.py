@@ -27,7 +27,7 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 1
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -619,7 +619,7 @@ REINFLATE_BEFORE_LOG = False
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
-if ISOSPIN == 1:
+if ISOSPIN == 1 and GEVP:
     OPERATOR_NORMS[0] = complex(0+1j)
     OPERATOR_NORMS[2] = complex(0+1j)
     OPERATOR_NORMS[3] = complex(0+1j)
