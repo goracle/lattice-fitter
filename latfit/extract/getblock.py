@@ -63,10 +63,10 @@ if len(DISP_ENERGIES) != MULT and GEVP:
             if hasattr(DISP_ENERGIES[0], '__iter__'):
                 assert i, "rho/sigma should not be first operator."
                 DISP_ENERGIES.insert(
-                    i, np.zeros(len(DISP_ENERGIES[0])),
-                    dtype=np.complex)
+                    i, np.zeros(len(DISP_ENERGIES[0]), dtype=np.complex))
             else:
                 DISP_ENERGIES.insert(i, 0)
+DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
 
 """
 if PIONRATIO and GEVP:
@@ -813,9 +813,14 @@ def aroundtheworld_pionratio(diag_name, timeij):
         exp = DELTA_E_AROUND_THE_WORLD
         exp2 = DELTA_E2_AROUND_THE_WORLD
         if exp is not None:
-            ret *= math.exp(exp*timeij)
             sub = proc_folder(name, timeij-DELTA_T_MATRIX_SUBTRACTION)
-            sub *= math.exp(exp*(timeij-DELTA_T_MATRIX_SUBTRACTION))
+            if hasattr(exp, '__iter__'):
+                for i in range(len(exp)):
+                    ret[i] *= math.exp(exp[i]*timeij)
+                    sub[i] *= math.exp(exp[i]*(timeij-DELTA_T_MATRIX_SUBTRACTION))
+            else:
+                ret *= math.exp(exp*timeij)
+                sub *= math.exp(exp*(timeij-DELTA_T_MATRIX_SUBTRACTION))
             ret -= sub
         if exp2 is not None:
             ret *= math.exp(exp2*timeij)

@@ -67,7 +67,7 @@ T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS3' # t-1
 if LATTICE_ENSEMBLE == '24c':
-    T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS1'
+    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS3'
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
@@ -114,7 +114,7 @@ misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
 misc.PIONRATIO = PIONRATIO
-DISP_ENERGIES = opc.free_energies(IRREP, misc.MASS, L_BOX) if GEVP else []
+DISP_ENERGIES = opc.free_energies(IRREP, misc.massfunc(), L_BOX) if GEVP else []
 # manual, e.g.
 # DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
 # print(misc.dispersive([1, 1, 1]))
@@ -177,9 +177,7 @@ NOATWSUB = True if ISOSPIN == 1 else NOATWSUB
 # do the subtraction at the level of the GEVP matrix
 MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = True
-MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' and ISOSPIN == 2 else MATRIX_SUBTRACTION
-#MATRIX_SUBTRACTION = True if IRREP == 'A_1PLUS_mom000'\
-#    else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
@@ -212,7 +210,7 @@ DELTA_E2_AROUND_THE_WORLD = None
 
 if IRREP == 'A1_mom1':
     # the exception to the usual pattern for p1
-    E21 = misc.MASS
+    E21 = misc.massfunc()
     E22 = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)
 else:
     # the general E2
@@ -246,7 +244,7 @@ DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
 
 # change this if the slowest pion is not stationary
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
-    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.MASS if GEVP\
+    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.massfunc() if GEVP\
     and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 
 if FIT_SPACING_CORRECTION:
@@ -504,8 +502,8 @@ PLOT_DISPERSIVE = False if not GEVP else True
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
+DECREASE_VAR = 1
 DECREASE_VAR = 1e-4
-DECREASE_VAR = 1 if PIONRATIO else DECREASE_VAR
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues
@@ -705,7 +703,7 @@ UP.c = C
 UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
 UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
 UP.tstep2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else UP.tstep2
-UP.pionmass = misc.MASS
+UP.pionmass = misc.massfunc()
 UP.pionratio = False
 UP.lent = LT
 UP.gevp = GEVP
@@ -780,7 +778,7 @@ if EFF_MASS:
                                 -(trial_params[-1]-trial_params[3*i])*ctime)
                                      for i in rrl]
                             term3 = [trial_params[3*i+2]*exp(
-                                -1*LT*misc.MASS)*exp(
+                                -1*LT*misc.massfunc())*exp(
                                     -1*ctime*DELTA_E_AROUND_THE_WORLD)
                                      for i in rrl]
                             #print(term1,term2,term3)
@@ -801,7 +799,7 @@ if EFF_MASS:
                                 -(trial_params[-1]-trial_params[4*i])*ctime)
                                      for i in rrl]
                             term3 = [trial_params[
-                                4*i+2]*exp(-1*LT*misc.MASS)*exp(
+                                4*i+2]*exp(-1*LT*misc.massfunc())*exp(
                                     -1*ctime*(
                                         trial_params[
                                             4*i]-DELTA_E_AROUND_THE_WORLD))
@@ -982,8 +980,8 @@ assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO,\
     "isospin 2 is the only user of this"+\
     " lattice spacing correction method"
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
-    assert DELTA_E_AROUND_THE_WORLD == 0.0,\
-        "only 1 constant in COMP frame"
+    assert np.all(DELTA_E_AROUND_THE_WORLD == 0.0),\
+        "only 1 constant in COMP frame:"+str(DELTA_E_AROUND_THE_WORLD)
     assert DELTA_E2_AROUND_THE_WORLD is None,\
         "only 1 constant in COMP frame"
 if GEVP:

@@ -38,6 +38,7 @@ def massfunc():
             fn1 = open('x_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
             massfunc.MASS = pickle.load(fn1)
             print("load of jackknifed mass successful")
+            massfunc.MASS = massfunc.MASS.flatten()
         except FileNotFoundError:
             print("jackknifed mass not found")
             massfunc.MASS = MASS
@@ -59,7 +60,7 @@ def p1():
             p1.P1 = pickle.load(fn1)
             print("load of jackknifed p1 energy successful")
         except FileNotFoundError:
-            print("jackknifed p1 energy not found")
+            #print("jackknifed p1 energy not found")
             pass
     if p1.P1 is not None:
         ret = p1.P1
@@ -80,7 +81,7 @@ def p11():
             p11.P11 = pickle.load(fn1)
             print("load of jackknifed p11 energy successful")
         except FileNotFoundError:
-            print("jackknifed p11 energy not found")
+            #print("jackknifed p11 energy not found")
             pass
     if p11.P11 is not None:
         ret = p11.P11
@@ -101,7 +102,7 @@ def p111():
             p111.P111 = pickle.load(fn1)
             print("load of jackknifed p111 energy successful")
         except FileNotFoundError:
-            print("jackknifed p111 energy not found")
+            #print("jackknifed p111 energy not found")
             pass
     if p111.P111 is not None:
         ret = p111.P111
@@ -207,12 +208,23 @@ def norm2(mom):
 def dispersive(momentum, mass=None, box_length=None, continuum=False):
     """get the dispersive analysis energy == sqrt(m^2+p^2)"""
     mass = massfunc() if mass is None else mass
+    mass = np.asarray(mass)
     assert continuum == CONTINUUM, "dispersion relation mismatch."
     box_length = BOX_LENGTH if box_length is None else box_length
-    ret = np.sqrt((mass)**2+ 4*np.sin(
-        pi/box_length)**2*norm2(momentum)) # two pions so double the mass
-    ret = np.sqrt(mass**2+(2*pi/box_length)**2*norm2(
-        momentum)) if continuum else ret
+    if hasattr(mass, '__iter__'):
+        ret = [sqrt(i**2 + 4*np.sin(pi/box_length)**2*norm2(momentum)) for i in mass]
+        ret = [sqrt(i**2+(2*pi/box_length)**2*norm2(momentum)) for i in mass]\
+            if continuum else ret
+    else:
+        ret = sqrt(mass**2 + 4*np.sin(pi/box_length)**2*norm2(momentum))
+        ret = sqrt(mass**2+(2*pi/box_length)**2*norm2(momentum))\
+            if continuum else ret
+    if not np.sum(momentum):
+        try:
+            assert np.allclose(ret, mass, rtol=1e-8), "precision gain"
+        except AssertionError:
+            ret = massfunc()
+            assert np.allclose(ret, mass, rtol=1e-16), "precision gain"
     ret = np.asarray(ret)
     ret = ret.flatten()
     return ret

@@ -143,10 +143,18 @@ def matsub(files, sub, dt1, dt12='One'):
     delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else DELTA_E2_AROUND_THE_WORLD
     for timeidx in sub:
         sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))
-        sub[timeidx] *= math.exp(delta_e*timeidx)
+        if hasattr(delta_e, '__iter__'):
+            for i in range(len(delta_e)):
+                sub[timeidx][:,:,i] *= math.exp(delta_e[i]*timeidx)
+        else:
+            sub[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
         files[timeidx] = copy.deepcopy(np.asarray(files[timeidx]))
-        files[timeidx] *= math.exp(delta_e*timeidx)
+        if hasattr(delta_e, '__iter__'):
+            for i in range(len(delta_e)):
+                files[timeidx][:,:,i] *= math.exp(delta_e[i]*timeidx)
+        else:
+            files[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
         subidx = max(timeidx-dt1, 0)
         subterm[timeidx] = files[subidx] if subidx in files else sub[subidx]
