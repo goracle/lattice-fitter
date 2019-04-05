@@ -145,6 +145,8 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
     correction = np.zeros(energies.shape, np.float)
     for dim in range(len(energies)):
         moms = freemomenta(irr, dim)
+        if moms is None:
+            break
         try:
             assert moms is not None, "momenta not found; irrep has resonance"
         except AssertionError:

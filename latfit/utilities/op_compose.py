@@ -22,6 +22,7 @@ def freemomenta(irrep, dim):
     irrep = representative_row(irrep)
     currop = ''
     cdim = -1
+    ret = None
     for _, opstr, mom in OPLIST[irrep]:
         if currop != opstr:
             currop = opstr
