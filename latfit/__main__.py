@@ -391,6 +391,7 @@ def main():
                     continue
                 if toosmallp(meta, excl):
                     print('excl:', excl, 'is too small')
+                    continue
 
                 # update global info about excluded points
                 latfit.config.FIT_EXCL = excl
@@ -636,7 +637,7 @@ def toosmallp(meta, excl):
     ret = False
     excl = excl_inrange(meta, excl)
     # each energy should be included
-    if max([len(i) for i in excl]) == meta.fitwindow[
+    if max([len(i) for i in excl]) >= meta.fitwindow[
             1]-meta.fitwindow[0]+meta.xstep:
         print("skipped all the data points for a GEVP dim, "+\
                 "so continuing.")
@@ -647,19 +648,22 @@ def toosmallp(meta, excl):
             len(i) for i in excl] and\
             not ONLY_SMALL_FIT_RANGES:
         print("only one data point in fit curve, continuing")
-        ret = True
+        # ret = True
+        pass
     if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.xstep > 0 and\
         not ONLY_SMALL_FIT_RANGES:
         if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
             print("warning: only two data points in fit curve")
             # allow for very noisy excited states in I=0
             if not (ISOSPIN == 0 and GEVP):
-                ret = True
+                #ret = True
+                pass
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.xstep)) != len(excl):
         print("not an arithmetic sequence")
-        ret = True
+        # ret = True
+        pass
     ret = False if ISOSPIN == 0 and GEVP else ret
     return ret
 
