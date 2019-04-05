@@ -38,6 +38,7 @@ from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION
+import latfit.config
 
 from mpi4py import MPI
 
@@ -858,6 +859,7 @@ def energies_pionratio(timeij, delta_t):
     avglhs = np.mean(lhs, axis=0)
     avglhs_p1 = np.mean(lhs_p1, axis=0)
     avgrhs = np.mean(rhs, axis=0)
+    exclsave = [list(i) for i in latfit.config.FIT_EXCL]
     try:
         pass
         #assert all(abs(rhs[0]/rhs[0]) > 1)
@@ -887,6 +889,7 @@ def energies_pionratio(timeij, delta_t):
                 energies[i][j] = np.nan
     energies_pionratio.store[(timeij, delta_t)] = energies
     np.seterr(divide='raise', invalid='raise')
+    latfit.config.FIT_EXCL = exclsave
     return energies
 energies_pionratio.store = {}
 
