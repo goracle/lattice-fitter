@@ -757,7 +757,8 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     orig = np.asarray(orig)
     nanindices = []
     if hasattr(orig, '__iter__'):
-        assert hasattr(avg, '__iter__') or len(orig.shape)==1, "dimension mismatch"
+        assert hasattr(avg, '__iter__') or len(
+            orig.shape)==1, "dimension mismatch"
         if len(orig.shape) == 1:
             for i,j in enumerate(orig):
                 if np.isnan(j):
@@ -901,17 +902,24 @@ if PIONRATIO:
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
         print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
-        ret = energies_interacting - energies_noninteracting+np.asarray(DISP_ENERGIES)
+        addzero = -1*energies_noninteracting+np.asarray(DISP_ENERGIES)
+        for i, energy in enumerate(addzero[0]):
+            if np.isnan(energy):
+                assert 'rho' in GEVP_DIRS[
+                    i][i] or 'sigma' in GEVP_DIRS[i][i]
+        addzero = np.nan_to_num(addzero)
+        ret = energies_interacting + addzero
         newe = []
-        for i in range(len(enint)):
+        for i in range(len(addzero)):
             try:
-                assert not any(np.isnan(ennon[i]))
+                assert not any(np.isnan(addzero[i]))
             except AssertionError:
                 print("nan found in pion ratio energies:")
-                print(ennon[i])
+                print(addzero[i])
                 sys.exit(1)
         ret = np.asarray(ret)
-        print(timeij,"before - after (diff):", np.std(enint[:,0])-np.std(ret[:,0]))
+        print(timeij,"before - after (diff):",
+              np.std(enint[:,0])-np.std(ret[:,0]))
         return ret
 else:
     def modenergies(energies, *unused):
