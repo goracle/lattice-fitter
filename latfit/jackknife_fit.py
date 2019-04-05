@@ -25,6 +25,7 @@ from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
+from latfit.config import ISOSPIN
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
@@ -389,15 +390,16 @@ def getsystematic(params, arr):
     params.energyind = None
     if len(arr) != params.dimops and len(arr) and EFF_MASS:
         temp = list(arr)
-        if not (len(START_PARAMS)-1) % 2 and (MATRIX_SUBTRACTION or not NOATWSUB):
+        if not (len(START_PARAMS)-1) % 2 and (
+                MATRIX_SUBTRACTION or not NOATWSUB or ISOSPIN == 1):
             params.energyind = 2
         elif not (len(START_PARAMS)-1) % 3:
             assert None, "no longer supported"
-            assert not MATRIX_SUBTRACTION and NOATWSUB
+            assert not MATRIX_SUBTRACTION and NOATWSUB and ISOSPIN != 1
             params.energyind = 3
         elif not (len(START_PARAMS)-1) % 4:
             assert None, "no longer supported"
-            assert not MATRIX_SUBTRACTION and NOATWSUB
+            assert not MATRIX_SUBTRACTION and NOATWSUB and ISOSPIN != 1
             params.energyind = 4
         del temp[params.energyind-1::params.energyind]
         ret = [item for item in arr if item not in temp]
