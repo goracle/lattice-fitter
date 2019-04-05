@@ -163,6 +163,7 @@ FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
     else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
+FIT_SPACING_CORRECTION = True if PIONRATIO else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
 
@@ -977,7 +978,7 @@ assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
 assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
-assert not FIT_SPACING_CORRECTION or ISOSPIN == 2,\
+assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO,\
     "isospin 2 is the only user of this"+\
     " lattice spacing correction method"
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
@@ -1008,7 +1009,7 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0, IRREP
 if PIONRATIO:
-    assert ISOSPIN == 2
+    #assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
 if ISOSPIN == 2 and GEVP:
     assert not NOATWSUB
