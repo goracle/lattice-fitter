@@ -40,7 +40,7 @@ def massfunc():
             print("load of jackknifed mass successful")
         except FileNotFoundError:
             print("jackknifed mass not found")
-            massfunc.MASS = misc.MASS
+            massfunc.MASS = MASS
             pass
     return massfunc.MASS
 massfunc.MASS = None
