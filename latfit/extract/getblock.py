@@ -425,7 +425,7 @@ def atwsub(cmat, timeij, reverseatw=False):
                 tosub = np.real(tosub)*0
             else:
                 tosub = np.real(tosub)
-            if len(cmat.shape) != 2:
+            if len(cmat.shape) == 3:
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
                 #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
@@ -441,6 +441,10 @@ def atwsub(cmat, timeij, reverseatw=False):
                 assert cmat[:, i, i].shape == tosub.shape
                 # for i in cmat:
                 #   print(i)
+            elif len(cmat.shape) == 2 and len(cmat) != len(cmat[0]):
+                for item in tosub:
+                    assert (item or zeroit) and not np.isnan(item)
+                cmat[:, i] = cmat[:, i]-tosub*np.abs(NORMS[i][i])
             else:
                 cmat[i, i] -= np.mean(tosub, axis=0)*np.abs(NORMS[i][i])
                 #if not reverseatw:
