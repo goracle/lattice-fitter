@@ -365,7 +365,7 @@ def sortevals(evals):
 def makeneg(val):
     """make a value negative"""
     val = drop0imag(val)
-    if hasattr(val, '__iter__'):
+    if hasattr(val, '__iter__') and np.asarray(val).shape:
         if all(val < 0):
             ret = val
         elif any(val < 0):
@@ -383,7 +383,7 @@ def drop0imag(val):
     if isinstance(val, complex):
         if val.imag == 0:
             ret = val.real
-    if hasattr(val, '__iter__'):
+    if hasattr(val, '__iter__') and np.asarray(val).shape:
         if isinstance(val[0], complex):
             if all(val.imag) == 0:
                 ret = val.real
@@ -391,7 +391,7 @@ def drop0imag(val):
             
 def propnan(vals):
     """propagate a nan in a complex value"""
-    if hasattr(vals, '__iter__'):
+    if hasattr(vals, '__iter__') and np.asarray(vals).shape:
         for i,val in enumerate(vals):
             if np.isnan(val) and np.imag(val) != 0:
                 vals[i] = np.nan+2j*np.nan
@@ -460,7 +460,7 @@ def all0imag_ignorenan(vals):
     have 0 imaginary piece or are nan
     """
     ret = True
-    if hasattr(vals, '__iter__'):
+    if hasattr(vals, '__iter__') and np.asarray(vals).shape:
         for i, val in enumerate(vals):
             if np.isnan(val):
                 continue
@@ -765,8 +765,8 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
     orig = np.asarray(orig)
     nanindices = []
-    if hasattr(orig, '__iter__'):
-        assert hasattr(avg, '__iter__') or len(
+    if hasattr(orig, '__iter__') and np.asarray(orig).shape:
+        assert hasattr(avg, '__iter__') and np.asarray(avg).shape or len(
             orig.shape)==1, "dimension mismatch"
         if len(orig.shape) == 1:
             for i,j in enumerate(orig):
@@ -822,7 +822,7 @@ def aroundtheworld_pionratio(diag_name, timeij):
         exp2 = DELTA_E2_AROUND_THE_WORLD
         if exp is not None:
             sub = proc_folder(name, timeij-DELTA_T_MATRIX_SUBTRACTION)
-            if hasattr(exp, '__iter__'):
+            if hasattr(exp, '__iter__') and np.asarray(exp).shape:
                 for i in range(len(exp)):
                     ret[i] *= math.exp(exp[i]*timeij)
                     sub[i] *= math.exp(exp[i]*(timeij-DELTA_T_MATRIX_SUBTRACTION))
@@ -977,7 +977,7 @@ if EFF_MASS:
         solve_gevp.hint = HINTS_ELIM[timeij] if timeij in HINTS_ELIM\
             else None
         assert len(file_tup) == 5, "bad file_tup length:"+str(len(file_tup))
-        if hasattr(delta_t, '__iter__'):
+        if hasattr(delta_t, '__iter__') and np.asarray(delta_t).shape:
             for i, dt1 in enumerate(delta_t):
                 try:
                     assert len(file_tup[1]) == len(delta_t),\
