@@ -60,13 +60,16 @@ if len(DISP_ENERGIES) != MULT and GEVP:
     for i, dur in enumerate(GEVP_DIRS):
         if 'rho' in dur[i] or 'sigma' in dur[i]:
             DISP_ENERGIES = list(DISP_ENERGIES)
-            if hasattr(DISP_ENERGIES[0], '__iter__'):
+            if hasattr(DISP_ENERGIES[0], '__iter__')\
+               and np.asarray(DISP_ENERGIES[0]).shape:
                 assert i, "rho/sigma should not be first operator."
                 DISP_ENERGIES.insert(
                     i, np.zeros(len(DISP_ENERGIES[0]), dtype=np.complex))
             else:
                 DISP_ENERGIES.insert(i, 0)
-DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
+if hasattr(DISP_ENERGIES[0], '__iter__')\
+   and np.asarray(DISP_ENERGIES[0]).shape:
+    DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
 
 """
 if PIONRATIO and GEVP:
