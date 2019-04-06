@@ -8,7 +8,10 @@ def best_times(coord, cov, index, times):
     (todo:make more general?)
     chisq = num/denom
     """
-    dispmean = np.mean(DISP_ENERGIES) if DISP_ENERGIES else 0
+    if hasattr(DISP_ENERGIES, '__iter__'):
+        dispmean = np.mean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
+    else:
+        dispmean = np.mean(DISP_ENERGIES) if DISP_ENERGIES else 0
     dist = []
     for i, ycoord in enumerate(coord):
         chisq = None
@@ -20,11 +23,11 @@ def best_times(coord, cov, index, times):
             except IndexError:
                 num = (ycoord-dispmean)**2
             denom = cov[i, i]
-            assert not np.isnan(num), "difference (chisq numerator)"+\
+            assert not np.any(np.isnan(num)), "difference (chisq numerator)"+\
                 " is not a number "+str(DISP_ENERGIES)+" "+str(ycoord)
             assert denom != 0, "Error: variance is 0"
-            assert not np.isnan(num/denom), "chisq is not a number."
-            chisq = num/denom
+            assert not np.any(np.isnan(num/denom)), "chisq is not a number."
+            chisq = np.mean(num/denom)
         dist.append([times[i], chisq])
     dist = np.array(sorted(dist, key=lambda row: row[1]))
     return dist
