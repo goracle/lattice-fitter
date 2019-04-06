@@ -305,6 +305,7 @@ def main():
             print("new fit window = ", meta.fitwindow)
             plotdata.fitcoord = meta.fit_coord()
         except (NegChisq, RelGammaError, NoConvergence,
+                OverflowError,
                 np.linalg.linalg.LinAlgError, BadJackknifeDist,
                 DOFNonPos, BadChisq, ZetaError) as err:
             print("fit failed (acceptably) with error:",
@@ -487,6 +488,7 @@ def main():
                     result_min, result_min_close,
                     meta.skiploop, param_err, param_err_close)
 
+                print("fit window = ", meta.fitwindow)
                 # plot the result
                 mkplot(plotdata, input_f, result_min,
                        param_err, meta.fitwindow)
