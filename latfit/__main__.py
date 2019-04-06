@@ -473,7 +473,8 @@ def main():
                           latfit.config.FIT_EXCL)
 
                 if (not (meta.skiploop and latfit.config.MINTOL)\
-                   and METHOD == 'Nelder-Mead') or not test_success:
+                   and METHOD == 'Nelder-Mead') or not test_success\
+                   and (len(min_arr) + len(overfit_arr) > 1):
                         latfit.config.MINTOL = True
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax,
