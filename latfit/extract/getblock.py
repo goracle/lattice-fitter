@@ -122,6 +122,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
                     file_tup[opa][opb], num+1)*NORMS[opa][opb]
                 assert isinstance(corr, np.complex) or \
                     isinstance(corr, str)
+                # takes the real if posimag==False
                 cmat[num][opa][opb] = proc_line(corr, file_tup[opa][opb])
         cmat[num] = enforce_hermiticity(cmat[num])
         checkherm(cmat[num])
