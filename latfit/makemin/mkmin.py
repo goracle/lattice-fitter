@@ -19,7 +19,7 @@ from collections import namedtuple
 from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
 
-def mkmin(covinv, coords):
+def mkmin(covinv, coords, method=METHOD):
     """Minimization of chi^2 section of fitter.
     Return minimized result.
     """
@@ -49,14 +49,14 @@ def mkmin(covinv, coords):
     else:
         start_params = [*START_PARAMS, *START_PARAMS,
                         *START_PARAMS] if SYSTEMATIC_EST else START_PARAMS
-    if METHOD not in set(['L-BFGS-B', 'minuit']):
+    if method not in set(['L-BFGS-B', 'minuit']):
         if latfit.config.MINTOL:
             options = {'maxiter': 10000, 'maxfev': 10000,
                        'xatol': 0.00000001, 'fatol': 0.00000001}
         else:
             options = {}
         res_min = minimize(chi_sq, start_params, (covinv, coords),
-                           method=METHOD,
+                           method=method,
                            options=options)
         #else:
         #    res_min = minimize(chi_sq, start_params, (covinv, coords),
@@ -68,14 +68,14 @@ def mkmin(covinv, coords):
         # method = 'L-BFGS-B'
         # bounds = BINDS
         # options = {'disp': True}
-    if METHOD in set(['L-BFGS-B']):
+    if method in set(['L-BFGS-B']):
         if latfit.config.MINTOL:
             options = {}
         else:
             options = {}
         try:
             res_min = minimize(chi_sq, start_params, (covinv, coords),
-                               method=METHOD, bounds=BINDS,
+                               method=method, bounds=BINDS,
                                options=options)
         except FloatingPointError:
             print('floating point error')
@@ -86,11 +86,11 @@ def mkmin(covinv, coords):
             sys.exit(1)
         
     # print "minimized params = ", res_min.x
-    if 'minuit' in METHOD:
+    if 'minuit' in method:
         options = {}
         try:
             res_min = minit(chi_sq, start_params, (covinv, coords),
-                            method=METHOD, bounds=BINDS,
+                            method=method, bounds=BINDS,
                             options=options)
             status = res_min.minuit.get_fmin().is_valid
             status = 0 if res_min.success else 1

@@ -98,6 +98,12 @@ if JACKKNIFE_FIT == 'FROZEN':
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
+                result_min_jack = mkmin(covinv_jack, coords_jack, 'minuit')
+                result_min.status = result_min_jack.status
+                if result_min_jack.status != 0:
+                    result_min_jack = mkmin(
+                        covinv_jack, coords_jack, 'L-BFGS-B')
+                    result_min.status = result_min_jack.status
             print("config", config_num, ":",
                   result_min_jack.x, "chisq/dof=",
                   result_min_jack.fun/result_min.dof)
@@ -193,7 +199,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
-                raise NoConvergence
+                result_min_jack = mkmin(covinv_jack, coords_jack, 'minuit')
+                result_min.status = result_min_jack.status
+                if result_min_jack.status != 0:
+                    result_min_jack = mkmin(
+                        covinv_jack, coords_jack, 'L-BFGS-B')
+                    result_min.status = result_min_jack.status
+                    if result_min_jack.status != 0:
+                        raise NoConvergence
 
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
