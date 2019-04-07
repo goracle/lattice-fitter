@@ -194,8 +194,9 @@ class FitRangeMetaData:
         if not self.random_fit and not self.skiploop:
             for excl in EXCL_ORIG:
                 if len(excl) > 1:
-                    assert False
-                    self.skiploop = True
+                    #assert None
+                    #self.skiploop = True
+                    self.skiploop = False
 
     def generate_combinations(self):
         """Generate all possible fit ranges"""
