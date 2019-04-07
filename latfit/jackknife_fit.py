@@ -965,6 +965,7 @@ class DOFNonPos(Exception):
     def __init__(self, dof=None, message=''):
         print("***ERROR***")
         print("dof < 1: dof=", dof)
+        print("FIT_EXCL=", latfit.config.FIT_EXCL)
         super(DOFNonPos, self).__init__(message)
         self.dof = dof
         self.message = message
