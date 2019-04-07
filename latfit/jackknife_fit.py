@@ -26,6 +26,7 @@ from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import ISOSPIN
+from latfit.config import SKIP_OVERFIT
 from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
@@ -39,6 +40,8 @@ MIN = namedtuple('min',
                   'error_bars', 'dof', 'phase_shift',
                   'phase_shift_err', 'scattering_length',
                   'scattering_length_err'])
+
+WINDOW = []
 
 class ResultMin:
     def __init__(self):
@@ -140,9 +143,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.dof = len(coords)*params.dimops-len(START_PARAMS)
         for i in coords[:, 0]:
             for j in latfit.config.FIT_EXCL:
-                if i in j:
+                if i in j and i in WINDOW:
                     result_min.dof -= 1
         if result_min.dof < 1:
+            print("dof < 1. dof =", result_min.dof)
+            print("fit window:", WINDOW)
+            print("excl:", latfit.config.FIT_EXCL)
             raise DOFNonPos(dof=result_min.dof)
 
         # alloc storage
@@ -249,7 +255,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
                 # check if chisq too big, too small
                 if result_min_jack.fun > chisq_fiduc_cut or\
-                   result_min_jack.fun < chisq_fiduc_overfit_cut:
+                   (SKIP_OVERFIT and result_min_jack.fun < chisq_fiduc_overfit_cut):
                     skip_votes.append(config_num)
 
                 if config_num == 1+SUPERJACK_CUTOFF:

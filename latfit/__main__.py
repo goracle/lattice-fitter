@@ -39,6 +39,7 @@ from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import GEVP, STYPE, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_ITER, BIASED_SPEEDUP, MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
+from latfit.config import SKIP_OVERFIT
 from latfit.jackknife_fit import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 import latfit.extract.getblock
@@ -61,6 +62,7 @@ from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
 from latfit.config import ONLY_SMALL_FIT_RANGES
 import latfit.config
+import latfit.jackknife_fit
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -248,6 +250,7 @@ class FitRangeMetaData:
         ret = np.arange(self.fitwindow[0],
                         self.fitwindow[1]+self.xstep, self.xstep)
         ret = list(ret)
+        latfit.jackknife_fit.WINDOW = ret
         return ret
 
 
@@ -270,6 +273,7 @@ def main():
     meta.xstep = xstep_err(options.xstep, input_f)
     meta.xmin_mat_sub()
     meta.fitwindow = fitrange_err(options, meta.xmin, meta.xmax)
+    meta.actual_range()
     print("fit window = ", meta.fitwindow)
     latfit.config.TSTEP = meta.xstep
     plotdata.fitcoord = meta.fit_coord()
@@ -355,7 +359,8 @@ def main():
                                  overfit_arr, param_err):
                     result = [result_min, list(param_err),
                               list(latfit.config.FIT_EXCL)]
-                    if result_min.fun/result_min.dof >= 1: # don't overfit
+                    # don't overfit
+                    if result_min.fun/result_min.dof >= 1 and SKIP_OVERFIT: 
                         min_arr.append(result)
                     else:
                         overfit_arr.append(result)
