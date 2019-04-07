@@ -407,14 +407,14 @@ def print_messages(result_min, param_err, param_chisq):
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
     print("chi^2 minimized = ", chisq_str)
-    print("degrees of freedom = ", param_chisq.dof)
+    print("degrees of freedom = ", result_min.dof)
     print("epsilon (inflation/deflation of GEVP parameter)", DECREASE_VAR)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
        JACKKNIFE == 'YES':
         print("avg p-value = ", gvar.gvar(result_min.pvalue,
                                           result_min.pvalue_err))
         print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
-                                                            param_chisq.dof))
+                                                            result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
@@ -482,7 +482,7 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
         param_chisq.dof -= 1
-    print("param_chisq.dof=", param_chisq.dof)
+    #print("param_chisq.dof=", param_chisq.dof)
     print("FIT_EXCL=", latfit.config.FIT_EXCL)
     for k, i in enumerate(latfit.config.FIT_EXCL):
         if k >= len(result_min.x): # if we leave off a gevp dimension
@@ -490,13 +490,13 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
         for j in i:
             if j in xcoord:
                 param_chisq.dof -= 1
-    param_chisq.redchisq = result_min.fun/param_chisq.dof
+    param_chisq.redchisq = result_min.fun/result_min.dof
     if JACKKNIFE_FIT:
         # redchisq_str = str(param_chisq.redchisq)
         # redchisq_str += '+/-'+str(result_min.chisq_err/param_chisq.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
-                result_min.chisq_err/param_chisq.dof > 10
-                or result_min.chisq_err/param_chisq.dof < .1):
+                result_min.chisq_err/result_min.dof > 10
+                or result_min.chisq_err/result_min.dof < .1):
             param_chisq.redchisq_round_str = format_chisq_str(
                 param_chisq.redchisq, plus=False)
         else:
@@ -845,6 +845,6 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
     # if result_min.status == 0 and param_chisq.redchisq < 2:
     if param_chisq.redchisq < 2:
         annotate_chisq(param_chisq.redchisq_round_str,
-                       param_chisq.dof, result_min)
+                       result_min.dof, result_min)
     annotate_jack()
     annotate_uncorr(coords, dimops)
