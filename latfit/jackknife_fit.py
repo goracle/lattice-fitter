@@ -454,6 +454,10 @@ def getenergies(params, arr):
         ret = arr[0::params.energyind][:-1]
     else:
         ret = arr
+    for i,j in zip(sorted(list(ret)), ret):
+        if i != j:
+            print("mis-sorted energies:", ret)
+            raise EnergySortError
     return ret
 
 def phase_shift_scatter_len_avg(min_arr, phase_shift, params):
@@ -929,6 +933,16 @@ def jack_errorbars(covjack, params):
         print("shape =", covjack.shape)
         sys.exit(1)
     return error_bars
+
+class EnergySortError(Exception):
+    """If the energies are not sorted in ascending order
+    (if the systematic errors are large)
+    """
+    def __init__(self, dof=None, message=''):
+        print("***ERROR***")
+        print("Energies are not sorted in ascending order")
+        super(EnergySortError, self).__init__(message)
+        self.message = message
 
 class BadJackknifeDist(Exception):
     """Exception for bad jackknife distribution"""

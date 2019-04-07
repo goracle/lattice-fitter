@@ -57,6 +57,7 @@ from latfit.extract.getblock import XmaxError
 from latfit.utilities.zeta.zeta import RelGammaError, ZetaError
 from latfit.jackknife_fit import DOFNonPos, BadChisq
 from latfit.jackknife_fit import BadJackknifeDist, NoConvergence
+from latfit.jackknife_fit import EnergySortError
 from latfit.config import MULT, RANGE_LENGTH_MIN 
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
@@ -309,7 +310,7 @@ def main():
             print("new fit window = ", meta.fitwindow)
             plotdata.fitcoord = meta.fit_coord()
         except (NegChisq, RelGammaError, NoConvergence,
-                OverflowError,
+                OverflowError, EnergySortError,
                 np.linalg.linalg.LinAlgError, BadJackknifeDist,
                 DOFNonPos, BadChisq, ZetaError) as err:
             print("fit failed (acceptably) with error:",
@@ -345,7 +346,7 @@ def main():
                     print("Test fit succeeded.")
                     test_success = True
             except (NegChisq, RelGammaError, OverflowError, NoConvergence,
-                    BadJackknifeDist, DOFNonPos,
+                    BadJackknifeDist, DOFNonPos, EnergySortError,
                     BadChisq, ZetaError) as err:
                 print("fit failed (acceptably) with error:",
                       err.__class__.__name__)
@@ -424,7 +425,7 @@ def main():
                         if meta.lenprod == 1 or MAX_RESULTS == 1:
                             retsingle_save = retsingle
                     except (NegChisq, RelGammaError, OverflowError,
-                            NoConvergence,
+                            NoConvergence, EnergySortError,
                             BadJackknifeDist,
                             DOFNonPos, BadChisq, ZetaError) as err:
                         # skip on any error
