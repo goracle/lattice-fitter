@@ -118,7 +118,7 @@ def free_energies(irrep, pionmass, lbox):
         energy = 0
         for pin in mom:
             # print(pionmass, pin, lbox)
-            if hasattr(pionmass, '__iter__'):
+            if hasattr(pionmass, '__iter__') and np.asarray(pionmass).shape:
                 toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(pin)) for i in pionmass]
             else:
                 toadd = sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
