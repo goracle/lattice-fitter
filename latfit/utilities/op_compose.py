@@ -22,7 +22,6 @@ def freemomenta(irrep, dim):
     irrep = representative_row(irrep)
     currop = ''
     cdim = -1
-    ret = None
     for _, opstr, mom in OPLIST[irrep]:
         if currop != opstr:
             currop = opstr
@@ -118,19 +117,9 @@ def free_energies(irrep, pionmass, lbox):
         energy = 0
         for pin in mom:
             # print(pionmass, pin, lbox)
-            if hasattr(pionmass, '__iter__'):
-                toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(pin)) for i in pionmass]
-            else:
-                toadd = sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
-            toadd = np.array(toadd)
-            energy += toadd
+            energy += sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
         retlist.append(energy)
-    averages = [np.mean(i) for i in retlist]
-    sortedret = []
-    for i,mean in enumerate(averages):
-        if np.mean(retlist[i]) == mean:
-            sortedret.append(retlist[i])
-    return sortedret
+    return sorted(retlist)
 
 def representative_row(irrep):
     if irrep in AVG_ROWS:
