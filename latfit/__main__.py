@@ -416,6 +416,8 @@ def main():
                                               meta.xstep)
                         print("fit succeeded for this selection"+\
                               " excluded points=", excl)
+                        if meta.lenprod == 1 or MAX_RESULTS == 1:
+                            retsingle_save = retsingle
                     except (NegChisq, RelGammaError, OverflowError,
                             NoConvergence,
                             BadJackknifeDist,

@@ -211,14 +211,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # we shifted the GEVP energy spectrum down
             # to fix the leading order around the world term so shift it back
             min_arr[config_num] = np.asarray(min_arr[config_num])+\
-                (DELTA_E_AROUND_THE_WORLD if GEVP else 0)+(
-                    DELTA_E2_AROUND_THE_WORLD if DELTA_E2_AROUND_THE_WORLD\
-                    is not None else 0)+\
-                    (misc.correct_epipi(min_arr[config_num],
-                                        config_num=config_num)
-                     if FIT_SPACING_CORRECTION and GEVP else 0)
-
-
+                correction(min_arr, config_num)
 
             # compute phase shift, if necessary
             if CALC_PHASE_SHIFT:
@@ -366,6 +359,23 @@ def chisqfiduc(num_configs, dof):
     #print(ret/dof, sol/dof, num_configs, dof, PVALUE_MIN,
     #      1-stats.chi2.cdf(ret, dof), 1-stats.chi2.cdf(sol, dof))
     return ret
+
+def correction(min_arr, config_num):
+    """Correct the jackknifed E_pipi"""
+    if hasattr(DELTA_E_AROUND_THE_WORLD, '__iter__') and\
+       np.asarray(DELTA_E_AROUND_THE_WORLD).shape:
+        corre1 = DELTA_E_AROUND_THE_WORLD[config_num]
+    if hasattr(DELTA_E2_AROUND_THE_WORLD, '__iter__') and\
+       np.asarray(DELTA_E2_AROUND_THE_WORLD).shape:
+        corre2 = DELTA_E2_AROUND_THE_WORLD[config_num]
+    ret = (corre1 if GEVP else 0)+(
+        corre2 if DELTA_E2_AROUND_THE_WORLD\
+        is not None else 0)+\
+        (misc.correct_epipi(min_arr[config_num],
+                            config_num=config_num)
+         if FIT_SPACING_CORRECTION and GEVP else 0)
+    return ret
+
 
 def unnan_coords(coords):
     """replace nan's with 0 in coords"""
