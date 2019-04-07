@@ -367,9 +367,13 @@ def correction(min_arr, config_num):
     if hasattr(DELTA_E_AROUND_THE_WORLD, '__iter__') and\
        np.asarray(DELTA_E_AROUND_THE_WORLD).shape:
         corre1 = DELTA_E_AROUND_THE_WORLD[config_num]
+    else:
+        corre1 = DELTA_E_AROUND_THE_WORLD
     if hasattr(DELTA_E2_AROUND_THE_WORLD, '__iter__') and\
        np.asarray(DELTA_E2_AROUND_THE_WORLD).shape:
         corre2 = DELTA_E2_AROUND_THE_WORLD[config_num]
+    else:
+        corre2 = DELTA_E2_AROUND_THE_WORLD
     ret = (corre1 if GEVP else 0)+(
         corre2 if DELTA_E2_AROUND_THE_WORLD\
         is not None else 0)+\
