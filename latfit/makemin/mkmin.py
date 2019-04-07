@@ -135,6 +135,11 @@ def mkmin(covinv, coords, method=METHOD):
     # print covinv
     if not res_min.status:
         if res_min.fun < 0:
+            print("negative chi^2 found:", res_min.fun)
+            print("result =", result_min.x)
+            print("chi^2 (check) =", chi_sq(result_min.x, covinv, coords))
+            print("covinv:", covinv)
+            sys.exit(1)
             raise NegChisq
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
