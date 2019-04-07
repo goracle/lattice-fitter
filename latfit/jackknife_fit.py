@@ -315,6 +315,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute mean, jackknife uncertainty of chi^2
         result_min.chisq_arr = np.array(chisq_min_arr) # remove this redundancy
         result_min.fun, result_min.chisq_err = jack_mean_err(chisq_min_arr)
+        assert np.mean(chisq_min_arr) == result_min.fun
+        print("chi^2/dof =", result_min.fun/result_min.dof)
 
         return result_min, param_err
 else:
