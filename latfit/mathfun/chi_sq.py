@@ -39,7 +39,7 @@ if GEVP:
                     coords[inner][0], trial_params)))
                          for outer in range(len(coords))
                          for inner in range(len(coords))])
-        if retval.imag != 0:
+        if retval.imag != 0 and not np.isnan(retval.imag):
             llll = [dot(dot((
                 coords[outer][1] - fit_func_systematic(
                     coords[outer][0], trial_params)),
@@ -54,6 +54,7 @@ if GEVP:
             print("sep")
             print(coords[0][1])
             print("sep1")
+            print("trial_params:", trial_params)
             print((coords[0][1]-fit_func_systematic(
                 coords[0][0][0], trial_params)))
             print("sep2")
