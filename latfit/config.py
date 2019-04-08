@@ -67,7 +67,8 @@ T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
 T0 = 'TMINUS3' # t-1
 if LATTICE_ENSEMBLE == '24c':
-    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS3'
+    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS2'
+    T0 = 'TMINUS1' if IRREP == 'A_1PLUS_mom000' else T0
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
@@ -125,6 +126,7 @@ SIGMA = True if ISOSPIN == 0 else False
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
 DIM -= 2 if 'mom000' in IRREP and ISOSPIN == 0 else 0
 DIM = 1 if not GEVP else DIM
+DIM = 3 if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP else DIM
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -158,8 +160,8 @@ SLOPPYONLY = False
 BINNUM = 1
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
-FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True
+FIT_SPACING_CORRECTION = False
 FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
     else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
@@ -184,7 +186,7 @@ MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if LATTICE_ENSEMBLE == '24c':
-    DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+    DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 if LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A_1PLUS_mom000':
