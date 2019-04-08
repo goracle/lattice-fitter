@@ -35,24 +35,24 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom11'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom1'
 IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '24c'
 LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
+
+## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
 PIONRATIO = False
 PIONRATIO = True
-PIONRATIO = False if IRREP != 'A_1PLUS_mom000' and ISOSPIN == 2 else PIONRATIO
-PIONRATIO = False if ISOSPIN != 2 else PIONRATIO
 PIONRATIO = False if not GEVP else PIONRATIO
 
 # take derivative of GEVP eigenvalues
@@ -356,14 +356,16 @@ else:
 print("start params:", START_PARAMS)
 
 SYS_ENERGY_GUESS = 1.2
+SYS_ENERGY_GUESS = None
 SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else START_PARAMS
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
-MAX_ITER = 100 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
+MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
@@ -481,6 +483,10 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 # I=2 is not very noisy
 PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
 
+# skip overfit results (where chi^2/dof < 1)
+SKIP_OVERFIT = False
+SKIP_OVERFIT = True
+
 # skip fit range if parameter (energy) errors greater than 100%
 # I=2 is not very noisy
 SKIP_LARGE_ERRORS = False
@@ -568,13 +574,13 @@ CORRMATRIX = True
 ERROR_BAR_METHOD = 'jk'
 ERROR_BAR_METHOD = 'avgcov'
 
-# method used by the scipy.optimize.minimize
+# chi^2 minimizer method used by the scipy.optimize.minimize
 # other internals will need to be edited if you change this
 # it's probably not a good idea
 
-METHOD = 'Nelder-Mead'
 METHOD = 'L-BFGS-B'
-METHOD = 'minuit' if ISOSPIN != 1 else METHOD
+METHOD = 'Nelder-Mead'
+METHOD = 'minuit'
 
 # jackknife correction? "YES" or "NO"
 # correction only happens if multiple files are processed
