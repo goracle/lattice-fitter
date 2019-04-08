@@ -128,6 +128,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
                     pass
                     #print(cmat[num][opa][opb], corr)
                 if opa != opb and ISOSPIN != 0:
+                    pass
                     assert cmat[num][opa][opb] > 0\
                         or 'sigma' in GEVP_DIRS[opa][opb],\
                         str(corr)+str((opa,opb))
