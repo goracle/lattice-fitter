@@ -73,6 +73,13 @@ class ResultMin:
         syslength = max(1, syslength)
         self.systematics_arr = np.zeros((params.num_configs, syslength))
 
+    def funpvalue(self, chisq):
+        """Find the p-value for the stored degrees of freedom"""
+        ret = None
+        if self.dof is not None:
+            ret = 1 - stats.chi2.cdf(
+                chisq, self.dof)
+        return ret
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -205,17 +212,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
-                result_min_jack = mkmin(covinv_jack, coords_jack, 'minuit')
-                result_min.status = result_min_jack.status
-                if result_min_jack.status != 0:
-                    result_min_jack = mkmin(
-                        covinv_jack, coords_jack, 'L-BFGS-B')
-                    result_min.status = result_min_jack.status
-                    if result_min_jack.status != 0:
-                        raise NoConvergence
+                raise NoConvergence
 
             # store results for this fit
             chisq_min_arr[config_num] = result_min_jack.fun
+            toomanybadfitsp(result_min, chisq_min_arr)
 
             # store the result
             temp, ind = getsystematic(params, result_min_jack.x)
@@ -342,6 +343,17 @@ else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def toomanybadfitsp(result_min, chisq_min_arr):
+    """If there have already been too many fits with large chi^2,
+    the average chi^2 is not going to be good so abort the fit
+    (test)
+    """
+    avg = np.mean(chisq_min_arr)
+    pvalue = result_min.funpvalue(avg)
+    if pvalue < PVALUE_MIN:
+        raise TooManyBadFitsError(chisq=avg, pvalue=pvalue)
+
 
 def overfit_chisq_fiduc(num_configs, dof, guess=None):
     """Find the overfit 5 sigma cut
@@ -933,6 +945,16 @@ def jack_errorbars(covjack, params):
         print("shape =", covjack.shape)
         sys.exit(1)
     return error_bars
+
+class TooManyBadFitsError(Exception):
+    """Error if too many jackknifed fits have a large chi^2"""
+    def __init__(self, chisq=None, pvalue=None, message=''):
+        print("***ERROR***")
+        print("Too many fits have bad chi^2")
+        print("chi^2 average up to this point:", chisq)
+        print("pvalue up to this point:", pvalue)
+        super(TooManyBadFitsError, self).__init__(message)
+        self.message = message
 
 class EnergySortError(Exception):
     """If the energies are not sorted in ascending order
