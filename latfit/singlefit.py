@@ -21,7 +21,15 @@ from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
 from latfit.config import GEVP
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
 
+@PROFILE
 def singlefit(input_f, fitrange, xmin, xmax, xstep):
     """Get data to fit
     and minimized params for the fit function (if we're fitting)
@@ -117,6 +125,7 @@ singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
 
+@PROFILE
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
     """Get the starting and ending indices
     for the fitted subset of the data"""
@@ -125,6 +134,7 @@ def index_select(xmin, xmax, xstep, fitrange, coords_full):
     return start_index, stop_index
 
 
+@PROFILE
 def fit_select(coords_full, cov_full, selection):
     """Select portion of data to fit with"""
     # select part of data to fit
@@ -137,6 +147,7 @@ def fit_select(coords_full, cov_full, selection):
 
 # do this so reuse goes from reuse[time][config]
 # to more convenient reuse[config][time]
+@PROFILE
 def rearrange_reuse_dict(params, reuse):
     """reuse = swap(reuse, 0, 1), turn it into an array
     detail:

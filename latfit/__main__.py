@@ -70,18 +70,29 @@ MPISIZE = MPI.COMM_WORLD.Get_size()
 
 EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
 class Logger(object):
     """log output from fit"""
+    @PROFILE
     def __init__(self):
         """initialize logger"""
         self.terminal = sys.stdout
         self.log = open("fit.log", "a")
 
+    @PROFILE
     def write(self, message):
         """write to log"""
         self.terminal.write(message)
         self.log.write(message)
 
+    @PROFILE
     def flush(self):
         """this flush method is needed for python 3 compatibility.
         this handles the flush command by doing nothing.
@@ -94,6 +105,8 @@ sys.stdout = Logger()
 sys.stderr = Logger()
 
 
+
+@PROFILE
 def setup_logger():
     """Setup the logger"""
     print("BEGIN NEW OUTPUT")
@@ -115,6 +128,7 @@ def setup_logger():
     os.chdir(cwd)
 
 
+@PROFILE
 def filter_sparse(sampler, fitwindow, xstep=1):
     """Find the items in the power set which do not generate
     arithmetic sequences in the fitwindow powerset (sampler)
@@ -141,10 +155,12 @@ def filter_sparse(sampler, fitwindow, xstep=1):
         retsampler.append(excl)
     return retsampler
 
+@PROFILE
 def keyexcl(excl):
     """Make a unique id for a set of excluded points"""
     return str(list(excl))
 
+@PROFILE
 def get_one_fit_range(meta, prod, idx, samp_mult, checked):
     """Choose one fit range from all combinations"""
     key = None
@@ -175,6 +191,7 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
 
 class FitRangeMetaData:
     """Meta data about fit range loop"""
+    @PROFILE
     def __init__(self):
         """Define meta data container."""
         self.skiploop = False
@@ -187,6 +204,7 @@ class FitRangeMetaData:
         self.random_fit = True
         self.lenprod = 0
 
+    @PROFILE
     def skip_loop(self):
         """Set the loop condition"""
         self.skiploop = False if self.lenprod > 1 else True
@@ -198,6 +216,7 @@ class FitRangeMetaData:
                     #self.skiploop = True
                     self.skiploop = False
 
+    @PROFILE
     def generate_combinations(self):
         """Generate all possible fit ranges"""
         posexcl = powerset(
@@ -209,6 +228,7 @@ class FitRangeMetaData:
         prod = product(*posexcl)
         return prod, sampler
 
+    @PROFILE
     def xmin_mat_sub(self):
         """Shift xmin to be later in time in the case of
         around the world subtraction of previous time slices"""
@@ -222,12 +242,14 @@ class FitRangeMetaData:
                 ret = (delta + int(T0[6:]) + 1)* self.xstep
         self.xmin = ret
 
+    @PROFILE
     def fit_coord(self):
         """Get xcoord to plot fit function."""
         return np.arange(self.fitwindow[0],
                          self.fitwindow[1]+self.xstep, self.xstep)
 
 
+    @PROFILE
     def length_fit(self, prod, sampler):
         """Get length of fit window data"""
         self.lenfit = len(np.arange(self.fitwindow[0],
@@ -247,6 +269,7 @@ class FitRangeMetaData:
                 " vs. expected length."
         return prod
 
+    @PROFILE
     def actual_range(self):
         """Return the actual range spanned by the fit window"""
         ret = np.arange(self.fitwindow[0],
@@ -257,6 +280,7 @@ class FitRangeMetaData:
 
 
 
+@PROFILE
 def main():
     """Main for latfit"""
     setup_logger()
@@ -526,6 +550,7 @@ def main():
         sys.exit(0)
     print("END STDOUT OUTPUT")
 
+@PROFILE
 def combine_results(result_min, result_min_close,
                     skip_loop, param_err, param_err_close):
     """use the representative fit's goodness of fit in final print
@@ -546,6 +571,7 @@ def combine_results(result_min, result_min_close,
     return result_min, param_err
 
 
+@PROFILE
 def sort_fit_ranges(meta, tsorted, sampler):
     """Sort fit ranges by likelihood of success
     (if bias this introduces is not an issue)"""
@@ -580,6 +606,7 @@ def sort_fit_ranges(meta, tsorted, sampler):
             samp_mult.append(sampi)
     return samp_mult
 
+@PROFILE
 def get_tsorted(plotdata):
     """Get list of best times (most likely to yield good fits)"""
     tsorted = []
@@ -603,6 +630,7 @@ def get_tsorted(plotdata):
     return tsorted
 
 
+@PROFILE
 def loop_result(min_arr, overfit_arr):
     """Test if fit range loop succeeded"""
     if(min_arr):
@@ -621,6 +649,7 @@ def loop_result(min_arr, overfit_arr):
     return min_arr
 
 
+@PROFILE
 def collapse_filter(arr):
     """collapse the results array and filter out duplicates"""
     # collapse the array structure introduced by mpi
@@ -634,6 +663,7 @@ def collapse_filter(arr):
     arr = getuniqueres(arr)
     return arr
 
+@PROFILE
 def excl_inrange(meta, excl):
     """Find the excluded points in the actual fit window"""
     ret = []
@@ -646,6 +676,7 @@ def excl_inrange(meta, excl):
         ret.append(newexc)
     return ret
 
+@PROFILE
 def toosmallp(meta, excl):
     """Skip a fit range if it has too few points"""
     ret = False
@@ -681,6 +712,7 @@ def toosmallp(meta, excl):
     ret = False if ISOSPIN == 0 and GEVP else ret
     return ret
 
+@PROFILE
 def print_phaseshift(result_min):
     """Print the phase shift info from a single fit range"""
     for i in range(MULT):
@@ -703,6 +735,7 @@ def print_phaseshift(result_min):
                 #          np.imag(result_min.phase_shift[i]),
                 #          temperr), 'j')
 
+@PROFILE
 def cutresult(result_min, min_arr, overfit_arr, param_err):
     """Check if result of fit to a
     fit range is acceptable or not, return true if not acceptable
@@ -737,6 +770,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                 ret = True
     return ret
 
+@PROFILE
 def find_mean_and_err(meta, min_arr):
     """Find the mean and error from results of fit"""
     result_min = {}
@@ -841,6 +875,7 @@ def find_mean_and_err(meta, min_arr):
         "A parameter error is not a number (nan)"
     return result_min
 
+@PROFILE
 def print_fit_results(meta, min_arr):
     """ Print the fit results
     """
@@ -853,6 +888,7 @@ def print_fit_results(meta, min_arr):
         print(i)
 
 
+@PROFILE
 def getuniqueres(min_arr):
     """Find unique fit ranges"""
     ret = []
@@ -864,6 +900,7 @@ def getuniqueres(min_arr):
             keys.add(key)
     return ret
 
+@PROFILE
 def inverse_excl(meta, excl):
     """Get the included fit points from excluded points"""
     full = meta.actual_range()
@@ -882,6 +919,7 @@ def inverse_excl(meta, excl):
         ret[i] = list(np.delete(ret[i], inds))
     return ret
 
+@PROFILE
 def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
     """Compare the error of err to the effective mass errors.
     In other words, find the minimum error of
@@ -909,6 +947,7 @@ def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
     return arr, errmin
     
 
+@PROFILE
 def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     """Dump the jackknife blocks for the energy with minimum errors"""
     fname = "x_min_"+str(LATTICE_ENSEMBLE)
@@ -936,6 +975,7 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 if EFF_MASS:
+    @PROFILE
     def min_eff_mass_errors(mindim=None, getavg=False):
         """Append the errors of the effective mass points
         to errarr"""
@@ -991,10 +1031,12 @@ if EFF_MASS:
         assert isinstance(err, float) or mindim is None, "index bug"
         return arr, err
 else:
+    @PROFILE
     def min_eff_mass_errors(mindim=None):
         """blank"""
         return (None, np.inf)
 
+@PROFILE
 def pickle_res(avgname, min_arr):
     """Return the fit range results to be pickled,
     append the effective mass points
@@ -1012,6 +1054,7 @@ def pickle_res(avgname, min_arr):
     print("original error length (res):", origl, "final error length:", flen)
     return ret
 
+@PROFILE
 def pickle_res_err(errname, min_arr):
     """Append the effective mass errors to the """
     ret = [getattr(i[0], errname) for i in min_arr]
@@ -1031,6 +1074,7 @@ def pickle_res_err(errname, min_arr):
     print("original error length (err):", origl, "final error length:", flen)
     return ret
 
+@PROFILE
 def pickle_excl(meta, min_arr):
     """Get the fit ranges to be pickled
     append the effective mass points
@@ -1045,6 +1089,7 @@ def pickle_excl(meta, min_arr):
     print("final fit range amount:", len(ret))
     return ret
 
+@PROFILE
 def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     """Pickle the fit range result"""
     print("starting arg:", avgname)
@@ -1084,6 +1129,7 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
 dump_fit_range.fn1 = None
 
+@PROFILE
 def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq"""
     assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
@@ -1121,6 +1167,7 @@ def divbychisq(param_arr, pvalue_arr):
 
 
 
+@PROFILE
 def cut_on_errsize(meta):
     """Cut on the size of the error bars on individual points"""
     err = singlefit.error2
@@ -1158,6 +1205,7 @@ def cut_on_errsize(meta):
         ret = False
     return ret
 
+@PROFILE
 def closest_fit_to_avg(result_min_avg, min_arr):
     """Find closest fit to average fit
     (find the most common fit range)
@@ -1176,6 +1224,7 @@ def closest_fit_to_avg(result_min_avg, min_arr):
     return ret_excl
 
 
+@PROFILE
 def errerr(param_err_arr):
     """Find the error on the parameter error."""
     err = np.zeros(param_err_arr[0].shape)
@@ -1187,6 +1236,7 @@ def errerr(param_err_arr):
         avgerr[i] = np.mean(param_err_arr[:, i])
     return err, avgerr
 
+@PROFILE
 def skip_large_errors(result_param, param_err):
     """Skip on parameter errors greater than 100%
     (fit range is too noisy)
@@ -1203,6 +1253,7 @@ def skip_large_errors(result_param, param_err):
     return ret if SKIP_LARGE_ERRORS else False
 
 # obsolete, we should simply pick the model with the smallest errors and an adequate chi^2
+@PROFILE
 def min_excl(min_arr):
     """Find the minimum reduced chisq from all the fits considered"""
     minres = sorted(min_arr, key=lambda row: row[0])[0]
@@ -1210,6 +1261,7 @@ def min_excl(min_arr):
     print("best times to exclude:", minres[1])
     return minres[1]
 
+@PROFILE
 def augment_excl(excl):
     """If the user has specified excluded indices add these to the list."""
     for num, (i, j) in enumerate(zip(excl, augment_excl.excl_orig)):
@@ -1217,6 +1269,7 @@ def augment_excl(excl):
     return excl
 augment_excl.excl_orig = EXCL_ORIG
 
+@PROFILE
 def dof_check(lenfit, dimops, excl):
     """Check the degrees of freedom.  If < 1, cause a skip"""
     dof = (lenfit-1)*dimops
@@ -1228,6 +1281,7 @@ def dof_check(lenfit, dimops, excl):
         ret = False
     return ret
 
+@PROFILE
 def powerset(iterable):
     """powerset([1, 2, 3]) -->
     () (1, ) (2, ) (3, ) (1, 2) (1, 3) (2, 3) (1, 2, 3)"""
@@ -1235,6 +1289,7 @@ def powerset(iterable):
     return chain.from_iterable(combinations(siter,
                                             r) for r in range(len(siter)+1))
 
+@PROFILE
 def update_num_configs(num_configs=None, input_f=None):
     """Update the number of configs in the case that FIT is False.
     """
@@ -1257,6 +1312,7 @@ def update_num_configs(num_configs=None, input_f=None):
         latfit.finalout.mkplot.NUM_CONFIGS = num_configs
 
 
+@PROFILE
 def get_fitparams_loc(list_fit_params, trials):
     """Not sure what this does, probably wrong"""
     list_fit_params = np.array(list_fit_params).T.tolist()
@@ -1279,6 +1335,7 @@ def get_fitparams_loc(list_fit_params, trials):
     return avg_fit_params, err_fit_params
 
 # https://stackoverflow.com/questions/1158076/implement-touch-using-python
+@PROFILE
 def touch(fname, mode=0o666, dir_fd=None, **kwargs):
     """unix touch"""
     flags = os.O_CREAT | os.O_APPEND
@@ -1287,6 +1344,7 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
         os.utime(fn1.fileno() if os.utime in os.supports_fd else fname,
                  dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
+@PROFILE
 def sum_files_total(basename, local_total):
     """Find a total by using temp files"""
     fn1 = open(basename+str(MPIRANK)+".temp", 'w')
@@ -1302,6 +1360,7 @@ def sum_files_total(basename, local_total):
     return total
 
 
+@PROFILE
 def exitp(meta, min_arr, overfit_arr, idx):
     """Test to exit the fit range loop"""
     ret = False

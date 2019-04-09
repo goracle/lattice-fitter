@@ -19,6 +19,16 @@ from collections import namedtuple
 from latfit.config import GEVP, SYSTEMATIC_EST
 import latfit.config
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
+
+@PROFILE
 def mkmin(covinv, coords, method=METHOD):
     """Minimization of chi^2 section of fitter.
     Return minimized result.
@@ -145,6 +155,7 @@ def mkmin(covinv, coords, method=METHOD):
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return prune_res_min(res_min)
 
+@PROFILE
 def convert_to_namedtuple(dictionary):
     """Convert dictionary to named tuple"""
     return namedtuple('min', dictionary.keys())(**dictionary)
@@ -152,18 +163,21 @@ def convert_to_namedtuple(dictionary):
 
 
 if SYSTEMATIC_EST:
+    @PROFILE
     def prune_res_min(res_min):
         """Get rid of systematic error information"""
         print([res_min.x[len(START_PARAMS):][2*i+1] for i in range(len(START_PARAMS))])
         res_min.x = np.array(res_min.x)[:len(START_PARAMS)]
         return res_min
 else:
+    @PROFILE
     def prune_res_min(res_min):
         """pass"""
         return res_min
 
 class NegChisq(Exception):
     """Exception for imaginary GEVP eigenvalue"""
+    @PROFILE
     def __init__(self, problemx=None, message=''):
         print("***ERROR***")
         print("Chi^2 minimizer failed. Chi^2 found to be less than zero.")
