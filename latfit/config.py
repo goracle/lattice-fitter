@@ -1021,5 +1021,3 @@ if ISOSPIN == 2 and GEVP:
 if not NOATWSUB:
     print("matrix subtraction:", MATRIX_SUBTRACTION)
 assert not ISOSPIN == 1 or NOATWSUB, "I=1 has no ATW terms."
-if METHOD == 'minuit':
-    START_PARAMS = [0 for _ in START_PARAMS]
