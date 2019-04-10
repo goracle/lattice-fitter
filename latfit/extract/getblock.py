@@ -67,9 +67,11 @@ if len(DISP_ENERGIES) != MULT and GEVP:
                     i, np.zeros(len(DISP_ENERGIES[0]), dtype=np.complex))
             else:
                 DISP_ENERGIES.insert(i, 0)
-if hasattr(DISP_ENERGIES[0], '__iter__')\
-   and np.asarray(DISP_ENERGIES[0]).shape:
-    DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
+
+if DISP_ENERGIES:
+    if hasattr(DISP_ENERGIES[0], '__iter__')\
+       and np.asarray(DISP_ENERGIES[0]).shape:
+        DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
 
 """
 if PIONRATIO and GEVP:
