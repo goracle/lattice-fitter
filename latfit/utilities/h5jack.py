@@ -150,9 +150,10 @@ FILTER_OUT_CROSS_MOMENTA = False
 # TESTKEY = 'FigureHbub_scalar_mom000'
 # TESTKEY = 'FigureBub2_mom000'
 TESTKEY = 'FigureV_sep3_mom1src000_mom2src000_mom1snk000'
-TESTKEY = 'FigureD_sep4_mom1src000_mom2src000_mom1snk000'
 TESTKEY = '' if WRITE_INDIVIDUAL else TESTKEY
+TESTKEY = 'FigureD_vec_sep4_mom1src00_1_mom2src001_mom1snk001'
 TESTKEY = ''
+
 
 # Print out the jackknife block at t=TSLICE
 # (0..N or ALL for all time slices) for a diagram TESTKEY2

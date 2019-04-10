@@ -102,7 +102,7 @@ if LATTICE_ENSEMBLE == '32c':
     AINVERSE = 1.3784
     PION_MASS = 0.10470*AINVERSE
     LT = 64
-    SUPERJACK_CUTOFF = 8
+    SUPERJACK_CUTOFF = 17
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
     AINVERSE = 1.015 
@@ -372,8 +372,8 @@ MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
-MAX_RESULTS = 16
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
+MAX_RESULTS = 16
 
 # modify the configs used and bin
 
