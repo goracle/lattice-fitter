@@ -23,6 +23,7 @@ from itertools import combinations, chain, product
 from warnings import warn
 import pickle
 import numpy as np
+import ast
 import h5py
 from mpi4py import MPI
 import gvar
@@ -265,6 +266,9 @@ class FitRangeMetaData:
         if self.lenprod < MAX_ITER: # fit range is small, use brute force
             self.random_fit = False
             prod = list(prod)
+            prod = [str(i) for i in prod]
+            prod = sorted(prod)
+            prod = [ast.literal_eval(i) for i in prod]
             assert len(prod) == self.lenprod, "powerset length mismatch"+\
                 " vs. expected length."
         return prod
