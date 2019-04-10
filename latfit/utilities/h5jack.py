@@ -121,8 +121,6 @@ TSEP = 4
 TDIS_MAX = 22
 TSTEP = 64/6
 
-
-
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
 OUTERSUB = False  # (True): <AB>-<A><B>.  New way (False): <A-<A>><B-<B>>
@@ -1499,32 +1497,33 @@ def main(fixn=False):
             check_count_of_diagrams(ocs, "I2")
             if not SKIP_VEC:
                 check_count_of_diagrams(ocs, "I1")
-            check_match_oplist(ocs)
-            check_inner_outer(
-                ocs, allblks.keys() | set(), auxblks.keys() | set())
-            unused = set()
-            for fig in ['FigureR' 'FigureC' 'FigureD',
-                        # 'FigureV', 'FigureCv3', 'FigureCv3R',
-                        'FigureBub2', 'FigureT']:
-                unused = find_unused(
-                    ocs, allblks.keys() | set(),
-                    auxblks.keys() | set(), fig=fig).union(unused)
-            count = len(unused)
-            for useless in sorted(list(unused)):
-                try:
-                    # we don't analyze all of pcom for I=1 yet
-                    if not (rf.vecp(useless) and rf.norm2(wd.momtotal(
-                            rf.mom(useless)))):
-                        if not rf.checkp(useless) and not (rf.vecp(
-                                useless) and rf.allzero(rf.mom(useless))):
-                            print("unused diagram:", useless)
-                            count -= 1
-                except TypeError:
-                    print(useless)
-                    sys.exit(1)
-            print("length of unused=", len(unused))
-            assert unused or count == len(unused),\
-                "Unused (non-vec) diagrams exist."
+            if not TESTKEY:
+                check_match_oplist(ocs)
+                check_inner_outer(
+                    ocs, allblks.keys() | set(), auxblks.keys() | set())
+                unused = set()
+                for fig in ['FigureR' 'FigureC' 'FigureD',
+                            # 'FigureV', 'FigureCv3', 'FigureCv3R',
+                            'FigureBub2', 'FigureT']:
+                    unused = find_unused(
+                        ocs, allblks.keys() | set(),
+                        auxblks.keys() | set(), fig=fig).union(unused)
+                count = len(unused)
+                for useless in sorted(list(unused)):
+                    try:
+                        # we don't analyze all of pcom for I=1 yet
+                        if not (rf.vecp(useless) and rf.norm2(wd.momtotal(
+                                rf.mom(useless)))):
+                            if not rf.checkp(useless) and not (rf.vecp(
+                                    useless) and rf.allzero(rf.mom(useless))):
+                                print("unused diagram:", useless)
+                                count -= 1
+                    except TypeError:
+                        print(useless)
+                        sys.exit(1)
+                print("length of unused=", len(unused))
+                assert unused or count == len(unused),\
+                    "Unused (non-vec) diagrams exist."
             if TESTKEY:
                 print("displaying block:", TESTKEY)
                 buberr(allblks)
