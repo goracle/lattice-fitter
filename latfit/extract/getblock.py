@@ -792,7 +792,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
             for i,j in enumerate(orig):
                 if np.isnan(j):
                     orig[i] = np.nan
-                    avg = np.nan
+                    avg[i] = np.nan
     else:
         assert not np.isnan(orig+avg), "nan found"
     ret = (orig-avg)*decrease_var+avg

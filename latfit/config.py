@@ -49,6 +49,40 @@ LATTICE_ENSEMBLE = '24c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
+SYS_ENERGY_GUESS = 1.2
+SYS_ENERGY_GUESS = None
+SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
+
+# T0 behavior for GEVP (t/2 or t-1)
+
+T0 = 'ROUND' # ceil(t/2)
+T0 = 'LOOP' # ceil(t/2)
+T0 = 'TMINUS3' # t-1
+if LATTICE_ENSEMBLE == '24c':
+    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS1'
+    T0 = 'TMINUS1' if IRREP == 'A_1PLUS_mom000' else T0
+elif LATTICE_ENSEMBLE == '32c':
+    T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
+#T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+
+# print raw gevp info (for debugging source construction)
+
+GEVP_DEBUG = True
+GEVP_DEBUG = False
+
+if LATTICE_ENSEMBLE == '24c':
+    DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
+    DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
+if LATTICE_ENSEMBLE == '32c':
+    if IRREP == 'A_1PLUS_mom000':
+        DELTA_T_MATRIX_SUBTRACTION = 4 if not GEVP_DEBUG else 0
+    else:
+        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+# do the subtraction at the level of the eigenvalues
+
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
 PIONRATIO = False
@@ -60,18 +94,6 @@ GEVP_DERIV = True
 GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
 GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
-
-# T0 behavior for GEVP (t/2 or t-1)
-
-T0 = 'ROUND' # ceil(t/2)
-T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS3' # t-1
-if LATTICE_ENSEMBLE == '24c':
-    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS2'
-    T0 = 'TMINUS1' if IRREP == 'A_1PLUS_mom000' else T0
-elif LATTICE_ENSEMBLE == '32c':
-    T0 = 'TMINUS4' if ISOSPIN != 2 else 'TMINUS4'
-#T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
 
 # Plot Effective Mass? True or False
 
@@ -139,11 +161,6 @@ if LATTICE_ENSEMBLE == '24c':
 if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 
-# print raw gevp info (for debugging source construction)
-
-GEVP_DEBUG = True
-GEVP_DEBUG = False
-
 # halve the data to check for consistencies
 HALF = 'first half'
 HALF = 'second half'
@@ -185,16 +202,6 @@ MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
-if LATTICE_ENSEMBLE == '24c':
-    DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
-if LATTICE_ENSEMBLE == '32c':
-    if IRREP == 'A_1PLUS_mom000':
-        DELTA_T_MATRIX_SUBTRACTION = 4 if not GEVP_DEBUG else 0
-    else:
-        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
-    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
-# do the subtraction at the level of the eigenvalues
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
@@ -357,12 +364,6 @@ else:
 
 print("start params:", START_PARAMS)
 
-SYS_ENERGY_GUESS = 1.2
-SYS_ENERGY_GUESS = None
-SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
-SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
-SYS_ENERGY_GUESS = 1.2
-SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else START_PARAMS
 
 # how many loop iterations until we start using random samples
