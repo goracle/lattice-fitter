@@ -315,6 +315,7 @@ def main():
         # try an initial plot, shrink the xmax if it's too big
         print("Trying initial test fit.")
         test_success = False
+        retsingle_save = None
         try:
             retsingle_save = singlefit(input_f, meta.fitwindow,
                                        meta.xmin, meta.xmax, meta.xstep)
@@ -450,6 +451,8 @@ def main():
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax,
                                               meta.xstep)
+                        if retsingle_save is None:
+                            retsingle_save = retsingle
                         print("fit succeeded for this selection"+\
                               " excluded points=", excl)
                         if meta.lenprod == 1 or MAX_RESULTS == 1:

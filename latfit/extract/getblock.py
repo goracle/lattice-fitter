@@ -771,6 +771,13 @@ class XmaxError(Exception):
         self.problemx = problemx
         self.message = message
 
+class PrecisionLossError(Exception):
+    """Error if precision loss in eps prescription"""
+    def __init__(self, message=''):
+        print("***ERROR***")
+        print("Precision loss.")
+        super(PrecisionLossError, self).__init__(message)
+        self.message = message
 
 def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
@@ -800,7 +807,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
         print('check =', check)
         print('orig =', orig)
         print("precision loss detected, orig != check")
-        sys.exit(1)
+        raise PrecisionLossError
     return ret
 
 # mostly useless (only a check)
@@ -1133,8 +1140,8 @@ if EFF_MASS:
         # subtract the non-interacting around the world piece
         if '000' not in IRREP and not NOATWSUB:
             assert pionratio.DELTAT == delta_t,\
-                "weak check of delta_t failed:"+str(pionratio.DELTAT)+\
-                ","+str(delta_t)
+                "weak check of delta_t failed (file,config):"+str(
+                    pionratio.DELTAT)+","+str(delta_t)
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
             mean_cmats_lhs[i] = atwsub(mean, timeij+i)
