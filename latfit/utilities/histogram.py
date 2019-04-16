@@ -97,6 +97,9 @@ def make_hist(fname):
                           key = lambda elem: elem[2], reverse=True)
             median_err = []
             for i, j, k, _ in loop:
+                # skip the single time slice points for GEVP
+                if j == 1.0 and hasattr(freqarr.shape, '__iter__') and hasattr(freqarr.shape[-1], '__iter__') and len(freqarr.shape[-1]) > 1: 
+                    continue
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
                     freq_median = i
@@ -123,6 +126,9 @@ def make_hist(fname):
             median = gvar.gvar(freq_median, sys_err)
             maxdiff = 0
             for j,(i,pval) in enumerate(median_err):
+                # skip the single time slice points for GEVP
+                if pval == 1.0 and hasattr(freqarr.shape[-1], '__iter__') and len(freqarr.shape[-1]) > 1: 
+                    continue
                 pval = trunc(pval)
                 median_diff = i-median
                 median_diff = gvar.gvar(abs(median_diff.val),
