@@ -11,6 +11,8 @@ from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
+from latfit.logger import setup_logger
+setup_logger()
 
 # TYPE OF FIT
 
