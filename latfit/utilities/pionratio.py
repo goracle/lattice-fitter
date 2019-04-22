@@ -42,7 +42,7 @@ STYPE = 'hdf5'
 # ensemble specific hack
 # DELTAT is T-T0 where T,T0 are RHS, LHS time separations
 # used in the GEVP
-DELTAT = 4 if TSTEP == 10 else 1
+DELTAT = 2 if TSTEP == 10 else 1
 print("Using DELTAT=", DELTAT)
 
 try:
