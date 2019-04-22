@@ -17,7 +17,7 @@ from op_compose import AVG_ROWS
 import write_discon as wd
 import aux_write as aux
 import avg_hdf5
-
+import pickle
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd
@@ -110,7 +110,6 @@ TDIS_MAX = 64
 TDIS_MAX = 22
 TDIS_MAX = 16
 
-
 # 24c
 TSEP = 3
 TDIS_MAX = 16
@@ -120,6 +119,7 @@ TSTEP = 8
 TSEP = 4
 TDIS_MAX = 22
 TSTEP = 64/6
+
 
 # DO NOT CHANGE IF NOT DEBUGGING
 # do subtraction in the old way
@@ -1564,8 +1564,29 @@ def printblk(basename, blk):
         print("Printing all time slices of", basename)
         print(blk)
 
+@PROFILE
+def check_ids():
+    """Check the ensemble id file to be sure
+    not to run processing parameters from a different ensemble"""
+    ids_check = [TSEP, TDIS_MAX, TSTEP,  DOAMA, SKIP_VEC]
+    ids_check = np.asarray(ids_check)
+    ids = pickle.load(open('ids.p', "rb"))
+    assert np.all(ids == ids_check), "wrong ensemble. [TSEP, TDIS_MAX, TSTEP,  DOAMA, SKIP_VEC] should be:"+str(ids)+" instead of:"+str(ids_check)
 
 if __name__ == '__main__':
+    try:
+        open('ids.p', 'rb')
+    except FileNotFoundError:
+        print("be sure to set TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC correctly")
+        print("edit h5jack.py to remove the hold then rerun")
+        # the hold
+        sys.exit(1)
+        ids = [TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC]
+        ids = np.asarray(ids)
+        pickle.dump(ids, open('ids.p', "wb"))
+
+    check_ids()
+
     FNDEF, GNDEF, HNDEF = fill_fndefs()
     WRITEBLOCK = fill_write_block(FNDEF)
     FIXN = None
@@ -1587,3 +1608,5 @@ if __name__ == '__main__':
     END = time.perf_counter()
     if MPIRANK == 0:
         print("Total elapsed time =", END-START, "seconds")
+else:
+    check_ids()
