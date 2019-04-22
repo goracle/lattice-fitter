@@ -12,7 +12,9 @@ import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
+from latfit.utilities.h5jack import check_ids
 setup_logger()
+
 
 # TYPE OF FIT
 
@@ -162,6 +164,7 @@ if LATTICE_ENSEMBLE == '24c':
     TSEP_VEC = [3 for _ in range(DIM)] if GEVP else [0]
 if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
+assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch."
 
 # halve the data to check for consistencies
 HALF = 'first half'
