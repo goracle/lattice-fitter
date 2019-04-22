@@ -48,8 +48,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
@@ -57,6 +57,7 @@ SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None
 SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 
 # T0 behavior for GEVP (t/2 or t-1)
@@ -70,6 +71,7 @@ if LATTICE_ENSEMBLE == '24c':
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+T0 = 'TMINUS1' # t-1
 
 # print raw gevp info (for debugging source construction)
 
