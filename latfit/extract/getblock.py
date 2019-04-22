@@ -915,6 +915,8 @@ def energies_pionratio(timeij, delta_t):
         app = callprocmeff([arg1[i], arg2[i]],
                            timeij, delta_t)
         energies.append(app)
+    np.seterr(divide='warn', invalid='warn')
+    print(avglhs, avgrhs, avglhs/avgrhs)
     avg_energies = callprocmeff([
         (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t)
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
