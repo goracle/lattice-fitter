@@ -25,7 +25,7 @@ import op_compose as opc
 import os.path
 from scipy.optimize import minimize_scalar
 import h5jack
-from h5jack import getwork, gatherdicts
+from h5jack import getwork, gatherdicts, check_ids
 from mpi4py import MPI
 
 TSTEP = int(TSTEP)
@@ -843,6 +843,7 @@ def divide_multiply(tplat=10):
 
 if __name__ == '__main__':
     print("start")
+    check_ids()
     h5jack.AVGTSRC = True # hack to get file names right.
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect(atw=True)

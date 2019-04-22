@@ -1572,7 +1572,8 @@ def check_ids():
     ids_check = np.asarray(ids_check)
     ids = pickle.load(open('ids.p', "rb"))
     assert np.all(ids == ids_check), "wrong ensemble. [TSEP, TDIS_MAX, TSTEP,  DOAMA, SKIP_VEC] should be:"+str(ids)+" instead of:"+str(ids_check)
-
+    return ids
+    
 if __name__ == '__main__':
     try:
         open('ids.p', 'rb')
