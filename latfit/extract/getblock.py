@@ -413,13 +413,14 @@ def propnan(vals):
             vals = np.nan+2j*np.nan
     return vals
 
-def atwsub(cmat, timeij, reverseatw=False):
+def atwsub(cmat, timeij, delta_t, reverseatw=False):
     """Subtract the atw vacuum saturation single pion correlators
     (non-interacting around the world term, single pion correlator squared)
     """
     origshape = cmat.shape
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
-        suffix = r'_pisq_atwR.jkdat' if reverseatw else r'_pisq_atw.jkdat'
+        suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
+        suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
             zeroit = False 
             idx2 = i
@@ -792,7 +793,10 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
             for i,j in enumerate(orig):
                 if np.isnan(j):
                     orig[i] = np.nan
-                    avg[i] = np.nan
+                    if np.asarray(orig).shape == np.asarray(avg).shape:
+                        avg[i] = np.nan
+                    else:
+                        avg = np.nan
     else:
         assert not np.isnan(orig+avg), "nan found"
     ret = (orig-avg)*decrease_var+avg
@@ -859,7 +863,7 @@ def aroundtheworld_pionratio(diag_name, timeij):
             ret -= sub2*math.exp((exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
     return ret
 
-def evals_pionratio(timeij, switch=False):
+def evals_pionratio(timeij, delta_t, switch=False):
     """Get the non-interacting eigenvalues"""
     ret = []
     for i, diag in enumerate(GEVP_DIRS):
@@ -881,17 +885,17 @@ def evals_pionratio(timeij, switch=False):
     ret = np.real(ret)
     ret = variance_reduction(ret, np.mean(ret, axis=0))
     if not MATRIX_SUBTRACTION and not NOATWSUB:
-        ret = atwsub(ret, timeij, reverseatw=switch)
+        ret = atwsub(ret, timeij, delta_t, reverseatw=switch)
     return np.asarray(ret)
 
 def energies_pionratio(timeij, delta_t):
     """Find non-interacting energies"""
-    lhs = evals_pionratio(timeij)
-    lhs_p1 = evals_pionratio(timeij+1)
-    rhs = evals_pionratio(timeij-delta_t, switch=True)
-    avglhs = np.mean(lhs, axis=0)
-    avglhs_p1 = np.mean(lhs_p1, axis=0)
-    avgrhs = np.mean(rhs, axis=0)
+    lhs = evals_pionratio(timeij, delta_t)
+    lhs_p1 = evals_pionratio(timeij+1, delta_t)
+    rhs = evals_pionratio(timeij-delta_t, delta_t, switch=True)
+    avglhs = np.asarray(np.mean(lhs, axis=0))
+    avglhs_p1 = np.asarray(np.mean(lhs_p1, axis=0))
+    avgrhs = np.asarray(np.mean(rhs, axis=0))
     exclsave = [list(i) for i in latfit.config.FIT_EXCL]
     try:
         pass
@@ -1138,16 +1142,16 @@ if EFF_MASS:
             file_tup, num_configs)
 
         # subtract the non-interacting around the world piece
-        if '000' not in IRREP and not NOATWSUB:
-            assert pionratio.DELTAT == delta_t,\
-                "weak check of delta_t failed (file,config):"+str(
-                    pionratio.DELTAT)+","+str(delta_t)
+        #if '000' not in IRREP and not NOATWSUB:
+        #    assert pionratio.DELTAT == delta_t,\
+        #        "weak check of delta_t failed (file,config):"+str(
+        #            pionratio.DELTAT)+","+str(delta_t)
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
-            mean_cmats_lhs[i] = atwsub(mean, timeij+i)
-            cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i)
-        mean_cmats_rhs = atwsub(mean_crhs, timeij-delta_t, reverseatw=True)
-        cmat_rhs = atwsub(cmat_rhs, timeij-delta_t, reverseatw=True)
+            mean_cmats_lhs[i] = atwsub(mean, timeij+i, delta_t)
+            cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i, delta_t)
+        mean_cmats_rhs = atwsub(mean_crhs, timeij-delta_t, delta_t, reverseatw=True)
+        cmat_rhs = atwsub(cmat_rhs, timeij-delta_t, delta_t, reverseatw=True)
 
         norm_comm = []
         norms_comm = []
