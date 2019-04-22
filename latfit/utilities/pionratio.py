@@ -656,6 +656,8 @@ def piondirect(atw=False, reverseatw=False):
         suffix = '_pisq' if not atw else '_pisq_atw'
         if atw and reverseatw:
             suffix = suffix + 'R'
+        if atw:
+            suffix = suffix + '_dt'+str(DELTAT)
         for i in list(ocs):
             ocs[i+suffix] = ocs[i]
             del ocs[i]
