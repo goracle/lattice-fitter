@@ -628,6 +628,11 @@ REINFLATE_BEFORE_LOG = False
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
 if ISOSPIN == 1 and GEVP:
     OPERATOR_NORMS[1] = complex(0+1j)
+if ISOSPIN == 0 and GEVP and 'avg' in IRREP:
+    OPERATOR_NORMS[0] = 1e-5
+    OPERATOR_NORMS[1] = 1e-2
+    if DIM == 3:
+        OPERATOR_NORMS[2] = 1e-5
 print("New Operator Norms:", OPERATOR_NORMS)
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
