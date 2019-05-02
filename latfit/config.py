@@ -1020,6 +1020,7 @@ assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
 assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
 # we can't fit to 0 length subsets
 assert not ONLY_SMALL_FIT_RANGES or RANGE_LENGTH_MIN
+assert not SYSTEMATIC_EST, "cruft; should be removed eventually"
 #assert not PIONRATIO or ISOSPIN == 2
 #assert MATRIX_SUBTRACTION or not PIONRATIO
 if DELTA_E2_AROUND_THE_WORLD is not None:
