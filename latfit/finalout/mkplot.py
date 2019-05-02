@@ -423,7 +423,7 @@ def print_messages(result_min, param_err, param_chisq):
         if UNCORR:
             print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun, result_min.dof))
         else:
-            print("p-value of avg t^2 = ", 1 - NUM_CONFIGS/(NUM_CONFIGS-result_min.dof+1)* stats.chi2.cdf(result_min.fun, result_min.dof))
+            print("p-value of avg t^2 = ", 1 - (NUM_CONFIGS-1)/(NUM_CONFIGS-result_min.dof)* stats.chi2.cdf(result_min.fun, result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     if UNCORR:
         print("chi^2/dof = ", redchisq_str)

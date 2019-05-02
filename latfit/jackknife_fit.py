@@ -92,11 +92,11 @@ class ResultMin:
         is actually a sort of correlated chi^2)
         """
         ret = None
+        correction = (self.num_configs-1)/(self.num_configs-self.dof)
+        correction = 1 if UNCORR else correction
+        corr = correction
         if self.dof is not None:
-            ret = 1 - stats.chi2.cdf(
-                chisq, self.dof)
-            if not UNCORR:
-                ret *= self.num_configs/(self.num_configs-self.dof+1)
+            ret = 1 - corr*stats.chi2.cdf(chisq, self.dof)
         return ret
 
 def torchi():
@@ -396,7 +396,7 @@ def overfit_chisq_fiduc(num_configs, dof, guess=None):
     (see chisqfiduc for the lower cut on the upper bound)
     """
     key = (num_configs, dof)
-    t2correction = num_configs/(num_configs-dof+1)
+    t2correction = (num_configs-1)/(num_configs-dof)
     t2cor = t2correction
     if key in overfit_chisq_fiduc.cache:
         ret = overfit_chisq_fiduc.cache[key]
@@ -424,7 +424,7 @@ def chisqfiduc(num_configs, dof):
     2*dof is the variance in chi^2 (t^2)
     """
     key = (num_configs, dof)
-    t2correction = num_configs/(num_configs-dof+1)
+    t2correction = (num_configs-1)/(num_configs-dof)
     t2cor = t2correction
     if key in chisqfiduc.mem:
         ret = chisqfiduc.mem[key]
