@@ -376,7 +376,10 @@ def print_messages(result_min, param_err, param_chisq):
     # print("Assisted Fit:", ASSISTED_FIT)
     print("GEVP derivative taken:", GEVP_DERIV)
     print("GEVP delta t:", int(T0[6:]))
-    print("Minimizer (of chi^2) method:", METHOD)
+    if UNCORR:
+        print("Minimizer (of chi^2) method:", METHOD)
+    else:
+        print("Minimizer (of t^2) method:", METHOD)
     if METHOD == 'L-BFGS-B':
         print("Bounds:", BINDS)
     print("Guessed params:  ", np.array2string(startp, separator=', '))
@@ -406,7 +409,10 @@ def print_messages(result_min, param_err, param_chisq):
     chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
-    print("chi^2 minimized = ", chisq_str)
+    if UNCORR:
+        print("chi^2 minimized = ", chisq_str)
+    else:
+        print("t^2 minimized = ", chisq_str)
     print("degrees of freedom = ", result_min.dof)
     print("epsilon (inflation/deflation of GEVP parameter)", DECREASE_VAR)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
@@ -414,9 +420,15 @@ def print_messages(result_min, param_err, param_chisq):
         print("avg p-value = ", gvar.gvar(result_min.pvalue,
                                           result_min.pvalue_err))
         assert NUM_CONFIGS > 0, "num configs not set (bug):"+str(NUM_CONFIGS)
-        print("p-value of avg chi^2 = ", 1 - NUM_CONFIGS/(NUM_CONFIGS-result_min.dof+1)* stats.chi2.cdf(result_min.fun, result_min.dof))
+        if UNCORR:
+            print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun, result_min.dof))
+        else:
+            print("p-value of avg t^2 = ", 1 - NUM_CONFIGS/(NUM_CONFIGS-result_min.dof+1)* stats.chi2.cdf(result_min.fun, result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
-    print("chi^2/dof = ", redchisq_str)
+    if UNCORR:
+        print("chi^2/dof = ", redchisq_str)
+    else:
+        print("t^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:
         print_phase_info(result_min, param_err)
 
@@ -710,6 +722,16 @@ def trunc_prec(num, extra_trunc=0):
     formstr = '%.'+str(int(PREC_DISP-extra_trunc))+'e'
     return str(float(formstr % Decimal(str(num))))
 
+def anchisq(redchisq_round_str):
+    """get the annotation chi^2 string
+    """
+    if UNCORR:
+        rcp = r"$\chi^2$/dof = "
+    else:
+        rcp = r"$\t^2$/dof = "
+    rcp += redchisq_round_str+", dof = "+str(dof)
+    return rcp
+
 
 if EFF_MASS and EFF_MASS_METHOD == 3:
     if GEVP:
@@ -722,8 +744,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
-            rcp = r"$\chi^2$/dof = "
-            rcp += redchisq_round_str+", dof = "+str(dof)
+            rcp = anchisq(redchisq_round_str)
             plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
 
@@ -739,23 +760,18 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """
             if result_min:
                 pass
-            rcp = r"$\chi^2$/dof = "
-            rcp += redchisq_round_str+", dof = "+str(dof)
+            rcp = anchisq(redchisq_round_str)
             plt.annotate(rcp, xy=(0.15, ystart),
                          xycoords='axes fraction')
 
 
 else:
 
-    def annotate_chisq(redchisq_round_str, dof, result_min=None):
+    def annotate_chisq(redchisq_round_str, dof, _=None):
         """Annotate with resultant chi^2
         """
-        if result_min:
-            pass
-        plt.annotate(
-            r"$\chi^2$/dof="+redchisq_round_str+", dof="+str(dof),
-            xy=(0.5, 0.05),
-            xycoords='axes fraction')
+        rcp = anchisq(redchisq_round_str)
+        plt.annotate(rcp, xy=(0.5, 0.05), xycoords='axes fraction')
 
 
 if JACKKNIFE_FIT:

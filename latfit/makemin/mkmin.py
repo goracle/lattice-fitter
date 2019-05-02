@@ -1,4 +1,4 @@
-"""Minimizes chi^2"""
+"""Minimizes chi^2 (t^2)"""
 import sys
 from scipy.optimize import minimize
 from scipy.optimize import curve_fit
@@ -30,7 +30,7 @@ except NameError:
 
 @PROFILE
 def mkmin(covinv, coords, method=METHOD):
-    """Minimization of chi^2 section of fitter.
+    """Minimization of chi^2 (t^2) section of fitter.
     Return minimized result.
     """
     if AUTO_FIT:
@@ -147,7 +147,8 @@ def mkmin(covinv, coords, method=METHOD):
         if res_min.fun < 0:
             print("negative chi^2 found:", res_min.fun)
             print("result =", result_min.x)
-            print("chi^2 (check) =", chi_sq(result_min.x, covinv, coords))
+            print("chi^2 (t^2; check) =",
+                  chi_sq(result_min.x, covinv, coords))
             print("covinv:", covinv)
             sys.exit(1)
             raise NegChisq
@@ -180,7 +181,8 @@ class NegChisq(Exception):
     @PROFILE
     def __init__(self, problemx=None, message=''):
         print("***ERROR***")
-        print("Chi^2 minimizer failed. Chi^2 found to be less than zero.")
+        print("Chi^2 (t^2) minimizer failed.",
+              "Chi^2 (t^2) found to be less than zero.")
         super(NegChisq, self).__init__(message)
         self.problemx = problemx
         self.message = message

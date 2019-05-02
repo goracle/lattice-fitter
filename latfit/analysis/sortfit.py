@@ -6,7 +6,7 @@ def best_times(coord, cov, index, times):
     """minimize distance to dispersive (no interactions) line
     index is the operator index of the GEVP
     (todo:make more general?)
-    chisq = num/denom
+    chisq (t^2) = num/denom
     """
     if hasattr(DISP_ENERGIES, '__iter__'):
         dispmean = np.mean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
@@ -23,10 +23,12 @@ def best_times(coord, cov, index, times):
             except IndexError:
                 num = (ycoord-dispmean)**2
             denom = cov[i, i]
-            assert not np.any(np.isnan(num)), "difference (chisq numerator)"+\
+            assert not np.any(np.isnan(num)),\
+                "difference (chisq (t^2) numerator)"+\
                 " is not a number "+str(DISP_ENERGIES)+" "+str(ycoord)
             assert denom != 0, "Error: variance is 0"
-            assert not np.any(np.isnan(num/denom)), "chisq is not a number."
+            assert not np.any(np.isnan(num/denom)),\
+                "chisq (t^2) is not a number."
             chisq = np.mean(num/denom)
         dist.append([times[i], chisq])
     dist = np.array(sorted(dist, key=lambda row: row[1]))
@@ -34,7 +36,7 @@ def best_times(coord, cov, index, times):
 
 def score_excl(excl1d, tsorted, lenfit, inversescore=True):
     """Sort the fit ranges based on which times are best
-    (most likely to give good chi^2)
+    (most likely to give good chi^2 (t^2))
     score the excluded time slices for a particular (GEVP) dimension
     higher scores are better fits, so return -score
     so the better fits come first using sorted()

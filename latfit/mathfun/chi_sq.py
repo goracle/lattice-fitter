@@ -1,4 +1,4 @@
-"""Calculates chi^2"""
+"""Calculates chi^2 (t^2)"""
 import sys
 from math import exp
 from numpy import dot
@@ -24,7 +24,8 @@ else:
 
 if GEVP:
     def chi_sq(trial_params, covinv, coords):
-        """Compute chi^2 given a set of trial parameters,
+        """Compute chi^2 (or, more likely, Hotelling's t^2)
+        given a set of trial parameters,
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
         # print("break")
@@ -49,7 +50,7 @@ if GEVP:
                     for outer in range(len(coords))
                     for inner in range(len(coords))]
             print("***ERROR***")
-            print("imaginary part of chi^2 is non-zero")
+            print("imaginary part of chi^2 (t^2) is non-zero")
             print(coords[0][0])
             print("sep")
             print(coords[0][1])
@@ -70,7 +71,7 @@ if GEVP:
         return retval.real
 else:
     def chi_sq(trial_params, covinv, coords):
-        """Compute chi^2 given a set of trial parameters,
+        """Compute chi^2 (t^2) given a set of trial parameters,
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
         return np.sum([dot(dot((

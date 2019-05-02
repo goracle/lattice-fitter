@@ -19,7 +19,7 @@ def geterr(result_min, covinv, coords):
     if result_min.fun > 0 and result_min.status == 0:
 
         # #param setup
-        # Numeric Hessian of chi^2 is unstable.  Use at own risk.
+        # Numeric Hessian of chi^2 (t^2) is unstable.  Use at own risk.
         hfun = nd.Hessian(lambda xrray:
                           chi_sq(xrray, covinv, coords))(result_min.x)
         l_coords = len(coords)
@@ -63,7 +63,8 @@ def compute_grad(result_min, coords, analytic_gradf=None):
 
 
 def compute_hess(grad, covinv, l_params, l_coords):
-    """compute analytically hessian of chi^2 with respect to fit parameters
+    """compute analytically hessian
+    of chi^2 (t^2) with respect to fit parameters
     """
     if l_params != 1:
         # use numeric second deriv of fit fit func.
@@ -93,7 +94,7 @@ def compute_hess(grad, covinv, l_params, l_coords):
 
 
 def compute_hess_inv(hess, hfun=None):
-    """compute hessian inverse of chi^2
+    """compute hessian inverse of chi^2 (t^2)
     """
     try:
         # debugging function; compare to numerically calculated Hessian

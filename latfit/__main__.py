@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Fit function to data.
-Compute chi^2 and errors.
+Compute chi^2 (t^2) and errors.
 Plot fit with error bars.
 Save result to pdf.
 usage note: MAKE SURE YOU SET THE Y LIMITS of your plot by hand!
@@ -33,7 +33,7 @@ import latfit.singlefit
 import latfit.analysis.sortfit as sortfit
 from latfit.config import JACKKNIFE, NOLOOP
 from latfit.config import FIT, METHOD, T0
-from latfit.config import ISOSPIN, MOMSTR
+from latfit.config import ISOSPIN, MOMSTR, UNCORR
 from latfit.config import ERR_CUT, PVALUE_MIN
 from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION, DELTA_E2_AROUND_THE_WORLD
@@ -301,7 +301,7 @@ def main():
         # which have error bars which are too large
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
         if FIT:
-            # store different excluded, and the avg chisq/dof
+            # store different excluded, and the avg chisq/dof (t^2/dof)
             min_arr = []
             overfit_arr = [] # allow overfits if no usual fits succeed
 
@@ -572,7 +572,7 @@ def get_tsorted(plotdata):
         #    break
         if i == 0 and MPIRANK == 0:
             print("Finding best times ("+\
-                    "most likely to give small chi^2 contributions)")
+                    "most likely to give small chi^2 (t^2) contributions)")
         if MULT > 1:
             coords = np.array([j[i] for j in plotdata.coords[:, 1]])
         else:
@@ -1069,6 +1069,7 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
         str(pickl_res_err.shape)+str(pickl_res[2].shape)
     avgname = 'chisq' if avgname == 'fun' else avgname
+    avgname = 't^2' if not UNCORR else avgname
     if not GEVP:
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
             avgname = avgname+'_'+dump_fit_range.fn1
@@ -1088,7 +1089,7 @@ dump_fit_range.fn1 = None
 
 @PROFILE
 def divbychisq(param_arr, pvalue_arr):
-    """Divide a parameter by chisq"""
+    """Divide a parameter by chisq (t^2)"""
     assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
     ret = np.array(param_arr)
     if len(ret.shape) > 1:
@@ -1209,12 +1210,15 @@ def skip_large_errors(result_param, param_err):
             ret = abs(i/j) < 1
     return ret if SKIP_LARGE_ERRORS else False
 
-# obsolete, we should simply pick the model with the smallest errors and an adequate chi^2
+# obsolete, we should simply pick the model with the smallest errors and an adequate chi^2 (t^2)
 @PROFILE
 def min_excl(min_arr):
-    """Find the minimum reduced chisq from all the fits considered"""
+    """Find the minimum reduced chisq (t^2) from all the fits considered"""
     minres = sorted(min_arr, key=lambda row: row[0])[0]
-    print("min chisq/dof=", minres[0])
+    if UNCORR:
+        print("min chisq/dof=", minres[0])
+    else:
+        print("min t^2/dof=", minres[0])
     print("best times to exclude:", minres[1])
     return minres[1]
 

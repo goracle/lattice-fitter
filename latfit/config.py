@@ -493,7 +493,7 @@ CALC_PHASE_SHIFT = False if not GEVP else CALC_PHASE_SHIFT
 # I=2 is not very noisy
 PHASE_SHIFT_ERR_CUT = 20 if ISOSPIN == 2 else np.inf
 
-# skip overfit results (where chi^2/dof < 1)
+# skip overfit results (where chi^2/dof (t^2/dof) < 1)
 SKIP_OVERFIT = False
 SKIP_OVERFIT = True
 
@@ -584,7 +584,7 @@ CORRMATRIX = True
 ERROR_BAR_METHOD = 'jk'
 ERROR_BAR_METHOD = 'avgcov'
 
-# chi^2 minimizer method used by the scipy.optimize.minimize
+# chi^2 (t^2) minimizer method used by the scipy.optimize.minimize
 # other internals will need to be edited if you change this
 # it's probably not a good idea
 

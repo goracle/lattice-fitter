@@ -95,8 +95,19 @@ class ResultMin:
         if self.dof is not None:
             ret = 1 - stats.chi2.cdf(
                 chisq, self.dof)
-            ret *= self.num_configs/(self.num_configs-self.dof+1)
+            if not UNCORR:
+                ret *= self.num_configs/(self.num_configs-self.dof+1)
         return ret
+
+def torchi():
+    """Are we calculating Hotelling's t^2 statistic or a true chi^2?
+    return the corresponding string.
+    """
+    if UNCORR:
+        ret = 'chisq/dof='
+    else:
+        ret = 't^2/dof='
+    return ret
 
 if JACKKNIFE_FIT == 'FROZEN':
     def jackknife_fit(params, reuse, coords, covinv):
@@ -105,6 +116,7 @@ if JACKKNIFE_FIT == 'FROZEN':
         jackknife avg value of chi^2 ('fun') and error in chi^2
         and whether the minimizer succeeded on all fits
         ('status' == 0 if all were successful)
+        (N.B. substitute t^2 for chi^2 if doing a correlated fit)
         """
         assert 0, "not currently supported"
         result_min = namedtuple(
@@ -132,7 +144,7 @@ if JACKKNIFE_FIT == 'FROZEN':
                         covinv_jack, coords_jack, 'L-BFGS-B')
                     result_min.status = result_min_jack.status
             print("config", config_num, ":",
-                  result_min_jack.x, "chisq/dof=",
+                  result_min_jack.x, torchi(),
                   result_min_jack.fun/result_min.dof)
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
@@ -154,6 +166,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         jackknife avg value of chi^2 ('fun') and error in chi^2
         and whether the minimizer succeeded on all fits
         ('status' == 0 if all were successful)
+        (N.B. substitute t^2 for chi^2 if doing a correlated fit)
         """
         if covinv is None:
             pass
@@ -195,14 +208,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         min_arr = np.zeros((params.num_configs, len(START_PARAMS)
                             if not GEVP else params.dimops))
 
-        # storage for fit by fit chi^2
+        # storage for fit by fit chi^2 (t^2)
         chisq_min_arr = np.zeros(params.num_configs)
 
         # fit by fit error bars (we eventually plot the averaged set)
         result_min.error_bars = alloc_errbar_arr(params, len(coords))
 
         # p-value fiducial cut:  cut below this pvalue
-        # as it is 5 \sigma away from an acceptable chi^2/dof
+        # as it is 5 \sigma away from an acceptable chi^2/dof (t^2/dof)
         chisq_fiduc_cut = chisqfiduc(params.num_configs,
                                      result_min.dof)
         # similarly, cut below 5 sigma below chisq/dof = 1
@@ -226,7 +239,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 config_num] = get_doublejk_data(params, coords_jack,
                                                 reuse, config_num)
 
-            # minimize chi^2 given the inverse covariance matrix and data
+            # minimize chi^2 (t^2) given the inv. covariance matrix and data
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
                 result_min.status = result_min_jack.status
@@ -263,7 +276,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # print results for this config
             print("config", config_num, ":", min_arr[config_num],
                   result_min.systematics_arr[config_num][-1],
-                  "chisq/dof=", result_min_jack.fun/result_min.dof,
+                  torchi(), result_min_jack.fun/result_min.dof,
                   "p-value=", result_min.pvalue[config_num],
                   'dof=', result_min.dof)
 
@@ -272,7 +285,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # use sloppy configs to check if fit will work
             if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
 
-                # check if chisq too big, too small
+                # check if chi^2 (t^2) too big, too small
                 if result_min_jack.fun > chisq_fiduc_cut or\
                    (SKIP_OVERFIT and result_min_jack.fun < \
                     chisq_fiduc_overfit_cut):
@@ -288,8 +301,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                         # approximate the difference as the stddev:
                         # sqrt(\sum(x-<x>)**2/(N));
                         # mult by sqrt(N-1) to get the variance in chi^2
+                        # (t^2)
                         # if we have one bad fit and another which is within
-                        # 5 sigma of the bad chi^2, skip, else throw an error
+                        # 5 sigma of the bad chi^2 (t^2),
+                        # skip, else throw an error
                         skip_range = abs(result_min_jack.fun-chisq_min_arr[
                             0+SUPERJACK_CUTOFF])<5*np.sqrt(2*result_min.dof/(
                                 params.num_configs-1))
@@ -351,11 +366,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min =  unpack_min_data(
                 result_min, phase_shift_data, scattering_length_data)
 
-        # compute mean, jackknife uncertainty of chi^2
+        # compute mean, jackknife uncertainty of chi^2 (t^2)
         result_min.chisq_arr = np.array(chisq_min_arr) # remove this redundancy
         result_min.fun, result_min.chisq_err = jack_mean_err(chisq_min_arr)
         assert np.mean(chisq_min_arr) == result_min.fun
-        print("chi^2/dof =", result_min.fun/result_min.dof)
+        print(torchi(), result_min.fun/result_min.dof)
 
         return result_min, param_err
 else:
@@ -365,8 +380,8 @@ else:
 
 @PROFILE
 def toomanybadfitsp(result_min, chisq_min_arr):
-    """If there have already been too many fits with large chi^2,
-    the average chi^2 is not going to be good so abort the fit
+    """If there have already been too many fits with large chi^2 (t^2),
+    the average chi^2 (t^2) is not going to be good so abort the fit
     (test)
     """
     avg = np.mean(chisq_min_arr)
@@ -388,13 +403,15 @@ def overfit_chisq_fiduc(num_configs, dof, guess=None):
     else:
         cut = stats.chi2.cdf(dof, dof)*t2cor
         lbound = 3e-7
-        func = lambda tau: ((1-cut*lbound)-(1-t2cor*stats.chi2.cdf(abs(tau), dof)))**2
+        func = lambda tau: ((1-cut*lbound)-(
+            1-t2cor*stats.chi2.cdf(abs(tau), dof)))**2
         sol = abs(float(fsolve(func, 1e-5 if guess is None else guess)))
         sol2 = dof
         assert abs(func(sol)) < 1e-12, "fsolve failed:"+str(num_configs)+\
             " "+str(dof)
         diff = (sol2-sol)/(num_configs-SUPERJACK_CUTOFF-1)
-        assert diff > 0, "bad solution to p-value solve, chisq/dof solution > 1"
+        assert diff > 0,\
+            "bad solution to p-value solve, chi^2(/t^2)/dof solution > 1"
         ret = sol2-diff
         overfit_chisq_fiduc.cache[key] = ret
     return ret
@@ -402,9 +419,9 @@ overfit_chisq_fiduc.cache = {}
 
 @PROFILE
 def chisqfiduc(num_configs, dof):
-    """Find the chi^2/dof cutoff (acceptance upper bound)
+    """Find the chi^2/dof (t^2/dof) cutoff (acceptance upper bound)
     defined as > 5 \sigma away from an acceptable pvalue
-    2*dof is the variance in chi^2
+    2*dof is the variance in chi^2 (t^2)
     """
     key = (num_configs, dof)
     t2correction = num_configs/(num_configs-dof+1)
@@ -704,7 +721,8 @@ def unique_pickle_file(filestr, reti=False):
 @PROFILE
 def prune_fit_range(covinv_jack, coords_jack, debug=False):
     """Zero out parts of the inverse covariance matrix to exclude items
-    from fit range.  Thus, the contribution to chi^2 will be 0.
+    from fit range.
+    Thus, the contribution to chi^2 (or, usually, t^2) will be 0.
     """
     excl = latfit.config.FIT_EXCL
     dimops1 = len(excl) == 1
@@ -1014,12 +1032,16 @@ def jack_errorbars(covjack, params):
     return error_bars
 
 class TooManyBadFitsError(Exception):
-    """Error if too many jackknifed fits have a large chi^2"""
+    """Error if too many jackknifed fits have a large chi^2 (t^2)"""
     @PROFILE
     def __init__(self, chisq=None, pvalue=None, message=''):
         print("***ERROR***")
-        print("Too many fits have bad chi^2")
-        print("chi^2 average up to this point:", chisq)
+        if UNCORR:
+            print("Too many fits have bad chi^2")
+            print("chi^2 average up to this point:", chisq)
+        else:
+            print("Too many fits have bad t^2")
+            print("t^2 average up to this point:", chisq)
         print("pvalue up to this point:", pvalue)
         super(TooManyBadFitsError, self).__init__(message)
         self.message = message
@@ -1040,7 +1062,10 @@ class BadJackknifeDist(Exception):
     @PROFILE
     def __init__(self, dof=None, message=''):
         print("***ERROR***")
-        print("Bad jackknife distribution, variance in chi^2 too large")
+        if UNCORR:
+            print("Bad jackknife distribution, variance in chi^2 too large")
+        else:
+            print("Bad jackknife distribution, variance in t^2 too large")
         super(BadJackknifeDist, self).__init__(message)
         self.message = message
 
@@ -1064,12 +1089,16 @@ class DOFNonPos(Exception):
         self.message = message
 
 class BadChisq(Exception):
-    """Exception for bad chi^2"""
+    """Exception for bad chi^2 (t^2)"""
     @PROFILE
     def __init__(self, chisq=None, message='', dof=None):
         print("***ERROR***")
-        print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
-              chisq, "dof =", dof)
+        if UNCORR:
+            print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
+                  chisq, "dof =", dof)
+        else:
+            print("t^2/dof >> 1 or p-value >> 0.5 t^2/dof =",
+                  chisq, "dof =", dof)
         super(BadChisq, self).__init__(message)
         self.chisq = chisq
         self.dof = dof
