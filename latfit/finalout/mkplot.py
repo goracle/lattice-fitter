@@ -413,8 +413,8 @@ def print_messages(result_min, param_err, param_chisq):
        JACKKNIFE == 'YES':
         print("avg p-value = ", gvar.gvar(result_min.pvalue,
                                           result_min.pvalue_err))
-        print("p-value of avg chi^2 = ", 1 - stats.chi2.cdf(result_min.fun,
-                                                            result_min.dof))
+        assert NUM_CONFIGS > 0, "num configs not set (bug):"+str(NUM_CONFIGS)
+        print("p-value of avg chi^2 = ", 1 - NUM_CONFIGS/(NUM_CONFIGS-result_min.dof+1)* stats.chi2.cdf(result_min.fun, result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     print("chi^2/dof = ", redchisq_str)
     if CALC_PHASE_SHIFT:

@@ -75,6 +75,7 @@ class ResultMin:
         self.scattering_length_arr = None
         self.scattering_length_err = None
         self.phase_shift_arr = None
+        self.num_configs = None
 
     @PROFILE
     def alloc_sys_arr(self, params):
@@ -82,14 +83,19 @@ class ResultMin:
         syslength = len(START_PARAMS)-params.dimops*(1 if GEVP else 0)
         syslength = max(1, syslength)
         self.systematics_arr = np.zeros((params.num_configs, syslength))
+        self.num_configs = params.num_configs
 
     @PROFILE
     def funpvalue(self, chisq):
-        """Find the p-value for the stored degrees of freedom"""
+        """Give pvalue from Hotelling t^2 stastistic
+        (often referred to incorrectly as chi^2;
+        is actually a sort of correlated chi^2)
+        """
         ret = None
         if self.dof is not None:
             ret = 1 - stats.chi2.cdf(
                 chisq, self.dof)
+            ret *= self.num_configs/(self.num_configs-self.dof+1)
         return ret
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -251,8 +257,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     params, min_arr[config_num])
 
             # compute p value for this fit
-            result_min.pvalue[config_num] = 1 - stats.chi2.cdf(
-                result_min_jack.fun, result_min.dof)
+            result_min.pvalue[config_num] = result_min.funpvalue(
+                result_min_jack.fun)
 
             # print results for this config
             print("config", config_num, ":", min_arr[config_num],
@@ -375,12 +381,14 @@ def overfit_chisq_fiduc(num_configs, dof, guess=None):
     (see chisqfiduc for the lower cut on the upper bound)
     """
     key = (num_configs, dof)
+    t2correction = num_configs/(num_configs-dof+1)
+    t2cor = t2correction
     if key in overfit_chisq_fiduc.cache:
         ret = overfit_chisq_fiduc.cache[key]
     else:
-        cut = stats.chi2.cdf(dof, dof)
+        cut = stats.chi2.cdf(dof, dof)*t2cor
         lbound = 3e-7
-        func = lambda tau: ((1-cut*lbound)-(1-stats.chi2.cdf(abs(tau), dof)))**2
+        func = lambda tau: ((1-cut*lbound)-(1-t2cor*stats.chi2.cdf(abs(tau), dof)))**2
         sol = abs(float(fsolve(func, 1e-5 if guess is None else guess)))
         sol2 = dof
         assert abs(func(sol)) < 1e-12, "fsolve failed:"+str(num_configs)+\
@@ -399,11 +407,13 @@ def chisqfiduc(num_configs, dof):
     2*dof is the variance in chi^2
     """
     key = (num_configs, dof)
+    t2correction = num_configs/(num_configs-dof+1)
+    t2cor = t2correction
     if key in chisqfiduc.mem:
         ret = chisqfiduc.mem[key]
     else:
-        func = lambda tau: PVALUE_MIN*3e-7-(1-stats.chi2.cdf(tau, dof))
-        func2 = lambda tau: PVALUE_MIN-(1-stats.chi2.cdf(tau, dof))
+        func = lambda tau: PVALUE_MIN*3e-7-(1-t2cor*stats.chi2.cdf(tau, dof))
+        func2 = lambda tau: PVALUE_MIN-(1-t2cor*stats.chi2.cdf(tau, dof))
         # guess about 2 for the max chi^2/dof
         sol = float(fsolve(func, dof))
         sol2 = float(fsolve(func2, dof))
