@@ -92,11 +92,12 @@ class ResultMin:
         is actually a sort of correlated chi^2)
         """
         ret = None
-        correction = (self.num_configs-1)/(self.num_configs-self.dof)
+        correction = (self.num_configs-self.dof)/(self.num_configs-1)
+        correction /= self.dof
         correction = 1 if UNCORR else correction
-        corr = correction
+        cor = correction
         if self.dof is not None:
-            ret = 1 - corr*stats.chi2.cdf(chisq, self.dof)
+            ret = stats.f.sf(chisq*cor, self.dof, self.num_configs-self.dof)
         return ret
 
 def torchi():
@@ -396,15 +397,15 @@ def overfit_chisq_fiduc(num_configs, dof, guess=None):
     (see chisqfiduc for the lower cut on the upper bound)
     """
     key = (num_configs, dof)
-    t2correction = (num_configs-1)/(num_configs-dof)
-    t2cor = t2correction
+    t2correction = (num_configs-dof)/(num_configs-1)/dof
+    cor = t2correction
     if key in overfit_chisq_fiduc.cache:
         ret = overfit_chisq_fiduc.cache[key]
     else:
-        cut = stats.chi2.cdf(dof, dof)*t2cor
+        cut = stats.f.cdf(dof*cor, dof, num_configs-dof)
         lbound = 3e-7
         func = lambda tau: ((1-cut*lbound)-(
-            1-t2cor*stats.chi2.cdf(abs(tau), dof)))**2
+            stats.f.sf(abs(tau)*cor, dof, num_configs-dof)))**2
         sol = abs(float(fsolve(func, 1e-5 if guess is None else guess)))
         sol2 = dof
         assert abs(func(sol)) < 1e-12, "fsolve failed:"+str(num_configs)+\
@@ -424,13 +425,13 @@ def chisqfiduc(num_configs, dof):
     2*dof is the variance in chi^2 (t^2)
     """
     key = (num_configs, dof)
-    t2correction = (num_configs-1)/(num_configs-dof)
-    t2cor = t2correction
+    t2correction = (num_configs-dof)/(num_configs-1)/dof
+    cor = t2correction
     if key in chisqfiduc.mem:
         ret = chisqfiduc.mem[key]
     else:
-        func = lambda tau: PVALUE_MIN*3e-7-(1-t2cor*stats.chi2.cdf(tau, dof))
-        func2 = lambda tau: PVALUE_MIN-(1-t2cor*stats.chi2.cdf(tau, dof))
+        func = lambda tau: PVALUE_MIN*3e-7-(stats.f.sf(tau*cor, dof, num_configs-dof))
+        func2 = lambda tau: PVALUE_MIN-(stats.f.sf(tau*cor, dof, num_configs-dof))
         # guess about 2 for the max chi^2/dof
         sol = float(fsolve(func, dof))
         sol2 = float(fsolve(func2, dof))
