@@ -1324,8 +1324,7 @@ def pval_commutator(norms_comm):
     if UNCORR:
         pval_arr = 1- stats.chi2.cdf(chisq_arr, dof)
     else:
-        pval_arr = 1- (len(chisq_arr)-1)/(
-            len(chisq_arr)-dof)*stats.chi2.cdf(chisq_arr, dof)
+        pval_arr = stats.f.sf(chisq_arr*(len(chisq_arr)-dof)/(len(chisq_arr)-1)/dof, dof, len(chisq_arr)-dof)
     pval = fsum(pval_arr)/len(chisq_arr)
     chisq = fsum(chisq_arr)/len(chisq_arr)
     #print("dev:", np.std(chisq_arr, ddof=1))
