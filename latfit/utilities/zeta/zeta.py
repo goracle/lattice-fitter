@@ -45,18 +45,22 @@ if CALC_PHASE_SHIFT:
         """
         epipi = remove_epipi_indexing(epipi)
         comp = np.array(rf.procmom(MOMSTR))
-        try:
-            if FIT_SPACING_CORRECTION:
-                gamma = epipi/sqrt(
-                    epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp))
-            else:
-                gamma = epipi/sqrt(
-                    epipi**2-4*np.sin(np.pi/L_BOX)**2*np.dot(comp, comp))
-        except (ValueError, FloatingPointError):
-            print("zeta.py, bad gamma value for epipi=", epipi)
-            print("center of mass momentum=", comp)
-            print("Length of box=", L_BOX)
-            raise ZetaError("bad gamma, epipi = "+str(epipi))
+        gamma = 1
+        if epipi:
+            try:
+                if FIT_SPACING_CORRECTION:
+                    arg = epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp)
+                    gamma = epipi/sqrt(arg)
+                else:
+                    arg = epipi**2-4*np.sin(
+                        np.pi/L_BOX)**2*np.dot(comp, comp)
+                    gamma = epipi/sqrt(arg)
+            except (ValueError, FloatingPointError):
+                print("zeta.py, bad gamma value for epipi=", epipi)
+                print("arg=", arg)
+                print("center of mass momentum=", comp)
+                print("Length of box=", L_BOX)
+                raise ZetaError("bad gamma, epipi = "+str(epipi))
         if gamma < 1:
             raise RelGammaError(gamma=gamma, epipi=epipi)
         epipi = epipi*AINVERSE/gamma
@@ -67,7 +71,10 @@ if CALC_PHASE_SHIFT:
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
                    str(int(not FIT_SPACING_CORRECTION))]
         try:
-            out = subprocess.check_output(arglist)
+            if not np.isnan(epipi):
+                out = subprocess.check_output(arglist)
+            else:
+                out = np.nan
         except FileNotFoundError:
             print("Error in zeta: main.C not compiled yet.")
             print(subprocess.check_output(['pwd']))
@@ -158,9 +165,10 @@ def plotcrosscurves(plot_both=False):
     the intersection points are predictions for lattice energies
     """
     points = 1e3 # Number of points
-    xmin, xmax = 0, 1.1
+    xmin, xmax = 2*float(PION_MASS)/AINVERSE, 1.1
     xlist = list(map(lambda x: float(xmax - xmin)*1.0*x/(
-        points*1.0), list(np.arange(points+1))))
+        points*1.0)+xmin, list(np.arange(points+1))))
+    xlist = [0+0j if np.isnan(i) else i for i in xlist]
     #ylist_pheno_minus = list(map(lambda y: -pheno(y), xlist))
     #plt.plot(xlist, ylist_pheno_minus, label='pheno-')
     #plt.plot(xlist, ylist_pheno_plus, label='pheno+')
