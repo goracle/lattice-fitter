@@ -421,9 +421,9 @@ def print_messages(result_min, param_err, param_chisq):
                                           result_min.pvalue_err))
         assert NUM_CONFIGS > 0, "num configs not set (bug):"+str(NUM_CONFIGS)
         if UNCORR:
-            print("p-value of avg chi^2 = ", stats.f.sf(result_min.fun*(NUM_CONFIGS-result_min.dof)/(NUM_CONFIGS-1)/result_min.dof, result_min.dof, NUM_CONFIGS-result_min.dof))
+            print("p-value of avg chi^2 = ", 1 -  stats.chi2.cdf(result_min.fun, result_min.dof))
         else:
-            print("p-value of avg t^2 = ", 1 - * stats.chi2.cdf(result_min.fun, result_min.dof))
+            print("p-value of avg t^2 = ", stats.f.sf(result_min.fun*(NUM_CONFIGS-result_min.dof)/(NUM_CONFIGS-1)/result_min.dof, result_min.dof, NUM_CONFIGS-result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     if UNCORR:
         print("chi^2/dof = ", redchisq_str)
