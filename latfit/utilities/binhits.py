@@ -11,10 +11,10 @@ import numpy as np
 import h5py
 import read_file as rf
 
-SKIP_VEC = False
 SKIP_VEC = True
-SKIP_SCALAR = True
+SKIP_VEC = False
 SKIP_SCALAR = False
+SKIP_SCALAR = True
 
 def h5list(dd1):
     """List hdf5 files in given directory
