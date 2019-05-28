@@ -722,7 +722,7 @@ def trunc_prec(num, extra_trunc=0):
     formstr = '%.'+str(int(PREC_DISP-extra_trunc))+'e'
     return str(float(formstr % Decimal(str(num))))
 
-def anchisq(redchisq_round_str):
+def anchisq(redchisq_round_str, dof):
     """get the annotation chi^2 string
     """
     if UNCORR:
@@ -744,7 +744,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
                            result_min, ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
-            rcp = anchisq(redchisq_round_str)
+            rcp = anchisq(redchisq_round_str, dof)
             plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.x)-2)),
                          xycoords='axes fraction')
 
@@ -760,7 +760,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """
             if result_min:
                 pass
-            rcp = anchisq(redchisq_round_str)
+            rcp = anchisq(redchisq_round_str, dof)
             plt.annotate(rcp, xy=(0.15, ystart),
                          xycoords='axes fraction')
 
@@ -770,7 +770,7 @@ else:
     def annotate_chisq(redchisq_round_str, dof, _=None):
         """Annotate with resultant chi^2
         """
-        rcp = anchisq(redchisq_round_str)
+        rcp = anchisq(redchisq_round_str, dof)
         plt.annotate(rcp, xy=(0.5, 0.05), xycoords='axes fraction')
 
 
