@@ -30,6 +30,7 @@ from mpi4py import MPI
 
 TSTEP = int(TSTEP)
 
+# do not change, delete_tsrc should be true
 DELETE_TSRC = False
 DELETE_TSRC = True
 
