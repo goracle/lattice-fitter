@@ -98,6 +98,9 @@ def phase(epipi):
     assert COMP, "center of mass momentum not set"
     assert L_BOX, "box length not set"
     assert MPION, "mass of pion not set"
+    # sort this, per quantization conditions given in https://arxiv.org/pdf/1704.05439.pdf
+    COMP = np.asarray(sorted(list(COMP)))
+    COMP = np.abs(COMP)
 
     # set up wlm
     wlm = wfun()
@@ -117,27 +120,35 @@ def getcot(wlm):
     cot = wlm(0,0)
     units = np.sum(np.abs(COMP))
 
+    foundirr = True
     if units == 1:
-        if IRREP == 'A2':
+        if IRREP == 'A_1PLUS_mom1':
             cot += 2*wlm(2,0)
-        if IRREP == 'E':
+        elif IRREP == 'B_mom1':
             cot += -wlm(2,0)
+        else:
+            foundirr = False
     if units == 2:
-        if IRREP == 'B1':
+        if IRREP == 'A_1PLUS_mom11':
             cot += wlm(2,0)/2
             cot += 1j*np.sqrt(6)*wlm(2,1)-sqrt(3/2)*wlm(2,2)
-        if IRREP == 'B2':
+        elif IRREP == 'A_2PLUS_mom11':
             cot += wlm(2,0)/2
             cot += -1j*np.sqrt(6)*wlm(2,1)-sqrt(3/2)*wlm(2,2)
-        if IRREP == 'B3':
+        elif IRREP == 'A_2MINUS_mom11':
             cot += wlm(2,0)+sqrt(6)*wlm(2,2)
+        else:
+            foundirr = False
     if units == 3:
-        if IRREP == 'A2':
+        if IRREP == 'A_1PLUS_avg_mom111':
             cot += -1j*wlm(2,2)*np.sqrt(8/3)
             cot += np.real(wlm(2,1))*np.sqrt(8/3)
             cot += np.imag(wlm(2,1))*np.sqrt(8/3)
-        elif IRREP == 'E':
+        elif IRREP == 'B_mom111':
             cot += 1j*np.sqrt(6)*wlm(2,2)
+        else:
+            foundirr = False
+    assert foundirr, "bad irrep specified:"+str(IRREP)
     return cot
 
 if __name__ == '__main__':
