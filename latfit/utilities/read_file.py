@@ -30,12 +30,31 @@ def pol(filename):
         polret = None
     return polret
 
+def firstpol(filename):
+    """Just get the first polarization
+    (exists a common case where second == first)"""
+    ret = pol(filename)
+    if isinstance(ret, int) or ret is None:
+        pass
+    else:
+        ret = int(ret[0])
+    return ret
+
+
 def compare_pols(pol1, pol2):
     """Return true if both polarization specifiers are the same.
     false if they are different
     None if one is None
     """
-    if pol1 is None or pol2 is None:
+    if hasattr('__iter__', pol1):
+        retval = None
+        if str(pol2).isdigit():
+            retval = bool(pol1[int(pol2)-1])
+    elif hasattr('__iter__', pol2):
+        retval = None
+        if str(pol1).isdigit():
+            retval = bool(pol2[int(pol1)-1])
+    elif pol1 is None or pol2 is None:
         retval = None
     elif str(pol1).isdigit() and str(pol2).isdigit():
         retval = pol1 == pol2
