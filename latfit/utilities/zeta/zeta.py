@@ -10,7 +10,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
+from latfit.config import IRREP, ISOSPIN
 from latfit.utilities import read_file as rf
+import latfit.utilities.i1zeta as i1z
 
 class ZetaError(Exception):
     """Define an error for generic phase shift calc failure"""
@@ -26,7 +28,6 @@ class RelGammaError(Exception):
         self.gamma = gamma
         self.epipi = epipi
         self.message = message
-
 if CALC_PHASE_SHIFT:
     def remove_epipi_indexing(epipi):
         """Remove the indexining on epipi"""
@@ -66,26 +67,38 @@ if CALC_PHASE_SHIFT:
         epipi = epipi*AINVERSE/gamma
         lbox = L_BOX/AINVERSE
         #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
-        binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
+
+        # set up the normal call to w00 phase shift method
         arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
                    str(int(not FIT_SPACING_CORRECTION))]
+        binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
+
+        # set up the I=1 moving frame version
+        i1z.COMP = MOMSTR
+        i1z.L_BOX = np.float(lbox)
+        i1z.IRREP = str(IRREP)
+        i1z.MPION = np.float(PION_MASS)
+
         try:
             if not np.isnan(epipi):
-                out = subprocess.check_output(arglist)
+                if (ISOSPIN !=1 or not np.any(comp):
+                    out = subprocess.check_output(arglist)
+                else:
+                    out = i1z.phase(epipi)
             else:
                 out = np.nan
-        except FileNotFoundError:
-            print("Error in zeta: main.C not compiled yet.")
-            print(subprocess.check_output(['pwd']))
-            print(inspect.getfile(zeta))
-            sys.exit(1)
-        except subprocess.CalledProcessError:
-            print("Error in zeta: calc of phase shift error:")
-            print(epipi)
-            errstr = subprocess.Popen(arglist,
-                                      stdout=subprocess.PIPE).stdout.read()
-            raise ZetaError(errstr)
+            except FileNotFoundError:
+                print("Error in zeta: main.C not compiled yet.")
+                print(subprocess.check_output(['pwd']))
+                print(inspect.getfile(zeta))
+                sys.exit(1)
+            except subprocess.CalledProcessError:
+                print("Error in zeta: calc of phase shift error:")
+                print(epipi)
+                errstr = subprocess.Popen(arglist,
+                                        stdout=subprocess.PIPE).stdout.read()
+                raise ZetaError(errstr)
         try:
             test = epipi*epipi/4-PION_MASS**2 < 0
         except FloatingPointError:
