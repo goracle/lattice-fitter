@@ -3,6 +3,7 @@
 # A1_mom11 dim = 5
 # A1_mom111 dim = 3
 from math import sqrt
+from i1movingframes import OPLIST, AVG_ROWS
 
 
 ENSEMBLE = 'FULL'
@@ -20,7 +21,6 @@ if ENSEMBLE == '24ID':
         (1/sqrt(6), 'pipi', [[0, 0, 1], [0, 0, -1]]),
         (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
         (1, 'sigma', [0, 0, 0]),
-        # (1, 'rho', [0, 0, 0]),
         (1/sqrt(12), 'UUpipi', [[0, 1, 1], [0, -1, -1]]),
         (1/sqrt(12), 'UUpipi', [[0, -1, -1], [0, 1, 1]]),
         (1/sqrt(12), 'UUpipi', [[1, 0, 1], [-1, 0, -1]]),
@@ -486,6 +486,7 @@ if ENSEMBLE == '24ID':
     T_1_1MINUS_mom000 = [
         (1/sqrt(2), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
         (-1/sqrt(2), 'pipi', [[-1, 0, 0], [1, 0, 0]]),
+        (1, 'rho', [0, 0, 0])
         (-1/sqrt(8), 'UUpipi', [[-1,-1, 0], [1, 1, 0]]),
         (1/sqrt(8), 'UUpipi', [[1,1, 0], [-1, -1, 0]]),
         (-1/sqrt(8), 'UUpipi', [[-1, 1, 0], [1,-1, 0]]),
@@ -502,11 +503,11 @@ if ENSEMBLE == '24ID':
         (1/sqrt(8), 'U2pipi', [[1, -1, 1], [-1, 1, -1]]) ,
         (1/sqrt(8), 'U2pipi', [[1, 1, -1], [-1, -1, 1]]) ,
         (1/sqrt(8), 'U2pipi', [[1, 1, 1], [-1, -1, -1]]) ,
-        (1, 'rho', [0, 0, 0])
     ]
     T_1_2MINUS_mom000 = [
         ( 1/sqrt(2) , 'pipi' , [[0, 1, 0], [0, -1, 0]] ) ,
         ( -1/sqrt(2) , 'pipi' , [[0, -1, 0], [0, 1, 0]] ) ,
+        ( 1 , 'rho' , [0, 0, 0] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[0, -1, -1], [0, 1, 1]] ) ,
         ( 1/sqrt(8) , 'UUpipi' , [[0, 1, 1], [0, -1, -1]] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[0, -1, 1], [0, 1, -1]] ) ,
@@ -523,11 +524,11 @@ if ENSEMBLE == '24ID':
         ( 1/sqrt(8) , 'U2pipi' , [[1, 1, -1], [-1, -1, 1]] ) ,
         ( 1/sqrt(8) , 'U2pipi' , [[-1, 1, 1], [1, -1, -1]] ) ,
         ( 1/sqrt(8) , 'U2pipi' , [[1, 1, 1], [-1, -1, -1]] ) ,
-        ( 1 , 'rho' , [0, 0, 0] ) ,
     ]
     T_1_3MINUS_mom000 = [
         ( 1/sqrt(2) , 'pipi' , [[0, 0, 1], [0, 0, -1]] ) ,
         ( -1/sqrt(2) , 'pipi' , [[0, 0, -1], [0, 0, 1]] ) ,
+        ( 1 , 'rho' , [0, 0, 0] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[-1, 0, -1], [1, 0, 1]] ) ,
         ( 1/sqrt(8) , 'UUpipi' , [[1, 0, 1], [-1, 0, -1]] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[1, 0, -1], [-1, 0, 1]] ) ,
@@ -544,7 +545,6 @@ if ENSEMBLE == '24ID':
         ( 1/sqrt(8) , 'U2pipi' , [[-1, 1, 1], [1, -1, -1]] ) ,
         ( 1/sqrt(8) , 'U2pipi' , [[1, -1, 1], [-1, 1, -1]] ) ,
         ( 1/sqrt(8) , 'U2pipi' , [[1, 1, 1], [-1, -1, -1]] ) ,
-        ( 1 , 'rho' , [0, 0, 0] ) ,
     ]
 
 
@@ -560,7 +560,6 @@ elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a pr
         (1/sqrt(6), 'pipi', [[0, 0, 1], [0, 0, -1]]),
         (1/sqrt(6), 'pipi', [[0, 0, -1], [0, 0, 1]]),
         (1, 'sigma', [0, 0, 0]),
-        # (1, 'rho', [0, 0, 0]),
         (1/sqrt(12), 'UUpipi', [[0, 1, 1], [0, -1, -1]]),
         (1/sqrt(12), 'UUpipi', [[0, -1, -1], [0, 1, 1]]),
         (1/sqrt(12), 'UUpipi', [[1, 0, 1], [-1, 0, -1]]),
@@ -1345,6 +1344,7 @@ elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a pr
     T_1_1MINUS_mom000 = [
         (1/sqrt(2), 'pipi', [[1, 0, 0], [-1, 0, 0]]),
         (-1/sqrt(2), 'pipi', [[-1, 0, 0], [1, 0, 0]]),
+        (1, 'rho', [0, 0, 0])
         (-1/sqrt(8), 'UUpipi', [[-1,-1, 0], [1, 1, 0]]),
         (1/sqrt(8), 'UUpipi', [[1,1, 0], [-1, -1, 0]]),
         (-1/sqrt(8), 'UUpipi', [[-1, 1, 0], [1,-1, 0]]),
@@ -1387,11 +1387,11 @@ elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a pr
         (0.25, 'U5pipi', [[1, -1, 2], [-1, 1, -2]]),
         (-0.25, 'U5pipi', [[-1, 1, 2], [1, -1, -2]]),
         (0.25, 'U5pipi', [[1, 1, 2], [-1, -1, -2]]),
-        (1, 'rho', [0, 0, 0])
     ]
     T_1_2MINUS_mom000 = [
         ( 1/sqrt(2) , 'pipi' , [[0, 1, 0], [0, -1, 0]] ) ,
         ( -1/sqrt(2) , 'pipi' , [[0, -1, 0], [0, 1, 0]] ) ,
+        ( 1 , 'rho' , [0, 0, 0] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[0, -1, -1], [0, 1, 1]] ) ,
         ( 1/sqrt(8) , 'UUpipi' , [[0, 1, 1], [0, -1, -1]] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[0, -1, 1], [0, 1, -1]] ) ,
@@ -1434,11 +1434,11 @@ elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a pr
         ( 0.25 , 'U5pipi' , [[2, 1, -1], [-2, -1, 1]] ) ,
         ( -0.25 , 'U5pipi' , [[2, -1, 1], [-2, 1, -1]] ) ,
         ( 0.25 , 'U5pipi' , [[2, 1, 1], [-2, -1, -1]] ) ,
-        ( 1 , 'rho' , [0, 0, 0] ) ,
     ]
     T_1_3MINUS_mom000 = [
         ( 1/sqrt(2) , 'pipi' , [[0, 0, 1], [0, 0, -1]] ) ,
         ( -1/sqrt(2) , 'pipi' , [[0, 0, -1], [0, 0, 1]] ) ,
+        ( 1 , 'rho' , [0, 0, 0] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[-1, 0, -1], [1, 0, 1]] ) ,
         ( 1/sqrt(8) , 'UUpipi' , [[1, 0, 1], [-1, 0, -1]] ) ,
         ( -1/sqrt(8) , 'UUpipi' , [[1, 0, -1], [-1, 0, 1]] ) ,
@@ -1481,7 +1481,6 @@ elif ENSEMBLE == 'FULL': # the full operator set (too large to be used in a2a pr
         ( 0.25 , 'U5pipi' , [[-1, 2, 1], [1, -2, -1]] ) ,
         ( -0.25 , 'U5pipi' , [[1, 2, -1], [-1, -2, 1]] ) ,
         ( 0.25 , 'U5pipi' , [[1, 2, 1], [-1, -2, -1]] ) ,
-        ( 1 , 'rho' , [0, 0, 0] ) ,
     ]
 
     #T_1_1MINUS_mom001 =
@@ -1495,7 +1494,7 @@ else:
 
 
 # specify polarization info here
-OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
+OPLIST.update({'A_1PLUS_mom000': A_1PLUS_mom000,
           'A1x_mom100': A1x_mom100,
           'A1x_mom_100': A1x_mom_100,
           'A1y_mom010': A1y_mom010,
@@ -1533,9 +1532,9 @@ OPLIST = {'A_1PLUS_mom000': A_1PLUS_mom000,
           # 'A1my': A1my,
           # 'A1z': A1z,
           #'A1mz': A1mz,
-}
+})
 
-AVG_ROWS = {
+AVG_ROWS.update({
     'T_1_MINUS': ('T_1_1MINUS_mom000', 'T_1_2MINUS_mom000',
                   'T_1_3MINUS_mom000'),
     'A1_mom1': ('A1x_mom100',
@@ -1567,4 +1566,4 @@ AVG_ROWS = {
                       'A1y_mom_11_1',
                       'A1z_mom_1_11'),
     # 'A1': ('A1x', 'A1mx', 'A1y', 'A1my', 'A1z', 'A1mz')
-}
+})
