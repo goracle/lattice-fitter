@@ -7,6 +7,7 @@ import re
 import glob
 import math
 import itertools
+import ast
 import numpy as np
 from mpi4py import MPI
 import h5py
@@ -425,7 +426,7 @@ def overall_coeffs(iso, irr):
     ocs = {}
     for iso_dir in iso:
         for operator in irr:
-            pol_req = get_polreq(operator)
+            pol_req, pol_coeffs = get_polreq(operator)
             mat = re.search(r'I(\d+)/', iso_dir)
             if not mat:
                 print("Error: No isopsin info found")
@@ -439,6 +440,11 @@ def overall_coeffs(iso, irr):
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
                     pol_comparison = rf.compare_pols(pols, pol_req)
+                    if pols is not None:
+                        pol_coeff = pol_coeffs[rf.firstpol(original_block)]
+                    else:
+                        assert pol_coeffs == 1.0, "bad polarization coeff:"+str(pol_coeffs)
+                        pol_coeff = pol_coeffs
                     # pol_comparison is false if the polarizations are different
                     # otherwise it is None if there is no polarization
                     # either in pols or pol_req
@@ -448,7 +454,7 @@ def overall_coeffs(iso, irr):
                         continue
                     ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
-                                               outer_coeff*inner_coeff))
+                                               pol_coeff*outer_coeff*inner_coeff))
     if MPIRANK == 0:
         print("Done getting projection coefficients")
     return ocs
@@ -479,15 +485,22 @@ def get_polreq(op1):
     e.g. T_1_1MINUS needs to have vector particle polarized in x
     """
     spl = op1.split('?')
+    pol_coeffs = np.array(1.0)
     if len(spl) == 1:
         reqpol = None
     else:
         polstrspl = spl[1].split(',')[0].split('=')
         if polstrspl[0] == 'pol':
-            reqpol = int(polstrspl[1])
+            try:
+                reqpol = int(polstrspl[1])
+            except ValueError:
+                reqpol = None
+                pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]))
+                assert len(pol_coeffs) == 3,\
+                    "need 3 coefficients for each polarization"
         else:
             reqpol = None
-    return reqpol
+    return reqpol, pol_coeff
 
 
 @PROFILE
