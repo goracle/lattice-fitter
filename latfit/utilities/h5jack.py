@@ -819,6 +819,7 @@ def getbubbles(bubl, trajl, openlist=None):
             continue
         for traj in trajl:
             filekey = get_file_name(traj)
+            errfn = str(filekey)
             if openlist is None:
                 fn1 = h5py.File(filekey, 'r')
             else:
@@ -827,7 +828,7 @@ def getbubbles(bubl, trajl, openlist=None):
             filekey = get_file_name(traj)
             keysrc = 'traj_' + str(traj) + '_' + dsrc
             assert(keysrc in fn1), "key = " + keysrc + \
-                " not found in fn1:"+filekey
+                " not found in fn1:"+errfn
             #try:
             #    pdiag = fn1[keysrc].attrs['mom']
             #except KeyError:
