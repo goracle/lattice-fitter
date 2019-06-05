@@ -3,6 +3,7 @@
 
 ## p1 == A1^+ \circleplus B
 import sys
+import numpy as np
 from math import sqrt
 import read_file as rf
 current_module = sys.modules[__name__]
@@ -960,7 +961,7 @@ def pol_coeff(comp):
     from center of mass momentum"""
     isnzero = int(sum([abs(i) for i in comp]))
     if isnzero == 3:
-        ret = np.cross(v, [1, 0, 0])
+        ret = np.cross(comp, [1, 0, 0])
     elif isnzero == 2:
         assert None, "fix this"
         ret = []
@@ -1001,7 +1002,7 @@ for irr in dir(cmod):
             key += lstr(mom)
         elif 'A_2PLUS' in irr and sum(np.abs(mom)) == 2:
             key += str(tarr.index(False)+1)
-        elif 'A_1MINUS' in irr and sum(np.abs(mom)) == 2:
+        elif 'A_2MINUS' in irr and sum(np.abs(mom)) == 2:
             key += lstr(np.cross(mom, [(1 if not i else 0) for i in tarr]))
 
         #pols for p111
@@ -1086,7 +1087,7 @@ AVG_ROWS = {
                  'B_0_mom11_1',
                  'B_0_mom1_1_1',
                  'B_0_mom_11_1',
-                 'B_0_mom_1_11'
+                 'B_0_mom_1_11',
                  'B_1_mom111',
                  'B_1_mom_1_1_1',
                  'B_1_mom_111',
@@ -1094,7 +1095,7 @@ AVG_ROWS = {
                  'B_1_mom11_1',
                  'B_1_mom1_1_1',
                  'B_1_mom_11_1',
-                 'B_1_mom_1_11'
+                 'B_1_mom_1_11',
     ),
     'A_1PLUS_avg_mom111': ('A_1PLUS_mom111',
                            'A_1PLUS_mom_1_1_1',

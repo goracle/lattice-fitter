@@ -827,7 +827,7 @@ def getbubbles(bubl, trajl, openlist=None):
             filekey = get_file_name(traj)
             keysrc = 'traj_' + str(traj) + '_' + dsrc
             assert(keysrc in fn1), "key = " + keysrc + \
-                " not found in fn1:"+PREFIX+str(traj)+'.'+EXTENSION
+                " not found in fn1:"+filekey
             #try:
             #    pdiag = fn1[keysrc].attrs['mom']
             #except KeyError:
