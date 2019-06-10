@@ -991,6 +991,28 @@ def lstr(arr):
     ret = str(ret)
     return ret
 
+def sumabs(mom):
+    """Sum the absolute value of the momentum
+    [1,-1,0] => 2
+    """
+    ret = np.sum(np.abs(mom))
+    return ret
+
+def sortmom(irrvar):
+    """Enforce Luchang's condition
+    that inner pions should be higher energy
+    """
+    ret = []
+    for i in irrvar:
+        moms = i[2]
+        if len(moms) == 2:
+            if sumabs(moms[0]) > sumabs(moms[1]):
+                moms[0], moms[1] = moms[1], moms[0]
+        ret.append((i[0], i[1], moms))
+    assert len(ret) == len(irrvar), "bad return length:"+\
+        str(ret)+" "+str(irrvar)
+    return ret
+
 # add the rho operator via this hack
 OPLIST = {}
 for irr in dir(cmod):
@@ -998,12 +1020,15 @@ for irr in dir(cmod):
         continue
     else:
         irrvar = getattr(cmod, irr)
+        if not hasattr(irrvar, '__iter__'):
+            continue
+        irrvar = sortmom(irrvar)
         mom = rf.mom(irr)
         assert len(mom) == 3, "bad momentum specified:"+str(mom)
         for i in mom:
             assert isinstance(i, int), "momentum has non-int value:"+str(mom)
         toadd = [(1, 'rho', list(mom))]
-        irrvar.insert(1, *toadd)
+        irrvar.insert(0, *toadd)
         key = str(irr)+'?pol='
         tarr = [bool(i) for i in mom] 
 
@@ -1130,5 +1155,10 @@ AVG_ROWS = {
 for i in AVG_ROWS:
     assert len(set(AVG_ROWS[i])) == len(list(AVG_ROWS[i])),\
         "duplicate found:"+str(AVG_ROWS[i])
+    count = 0
     for j in AVG_ROWS[i]:
         assert j in dir(cmod), "unknown irrep:"+str(j)
+        irrvar = getattr(cmod, j)
+        count = len(irrvar) if not count else count
+        if 'B' not in j:
+            assert len(irrvar) == count, "bad irrep length:"+str(j)+" "+str(irrvar)
