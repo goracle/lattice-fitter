@@ -11,16 +11,16 @@ def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
     retdirs = [[None for i in range(dim)] for j in range(dim)]
     for i in range(dim):
         for j in range(dim):
-            istr = hierarchy(i, isospin, sigma)
-            jstr = hierarchy(j, isospin, sigma)
+            istr = hierarchy(i, isospin, sigma, irrep)
+            jstr = hierarchy(j, isospin, sigma, irrep)
             if istr == 'pipi' and jstr == 'pipi':
                 jstr = ''
             retdirs[i][j] = dirstr+istr+jstr+irrepstr+endstr
     return retdirs
 
-def hierarchy(index, isospin, sigma):
+def hierarchy(index, isospin, sigma, irrep):
     """Return the operator for this dimension, in ascending energy order"""
-    if index == 0 and isospin != 1:
+    if index == 0 and isospin != 1 and 'A_1PLUS' not in irrep:
         retstr = 'S_pipi'
     elif isospin == 1 and index == 0:
         retstr = 'pipi'
