@@ -211,20 +211,25 @@ def dispersive(momentum, mass=None, box_length=None, continuum=False):
     mass = np.asarray(mass)
     assert continuum == CONTINUUM, "dispersion relation mismatch."
     box_length = BOX_LENGTH if box_length is None else box_length
-    if hasattr(mass, '__iter__') and mass.shape:
+    if hasattr(mass, '__iter__') and mass.shape and momentum is not None:
         ret = [sqrt(i**2 + 4*np.sin(pi/box_length)**2*norm2(momentum)) for i in mass]
         ret = [sqrt(i**2+(2*pi/box_length)**2*norm2(momentum)) for i in mass]\
             if continuum else ret
     else:
-        ret = sqrt(mass**2 + 4*np.sin(pi/box_length)**2*norm2(momentum))
-        ret = sqrt(mass**2+(2*pi/box_length)**2*norm2(momentum))\
-            if continuum else ret
-    if not np.sum(momentum):
-        try:
-            assert np.allclose(ret, mass, rtol=1e-8), "precision gain"
-        except AssertionError:
-            ret = massfunc()
-            assert np.allclose(ret, mass, rtol=1e-16), "precision gain"
-    ret = np.asarray(ret)
-    ret = ret.flatten()
+        if momentum is not None:
+            ret = sqrt(mass**2 + 4*np.sin(pi/box_length)**2*norm2(momentum))
+            ret = sqrt(mass**2+(2*pi/box_length)**2*norm2(momentum))\
+                if continuum else ret
+        else:
+            ret = None
+    if momentum is not None:
+        if not np.sum(momentum):
+            try:
+                assert np.allclose(ret, mass, rtol=1e-8), "precision gain"
+            except AssertionError:
+                ret = massfunc()
+                assert np.allclose(ret, mass, rtol=1e-16), "precision gain"
+    if ret is not None:
+        ret = np.asarray(ret)
+        ret = ret.flatten()
     return ret
