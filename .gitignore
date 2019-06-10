@@ -8,6 +8,7 @@ A1_PI_Sub_prop
 *.out
 *.pdf
 *.o
+*.so
 *.dat
 *\#*
 *.pyc
