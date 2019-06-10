@@ -300,8 +300,12 @@ def op_list(stype='ascii'):
 
 def cons_mom(src, snk, momtotal=None):
     """Check for momentum conservation"""
+    assert len(src) == 3, "bad source/sink spec.:"+str(src)+" "+str(snk)
+    assert len(snk) == 3, "bad source/sink spec.:"+str(snk)
     psrc = wd.momtotal(src[2])
     psnk = wd.momtotal(snk[2])
+    assert len(psrc) == len(psnk), "bad length for p:"+str(psrc)+" "+str(psnk)
+    assert len(psrc) == 3, "bad length for p:"+str(psrc)+" "+str(psnk)
     conssrcsnk = psrc[0] == psnk[0] and psrc[1] == psnk[1] and psrc[2] == psnk[2]
     if momtotal:
         check = momtotal[0] == psnk[0] and momtotal[1] == psnk[1] and momtotal[2] == psnk[2]
