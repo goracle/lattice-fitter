@@ -14,7 +14,7 @@ def zetalm(l_arg, m_arg, qtwo, gamma):
     """Compute generalized Luscher zeta function"""
     zeta = czeta()
     dlist = []
-    dx, dy, dz = COMP:
+    dx, dy, dz = COMP
     zeta.set_dgam(dx,dy,dz, gamma)
     zeta.set_lm(l_arg, m_arg)
     ret = zeta.evaluate(qtwo)
