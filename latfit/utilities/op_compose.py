@@ -195,6 +195,7 @@ def mom2ndorder(irrep):
         p1, p2 = mom
         if rf.norm2(p1) == minp2 and rf.norm2(p2)-minp2 == mindiff:
             ret = mom if ret is None else ret
+    ret = [None, None] if ret is None else ret
     return ret
 
 
