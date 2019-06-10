@@ -40,7 +40,14 @@ def comb_fig(dsrc, dsnk):
 
 def single_p(ptest):
     """is the momentum array only a single momentum?"""
-    return bool((len(ptest) == 3 and isinstance(ptest[0], (int, np.integer))))
+    ret = bool((len(ptest) == 3 and isinstance(ptest[0], (int, np.integer))))
+    if ret:
+        try:
+            int(ptest[2])
+        except AssertionError:
+            print("bad momentum:", ptest)
+            raise
+    return ret
 
 
 def momtotal(mom):
@@ -49,7 +56,11 @@ def momtotal(mom):
         momret = mom
     else:
         mom1 = np.array(mom[0])
-        mom2 = np.array(mom[1])
+        try:
+            mom2 = np.array(mom[1])
+        except IndexError:
+            print("bad momentum spec:", mom)
+            raise
         momret = mom1+mom2
     return momret
 
