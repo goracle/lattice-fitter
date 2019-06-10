@@ -440,8 +440,13 @@ def overall_coeffs(iso, irr):
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
                     pol_comparison = rf.compare_pols(pols, pol_req)
-                    if pols is not None:
-                        pol_coeff = pol_coeffs[rf.firstpol(original_block)]
+                    if pols is not None and pol_coeffs != 1.0:
+                        try:
+                            pol_coeff = pol_coeffs[rf.firstpol(original_block)-1] # -1 because of 0 indexing not being applied to polarizations
+                        except IndexError:
+                            print("bad block cause:", original_block)
+                            print("pol coefficients:", pol_coeffs)
+                            raise
                     else:
                         assert pol_coeffs == 1.0, "bad polarization coeff:"+str(pol_coeffs)
                         pol_coeff = pol_coeffs
@@ -500,7 +505,7 @@ def get_polreq(op1):
                     "need 3 coefficients for each polarization"
         else:
             reqpol = None
-    return reqpol, pol_coeff
+    return reqpol, pol_coeffs
 
 
 @PROFILE
