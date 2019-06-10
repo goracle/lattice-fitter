@@ -46,11 +46,11 @@ def compare_pols(pol1, pol2):
     false if they are different
     None if one is None
     """
-    if hasattr('__iter__', pol1):
+    if hasattr(pol1, '__iter__'):
         retval = None
         if str(pol2).isdigit():
             retval = bool(pol1[int(pol2)-1])
-    elif hasattr('__iter__', pol2):
+    elif hasattr(pol2, '__iter__'):
         retval = None
         if str(pol1).isdigit():
             retval = bool(pol2[int(pol1)-1])
