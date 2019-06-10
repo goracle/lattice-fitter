@@ -12,7 +12,7 @@ from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.config import IRREP, ISOSPIN
 from latfit.utilities import read_file as rf
-import latfit.utilities.i1zeta as i1z
+import latfit.utilities.zeta.i1zeta as i1z
 
 class ZetaError(Exception):
     """Define an error for generic phase shift calc failure"""
@@ -82,23 +82,23 @@ if CALC_PHASE_SHIFT:
 
         try:
             if not np.isnan(epipi):
-                if (ISOSPIN !=1 or not np.any(comp):
+                if (ISOSPIN !=1 or not np.any(comp)):
                     out = subprocess.check_output(arglist)
                 else:
                     out = i1z.phase(epipi)
             else:
                 out = np.nan
-            except FileNotFoundError:
-                print("Error in zeta: main.C not compiled yet.")
-                print(subprocess.check_output(['pwd']))
-                print(inspect.getfile(zeta))
-                sys.exit(1)
-            except subprocess.CalledProcessError:
-                print("Error in zeta: calc of phase shift error:")
-                print(epipi)
-                errstr = subprocess.Popen(arglist,
-                                        stdout=subprocess.PIPE).stdout.read()
-                raise ZetaError(errstr)
+        except FileNotFoundError:
+            print("Error in zeta: main.C not compiled yet.")
+            print(subprocess.check_output(['pwd']))
+            print(inspect.getfile(zeta))
+            sys.exit(1)
+        except subprocess.CalledProcessError:
+            print("Error in zeta: calc of phase shift error:")
+            print(epipi)
+            errstr = subprocess.Popen(arglist,
+                                    stdout=subprocess.PIPE).stdout.read()
+            raise ZetaError(errstr)
         try:
             test = epipi*epipi/4-PION_MASS**2 < 0
         except FloatingPointError:
