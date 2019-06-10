@@ -42,7 +42,17 @@ IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
-IRREP = 'T_1_MINUS' if ISOSPIN == 1 else IRREP
+
+if ISOSPIN == 1:
+    IRREP = 'A_2PLUS_mom11'
+    IRREP = 'A_2MINUS_mom11'
+    IRREP = 'A_1PLUS_avg_mom111'
+    IRREP = 'T_1_MINUS'
+    IRREP = 'A_1PLUS_mom1'
+    IRREP = 'B_mom1'
+    IRREP = 'A_1PLUS_mom11'
+    IRREP = 'B_mom111'
+
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
@@ -97,7 +107,7 @@ PIONRATIO = False if not GEVP else PIONRATIO
 GEVP_DERIV = True
 GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
-GEVP_DERIV = False if ISOSPIN == 1 else GEVP_DERIV
+GEVP_DERIV = False if IRREP == 'T_1_MINUS' else GEVP_DERIV
 
 # Plot Effective Mass? True or False
 
@@ -195,7 +205,7 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 NOATWSUB = True
 NOATWSUB = False
 NOATWSUB = False if ISOSPIN == 2 else NOATWSUB
-NOATWSUB = True if ISOSPIN == 1 else NOATWSUB
+NOATWSUB = True if IRREP == 'T_1_MINUS' else NOATWSUB
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -205,7 +215,7 @@ MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
-MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if IRREP == 'T_1_MINUS' else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
@@ -230,9 +240,9 @@ else:
     # the general E2
     E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=FIT_SPACING_CORRECTION)
     E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
-assert np.all(E21 > 0) and np.all(E22 > 0)
-assert np.all(E22-E21) >= 0
-DELTA_E2_AROUND_THE_WORLD = E22-E21
+assert E21 is None or (np.all(E21 > 0) and np.all(E22 > 0))
+assert E21 is None or (np.all(E22-E21) >= 0)
+DELTA_E2_AROUND_THE_WORLD = E22-E21 if E21 is not None and E22 is not None else None
 MINE2 = None # not supported
 #MINE2 = min(E21, E22)
 
@@ -629,7 +639,7 @@ REINFLATE_BEFORE_LOG = False
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
-if ISOSPIN == 1 and GEVP:
+if IRREP == 'T_1_MINUS' and GEVP:
     OPERATOR_NORMS[1] = complex(0+1j)
 if ISOSPIN == 0 and GEVP and 'avg' in IRREP:
     OPERATOR_NORMS[0] = 1e-5
@@ -990,7 +1000,8 @@ assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
 assert NUM_PENCILS == 0, "this feature is less tested, "+\
     " use at your own risk (safest to have NUM_PENCILS==0)"
 assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
-assert 'avg' in IRREP or 'mom111' not in IRREP, "A1_avg_mom111 is the "+\
+assert 'avg' in IRREP or 'mom111' not in IRREP or 'A' not in IRREP,\
+    "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
 assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO,\
@@ -1023,7 +1034,7 @@ assert not SYSTEMATIC_EST, "cruft; should be removed eventually"
 #assert MATRIX_SUBTRACTION or not PIONRATIO
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0, IRREP
+assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0 or 'T_1_MINUS' not in IRREP, IRREP
 if PIONRATIO:
     #assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
@@ -1032,4 +1043,4 @@ if ISOSPIN == 2 and GEVP:
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 if not NOATWSUB:
     print("matrix subtraction:", MATRIX_SUBTRACTION)
-assert not ISOSPIN == 1 or NOATWSUB, "I=1 has no ATW terms."
+assert not 'T_1_MINUS' in IRREP or NOATWSUB, "I=1 has no ATW terms."
