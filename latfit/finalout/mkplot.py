@@ -279,6 +279,7 @@ def get_file_string(title):
     title_safe = re.sub(r'}', '', title_safe)
     title_safe = re.sub(r'\^', '_', title_safe)
     title_safe = re.sub(r'\+', 'PLUS', title_safe)
+    title_safe = re.sub(r'\-', 'MINUS', title_safe)
     title_safe = re.sub(r'vec{p} {CM}=', 'mom', title_safe)
 
     if JACKKNIFE_FIT == 'DOUBLE':
