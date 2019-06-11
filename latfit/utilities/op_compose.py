@@ -142,6 +142,9 @@ def representative_row(irrep):
 def get_comp_str(irrep):
     """Get center of mass momentum of an irrep, return as a string for latfit"""
     retlist = []
+    takeabs = False
+    if rf.mom(irrep) is None:
+        takeabs = True
     irrep = representative_row(irrep)
     opprev = ''
     momtotal = np.array([0, 0, 0])
@@ -151,6 +154,10 @@ def get_comp_str(irrep):
         for pin in mom:
             momtotal += np.array(pin)
         break
+    assert np.all(momtotal == rf.mom(irrep)), str(irrep)+" "+str(momtotal)
+    # presumably, the average with +/- is taken
+    if takeabs:
+        momtotal = np.abs(momtotal)
     return 'mom'+rf.ptostr(momtotal)
 
 def mom2ndorder(irrep):
