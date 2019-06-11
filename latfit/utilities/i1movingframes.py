@@ -998,17 +998,25 @@ def sumabs(mom):
     ret = np.sum(np.abs(mom))
     return ret
 
-def sortmom(irrvar):
+def sortmom(irrvar, irr):
     """Enforce Luchang's condition
     that inner pions should be higher energy
     """
     ret = []
     for i in irrvar:
-        moms = i[2]
+        moms = list(i[2])
         if len(moms) == 2:
             if sumabs(moms[0]) > sumabs(moms[1]):
                 moms[0], moms[1] = moms[1], moms[0]
-        ret.append((i[0], i[1], moms))
+                toapp = (i[0], i[1], moms)
+                assert str(toapp) != str(i)
+                if toapp in irrvar:
+                    ret = irrvar
+                    print(irr, "has reverse")
+                    break
+            else:
+                toapp = i
+        ret.append(toapp)
     assert len(ret) == len(irrvar), "bad return length:"+\
         str(ret)+" "+str(irrvar)
     return ret
@@ -1022,7 +1030,7 @@ for irr in dir(cmod):
         irrvar = getattr(cmod, irr)
         if not hasattr(irrvar, '__iter__'):
             continue
-        irrvar = sortmom(irrvar)
+        irrvar = sortmom(irrvar, irr)
         mom = rf.mom(irr)
         assert len(mom) == 3, "bad momentum specified:"+str(mom)
         for i in mom:
