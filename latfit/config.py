@@ -7,6 +7,7 @@ from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
+from latfit.analysis.irr2tex import irr2tex
 from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
 from latfit.utilities import read_file as rf
@@ -44,14 +45,16 @@ IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
 
 if ISOSPIN == 1:
-    IRREP = 'A_2PLUS_mom11'
-    IRREP = 'A_2MINUS_mom11'
-    IRREP = 'A_1PLUS_avg_mom111'
-    IRREP = 'T_1_MINUS'
-    IRREP = 'A_1PLUS_mom1'
+    # done
     IRREP = 'B_mom1'
-    IRREP = 'A_1PLUS_mom11'
     IRREP = 'B_mom111'
+    IRREP = 'A_1PLUS_mom1'
+    IRREP = 'A_1PLUS_mom11'
+    IRREP = 'A_1PLUS_avg_mom111'
+    IRREP = 'A_2MINUS_mom11'
+    IRREP = 'A_2PLUS_mom11'
+    # control
+    IRREP = 'T_1_MINUS'
 
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
@@ -426,7 +429,7 @@ PICKLE = None
 # title prefix
 
 # p_cm = 001, no need to modify 
-PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))
+PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+","
 
 if GEVP:
     if SIGMA and ISOSPIN == 0:
@@ -437,7 +440,8 @@ if GEVP:
             r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
     elif ISOSPIN == 1:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I1, $\pi\pi, \rho$ ' + PSTR_TITLE + ' '
+            r' GEVP, I1, $\pi\pi, \rho$,' + \
+            irr2tex(IRREP) + PSTR_TITLE + ' '
     else:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
             r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
