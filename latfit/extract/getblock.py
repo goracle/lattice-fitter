@@ -28,10 +28,10 @@ from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
-from latfit.config import STYPE, ISOSPIN, GEVP_DIRS
+from latfit.config import STYPE, IRREP, GEVP_DIRS
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
-from latfit.config import DECREASE_VAR, IRREP
+from latfit.config import DECREASE_VAR, IRREP, ISOSPIN
 from latfit.config import HINTS_ELIM, DISP_ENERGIES
 from latfit.config import REINFLATE_BEFORE_LOG
 from latfit.config import DELTA_E_AROUND_THE_WORLD
@@ -418,7 +418,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
     (non-interacting around the world term, single pion correlator squared)
     """
     origshape = cmat.shape
-    if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
+    if not MATRIX_SUBTRACTION and 'T_1_MINUS' not in IRREP and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
