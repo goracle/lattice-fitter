@@ -10,12 +10,15 @@ import write_discon as wd
 import read_file as rf
 from oplist import *
 
+"""
+assert None
 for opa in list(OPLIST): # get rid of polarization information
     opa_strip = opa.split('?')[0]
     if opa != opa_strip:
         OPLIST[opa_strip] = OPLIST[opa] 
         del OPLIST[opa]
-
+assert None
+"""
 
 def freemomenta(irrep, dim):
     """Get the free momenta for the irrep and dimension"""
