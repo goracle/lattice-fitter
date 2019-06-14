@@ -494,13 +494,20 @@ def get_polreq(op1):
     if len(spl) == 1:
         reqpol = None
     else:
-        polstrspl = spl[1].split(',')[0].split('=')
+        polstrspl = spl[1].split('=')
         if polstrspl[0] == 'pol':
             try:
                 reqpol = int(polstrspl[1])
             except ValueError:
                 reqpol = None
-                pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]))
+                try:
+                    pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]))
+                except SyntaxError:
+                    print('unable to parse:', polstrspl[1], 'as code.')
+                    print("op1 =", op1)
+                    print("spl =", spl)
+                    print('polstrspl =', polstrspl)
+                    raise
                 assert len(pol_coeffs) == 3,\
                     "need 3 coefficients for each polarization"
         else:
