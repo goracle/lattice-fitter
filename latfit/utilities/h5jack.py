@@ -424,6 +424,7 @@ def overall_coeffs(iso, irr):
     irr (irrep projection)
     """
     ocs = {}
+    print("getting overall projection coefficients")
     for iso_dir in iso:
         for operator in irr:
             pol_req, pol_coeffs = get_polreq(operator)
