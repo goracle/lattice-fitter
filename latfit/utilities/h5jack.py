@@ -441,14 +441,17 @@ def overall_coeffs(iso, irr):
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
                     pol_comparison = rf.compare_pols(pols, pol_req)
-                    if pols is not None and pol_coeffs != 1.0:
+                    if pols is not None and np.asarray(pol_coeffs).shape:
                         try:
                             pol_coeff = pol_coeffs[rf.firstpol(original_block)-1] # -1 because of 0 indexing not being applied to polarizations
                         except IndexError:
                             print("bad block cause:", original_block)
                             print("pol coefficients:", pol_coeffs)
                             raise
+                    elif pols is None:
+                        pol_coeff = 1.0
                     else:
+                        assert not np.asarray(pol_coeffs).shape, str(pol_coeffs)
                         assert pol_coeffs == 1.0, "bad polarization coeff:"+str(pol_coeffs)
                         pol_coeff = pol_coeffs
                     # pol_comparison is false if the polarizations are different
