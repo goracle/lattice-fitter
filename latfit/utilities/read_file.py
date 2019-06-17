@@ -20,10 +20,13 @@ FORMAT = 'ASCII'
 def pol(filename):
     """Get polarization info from filename"""
     mat = re.search(r'pol_snk_(\d)', filename)
+    mat2 = re.search(r'pol_src_(\d)', filename)
     nmat = re.search(r'pol_src-snk_(\d)-(\d)', filename)
     assert not (mat and nmat), "Conflicting polarizations found."
     if mat:
         polret = int(mat.group(1))
+    elif mat2:
+        polret = int(mat2.group(1))
     elif nmat:
         polret = int(nmat.group(1)), int(nmat.group(2))
     else:
@@ -48,9 +51,15 @@ def compare_pols(pol1, pol2):
     """
     if hasattr(pol1, '__iter__'):
         retval = None
-        if str(pol2).isdigit():
-            retval = bool(pol1[int(pol2)-1])
-    elif hasattr(pol2, '__iter__'):
+        if str(pol2).isdigit() and len(pol1) > 2:
+            try:
+                retval = bool(pol1[int(pol2)-1])
+            except IndexError:
+                print("unable to return: bool(pol1[int(pol2)-1])")
+                print("pol1 =", pol1)
+                print("pol2 =", pol2)
+                raise
+    elif hasattr(pol2, '__iter__') and len(pol2) > 2:
         retval = None
         if str(pol1).isdigit():
             retval = bool(pol2[int(pol1)-1])
