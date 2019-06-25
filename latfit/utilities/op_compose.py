@@ -10,15 +10,13 @@ import write_discon as wd
 import read_file as rf
 from oplist import *
 
-"""
-assert None
+OPLIST_STRIPPED = {}
 for opa in list(OPLIST): # get rid of polarization information
     opa_strip = opa.split('?')[0]
+    OPLIST_STRIPPED[opa] = OPLIST[opa]
     if opa != opa_strip:
-        OPLIST[opa_strip] = OPLIST[opa] 
-        del OPLIST[opa]
-assert None
-"""
+        OPLIST[opa_strip] = OPLIST[opa]
+        del OPLIST_STRIPPED[opa]
 
 def freemomenta(irrep, dim):
     """Get the free momenta for the irrep and dimension"""
@@ -26,7 +24,7 @@ def freemomenta(irrep, dim):
     currop = ''
     cdim = -1
     ret = None
-    for _, opstr, mom in OPLIST[irrep]:
+    for _, opstr, mom in OPLIST_STRIPPED[irrep]:
         if currop != opstr:
             currop = opstr
             cdim += 1
@@ -79,8 +77,8 @@ def write_mom_comb():
     """Write the momentum combination vml
     (list of allowed two particle momenta)"""
     twoplist = {}
-    for irrep in OPLIST:
-        for _, _, mom_comb in OPLIST[irrep]:
+    for irrep in OPLIST_STRIPPED:
+        for _, _, mom_comb in OPLIST_STRIPPED[irrep]:
             if len(mom_comb) == 2: # skip the sigma
                 twoplist[str(mom_comb)] = mom_comb
     begin = 'Array moms[2] = {\nArray moms[0] = {\nArray p[3] = {\n'
@@ -112,7 +110,7 @@ def free_energies(irrep, pionmass, lbox):
             irrep = irr
             break
     opprev = ''
-    for _, opa, mom in OPLIST[irrep]:
+    for _, opa, mom in OPLIST_STRIPPED[irrep]:
         if opa == opprev:
             continue
         if len(mom) != 2:
@@ -151,7 +149,7 @@ def get_comp_str(irrep):
     irrep = representative_row(irrep)
     opprev = ''
     momtotal = np.array([0, 0, 0])
-    for _, _, mom in OPLIST[irrep]:
+    for _, _, mom in OPLIST_STRIPPED[irrep]:
         if len(mom) != 2:
             continue
         for pin in mom:
@@ -175,13 +173,13 @@ def mom2ndorder(irrep):
     opprev = ''
     momtotal = np.array([0, 0, 0])
     minp = np.inf
-    for _, _, mom in OPLIST[irrep]:
+    for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
         p1, p2 = mom
         minp = min(rf.norm2(p1), rf.norm2(p2), minp)
     minp2 = np.inf
-    for _, _, mom in OPLIST[irrep]:
+    for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
         p1, p2 = mom
@@ -190,7 +188,7 @@ def mom2ndorder(irrep):
         minp2 = min(rf.norm2(p1), rf.norm2(p2), minp2)
     ret = None
     mindiff = np.inf
-    for _, _, mom in OPLIST[irrep]:
+    for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
         p1, p2 = mom
@@ -199,7 +197,7 @@ def mom2ndorder(irrep):
             if mindiff == 0:
                 ret = mom
             break
-    for _, _, mom in OPLIST[irrep]:
+    for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
         p1, p2 = mom
@@ -213,9 +211,9 @@ def generateChecksums(isospin):
     """Generate a sum of expected diagrams for each operator"""
     isospin = int(isospin)
     checks = {}
-    for oplist in OPLIST:
-        newl = len(OPLIST[oplist])
-        for coeff, opa, mom in OPLIST[oplist]:
+    for oplist in OPLIST_STRIPPED:
+        newl = len(OPLIST_STRIPPED[oplist])
+        for coeff, opa, mom in OPLIST_STRIPPED[oplist]:
             if 'sigma' in opa and isospin != 0:
                 newl -= 1
             elif 'rho' in opa and isospin != 1:
@@ -224,10 +222,10 @@ def generateChecksums(isospin):
     return checks
 
 
-# OPLIST = {'A0': A0}
+# OPLIST_STRIPPED = {'A0': A0}
 PART_LIST = set([])
-for opa_out in OPLIST:
-    for item in OPLIST[opa_out]:
+for opa_out in OPLIST_STRIPPED:
+    for item in OPLIST_STRIPPED[opa_out]:
         PART_LIST.add(item[1])
 
 
@@ -264,11 +262,11 @@ def op_list(stype='ascii'):
     """Compose irrep operators at source and sink to do irrep projection.
     """
     projlist = {}
-    for opa in OPLIST:
+    for opa in OPLIST_STRIPPED:
         coeffs_tuple = []
         momchk = rf.mom(opa) if 'mom' in opa else None
-        for chkidx, src in enumerate(OPLIST[opa]):
-            for chkidx2, snk in enumerate(OPLIST[opa]):
+        for chkidx, src in enumerate(OPLIST_STRIPPED[opa]):
+            for chkidx2, snk in enumerate(OPLIST_STRIPPED[opa]):
                 if src[1] == snk[1]:
                     dup_flag = True
                     for pcheck, pcheck2 in zip(src[2], snk[2]):
