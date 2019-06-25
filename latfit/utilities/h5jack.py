@@ -406,7 +406,7 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
         print("Combined Isospin/Subduction coefficients for", outfile, ":")
         try:
             for ctup in ocs[outfile]:
-                diagram, coeff = ctup
+                diagram, coeff, _ = ctup
                 print(diagram, ":", coeff)
         except KeyError:
             print(ocs[outfile])
@@ -417,6 +417,14 @@ def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
     if MPIRANK == 0:
         print("done writing jackknife blocks: ", outh5)
 
+def nnon0(vec):
+    """Count number of non-zero components"""
+    assert hasattr(vec, '__iter__')
+    ret = 0
+    for i in vec:
+        if i:
+            ret += 1
+    return ret
 
 @PROFILE
 def overall_coeffs(iso, irr):
@@ -441,7 +449,9 @@ def overall_coeffs(iso, irr):
                 for original_block, inner_coeff in iso[iso_dir]:
                     pols = rf.pol(original_block)
                     pol_comparison = rf.compare_pols(pols, pol_req)
+                    polcount = 0
                     if pols is not None and np.asarray(pol_coeffs).shape:
+                        polcount = nnon0(pol_coeffs)
                         try:
                             pol_coeff = pol_coeffs[rf.firstpol(original_block)-1] # -1 because of 0 indexing not being applied to polarizations
                         except IndexError:
@@ -461,9 +471,15 @@ def overall_coeffs(iso, irr):
                         continue
                     if cross_p(original_block):
                         continue
+                    if not pol_coeff*outer_coeff*inner_coeff:
+                        continue
+#                    if isospin_str+strip_op(operator) == 'I1/rhorho_A_1PLUS_mom001':
+#                        print(original_block)
+#                        print(rf.pol(original_block), pol_req, pol_coeffs)
                     ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
-                                               pol_coeff*outer_coeff*inner_coeff))
+                                               pol_coeff*outer_coeff*inner_coeff,
+                                               polcount))
     if MPIRANK == 0:
         print("Done getting projection coefficients")
     return ocs
@@ -577,7 +593,7 @@ def check_match_oplist(ocs):
             figlist = set()
             momlist = set()
             diaglist = [tup[0] for tup in ocs[opa]]
-            for diag, _ in ocs[opa]:
+            for diag, _, _ in ocs[opa]:
                 figlist.add(rf.mom_prefix(diag))
             for diag, _ in opcheck[irrop]:
                 momlist.add(rf.mom_suffix(diag))
@@ -603,24 +619,30 @@ def check_count_of_diagrams(ocs, isospin_str='I0'):
         print("irrep checksumming op=", irrop, "for correctness")
         counter_checks[irrop] = 0
         for opa in ocs: # e.g. 'I0/pipisigma_A_1PLUS_mom000'
+            lopa = len(ocs[opa])
+            polcount = int(ocs[opa][0][2])
             if not irrop == getopstr(opa) or isospin_str not in opa:
                 continue
             print("isospin checksumming op=", opa, "for correctness")
+
+            # get isocount
             if 'rho' in opa:
-                if 'pipi' in opa:
-                    isocount = 2
-                else:
-                    isocount = 1
+                isocount = 1 if not polcount else polcount
             elif 'sigma' in opa:
                 isocount = 2
             else:
                 assert 'pipi' in opa, "bad operator:"+str(ocs[opa])
                 isocount = 4 if 'I0' in opa else 2
-            assert len(ocs[opa]) % isocount == 0, "bad isospin projection count."+str(ocs[opa])+\
+            assert lopa % isocount == 0 or (use2 and not lopa % isocount2), "bad isospin projection count."+str(ocs[opa])+\
                 " in "+str(opa)
-            print("isocount=", isocount, "number of diagrams in op=", len(ocs[opa]))
-            counter_checks[irrop] += len(ocs[opa])/isocount
-            print("divided by isocount=", len(ocs[opa])/isocount)
+
+            # print checksum
+            print("isocount =", isocount, "number of diagrams in op=", lopa)
+            print("divided by isocount=", lopa/isocount)
+
+            # store checksum
+            counter_checks[irrop] += lopa/isocount
+
         assert counter_checks[irrop] == checks[irrop], "bad checksum,"+\
             " number of expected diagrams"+\
             " does not match:"+str(checks[irrop])+" vs. "+str(
@@ -654,7 +676,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 os.makedirs(outdir)
         flag = 0
         ntchk = None
-        for base, coeff in ocs[opa]:
+        for base, coeff, _ in ocs[opa]:
             if ntchk is None:
                 ntchk = allblks[base].shape[0]
                 print('ntchk=', ntchk)
@@ -1183,7 +1205,7 @@ def check_inner_outer(ocs, allkeys, auxkeys):
     allkeys = set(allkeys)
     auxkeys = set(auxkeys)
     for opa in ocs:
-        for diag, _ in ocs[opa]:
+        for diag, _, _ in ocs[opa]:
             if 'FigureC_' in diag:
                 mom = rf.mom(diag)
                 norm0 = rf.norm2(mom[0])
@@ -1219,7 +1241,7 @@ def find_unused(ocs, allkeys, auxkeys, fig=None):
     fn1 = open(fig+'list.txt', 'w')
     try:
         for opa in ocs:
-            for diag, _ in ocs[opa]:
+            for diag, _, _ in ocs[opa]:
                 if fig in diag:
                     used.add(diag)
                     assert diag in allkeys, "Missing "+fig+\

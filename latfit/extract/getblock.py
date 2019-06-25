@@ -134,7 +134,10 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
                     #assert cmat[num][opa][opb] > 0\
                     #    or 'sigma' in GEVP_DIRS[opa][opb],\
                     #    str(corr)+str((opa,opb))
+        #print(num, cmat[num][1,0],cmat[num][0,1])
         cmat[num] = enforce_hermiticity(cmat[num])
+        #print(num, cmat[num][1,0],cmat[num][0,1])
+        #sys.exit(0)
         if ISOSPIN != 0 and not MATRIX_SUBTRACTION:
             pass
             #assert np.all(cmat[num] > 0), str(cmat[num])

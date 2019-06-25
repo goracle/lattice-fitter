@@ -49,21 +49,7 @@ def compare_pols(pol1, pol2):
     false if they are different
     None if one is None
     """
-    if hasattr(pol1, '__iter__'):
-        retval = None
-        if str(pol2).isdigit() and len(pol1) > 2:
-            try:
-                retval = bool(pol1[int(pol2)-1])
-            except IndexError:
-                print("unable to return: bool(pol1[int(pol2)-1])")
-                print("pol1 =", pol1)
-                print("pol2 =", pol2)
-                raise
-    elif hasattr(pol2, '__iter__') and len(pol2) > 2:
-        retval = None
-        if str(pol1).isdigit():
-            retval = bool(pol2[int(pol1)-1])
-    elif pol1 is None or pol2 is None:
+    if pol1 is None or pol2 is None:
         retval = None
     elif str(pol1).isdigit() and str(pol2).isdigit():
         retval = pol1 == pol2
@@ -73,6 +59,8 @@ def compare_pols(pol1, pol2):
         retval = all([int(i) == int(pol2) for i in pol1])
     else:
         retval = all([int(i) == int(j) for i in pol1 for j in pol2])
+    assert pol1 is None or pol2 is None or retval is not None,\
+        "bug pols:"+str(pol1)+" "+str(pol2)
     return retval
 
 def momrelnorm(mom1, mom2):
