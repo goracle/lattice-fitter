@@ -5,18 +5,23 @@ import os
 import sys
 import re
 import numpy as np
+from copy import deepcopy
 from sum_blks import sum_blks
 import write_discon as wd
 import read_file as rf
 from oplist import *
+
 
 OPLIST_STRIPPED = {}
 for opa in list(OPLIST): # get rid of polarization information
     opa_strip = opa.split('?')[0]
     OPLIST_STRIPPED[opa] = OPLIST[opa]
     if opa != opa_strip:
-        OPLIST[opa_strip] = OPLIST[opa]
+        OPLIST_STRIPPED[opa_strip] = OPLIST[opa]
         del OPLIST_STRIPPED[opa]
+        assert opa_strip in OPLIST_STRIPPED
+
+assert 'T_1_1MINUS_mom000' in OPLIST_STRIPPED, "bug"
 
 def freemomenta(irrep, dim):
     """Get the free momenta for the irrep and dimension"""
@@ -149,6 +154,7 @@ def get_comp_str(irrep):
     irrep = representative_row(irrep)
     opprev = ''
     momtotal = np.array([0, 0, 0])
+    assert irrep in OPLIST_STRIPPED, "irrep not found:"+str(irrep)
     for _, _, mom in OPLIST_STRIPPED[irrep]:
         if len(mom) != 2:
             continue
