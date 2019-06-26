@@ -147,7 +147,7 @@ elif LATTICE_ENSEMBLE == '24c':
     AINVERSE = 1.015 
     PION_MASS = 0.13975*AINVERSE
     LT = 64
-    SUPERJACK_CUTOFF = 7 # , "0 exact configs exist for 32c"
+    SUPERJACK_CUTOFF = 15 # , "0 exact configs exist for 32c"
     #assert SUPERJACK_CUTOFF == 7, "7 exact configs exist for 24c"
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX

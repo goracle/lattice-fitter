@@ -1,6 +1,9 @@
 """Find the worst fit coordinates"""
+import sys
 import numpy as np
 from latfit.config import DISP_ENERGIES, ORIGL
+
+DISP_ENERGIES = np.asarray(DISP_ENERGIES)
 
 def best_times(coord, cov, index, times):
     """minimize distance to dispersive (no interactions) line
@@ -8,8 +11,10 @@ def best_times(coord, cov, index, times):
     (todo:make more general?)
     chisq (t^2) = num/denom
     """
-    if hasattr(DISP_ENERGIES, '__iter__'):
+    if hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) > 1:
         dispmean = np.mean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
+    elif hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) == 1:
+        dispmean = DISP_ENERGIES
     else:
         dispmean = np.mean(DISP_ENERGIES) if DISP_ENERGIES else 0
     dist = []
