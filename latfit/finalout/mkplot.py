@@ -849,7 +849,7 @@ def do_plot(title, pdf):
     plt.ylabel(YLABEL, **hfontl)
     if EFF_MASS:
         ymin, ymax = plt.ylim()
-        ymax = min(AINVERSE, ymax+0.05)
+        ymax = min(AINVERSE*1.3, ymax+0.05)
         ymin = max(0, ymin-0.2)
         plt.ylim(ymin, ymax)
     # read out into a pdf

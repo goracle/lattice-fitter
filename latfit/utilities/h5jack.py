@@ -8,6 +8,7 @@ import glob
 import math
 import itertools
 import ast
+import subprocess
 import numpy as np
 from mpi4py import MPI
 import h5py
@@ -473,9 +474,11 @@ def overall_coeffs(iso, irr):
                         continue
                     if not pol_coeff*outer_coeff*inner_coeff:
                         continue
-#                    if isospin_str+strip_op(operator) == 'I1/rhorho_A_1PLUS_mom001':
-#                        print(original_block)
-#                        print(rf.pol(original_block), pol_req, pol_coeffs)
+                    #                    if isospin_str+strip_op(operator) == 'I1/rhorho_A_1PLUS_mom001':
+                    #                        print(original_block)
+                    #                        print(rf.pol(original_block), pol_req, pol_coeffs)
+                    #if 'T_1_1MINUS' in operator:
+                    #    print("test:", pol_coeff*outer_coeff*inner_coeff, original_block, pol_comparison, pols, pol_req, pol_coeffs, pol_coeff)
                     ocs.setdefault(isospin_str+strip_op(operator),
                                    []).append((original_block,
                                                pol_coeff*outer_coeff*inner_coeff,
