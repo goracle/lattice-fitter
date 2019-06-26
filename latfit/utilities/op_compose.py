@@ -268,11 +268,11 @@ def op_list(stype='ascii'):
     """Compose irrep operators at source and sink to do irrep projection.
     """
     projlist = {}
-    for opa in OPLIST_STRIPPED:
+    for opa in OPLIST:
         coeffs_tuple = []
         momchk = rf.mom(opa) if 'mom' in opa else None
-        for chkidx, src in enumerate(OPLIST_STRIPPED[opa]):
-            for chkidx2, snk in enumerate(OPLIST_STRIPPED[opa]):
+        for chkidx, src in enumerate(OPLIST[opa]):
+            for chkidx2, snk in enumerate(OPLIST[opa]):
                 if src[1] == snk[1]:
                     dup_flag = True
                     for pcheck, pcheck2 in zip(src[2], snk[2]):

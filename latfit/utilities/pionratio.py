@@ -13,6 +13,7 @@ import sys
 import re
 import copy
 import glob
+import subprocess
 import numpy as np
 import h5py
 import read_file as rf
@@ -43,7 +44,7 @@ STYPE = 'hdf5'
 # ensemble specific hack
 # DELTAT is T-T0 where T,T0 are RHS, LHS time separations
 # used in the GEVP
-DELTAT = 2 if TSTEP == 10 else 1
+DELTAT = 2 if TSTEP == 10 else 3
 print("Using DELTAT=", DELTAT)
 
 try:
