@@ -69,10 +69,10 @@ if CALC_PHASE_SHIFT:
         #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
 
         # set up the normal call to w00 phase shift method
+        binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
         arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
                    str(int(not FIT_SPACING_CORRECTION))]
-        binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
 
         # set up the I=1 moving frame version
         i1z.COMP = MOMSTR
