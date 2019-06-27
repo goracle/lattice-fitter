@@ -30,6 +30,9 @@ AVGTSRC = True
 WRITE_INDIVIDUAL = True
 WRITE_INDIVIDUAL = False
 
+# free field check
+FREEFIELD = False
+FREEFIELD = True
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -80,12 +83,18 @@ if TEST24C:
     FNDEF = PREFIX+'2460.'+EXTENSION
     GNDEF = PREFIX+'2460.'+EXTENSION
     HNDEF = PREFIX+'2460.'+EXTENSION
+if FREEFIELD:
+    FNDEF = PREFIX+'1000.'+EXTENSION
+    GNDEF = PREFIX+'1000.'+EXTENSION
+    HNDEF = PREFIX+'1000.'+EXTENSION
 # size of lattice in time, lattice units
 LT = 64 if not TEST44 else 4
 LT = LT if not TEST24C else 64
+LT = 32 if FREEFIELD else LT
 TSEP = 3 if not TEST44 else 1
 TSEP = TSEP if not TEST24C else 3
 TSEP = 4 if not TEST44 else 1
+TSEP = 4 if FREEFIELD else TSEP
 # format for files; don't change
 STYPE = 'hdf5'
 # precomputed indexing matrices; DON'T CHANGE
@@ -291,7 +300,7 @@ def trajlist(getexactconfigs=False, getsloppysubtraction=False):
         if toadd >= THERMNUM:  # filter out unthermalized
             trajl.add(toadd)
     trajl = sorted(list(trajl))
-    if not TEST44 and not TEST24C:
+    if not TEST44 and not TEST24C and not FREEFIELD:
         assert len(trajl) > 1, "Len of trajectory list="+str(trajl)
     if getexactconfigs:
         trajl = [str(traj)+'_exact' for traj in trajl]
@@ -384,11 +393,16 @@ def bublist(fn1=None):
 def dojackknife(blk):
     """Apply jackknife to block with shape = (L_traj, L_time)"""
     out = np.zeros(blk.shape, dtype=np.complex)
-    if TEST44:
+    if len(blk) == 1:
         out = blk
     else:
-        for i, _ in enumerate(blk):
-            np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
+        if TEST44:
+            out = blk
+        else:
+            assert len(blk) > 1,\
+                "block length should be greater than 1 for jackknife"
+            for i, _ in enumerate(blk):
+                np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
     return out
 
 
@@ -1045,7 +1059,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         # but it avoids an error message.
                         outcome = np.tensordot(src, snk, axes=(0, 0))[
                             ROWS, cols]/(len(
-                                src)*1.0 if not TEST44 else 1.0)
+                                src)*1.0 if not TEST44 and not FREEFIELD else 1.0)
                         # mean is over tsrc
                         # len(src) division is average over configs
                         # (except for excluded one)
