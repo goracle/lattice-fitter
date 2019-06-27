@@ -208,7 +208,7 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 NOATWSUB = True
 NOATWSUB = False
 NOATWSUB = False if ISOSPIN == 2 else NOATWSUB
-NOATWSUB = True if IRREP == 'T_1_MINUS' else NOATWSUB
+NOATWSUB = True if ISOSPIN == 1 else NOATWSUB
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
@@ -218,7 +218,7 @@ MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
-MATRIX_SUBTRACTION = False if IRREP == 'T_1_MINUS' else MATRIX_SUBTRACTION
+MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
@@ -643,9 +643,9 @@ REINFLATE_BEFORE_LOG = False
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
-if IRREP == 'T_1_MINUS' and GEVP:
+if 'T' in IRREP and 'MINUS' in IRREP and GEVP and DIM > 1:
     OPERATOR_NORMS[1] = complex(0+1j)
-if ISOSPIN == 0 and GEVP and 'avg' in IRREP:
+if ISOSPIN == 0 and GEVP and 'avg' in IRREP and DIM > 1:
     OPERATOR_NORMS[0] = 1e-5
     OPERATOR_NORMS[1] = 1e-2
     if DIM == 3:
@@ -1038,7 +1038,7 @@ assert not SYSTEMATIC_EST, "cruft; should be removed eventually"
 #assert MATRIX_SUBTRACTION or not PIONRATIO
 if DELTA_E2_AROUND_THE_WORLD is not None:
     DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0 or 'T_1_MINUS' not in IRREP, IRREP
+assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0 or ISOSPIN == 1, IRREP
 if PIONRATIO:
     #assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
@@ -1047,4 +1047,4 @@ if ISOSPIN == 2 and GEVP:
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
 if not NOATWSUB:
     print("matrix subtraction:", MATRIX_SUBTRACTION)
-assert not 'T_1_MINUS' in IRREP or NOATWSUB, "I=1 has no ATW terms."
+assert ISOSPIN != 1 or NOATWSUB, "I=1 has no ATW terms."

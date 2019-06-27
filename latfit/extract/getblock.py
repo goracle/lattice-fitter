@@ -421,7 +421,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
     (non-interacting around the world term, single pion correlator squared)
     """
     origshape = cmat.shape
-    if not MATRIX_SUBTRACTION and 'T_1_MINUS' not in IRREP and not NOATWSUB:
+    if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
