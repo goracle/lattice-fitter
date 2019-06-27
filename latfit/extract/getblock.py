@@ -740,9 +740,13 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
         print("rhs=", c_rhs)
         for i, j in enumerate(eigvals):
             print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
+            assert np.all(evecs[:, i] == evecs.T[i])
         print("end solve")
     #checkgteq0(eigfin)
-    ret = (eigfin, commutator_norm, commutator_norms) if commnorm else eigfin
+    evecs = evecs.T
+    ret = (eigfin, evecs, commutator_norm, commutator_norms)\
+        if commnorm else (eigfin, evecs)
+    assert len(ret) == 2 or len(ret) == 4, str(ret)
     return ret
 get_eigvals.sent = False
 
@@ -1068,7 +1072,8 @@ if EFF_MASS:
         cmat_lhs_tp2_mean = mean_cmats_lhs[2]
         cmat_lhs_tp3_mean = mean_cmats_lhs[3]
         while 1<2:
-            eigvals_mean_t = get_eigvals(cmat_lhs_t_mean, mean_crhs)
+            eigvals_mean_t, evecs_mean_t = get_eigvals(
+                cmat_lhs_t_mean, mean_crhs)
             try:
                 if DELETE_NEGATIVE_OPERATORS:
                     checkgteq0(eigvals_mean_t)
@@ -1081,7 +1086,8 @@ if EFF_MASS:
 
 
         if GEVP_DERIV:
-            eigvals_mean_tp1 = get_eigvals(cmat_lhs_tp1_mean, mean_crhs)
+            eigvals_mean_tp1, evecs_mean_tp1  = get_eigvals(
+                cmat_lhs_tp1_mean, mean_crhs)
             for i, eva1 in enumerate(eigvals_mean_tp1):
                 if eva1 < 0:
                     eigvals_mean_tp1[i] = np.nan
@@ -1097,6 +1103,9 @@ if EFF_MASS:
             checkgteq0(eigvals_mean_tp2)
             checkgteq0(eigvals_mean_tp3)
 
+        dotprod = np.dot(np.conj(evecs_mean_t[0]),evecs_mean_t[0])
+        assert np.allclose(dotprod, 1.0, rtol=1e-8), str(dotprod)
+        print("evecs of avg gevp", np.real(evecs_mean_t))
         avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
                                      eigvals_mean_tp2,
                                      eigvals_mean_tp3], timeij, delta_t)
@@ -1179,9 +1188,12 @@ if EFF_MASS:
                     pass
                     #assert solve_gevp.mean is not None, "bug"
                 eigret = get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
-                                     print_evecs=True, commnorm=True)
-                norm_comm.append(eigret[1])
-                norms_comm.append(eigret[2])
+                                               print_evecs=True, commnorm=True)
+                if not num:
+                    avg_evecs = np.zeros(eigret[1].shape)
+                avg_evecs += np.real(eigret[1])
+                norm_comm.append(eigret[2])
+                norms_comm.append(eigret[3])
                 eigvals = np.array(eigret[0])
                 #print('avg_energies', avg_energies)
 
@@ -1199,7 +1211,7 @@ if EFF_MASS:
                 tprob = None if not EFF_MASS else tprob
 
                 if GEVP_DERIV:
-                    eigvals2 = get_eigvals(cmats_lhs[1][num], cmat_rhs[num])
+                    eigvals2, evecs2 = get_eigvals(cmats_lhs[1][num], cmat_rhs[num])
                     for i, eva1 in enumerate(eigvals2):
                         if eva1 < 0:
                             eigvals2[i] = np.nan
@@ -1234,6 +1246,9 @@ if EFF_MASS:
             check_variance.append(eigvals)
             retblk.append(result)
             num += 1
+        print("average evecs:")
+        for i in list(zip(avg_evecs/num_configs, norms(avg_evecs/num_configs))):
+            print(i)
         retblk = modenergies(retblk, timeij, delta_t)
         retblk = deque(retblk)
         assert len(retblk) == num_configs,\
@@ -1272,7 +1287,7 @@ else:
             num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
             try:
-                eigvals = get_eigvals(num, file_tup[0], file_tup[1])
+                eigvals, evecs = get_eigvals(num, file_tup[0], file_tup[1])
             except ImaginaryEigenvalue:
                 print(num, timeij)
                 sys.exit(1)
@@ -1292,6 +1307,13 @@ for i, j in enumerate(ADD_CONST_VEC):
     eigvals[i] -= eigvals2[i]*j
     eigvals2[i] -= eigvals3[i]*j
 """
+def norms(evecs):
+    """Get norms of evecs"""
+    ret = []
+    for i in evecs:
+        ret.append(np.dot(i,i))
+    ret = np.asarray(ret)
+    return ret
 
 # obsolete; only works if GEVP matrix vector space shifts a lot from time slice to time slice
 # weak consistency check
