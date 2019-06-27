@@ -19,7 +19,7 @@ from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import UNCORR, SYS_ENERGY_GUESS
-from latfit.config import PVALUE_MIN, NOATWSUB
+from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
@@ -461,13 +461,16 @@ def correction(min_arr, config_num):
        np.asarray(DELTA_E2_AROUND_THE_WORLD).shape:
         corre2 = DELTA_E2_AROUND_THE_WORLD[config_num]
     else:
-        corre2 = DELTA_E2_AROUND_THE_WORLD
-    ret = (corre1 if GEVP else 0)+(
-        corre2 if DELTA_E2_AROUND_THE_WORLD\
-        is not None else 0)+\
-        (misc.correct_epipi(min_arr[config_num],
-                            config_num=config_num)
-         if FIT_SPACING_CORRECTION and GEVP else 0)
+        corre2 = DELTA_E2_AROUND_THE_WORLD if\
+            DELTA_E2_AROUND_THE_WORLD is not None else 0
+    if FIT_SPACING_CORRECTION and not PIONRATIO:
+        corre3 = misc.correct_epipi(min_arr[config_num],
+                                    config_num=config_num)
+    else:
+        corre3 = 0
+    ret = 0
+    if GEVP:
+        ret = corre1+corre2+corre3
     return ret
 
 
