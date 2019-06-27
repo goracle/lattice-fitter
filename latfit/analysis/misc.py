@@ -169,7 +169,7 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
             #    str(crect)+" "+str(energies[dim])
             if config_num is None:
                 crect = np.mean(crect, axis=0)
-            else:
+            elif len(crect) > config_num:
                 crect = crect[config_num]
         try:
             correction[dim] = crect
