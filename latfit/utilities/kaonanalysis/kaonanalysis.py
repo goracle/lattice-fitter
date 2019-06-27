@@ -14,6 +14,8 @@ import kaonvac # vacuum subtraction
 
 TSTEP12 = 2
 LT_CHECK = 4
+if h5jack.FREEFIELD:
+    LT_CHECK = 32
 assert h5jack.LT == LT_CHECK, "Time extents do not match"
 # the key structure is different,
 # key doesn't end with @momentum string, e.g. @000
@@ -104,12 +106,15 @@ def analyze():
     kfp.proc_sigma_type23(diags['type3sigma'], trajl, 'type3')
 
     # form single jackknife blocks of the operators, which should be only projected types 1,2,3
+    print("jackknifing ops")
     jackknife_ops()
 
     # get the disconnected k->x pieces
+    print("getting disconnected k")
     diags = get_kdiscon_fromfile(diags, trajl)
 
     # get mix coefficients from tK summed type4/2 and tK summed mix4
+    print("getting mix coefficients")
     alpha_kpipi = kaonmix.mix_coeffs(diags['type4_summed'],
                                      diags['mix4_summed'], trajl, 0)
     # useful for chipt study
@@ -118,6 +123,7 @@ def analyze():
 
     # do the mix4 vacuum subtraction, bubble composition,
     # tK time averaging, jackknifing
+    print("vacuum subtracting mix 4")
     mix4to_pipi = kaonvac.vac_subtract_mix4(diags['mix4_unsummed'],
                                             pipibubbles, trajl)
     mix4to_sigma = kaonvac.vac_subtract_mix4(diags['mix4_unsummed'],
@@ -125,6 +131,7 @@ def analyze():
 
     # do vacuum subtraction, jackknife,
     # project resulting type 4 onto operators
+    print("vacuum subtracting type 4")
     kaonvac.vac_subtract_type4(diags['type4_unsummed'],
                                pipibubbles, trajl, 'pipi')
     kaonvac.vac_subtract_type4(diags['type4_unsummed'],
@@ -133,10 +140,12 @@ def analyze():
     # do mix subtraction
     assert jackknife_ops.complete, "Operators need to be jackknifed"+\
         " before mix subtraction."
+    print("performing mix subtraction")
     kaonmix.mix_subtract(alpha_kpipi, diags['mix3'], mix4to_pipi, 'pipi', len(trajl))
     kaonmix.mix_subtract(alpha_kpipi, diags['mix3'], mix4to_sigma, 'pipi', len(trajl))
 
     # write the results
+    print("writing kaon output")
     kpp.write_out()
 
 def get_kdiscon_fromfile(diags, trajl):
