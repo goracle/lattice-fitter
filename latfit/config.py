@@ -54,6 +54,7 @@ if ISOSPIN == 1:
     IRREP = 'A_2MINUS_mom11'
     IRREP = 'A_2PLUS_mom11'
     # control
+    IRREP = 'T_1_3MINUS_mom000'
     IRREP = 'T_1_MINUS'
 
 # non-zero center of mass
