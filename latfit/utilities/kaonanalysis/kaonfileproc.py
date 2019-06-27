@@ -29,7 +29,7 @@ def gen_key(momdiag):
 
 def deltat(momdiag):
     """find k-pi tsep"""
-    mat = re.search(r'(.*?)deltat_(\d)', momdiag)
+    mat = re.search(r'(.*?)deltat_(\d+)', momdiag)
     assert mat, "bad diagram name : "+str(momdiag)
     return int(mat.group(2))
 
