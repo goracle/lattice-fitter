@@ -12,17 +12,34 @@ for j in np.arange(1, 11):
     QOPI2[str(j)] = {} # momentum dictionary, I2
     QOP_SIGMA[str(j)] = {} # momentum dictionary
 
+def querykeys(qop, descr):
+    """For debug purposes.  Print keys in qop with description descr"""
+    print("printing keys in", descr)
+    for i in qop:
+        print(i)
+        for j in qop[str(i)]:
+            print(j)
+    print("done printing keys in", descr)
+
 
 def check_consistency_keys(keyarr):
     """Check key consistency"""
     for i in np.arange(1, 11):
+        print("printing I2 keys")
+        for keyirr in QOPI2[str(i)]:
+            print(keyirr)
+        print("printing I0 keys")
         for keyirr in QOPI0[str(i)]:
+            print(keyirr)
+        print("checking that I=0 has at least same keys as I=2")
+        for keyirr in QOPI2[str(i)]:
+            print(keyirr)
             _, kpitsep = keyirr.split('@')
             keyarr.add(keyirr)
             assert keyirr in QOPI0[str(i)], "tsep = "+kpitsep+\
                 " not in Q_"+str(i)+", I=0"
-            assert keyirr in QOPI2[str(i)], "tsep = "+kpitsep+\
-                " not in Q_"+str(i)+", I=2"
+            assert keyirr in QOP_SIGMA[str(i)], "tsep = "+kpitsep+\
+                " not in Q_"+str(i)+", sigma"
     return keyarr
 
 
