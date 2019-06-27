@@ -42,7 +42,7 @@ def vac_subtract_mix4(mix4, sinkbubbles, trajl):
             print("vac: fidx, tdis =", fidx, tdis)
             # do the vac subtraction, avg over tk
             bubblks = latfit.utilities.h5jack.dobubjack(
-                bubbles, subdict, skipVBub2=True)
+                bubbles, subdict, skip_v_bub2=True)
 
             for blkname in bubblks:
                 for tsep_kpi in range(LT_CHECK):
@@ -86,7 +86,7 @@ def vac_subtract_type4(type4, sinkbubbles, trajl, otype):
                 print("vac: conidx, gcombidx, tdis =",
                       conidx, gcombidx, tdis)
                 bubblks = latfit.utilities.h5jack.dobubjack(
-                    bubbles, subdict, skipVBub2=True)
+                    bubbles, subdict, skip_v_bub2=True)
 
                 # now, use the result to create type4 diagrams,
                 # with defined tsep_kpi
