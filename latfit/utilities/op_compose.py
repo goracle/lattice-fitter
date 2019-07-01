@@ -136,6 +136,8 @@ def free_energies(irrep, pionmass, lbox):
     for i,mean in enumerate(averages):
         if np.mean(retlist[i]) == mean:
             sortedret.append(retlist[i])
+    if isinstance(sortedret[0], float):
+        sortedret = np.asarray(sorted(sortedret))
     return sortedret
 
 def representative_row(irrep):
