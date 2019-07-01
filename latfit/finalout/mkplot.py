@@ -733,7 +733,7 @@ def anchisq(redchisq_round_str, dof):
     if UNCORR:
         rcp = r"$\chi^2$/dof = "
     else:
-        rcp = r"$\t^2$/dof = "
+        rcp = r"$t^2$/dof = "
     rcp += redchisq_round_str+", dof = "+str(dof)
     return rcp
 
