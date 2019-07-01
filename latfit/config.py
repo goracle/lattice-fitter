@@ -111,7 +111,6 @@ PIONRATIO = False if not GEVP else PIONRATIO
 GEVP_DERIV = True
 GEVP_DERIV = False
 GEVP_DERIV = False if not GEVP else GEVP_DERIV
-GEVP_DERIV = False if IRREP == 'T_1_MINUS' else GEVP_DERIV
 
 # Plot Effective Mass? True or False
 
