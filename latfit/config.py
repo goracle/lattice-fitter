@@ -645,7 +645,7 @@ REINFLATE_BEFORE_LOG = False
 # NORMS = [[1.0/(16**6), 1.0/(16**3)], [1.0/(16**3), 1]]
 
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
-if 'T' in IRREP and 'MINUS' in IRREP and GEVP and DIM > 1:
+if ISOSPIN == 1 and GEVP and DIM > 1:
     OPERATOR_NORMS[1] = complex(0+1j)
 if ISOSPIN == 0 and GEVP and 'avg' in IRREP and DIM > 1:
     OPERATOR_NORMS[0] = 1e-5
