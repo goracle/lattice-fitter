@@ -784,12 +784,13 @@ PIONCORRS = ['pioncorrChk_mom000.jkdat',
              'pioncorrChk_p111.jkdat']
 
 for i in range(len(PIONCORRS)):
-    assert os.path.isfile(PIONCORRS[i])
-    DATAN = re.sub('.jkdat', '', PIONCORRS[i])
-    assert h5py.File(PIONCORRS[i], 'r')
-    tostore = np.array(h5py.File(PIONCORRS[i], 'r')[DATAN])
-    assert isinstance(PIONCORRS, list)
-    PIONCORRS[i] = tostore
+    if not h5jack.FREEFIELD:
+        assert os.path.isfile(PIONCORRS[i])
+        DATAN = re.sub('.jkdat', '', PIONCORRS[i])
+        assert h5py.File(PIONCORRS[i], 'r')
+        tostore = np.array(h5py.File(PIONCORRS[i], 'r')[DATAN])
+        assert isinstance(PIONCORRS, list)
+        PIONCORRS[i] = tostore
 
 @PROFILE
 def jkdatrm(fstr):
