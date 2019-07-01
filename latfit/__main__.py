@@ -1069,7 +1069,7 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
         str(pickl_res_err.shape)+str(pickl_res[2].shape)
     avgname = 'chisq' if avgname == 'fun' else avgname
-    avgname = 't^2' if not UNCORR else avgname
+    avgname = 'tsq' if not UNCORR and avgname == 'chisq' else avgname
     if not GEVP:
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
             avgname = avgname+'_'+dump_fit_range.fn1
