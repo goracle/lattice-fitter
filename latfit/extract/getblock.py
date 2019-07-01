@@ -939,6 +939,41 @@ def energies_pionratio(timeij, delta_t):
     return energies
 energies_pionratio.store = {}
 
+if ISOSPIN != 2:
+    def sort_addzero(addzero, intmean):
+        """Introducing rho/sigma operator introduces ambiguity
+        in energy sort:  where to sort the extra 0 entry
+        in the non-interacting energies introduced by these operators?
+        Well, we are free to choose (since we are adding 0),
+        so sort by the min distance
+        between interacting energies and dispersion relation energies"""
+        mapi = []
+        ret = np.zeros(addzero.shape, np.float)
+        disp = np.asarray(DISP_ENERGIES)
+        if not isinstance(DISP_ENERGIES[0], float):
+            disp = np.mean(DISP_ENERGIES, axis=0)
+        assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
+        for i, edisp in enumerate(disp):
+            if not edisp:
+                continue
+            mindist = np.inf
+            for j, mean in enumerate(intmean):
+                mindist = min(np.abs(mean-edisp), mindist)
+                if mindist == np.abs(mean-edisp):
+                    mindx = j
+            mapi.append((i, mindx))
+        for mapel in mapi:
+            fromi, toj = mapel
+            assert fromi != 1, "index bug, rho/sigma should not get a correlated 0"
+            ret[:, toj] = addzero[:, fromi]
+        return ret
+else:
+    def sort_addzero(addzero):
+        """I=2 has correct order, do nothing"""
+        return addzero
+
+    
+
 if PIONRATIO:
     def modenergies(energies_interacting, timeij, delta_t):
         """modify energies for pion ratio
@@ -957,6 +992,7 @@ if PIONRATIO:
                 assert 'rho' in GEVP_DIRS[
                     i][i] or 'sigma' in GEVP_DIRS[i][i]
         addzero = np.nan_to_num(addzero)
+        addzero = sort_addzero(addzero, np.mean(enint, axis=0))
         ret = energies_interacting + addzero
         newe = []
         for i in range(len(addzero)):
