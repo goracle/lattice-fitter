@@ -28,10 +28,10 @@ from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
 from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
-from latfit.config import STYPE, IRREP, GEVP_DIRS
+from latfit.config import STYPE, GEVP_DIRS
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
-from latfit.config import DECREASE_VAR, IRREP, ISOSPIN
+from latfit.config import DECREASE_VAR, ISOSPIN
 from latfit.config import HINTS_ELIM, DISP_ENERGIES
 from latfit.config import REINFLATE_BEFORE_LOG
 from latfit.config import DELTA_E_AROUND_THE_WORLD
@@ -48,6 +48,7 @@ NORMS = [[(1+0j) for _ in range(len(OPERATOR_NORMS))]
 for i, norm in enumerate(OPERATOR_NORMS):
     for j, norm2 in enumerate(OPERATOR_NORMS):
         NORMS[i][j] = norm*np.conj(norm2)
+print("NORMS_ij =", NORMS)
 
 MPIRANK = MPI.COMM_WORLD.rank
 
@@ -923,7 +924,6 @@ def energies_pionratio(timeij, delta_t):
                            timeij, delta_t)
         energies.append(app)
     np.seterr(divide='warn', invalid='warn')
-    print(avglhs, avgrhs, avglhs/avgrhs)
     avg_energies = callprocmeff([
         (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t)
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
