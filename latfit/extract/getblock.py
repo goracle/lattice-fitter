@@ -940,7 +940,7 @@ def energies_pionratio(timeij, delta_t):
 energies_pionratio.store = {}
 
 if ISOSPIN != 2:
-    def sort_addzero(addzero, intmean):
+    def sort_addzero(addzero, enint):
         """Introducing rho/sigma operator introduces ambiguity
         in energy sort:  where to sort the extra 0 entry
         in the non-interacting energies introduced by these operators?
@@ -952,20 +952,43 @@ if ISOSPIN != 2:
         disp = np.asarray(DISP_ENERGIES)
         if not isinstance(DISP_ENERGIES[0], float):
             disp = np.mean(DISP_ENERGIES, axis=0)
+            eint = np.swapaxes(enint, 0, 1)
+        else:
+            eint = np.mean(enint, axis=0)
         assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
-        for i, edisp in enumerate(disp):
-            if not edisp:
+        for i, mean in enumerate(np.mean(enint, axis=0)):
+            if np.isnan(mean):
                 continue
             mindist = np.inf
-            for j, mean in enumerate(intmean):
-                mindist = min(np.abs(mean-edisp), mindist)
-                if mindist == np.abs(mean-edisp):
+            mindev = np.inf
+            mindx = np.nan
+            mindx2 = np.nan
+            for j, edisp in enumerate(disp):
+                dist = np.abs(mean-edisp)
+                finsum = addzero[:, j]+eint[i]
+                assert not np.any(np.isnan(finsum)), str(addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
+                dev = np.std(finsum)
+                mindist = min(dist, mindist)
+                mindev = min(dev, mindev)
+                if mindist == dist:
                     mindx = j
-            mapi.append((i, mindx))
+                if mindev == dev:
+                    mindx2 = j
+            if not np.isnan(mindx):
+                print("i, mindx, mindx2", i, mindx, mindx2, mindist)
+                assert not np.isnan(mindx2)
+                #assert mindx == mindx2, str(mindx)+" "+str(mindx2)
+                #mapi.append((mindx, i))
+                mapi.append((mindx2, i))
+        print(disp)
+        print(np.mean(enint, axis=0))
         for mapel in mapi:
-            fromi, toj = mapel
-            assert fromi != 1, "index bug, rho/sigma should not get a correlated 0"
-            ret[:, toj] = addzero[:, fromi]
+            fromj, toi = mapel
+            #assert toi != 1,\
+            #    "index bug, rho/sigma should not get a correlated 0"
+            ret[:, toi] = np.copy(addzero[:, fromj])
+        if not mapi:
+            ret = addzero
         return ret
 else:
     def sort_addzero(addzero):
@@ -992,7 +1015,7 @@ if PIONRATIO:
                 assert 'rho' in GEVP_DIRS[
                     i][i] or 'sigma' in GEVP_DIRS[i][i]
         addzero = np.nan_to_num(addzero)
-        addzero = sort_addzero(addzero, np.mean(enint, axis=0))
+        addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
         newe = []
         for i in range(len(addzero)):
