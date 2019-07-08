@@ -21,6 +21,15 @@ def querykeys(qop, descr):
             print(j)
     print("done printing keys in", descr)
 
+def correct_dagger_factor():
+    """Need an overall -1 due to dagger not being taken on K
+    """
+    for i in np.arange(1,11):
+        for keyirr in QOPI2[str(i)]:
+            QOPI2[str(i)][keyirr] *= -1
+        for keyirr in QOPI0[str(i)]:
+            QOPI0[str(i)][keyirr] *= -1
+
 
 def check_consistency_keys(keyarr):
     """Check key consistency"""
@@ -46,6 +55,7 @@ def check_consistency_keys(keyarr):
 
 def write_out():
     """Write the result to file"""
+    correct_dagger_factor()
     keyarr = set()
     if not os.path.isdir('I0'):
         os.makedirs('I0')
@@ -58,24 +68,26 @@ def write_out():
         momrel = int(momrel)
         opstr = getopstr(momrel, key)
         for i in np.arange(1, 11):
-            filestr = 'Q'+str(i)+'_deltat_'+str(kpitsep)
-            filestr_pipi = filestr+'_'+opstr
-            if not os.path.isfile("I0/"+filestr_pipi):
-                print("writing file: ", "I0/"+filestr_pipi)
-                fn1 = h5py.File('I0/'+filestr_pipi, 'w')
-                fn1[filestr_pipi] = QOPI0[str(i)][key]
+            filestr0 = 'Q'+str(i)+'_I0_deltat_'+str(kpitsep)
+            filestr2 = 'Q'+str(i)+'_I2_deltat_'+str(kpitsep)
+            filestr_pipi0 = filestr0+'_'+opstr
+            filestr_pipi2 = filestr2+'_'+opstr
+            if not os.path.isfile("I0/"+filestr_pipi0):
+                print("writing file: ", "I0/"+filestr_pipi0)
+                fn1 = h5py.File('I0/'+filestr_pipi0, 'w')
+                fn1[filestr_pipi0] = QOPI0[str(i)][key]
                 fn1.close()
             else:
-                print("skipping extant file: ", "I0/"+filestr_pipi)
-            if not os.path.isfile("I2/"+filestr_pipi):
-                print("writing file: ", "I2/"+filestr_pipi)
-                fn1 = h5py.File('I2/'+filestr_pipi, 'w')
-                fn1[filestr_pipi] = QOPI2[str(i)][key]
+                print("skipping extant file: ", "I0/"+filestr_pipi0)
+            if not os.path.isfile("I2/"+filestr_pipi2):
+                print("writing file: ", "I2/"+filestr_pipi2)
+                fn1 = h5py.File('I2/'+filestr_pipi2, 'w')
+                fn1[filestr_pipi2] = QOPI2[str(i)][key]
                 fn1.close()
             else:
-                print("skipping extant file: ", "I2/"+filestr_pipi)
+                print("skipping extant file: ", "I2/"+filestr_pipi2)
             if momrel == 0:
-                filestr_sigma = filestr+'_sigma'
+                filestr_sigma = filestr0+'_sigma'
                 if not os.path.isfile("I0/"+filestr_sigma):
                     print("writing file: ", "I0/"+filestr_sigma)
                     gn1 = h5py.File('I0/'+filestr_sigma, 'w')
