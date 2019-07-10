@@ -334,7 +334,11 @@ def get_coord(coords, cov, error2=None):
             print('zero division error')
             print(arg)
             print(i, j, k)
-            root_s_var.append(np.array([np.nan]*len(arg)))
+            if hasattr(arg, '__iter__'):
+                larg = len(arg)
+            else:
+                larg = 1
+            root_s_var.append(np.array([np.nan]*larg))
         np.seterr(errstate)
     for i, xc1 in enumerate(xcoord):
         print(xc1, "E(lattice units) =", var[i])
@@ -844,6 +848,8 @@ def do_plot(title, pdf):
     hfontt = {'fontname': 'FreeSans', 'size': 12}
     hfontl = {'fontname': 'FreeSans', 'size': 14}
     # add axes labels, title
+    #if not EFF_MASS:
+    #    plt.yscale('log')
     plt.title(title, **hfontt)
     plt.xlabel(XLABEL, **hfontl)
     plt.ylabel(YLABEL, **hfontl)

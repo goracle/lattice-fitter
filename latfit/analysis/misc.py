@@ -41,7 +41,7 @@ def massfunc():
             massfunc.MASS = massfunc.MASS.flatten()
         except FileNotFoundError:
             print("jackknifed mass not found")
-            # massfunc.MASS = MASS
+            massfunc.MASS = MASS
             raise
     return massfunc.MASS
 massfunc.MASS = None

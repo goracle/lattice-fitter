@@ -967,7 +967,7 @@ if ISOSPIN != 2:
                 dist = np.abs(mean-edisp)
                 finsum = addzero[:, j]+eint[i]
                 assert not np.any(np.isnan(finsum)), str(addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
-                dev = np.std(finsum)
+                dev = np.std(finsum)*np.sqrt(len(finsum)-1)
                 mindist = min(dist, mindist)
                 mindev = min(dev, mindev)
                 if mindist == dist:
@@ -975,7 +975,6 @@ if ISOSPIN != 2:
                 if mindev == dev:
                     mindx2 = j
             if not np.isnan(mindx):
-                print("i, mindx, mindx2", i, mindx, mindx2, mindist)
                 assert not np.isnan(mindx2)
                 #assert mindx == mindx2, str(mindx)+" "+str(mindx2)
                 #mapi.append((mindx, i))
