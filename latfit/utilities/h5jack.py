@@ -31,8 +31,8 @@ WRITE_INDIVIDUAL = True
 WRITE_INDIVIDUAL = False
 
 # free field check
-FREEFIELD = False
 FREEFIELD = True
+FREEFIELD = False
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
