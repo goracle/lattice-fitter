@@ -107,6 +107,16 @@ PIONRATIO = False
 PIONRATIO = True
 PIONRATIO = False if not GEVP else PIONRATIO
 
+# use the pion ratio to correct systematic
+# (lattice spacing) error?
+# if not, we can use it to correct statistical error
+MINIMIZE_STAT_ERROR_PR = True
+MINIMIZE_STAT_ERROR_PR = False
+if LATTICE_ENSEMBLE == '24c':
+    MINIMIZE_STAT_ERROR_PR = False
+elif LATTICE_ENSEMBLE == '32c':
+    MINIMIZE_STAT_ERROR_PR = True
+
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = True
 GEVP_DERIV = False
