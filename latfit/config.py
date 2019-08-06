@@ -45,14 +45,15 @@ IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
 
 if ISOSPIN == 1:
-    # done
-    IRREP = 'B_mom1'
-    IRREP = 'B_mom111'
-    IRREP = 'A_1PLUS_mom1'
-    IRREP = 'A_1PLUS_mom11'
-    IRREP = 'A_1PLUS_avg_mom111'
-    IRREP = 'A_2MINUS_mom11'
-    IRREP = 'A_2PLUS_mom11'
+    # too noisy to even plot
+    IRREP = 'A_2MINUS_mom11' # very noisy, no go
+    IRREP = 'A_1PLUS_mom11' # very noisy, no go
+    IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
+    # working
+    IRREP = 'A_1PLUS_mom1' # t-t0=3 has decent t=8-10 plateau
+    IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
+    IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
+    IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
     # control
     IRREP = 'T_1_3MINUS_mom000'
     IRREP = 'T_1_MINUS'
