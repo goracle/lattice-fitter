@@ -943,97 +943,88 @@ def energies_pionratio(timeij, delta_t):
     return energies
 energies_pionratio.store = {}
 
-if ISOSPIN != 2:
-    def sort_addzero(addzero, enint):
-        """Introducing rho/sigma operator introduces ambiguity
-        in energy sort:  where to sort the extra 0 entry
-        in the non-interacting energies introduced by these operators?
-        Well, we are free to choose (since we are adding 0),
-        so sort by the min distance
-        between interacting energies and dispersion relation energies"""
-        mapi = []
-        ret = np.zeros(addzero.shape, np.float)
-        disp = np.asarray(DISP_ENERGIES)
-        if not isinstance(DISP_ENERGIES[0], float):
-            disp = np.mean(DISP_ENERGIES, axis=0)
-            eint = np.swapaxes(enint, 0, 1)
-        else:
-            eint = np.mean(enint, axis=0)
-        assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
-        for i, mean in enumerate(np.mean(enint, axis=0)):
-            if np.isnan(mean):
-                continue
+def sort_addzero(addzero, enint):
+    """Introducing rho/sigma operator introduces ambiguity
+    in energy sort:  where to sort the extra 0 entry
+    in the non-interacting energies introduced by these operators?
+    Well, we are free to choose (since we are adding 0),
+    so sort by the min distance
+    between interacting energies and dispersion relation energies"""
+    mapi = []
+    ret = np.zeros(addzero.shape, np.float)
+    disp = np.asarray(DISP_ENERGIES)
+    if not isinstance(DISP_ENERGIES[0], float):
+        disp = np.mean(DISP_ENERGIES, axis=0)
+        eint = np.swapaxes(enint, 0, 1)
+    else:
+        eint = np.mean(enint, axis=0)
+    assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
+    for i, mean in enumerate(np.mean(enint, axis=0)):
+        if np.isnan(mean):
+            continue
 
-            # tare comparisons
-            mindist = np.inf
-            mindev = np.inf
-            mindx = np.nan
-            mindx2 = np.nan
+        # tare comparisons
+        mindist = np.inf
+        mindev = np.inf
+        mindx = np.nan
+        mindx2 = np.nan
 
-            for j, edisp in enumerate(disp):
+        for j, edisp in enumerate(disp):
 
-                # calculate distance
-                dist = np.abs(mean-edisp)
+            # calculate distance
+            dist = np.abs(mean-edisp)
 
-                # proposal for final sum (to test)
-                finsum = addzero[:, j]+eint[i]
-                assert not np.any(np.isnan(finsum)), str(addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
+            # proposal for final sum (to test)
+            finsum = addzero[:, j]+eint[i]
+            assert not np.any(np.isnan(finsum)), str(
+                addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
 
-                # std error in finsum
-                dev = np.std(finsum)*np.sqrt(len(finsum)-1)
+            # std error in finsum
+            dev = np.std(finsum)*np.sqrt(len(finsum)-1)
 
-                # which additive zero
-                # has a corresponding disp energy
-                # closest to the energy level in question?
-                mindist = min(dist, mindist)
+            # which additive zero
+            # has a corresponding disp energy
+            # closest to the energy level in question?
+            mindist = min(dist, mindist)
 
-                # same thing but min std error
-                mindev = min(dev, mindev)
+            # same thing but min std error
+            mindev = min(dev, mindev)
 
-                # store result
-                if mindist == dist:
-                    mindx = j
-                if mindev == dev:
-                    mindx2 = j
-            # check
-            if not np.isnan(mindx):
-                assert not np.isnan(mindx2)
-                #assert mindx == mindx2, str(mindx)+" "+str(mindx2)
-                #mapi.append((mindx, i))
-                if MINIMIZE_STAT_ERROR_PR:
-                    mapi.append((mindx2, i))
-                else:
-                    mapi.append((mindx, i))
-        for mapel in mapi:
-            fromj, toi = mapel
-            #assert toi != 1,\
-            #    "index bug, rho/sigma should not get a correlated 0"
-            print("add zero mean (", j, "):", np.mean(addzero[:,fromj]))
-            ret[:, toi] = np.copy(addzero[:, fromj])
-        if not mapi:
-            assert None, "bug"
-            ret = addzero
-        # we can always add/subtract the average,
-        # which should be 0 in the large stat. limit.
-        # assuming pion ratio method doesn't correct discr. error.
-        for i in range(addzero.shape[1]):
-            # check to see if this raises the energy
-            # assuming excited states are the main sys. err,
-            # additive zero should always be 0 or < 0
-            if np.mean(ret[:, i]) > 0 and MINIMIZE_STAT_ERROR_PR:
-                print("correcting index", i, "of add zero avg")
-                assert None, "hold"
-                ret[:, i] = make_avg_zero(ret[:, i])
-        return ret
-else:
-    def sort_addzero(addzero):
-        """I=2 has correct order, do nothing"""
-        addzero = np.asarray(addzero)
-        ret = np.zeros(addzero.shape, float)
-        for i in range(addzero.shape[1]):
-            if np.mean(addzero[:, i]) > 0:
-                ret[:, i] = make_avg_zero(addzero[:, i])
-        return ret
+            # store result
+            if mindist == dist:
+                mindx = j
+            if mindev == dev:
+                mindx2 = j
+        # check
+        if not np.isnan(mindx):
+            assert not np.isnan(mindx2)
+            #assert mindx == mindx2, str(mindx)+" "+str(mindx2)
+            #mapi.append((mindx, i))
+            if MINIMIZE_STAT_ERROR_PR:
+                mapi.append((mindx2, i))
+            else:
+                mapi.append((mindx, i))
+    for mapel in mapi:
+        fromj, toi = mapel
+        #assert toi != 1,\
+        #    "index bug, rho/sigma should not get a correlated 0"
+        print("add zero mean (", j, "):", np.mean(addzero[:,fromj]))
+        ret[:, toi] = np.copy(addzero[:, fromj])
+    if not mapi:
+        assert None, "bug"
+        ret = addzero
+    # we can always add/subtract the average,
+    # which should be 0 in the large stat. limit.
+    # assuming pion ratio method doesn't correct discr. error.
+    for i in range(addzero.shape[1]):
+        # check to see if this raises the energy
+        # assuming excited states are the main sys. err,
+        # additive zero should always be 0 or < 0
+        if np.mean(ret[:, i]) > 0 and MINIMIZE_STAT_ERROR_PR:
+            print("correcting index", i, "of add zero avg")
+            assert None, "hold"
+            ret[:, i] = make_avg_zero(ret[:, i])
+    return ret
 
 def make_avg_zero(arr):
     """Subtract the average of the array to make the new average 0"""
