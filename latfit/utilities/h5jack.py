@@ -1358,14 +1358,14 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
                 " dictionary found"
 
     ttime = -time.perf_counter()
-    mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
-    ttime += time.perf_counter()
-    print("time to get most blocks:", ttime, "seconds")
-
-    ttime = -time.perf_counter()
     bubblks = gatherdicts(bubjack(nodebubl, trajl, openlist))
     ttime += time.perf_counter()
     print("time to get disconnected blocks:", ttime, "seconds")
+
+    ttime = -time.perf_counter()
+    mostblks = gatherdicts(getmostblks(nodebases, trajl, openlist))
+    ttime += time.perf_counter()
+    print("time to get most blocks:", ttime, "seconds")
 
     if TEST44:
         check_aux_consistency(auxblks, mostblks)
