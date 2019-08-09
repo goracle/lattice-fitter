@@ -1034,9 +1034,11 @@ def sort_addzero(addzero, enint):
             #assert mindx == mindx2, str(mindx)+" "+str(mindx2)
             #mapi.append((mindx, i))
             if MINIMIZE_STAT_ERROR_PR:
+                assert None, "needs consistency between all lattice spacing"
                 mapi.append((mindx2, i))
             else:
                 mapi.append((mindx, i))
+    print("map:", mapi)
     for mapel in mapi:
         fromj, toi = mapel
         #assert toi != 1,\
@@ -1086,7 +1088,7 @@ if PIONRATIO:
                 assert 'rho' in GEVP_DIRS[
                     i][i] or 'sigma' in GEVP_DIRS[i][i]
         addzero = np.nan_to_num(addzero)
-        addzero = sort_addzero(addzero, enint)
+        #addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
         newe = []
         for i in range(len(addzero)):
