@@ -212,10 +212,13 @@ if GEVP:
 # halve the data to check for consistencies
 HALF = 'full'
 HALF = 'first half'
-HALF = 'drop third fourth'
 HALF = 'drop fourth eighth'
 HALF = 'first half'
+HALF = 'drop fourth quarter'
 if HALF != 'full':
+    SUPERJACK_CUTOFF = 0
+    print("HALF spec:", HALF)
+    print("setting superjackknife cutoff to 0 (assuming no AMA)"
     assert not SUPERJACK_CUTOFF, "AMA first half second half analysis not supported"
 elim.HALF = HALF
 
