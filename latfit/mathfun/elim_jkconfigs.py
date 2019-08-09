@@ -34,19 +34,19 @@ def elim_jkconfigs(jkblk, elim_list=None):
         sys.exit(1)
     num_configs = len(jkblk)
     k_elim = len(elim_list)
-    if k_elim == 0:
+    if k_elim == 0 or len(jkblk) == 1:
         new_jkblk = jkblk
     else:
 
-        # each of the bad configs appears k_elim-1 times in skip_sum
-        # each of the good configs appears k_elim times in skip_sum
+        # each of the unwanted configs appears k_elim-1 times in skip_sum
+        # each of the wanted configs appears k_elim times in skip_sum
         skip_sum = np.sum([jkblk[skip]
                            for skip in elim_list], axis=0)
 
         sum_blk = np.sum(
             jkblk, axis=0) # same as sum over original set, no norm
 
-        # delete the blocks corresponding to the bad configs
+        # delete the blocks corresponding to the unwanted configs
         inner = np.delete(jkblk, elim_list, axis=0)+skip_sum
 
         # check for precision loss, plausibly
@@ -56,8 +56,8 @@ def elim_jkconfigs(jkblk, elim_list=None):
         # unormalize; only sums over configs now
         inner *= (num_configs-1)
         
-        # subtract the good configs we added in skip_sum
-        # subtract the bad configs we added in skip_sum, plus one extra
+        # subtract the wanted configs we added in skip_sum
+        # subtract the unwanted configs we added in skip_sum, plus one extra
         # this extra being the copy which shows up in the non-deleted blocks
         final_diff = inner-k_elim*sum_blk
 

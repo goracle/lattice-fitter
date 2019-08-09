@@ -210,16 +210,16 @@ if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
 
 # halve the data to check for consistencies
-HALF = 'full'
+HALF = 'drop fourth quarter'
 HALF = 'first half'
 HALF = 'drop fourth eighth'
 HALF = 'first half'
-HALF = 'drop fourth quarter'
+HALF = 'full'
 if HALF != 'full':
     SUPERJACK_CUTOFF = 0
     print("HALF spec:", HALF)
-    print("setting superjackknife cutoff to 0 (assuming no AMA)"
-    assert not SUPERJACK_CUTOFF, "AMA first half second half analysis not supported"
+    print("setting superjackknife cutoff to 0 (assuming no AMA)")
+    assert not SUPERJACK_CUTOFF, "AMA first half second half analysis not supported:"+str(SUPERJACK_CUTOFF)
 elim.HALF = HALF
 
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
