@@ -6,6 +6,7 @@ from collections import namedtuple
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
+import latfit.mathfun.elim_jkconfigs as elim
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.analysis.irr2tex import irr2tex
 from latfit.fit_funcs import FitFunctions
@@ -165,6 +166,18 @@ elif LATTICE_ENSEMBLE == '16c':
     PION_MASS = 0.3*AINVERSE
     LT = 32
     SUPERJACK_CUTOFF = 0
+
+# eliminate problematic configs.
+# Simply set this to a list of ints indexing the configs,
+# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
+
+#ELIM_JKCONF_LIST = [7,8,9,10,11,12,13,14,15,186,187,188,189,190]
+ELIM_JKCONF_LIST = []
+misc.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
+elim.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
+
+
+
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
@@ -197,10 +210,14 @@ if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
 
 # halve the data to check for consistencies
-HALF = 'first half'
-HALF = 'second half'
-HALF = 'drop fourth quarter'
 HALF = 'full'
+HALF = 'first half'
+HALF = 'drop third fourth'
+HALF = 'drop fourth eighth'
+HALF = 'first half'
+if HALF != 'full':
+    assert not SUPERJACK_CUTOFF, "AMA first half second half analysis not supported"
+elim.HALF = HALF
 
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
 # skips reading them in
@@ -347,12 +364,6 @@ if ISOSPIN == 1:
     HINTS_ELIM[16] = [(4,0), (3,0), (2,0)]
     HINTS_ELIM[11] = [(4,0)]
     HINTS_ELIM[12] = [(4,3), (3,2)]
-
-# eliminate problematic configs.
-# Simply set this to a list of ints indexing the configs,
-# e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
-
-ELIM_JKCONF_LIST = []
 
 # Cut fit points when the relative error in the error bar is > ERR_CUT
 ERR_CUT = 0.20

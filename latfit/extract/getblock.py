@@ -43,6 +43,7 @@ if PIONRATIO:
 else:
     MINIMIZE_STAT_ERROR_PR = False
 import latfit.config
+import latfit.analysis.misc as misc
 
 from mpi4py import MPI
 
@@ -61,22 +62,54 @@ if MATRIX_SUBTRACTION and GEVP:
 
 XMAX = 999
 
-if len(DISP_ENERGIES) != MULT and GEVP:
-    for i, dur in enumerate(GEVP_DIRS):
-        if 'rho' in dur[i] or 'sigma' in dur[i]:
-            DISP_ENERGIES = list(DISP_ENERGIES)
-            if hasattr(DISP_ENERGIES[0], '__iter__')\
-               and np.asarray(DISP_ENERGIES[0]).shape:
-                assert i, "rho/sigma should not be first operator."
-                DISP_ENERGIES.insert(
-                    i, np.zeros(len(DISP_ENERGIES[0]), dtype=np.complex))
-            else:
-                DISP_ENERGIES.insert(i, 0)
+def mod_disp(dispe):
+    """Modify imported dispersion energies"""
+    if len(dispe) != MULT and GEVP:
+        for i, dur in enumerate(GEVP_DIRS):
+            if 'rho' in dur[i] or 'sigma' in dur[i]:
+                dispe = list(dispe)
+                if hasattr(dispe[0], '__iter__')\
+                and np.asarray(dispe[0]).shape:
+                    assert i, "rho/sigma should not be first operator."
+                    dispe.insert(
+                        i, np.zeros(len(dispe[0]), dtype=np.complex))
+                else:
+                    dispe.insert(i, 0)
 
-if DISP_ENERGIES:
-    if hasattr(DISP_ENERGIES[0], '__iter__')\
-       and np.asarray(DISP_ENERGIES[0]).shape:
-        DISP_ENERGIES = np.swapaxes(DISP_ENERGIES, 0, 1)
+    if dispe:
+        if hasattr(dispe[0], '__iter__')\
+        and np.asarray(dispe[0]).shape:
+            dispe = np.swapaxes(dispe, 0, 1)
+    return dispe
+
+DISP_ENERGIES = mod_disp(DISP_ENERGIES)
+
+def disp():
+    """Return the dispersion relation energies = Sqrt(m^2+p^2)"""
+    if not disp.binned:
+        #disp.energies = latfit.config.update_disp()
+        #disp.energies = mod_disp(disp.energies)
+        disp.energies = binhalf_e(disp.energies)
+        disp.binned = True
+    return disp.energies
+disp.energies = np.asarray(DISP_ENERGIES)
+disp.binned = False
+
+def binhalf_e(ear):
+    """Update energies for binning and elimination
+    horrible global/local hack
+    """
+    new_disp = []
+    ldisp = len(np.asarray(misc.massfunc()).shape)
+    for i in range(MULT):
+        if MULT > 1 and ldisp > 1:
+            new_disp.append(misc.select_subset(ear[:, i]))
+        elif ldisp > 1:
+            ear = misc.select_subset(ear)
+    if MULT > 1 and ldisp > 1:
+        ear = np.swapaxes(new_disp, 0, 1)
+    return ear
+
 
 """
 if PIONRATIO and GEVP:
@@ -952,9 +985,9 @@ def sort_addzero(addzero, enint):
     between interacting energies and dispersion relation energies"""
     mapi = []
     ret = np.zeros(addzero.shape, np.float)
-    disp = np.asarray(DISP_ENERGIES)
-    if not isinstance(DISP_ENERGIES[0], float):
-        disp = np.mean(DISP_ENERGIES, axis=0)
+    disp = np.asarray(disp())
+    if not isinstance(disp()[0], float):
+        disp = np.mean(disp(), axis=0)
         eint = np.swapaxes(enint, 0, 1)
     else:
         eint = np.mean(enint, axis=0)
@@ -1045,7 +1078,9 @@ if PIONRATIO:
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
         print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
-        addzero = -1*energies_noninteracting+np.asarray(DISP_ENERGIES)
+        if not np.all(energies_noninteracting.shape == np.asarray(disp()).shape):
+            energies_noninteracting = binhalf_e(energies_noninteracting)
+        addzero = -1*energies_noninteracting+np.asarray(disp())
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
                 assert 'rho' in GEVP_DIRS[

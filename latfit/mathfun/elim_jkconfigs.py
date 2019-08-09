@@ -2,22 +2,30 @@
 import sys
 import numpy as np
 
-from latfit.config import ELIM_JKCONF_LIST
-from latfit.config import JACKKNIFE
+ELIM_JKCONF_LIST = None
+HALF = ''
+try:
+    from latfit.config import JACKKNIFE
+except ImportError:
+    JACKKNIFE = True
 
 
 def elim_jkconfigs(jkblk, elim_list=None):
     """Takes a jackknife block as an argument, eliminates configs
     corresponding to ELIM_JKCONF_LIST, then returns the new jackknife block.
     """
+    assert HALF, str(HALF)
     if not JACKKNIFE:
         print("***ERROR***")
         print("Attempting to eliminate configurations from jackknife blocks,")
         print("but jackknife correction to covariance matrix is not enabled.")
         sys.exit(1)
     try:
-        if not elim_list:
-            elim_list = tuple(ELIM_JKCONF_LIST)
+        assert elim_list or ELIM_JKCONF_LIST is not None, "missing elimination list"+str(ELIM_JKCONF_LIST)+" "+str(elim_list)
+        if elim_list is None:
+            elim_list = list(ELIM_JKCONF_LIST)
+        if ELIM_JKCONF_LIST is not None and HALF == 'full':
+            assert np.all(elim_list == ELIM_JKCONF_LIST), "list mismatch:"+str(elim_list)
     except (NameError, TypeError):
         print("***ERROR***")
         print("Not eliminating any configs because of misconfigured")

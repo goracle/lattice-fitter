@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
+from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 
 BOX_LENGTH = 1
 MASS = 0
@@ -28,6 +29,7 @@ def dummy(*x):
     return x
 BINOUT = dummy
 HALFTOTAL = dummy
+ELIM_JKCONF_LIST = []
 
 
 def massfunc():
@@ -39,12 +41,18 @@ def massfunc():
             massfunc.MASS = pickle.load(fn1)
             print("load of jackknifed mass successful")
             massfunc.MASS = massfunc.MASS.flatten()
+            massfunc.MASS = select_subset(massfunc.MASS)
         except FileNotFoundError:
             print("jackknifed mass not found")
             massfunc.MASS = MASS
-            raise
+            #raise
     return massfunc.MASS
 massfunc.MASS = None
+
+def update_binhalf():
+    """after we set these functions update (the mass)"""
+    massfunc.MASS = select_subset(massfunc.MASS, elimlist=[])
+    
 
 def p1():
     """E_pi(|p|=1)"""
@@ -125,14 +133,24 @@ def fitepi(norm):
         ret = p111()
     else:
         assert ret is not None, ""
+    ret = select_subset(ret)
+    return ret
+
+def select_subset(arr, elimlist=None):
+    """Apply binning and subsetting of data as needed (duplication of code in proc_folder)"""
+    ret = arr
+    elimlist = ELIM_JKCONF_LIST if elimlist is None else elimlist
     if hasattr(ret, '__iter__'):
         ret = BINOUT(ret)
         ret = HALFTOTAL(ret)
+        if ELIM_JKCONF_LIST:
+            ret = elim_jkconfigs(ret, elimlist)
     ret = np.asarray(ret)
     for i in ret.shape:
         assert i == max(ret.shape) or i == 1
     ret = ret.flatten()
     return ret
+
 
 def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
     """Correct 24c dispersion relation errors using fits

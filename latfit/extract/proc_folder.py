@@ -149,6 +149,18 @@ if STYPE == 'hdf5':
         elif halfswitch =='drop fourth quarter':
             excl = np.array(
                 range(len(arr)))[3*intceil(larr/4):]
+        elif halfswitch =='drop first eighth':
+            excl = np.array(
+                range(len(arr)))[:intceil(larr/8)]
+        elif halfswitch =='drop fourth eighth':
+            excl = np.array(
+                range(len(arr)))[3*intceil(larr/8):4*intceil(larr/8)]
+        elif halfswitch =='drop third eighth':
+            excl = np.array(
+                range(len(arr)))[2*intceil(larr/8):3*intceil(larr/8)]
+        elif halfswitch =='drop second eighth':
+            excl = np.array(
+                range(len(arr)))[intceil(larr/8):2*intceil(larr/8)]
         else:
             print("bad spec for half switch:", halfswitch)
             sys.exit(1)
@@ -267,3 +279,9 @@ elif STYPE == 'ascii':
 
 misc.HALFTOTAL = halftotal
 misc.BINOUT = binout
+misc.update_binhalf()
+# horrible hack
+if cfg.DELTA_E_AROUND_THE_WORLD is not None:
+    cfg.DELTA_E_AROUND_THE_WORLD = misc.select_subset(cfg.DELTA_E_AROUND_THE_WORLD)
+if cfg.DELTA_E2_AROUND_THE_WORLD is not None:
+    cfg.DELTA_E2_AROUND_THE_WORLD = misc.select_subset(cfg.DELTA_E2_AROUND_THE_WORLD)
