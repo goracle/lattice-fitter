@@ -15,6 +15,7 @@ from latfit.config import SLOPPYONLY
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 import latfit
 import latfit.analysis.misc as misc
+import latfit.config as cfg
 
 def binout(out):
     """Reduce the number of used configs
