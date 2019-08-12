@@ -33,7 +33,7 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 1
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -41,9 +41,9 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 
 if ISOSPIN == 1:
     # too noisy to even plot
