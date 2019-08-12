@@ -1079,3 +1079,7 @@ if ISOSPIN == 2 and GEVP:
 if not NOATWSUB:
     print("matrix subtraction:", MATRIX_SUBTRACTION)
 assert ISOSPIN != 1 or NOATWSUB, "I=1 has no ATW terms."
+if check_ids()[-2]:
+    assert SUPERJACK_CUTOFF, "AMA is turned on.  super jackknife cutoff should be non-zero"
+else:
+    assert not SUPERJACK_CUTOFF, "AMA is turned off.  super jackknife cutoff should be zero"

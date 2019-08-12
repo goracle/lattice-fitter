@@ -472,6 +472,7 @@ def piondirect(atw=False, reverseatw=False):
     if reverseatw: assert atw
     base = 'pioncorrChk_*_unsummed.jkdat'
     baseglob = glob.glob(base)
+    assert baseglob, "unsummed diagrams missing"
     allblks = {}
     count = {}
     numt = None
@@ -851,11 +852,12 @@ if __name__ == '__main__':
     check_ids()
     h5jack.AVGTSRC = True # hack to get file names right.
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
+    piondirect()
+    print("after pion ratio")
     piondirect(atw=True)
     print("after atw, rank", MPIRANK)
     piondirect(atw=True, reverseatw=True)
     print("after reverse atw", MPIRANK)
-    piondirect()
     print("end")
     for dirn in ['I0', 'I1', 'I2']:
         os.chdir(dirn)

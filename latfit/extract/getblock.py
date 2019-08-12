@@ -1066,7 +1066,68 @@ def make_avg_zero(arr):
     avg = np.mean(arr, axis=0)
     ret = arr - avg
     return ret
+
+def show_original_data(jkarr, jkarr2):
+    """Show original (unjackknifed) data for diagnostic purposes"""
+    orig = np.zeros(np.asarray(jkarr).shape)
+    orig2 = np.zeros(np.asarray(jkarr2).shape)
+    jsum = np.sum(jkarr, axis=0)
+    jsum2 = np.sum(jkarr2, axis=0)
+    diffarr = []
+    diffarr_total = []
+    diffarr_small = []
+    diffarr_early = []
+    diffarr_late = []
+    for i in range(len(jkarr)):
+        orig[i] = jkarr[i]
+        orig2[i] = jkarr2[i]
+        assert len(jkarr) == len(jkarr2), "array mismatch"
+        orig[i] = jsum-jkarr[i]*(len(jkarr)-1)
+        orig2[i] = jsum2-jkarr2[i]*(len(jkarr2)-1)
+        diff = orig2[i]-orig[i]
+        diff = jkarr2[i]-jkarr[i]
+        # jsum2-jkarr2[i]*(len(jkarr2)-1)-jsum+jkarr[i]*(len(jkarr)-1) == 0.03
+        diffarr_total.append(diff)
+        if i > 70:
+            diffarr_late.append(diff)
+        else:
+            diffarr_early.append(diff)
+        #print("arbitrary cutoff:", (0.03+jsum-jsum2)/(len(jkarr)-1))
+        if np.abs(diff) > (0.03+jsum-jsum2)/(len(jkarr)-1):
+        #if np.abs(diff) > 0.03:
+            diffarr.append(diff)
+            print(i, orig[i], orig2[i], diff)
+        else:
+            print(i, orig[i], orig2[i])
+            diffarr_small.append(diff)
+    print(np.std(orig)/np.sqrt(len(orig)))
+    print("early diff avg:", np.mean(diffarr_early), "error:", sterr(diffarr_early))
+    print("late diff avg:", np.mean(diffarr_late), "error:", sterr(diffarr_late))
+    if diffarr_small:
+        print("small diff avg:", np.mean(diffarr_small), "error:", sterr(diffarr_small))
+    if diffarr:
+        print("large diff avg:", np.mean(diffarr), "error:", sterr(diffarr))
+    print("early errors (up to 70) (int, nonint):", sterr(jkarr2[:70]), sterr(jkarr[:70]))
+    print("later errors (70 to 140) (int, nonint):", sterr(jkarr2[70:140]), sterr(jkarr[70:140]))
+    print("total diff avg:", np.mean(diffarr_total), "error:", sterr(diffarr_total))
+    suma = 0
+    for i in reversed(diffarr_total):
+        suma+=i-np.mean(diffarr_total)
+        print(suma)
+    return orig
+
+def jkerr(arr):
+    """Calculate the jackknife error in array arr"""
+    ret = np.std(arr)*np.sqrt(len(arr)-1)
+    return ret
     
+def sterr(arr):
+    """Calculate the standard error in array arr"""
+    ret = np.std(arr,ddof=1)/np.sqrt(len(arr))
+    return ret
+
+sterr=jkerr
+
 
 if PIONRATIO:
     def modenergies(energies_interacting, timeij, delta_t):
@@ -1079,7 +1140,15 @@ if PIONRATIO:
                 (timeij, delta_t)]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
+        for i, en in enumerate(ennon[:,0]):
+            pass
+            #print(i, en, min(ennon[:,0]), max(ennon[:,0]))
+        print("original ground non interacting energies")
+        if timeij == 7.0 and False:
+            show_original_data(ennon[:,0], enint[:,0])
         print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
+        if timeij == 7.0 and False:
+            sys.exit(0)
         if not np.all(energies_noninteracting.shape == np.asarray(disp()).shape):
             energies_noninteracting = binhalf_e(energies_noninteracting)
         addzero = -1*energies_noninteracting+np.asarray(disp())
