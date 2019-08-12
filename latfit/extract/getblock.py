@@ -1143,14 +1143,15 @@ if PIONRATIO:
         for i, en in enumerate(ennon[:,0]):
             pass
             #print(i, en, min(ennon[:,0]), max(ennon[:,0]))
-        print("original ground non interacting energies")
         if timeij == 7.0 and False:
+            print("original ground non interacting energies")
             show_original_data(ennon[:,0], enint[:,0])
         print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
         if timeij == 7.0 and False:
             sys.exit(0)
         if not np.all(energies_noninteracting.shape == np.asarray(disp()).shape):
             energies_noninteracting = binhalf_e(energies_noninteracting)
+        # this fails if the binning didn't fix the broadcast incompatibility
         addzero = -1*energies_noninteracting+np.asarray(disp())
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
@@ -1626,7 +1627,14 @@ else:
         """get the block"""
         if delta_t is None:
             pass
-        return getblock_simple(file_tup, reuse, timeij)
+        ret = getblock_simple(file_tup, reuse, timeij)
+        if timeij == 7.0 and False:
+            ret = np.asarray(ret)
+            print("error in eff mass at t=7:", sterr(ret))
+            print("error in eff mass at t=7 up to 70:", sterr(ret[16:70+16]))
+            print("error in eff mass at t=7 70 to 140:", sterr(ret[70+16:140+16]))
+            sys.exit(0)
+        return ret
 
 
 def getblock(file_tup, reuse, timeij=None, delta_t=None):
