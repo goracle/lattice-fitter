@@ -143,7 +143,6 @@ ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
-SUPERJACK_CUTOFF = 7
 SUPERJACK_CUTOFF = 0
 
 # automatically generate free energies, no need to modify if GEVP
@@ -166,6 +165,7 @@ elif LATTICE_ENSEMBLE == '16c':
     PION_MASS = 0.3*AINVERSE
     LT = 32
     SUPERJACK_CUTOFF = 0
+SUPERJACK_CUTOFF = 0 if not check_ids()[-2] else SUPERJACK_CUTOFF
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
