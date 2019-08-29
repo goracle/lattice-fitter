@@ -210,10 +210,10 @@ if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
 
 # halve the data to check for consistencies
-HALF = 'drop fourth quarter'
 HALF = 'first half'
 HALF = 'drop fourth eighth'
 HALF = 'first half'
+HALF = 'drop fourth quarter'
 HALF = 'full'
 if HALF != 'full':
     SUPERJACK_CUTOFF = 0
@@ -1073,6 +1073,8 @@ assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0 or ISOSPIN == 1,
 if PIONRATIO:
     #assert ISOSPIN == 2
     print("using pion ratio method, PIONRATIO:", PIONRATIO)
+else:
+    print("not using pion ratio method, PIONRATIO:", PIONRATIO)
 if ISOSPIN == 2 and GEVP:
     assert not NOATWSUB
     assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'

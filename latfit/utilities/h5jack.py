@@ -698,6 +698,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 ntchk = allblks[base].shape[0]
                 print('ntchk=', ntchk)
                 printt = False
+                outsum = []
                 outblk = np.zeros((
                     ntchk, outblk_shape[1]), dtype=np.complex)
                 if ntchk != outblk.shape[0]:
@@ -723,7 +724,8 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                or base == 'FigureC_sep3_mom1src000_mom2src000_mom1snk000':
                 printt = debugprint(allblks[base], base=base)
             try:
-                outblk += coeff*allblks[base]
+                outsum.append(coeff*allblks[base])
+                #outblk += coeff*allblks[base]
             except ValueError:
                 # mismatch between shapes of outblk and base.
                 # This is a programming error!
@@ -736,6 +738,8 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 print("This is a programming error!  Please fix!")
                 flag = 1
                 break
+        assert np.all(outblk == 0.0), "out block not zero'd"
+        outblk += avg_hdf5.kahan_sum(outsum)
         if printt:
             printt = debugprint(outblk, pstr='outblk=')
         if flag == 0:

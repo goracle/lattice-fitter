@@ -8,6 +8,20 @@ import h5py
 
 OUTNAME = ''
 
+# from here
+# https://github.com/numpy/numpy/issues/8786
+def kahan_sum(a, axis=0):
+    a = np.asarray(a)
+    s = np.zeros(a.shape[:axis] + a.shape[axis+1:])
+    c = np.zeros(s.shape)
+    for i in range(a.shape[axis]):
+        # http://stackoverflow.com/a/42817610/353337
+        y = a[(slice(None), ) * axis + (i, )] - c
+        t = s + y
+        c = (t - s) - y
+        s = t.copy()
+    return s
+
 def main(*args):
     """Average the datasets from the command line"""
     if not args:
@@ -16,7 +30,6 @@ def main(*args):
         args = [sys.argv[0], *args]
     assert len(args) > 1, "Input list of files to average"
     norm = 1.0/(len(args)-1)
-    avg = np.array([])
     for i, data in enumerate(args):
         if i == 0:
             continue
@@ -39,8 +52,9 @@ def main(*args):
             break
         print('adding in dataset=', setname, "in file=", data, 'i=', i)
         if i == 1:
-            avg = np.zeros(fn[setname].shape, dtype=np.complex128)
-        avg += np.asarray(fn[setname])
+            avg = []
+        avg.append(np.asarray(fn[setname]))
+    avg = kahan_sum(avg)
     print("multiplying by norm=", norm)
     avg *= norm
     name = str(input("output name?")) if not OUTNAME else OUTNAME

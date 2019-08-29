@@ -785,7 +785,7 @@ PIONCORRS = ['pioncorrChk_mom000.jkdat',
              'pioncorrChk_p111.jkdat']
 
 for i in range(len(PIONCORRS)):
-    if not h5jack.FREEFIELD:
+    if not h5jack.FREEFIELD and '__name__' == '__main__':
         assert os.path.isfile(PIONCORRS[i])
         DATAN = re.sub('.jkdat', '', PIONCORRS[i])
         assert h5py.File(PIONCORRS[i], 'r')
