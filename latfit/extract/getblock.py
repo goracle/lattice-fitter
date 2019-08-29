@@ -1112,8 +1112,8 @@ def show_original_data(jkarr, jkarr2):
     print("total diff avg:", np.mean(diffarr_total), "error:", sterr(diffarr_total))
     suma = 0
     for i in reversed(diffarr_total):
-        suma+=i-np.mean(diffarr_total)
-        print(suma)
+        #suma+=i-np.mean(diffarr_total)
+        print(i-np.mean(diffarr_total))
     return orig
 
 def jkerr(arr):
@@ -1451,6 +1451,13 @@ if EFF_MASS:
         print("average evecs:")
         for i in list(zip(avg_evecs/num_configs, norms(avg_evecs/num_configs))):
             print(i)
+        if timeij == 3.0 and False:
+            outlier = np.inf
+            for num,i in enumerate(retblk):
+                if i[0] < outlier:
+                    outlier = i[0]
+                    print(num, i)
+            sys.exit(0)
         retblk = modenergies(retblk, timeij, delta_t)
         retblk = deque(retblk)
         assert len(retblk) == num_configs,\
