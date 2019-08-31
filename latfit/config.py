@@ -22,13 +22,13 @@ setup_logger()
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = False
 GEVP = True
+GEVP = False
 
 # METHODS/PARAMS
 
