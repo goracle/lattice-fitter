@@ -454,7 +454,9 @@ def correction(min_arr, config_num):
     """Correct the jackknifed E_pipi"""
     if hasattr(DELTA_E_AROUND_THE_WORLD, '__iter__') and\
        np.asarray(DELTA_E_AROUND_THE_WORLD).shape:
-        corre1 = DELTA_E_AROUND_THE_WORLD[config_num]
+        latw = len(DELTA_E_AROUND_THE_WORLD)
+        assert latw == 1 or latw == len(min_arr), "bug:  array mismatch"
+        corre1 = DELTA_E_AROUND_THE_WORLD[config_num] if latw > 1 else DELTA_E_AROUND_THE_WORLD[0]
     else:
         corre1 = DELTA_E_AROUND_THE_WORLD
     if hasattr(DELTA_E2_AROUND_THE_WORLD, '__iter__') and\
