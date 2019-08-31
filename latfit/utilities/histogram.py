@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import sys
 import re
+from collections import Counter as ctr
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
@@ -118,6 +119,7 @@ def make_hist(fname):
                 sys.exit(1)
             # print(freq, np.mean(freq))
             hist, bins = np.histogram(freq, bins=10)
+            hist = addoffset(hist)
             # print(hist)
             center = (bins[:-1] + bins[1:]) / 2
             width = 0.7 * (bins[1] - bins[0])
@@ -181,6 +183,31 @@ def make_hist(fname):
             pdf.savefig()
             plt.show()
 
+def addoffset(hist):
+    """Add an offset to each histogram so the horizontal error bars
+    don't overlap
+    """
+    dup = np.zeros(len(hist))
+    hist = np.array(hist, dtype=np.float)
+    uniqs = [0 for i in range(len(hist))]
+    print(hist)
+    for i, count in enumerate(hist):
+        for j, count2 in enumerate(hist):
+            if i >= j or dup[j]:
+                continue
+            if count == count2:
+                dup[i] += 1
+                dup[j] += 1
+                uniqs[j] = dup[i]
+    print(uniqs)
+    for i in range(len(dup)):
+        if dup[i]:
+            offset = 0.1*uniqs[i]/dup[i]
+            hist[i] += offset
+    print(hist)
+    return hist
+
+
 def diff_ind(res, arr):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
@@ -220,9 +247,13 @@ def gettitle(fname):
     """Get title for histograms"""
     # get title
     title = re.sub('_', " ", fname)
-    title = re.sub('.p', '', title)
-    title = re.sub('0', '', title)
-    title = re.sub('mom', 'p', title)
+    title = re.sub('\.p', '', title)
+    for i in range(10):
+        if not i: continue
+        if str(i) in title:
+            title = re.sub('0', '', title)
+            title = re.sub('mom', 'p', title)
+            break
     title = re.sub('x', 'Energy (lattice units)', title)
     return title
 
