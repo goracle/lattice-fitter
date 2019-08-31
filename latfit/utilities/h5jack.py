@@ -200,6 +200,7 @@ def fill_fndefs():
     alist = []
     for i in glob.glob(PREFIX+'*'+'.'+EXTENSION):
         alist.append(i)
+    alist = sorted(alist)
     return (alist[0], alist[1], alist[2])
 
 def fill_write_block(fndef=FNDEF):
@@ -219,6 +220,7 @@ def fill_write_block(fndef=FNDEF):
             for j in needed[1:]:
                 ret = ret+'_'+j
             retlist.append(ret)
+    retlist = sorted(retlist)
     return retlist
 
 WRITEBLOCK = []
@@ -338,18 +340,18 @@ def baselist(fn1=None):
             sys.exit(1)
     basl = getbasl(fn1).intersection(getbasl(gn1)).intersection(getbasl(hn1))
     basl_union = getbasl(fn1).union(getbasl(gn1)).union(getbasl(hn1))
-    if list(basl_union-basl):
+    if sorted(list(basl_union-basl)):
         for i in basl_union-basl:
             assert i in getbasl(hn1), "hn1 missing dataset:"+str(i)
             assert i in getbasl(gn1), "gn1 missing dataset:"+str(i)
             assert i in getbasl(fn1), "fn1 missing dataset:"+str(i)
-        if list(getbasl(fn1)-getbasl(gn1)):
+        if sorted(list(getbasl(fn1)-getbasl(gn1))):
             print("fn1 larger than gn1")
-        elif list(getbasl(gn1)-getbasl(fn1)):
+        elif sorted(list(getbasl(gn1)-getbasl(fn1))):
             print("gn1 larger than fn1")
-        elif list(getbasl(hn1)-getbasl(gn1)):
+        elif sorted(list(getbasl(hn1)-getbasl(gn1))):
             print("hn1 larger than gn1")
-        elif list(getbasl(gn1)-getbasl(hn1)):
+        elif sorted(list(getbasl(gn1)-getbasl(hn1))):
             print("gn1 larger than hn1")
     assert not basl_union-basl, "Union of basenames is larger than intersection"
     fn1.close()
@@ -357,6 +359,7 @@ def baselist(fn1=None):
     hn1.close()
     if MPIRANK == 0:
         print("Done getting baselist")
+    basl = sorted(list(basl))
     return basl
 
 @PROFILE
@@ -386,6 +389,7 @@ def bublist(fn1=None):
     hn1.close()
     if MPIRANK == 0:
         print("Done getting bubble list")
+    bubl = sorted(list(bubl))
     return bubl
 
 
@@ -1212,11 +1216,12 @@ def getdisconwork(bubl):
     for src in bubl:
         for snk in bubl:
             bublcomb.add((src, snk))
-    nodebublcomb = getwork(list(bublcomb))
+    nodebublcomb = getwork(sorted(list(bublcomb)))
     nodebubl = set()
     for src, snk in nodebublcomb:
         nodebubl.add(src)
         nodebubl.add(snk)
+    nodebubl = sorted(list(nodebubl))
     return nodebubl
 
 @PROFILE
@@ -1290,6 +1295,7 @@ def individual_bases(basl):
         if base in WRITEBLOCK:
             basl_new.add(base)
     basl = basl_new
+    basl = sorted(list(basl))
     return basl
 
 def prune_vec(baselist):
@@ -1300,6 +1306,7 @@ def prune_vec(baselist):
         if rf.vecp(base) or 'vecCheck' in base:
             continue
         ret.add(base)
+    ret = sorted(list(ret))
     return ret
 
 def prune_nonequal_crosspol(baselist):
@@ -1314,6 +1321,7 @@ def prune_nonequal_crosspol(baselist):
             if pol[0] != pol[1]:
                 continue
         ret.add(base)
+    ret = sorted(list(ret))
     return ret
 
 
@@ -1321,7 +1329,7 @@ def prune_nonequal_crosspol(baselist):
 def get_data(getexactconfigs=False, getsloppysubtraction=False):
     """Get jackknife blocks (after this we write them to disk)"""
     bubl = bublist()
-    bubl = set() if WRITE_INDIVIDUAL else bubl
+    bubl = [] if WRITE_INDIVIDUAL else bubl
     trajl = trajlist(getexactconfigs, getsloppysubtraction)
     basl = baselist()
     basl = individual_bases(basl) if WRITE_INDIVIDUAL else basl
@@ -1562,8 +1570,8 @@ def main(fixn=False):
         if not WRITE_INDIVIDUAL:
             # allblks = {**mostblks, **bubblks} # for gparity
             ocs = overall_coeffs(
-                isoproj(fixn, 0, dlist=list(
-                    allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+                isoproj(fixn, 0, dlist=sorted(list(
+                    allblks.keys())), stype=STYPE), opc.op_list(stype=STYPE))
             # do a checksum to make sure we have all the diagrams we need
             for i in ocs:
                 print(i)
@@ -1619,7 +1627,7 @@ def avg_irreps(ext='.jkdat'):
                                          ext):
                         op_list.add(re.sub(example_row+ext,
                                            '', re.sub(isostr+'/', '', op1)))
-                for op1 in list(op_list):
+                for op1 in sorted(list(op_list)):
                     avg_hdf5.OUTNAME = isostr+'/'+op1+irrep+ext
                     avg_list = []
                     for row in AVG_ROWS[irrep]:
