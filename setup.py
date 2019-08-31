@@ -36,7 +36,8 @@ setup(
         'numdifftools',
         'h5py',
         'gvar',
-        'iminuit'
+        'iminuit',
+        'accupy'
     ],
     entry_points={
         'console_scripts': [

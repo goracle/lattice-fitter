@@ -16,6 +16,7 @@ from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 import latfit
 import latfit.analysis.misc as misc
 import latfit.config as cfg
+from latfit.utilities import exactmean as em
 
 def binout(out):
     """Reduce the number of used configs
@@ -88,7 +89,7 @@ if STYPE == 'hdf5':
         larr = len(arr)
         assert larr > 1
         err = np.std(arr, ddof=1, axis=0)*np.sqrt(len(arr)-1)
-        avg = np.mean(arr, axis=0)
+        avg = em.acmean(arr, axis=0)
         assert not hasattr(avg, '__iter__')
         if abs(avg) < err and opdim[0] == opdim[1] and opdim[0] is not None:
             print("setting correlator on time slice",

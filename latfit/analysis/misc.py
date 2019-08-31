@@ -6,6 +6,7 @@ import pickle
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
+from latfit.utilities import exactmean as em
 
 BOX_LENGTH = 1
 MASS = 0
@@ -186,7 +187,7 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
             #assert config_num is not None, "index bug "+\
             #    str(crect)+" "+str(energies[dim])
             if config_num is None:
-                crect = np.mean(crect, axis=0)
+                crect = em.acmean(crect, axis=0)
             elif len(crect) > config_num:
                 crect = crect[config_num]
         try:

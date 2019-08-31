@@ -10,6 +10,7 @@ from sum_blks import sum_blks
 import write_discon as wd
 import read_file as rf
 from oplist import *
+from latfit.utilities import exactmean as em
 
 
 OPLIST_STRIPPED = {}
@@ -131,10 +132,10 @@ def free_energies(irrep, pionmass, lbox):
             toadd = np.array(toadd)
             energy += toadd
         retlist.append(energy)
-    averages = [np.mean(i) for i in retlist]
+    averages = [em.acmean(i) for i in retlist]
     sortedret = []
     for i,mean in enumerate(averages):
-        if np.mean(retlist[i]) == mean:
+        if em.acmean(retlist[i]) == mean:
             sortedret.append(retlist[i])
     if isinstance(sortedret[0], float):
         sortedret = np.asarray(sorted(sortedret))

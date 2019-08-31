@@ -5,6 +5,7 @@ import os
 import os.path
 import numpy as np
 import read_file as rf
+from latfit.utilities import exactmean as em
 
 
 def unsub():
@@ -21,7 +22,7 @@ def unsub():
             continue
         subarr = rf.proc_vac(subfile)
         # average buble with respect to time
-        mean_bubble = np.repeat(np.mean(subarr), len(subarr))
+        mean_bubble = np.repeat(em.acmean(subarr), len(subarr))
         outdirs = [datadir+'_sub', datadir+'_avgsub']
         if not os.path.isdir(outdirs[0]):
             os.makedirs(outdirs[0])

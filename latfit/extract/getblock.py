@@ -13,6 +13,8 @@ import math
 from matplotlib.mlab import PCA
 from scipy.stats import pearsonr
 import numpy as np
+from accupy import fsum as afsum
+from latfit.utilities import exactmean as em
 import h5py
 
 from latfit.mathfun.proc_meff import proc_meff
@@ -180,7 +182,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
             pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
-    mean = np.mean(cmat, axis=0)
+    mean = em.acmean(cmat, axis=0)
     checkherm(mean)
     if decrease_var != 0:
         cmat = variance_reduction(cmat, mean)
@@ -234,20 +236,6 @@ def log_matrix(cmat, check=False):
     assert np.allclose(cmat, scipy.linalg.expm(ret), rtol=1e-8)
     return ret
 
-# from here
-# https://github.com/numpy/numpy/issues/8786
-def kahan_sum(a, axis=0):
-    a = np.asarray(a)
-    s = np.zeros(a.shape[:axis] + a.shape[axis+1:])
-    c = np.zeros(s.shape)
-    for i in range(a.shape[axis]):
-        # http://stackoverflow.com/a/42817610/353337
-        y = a[(slice(None), ) * axis + (i, )] - c
-        t = s + y
-        c = (t - s) - y
-        s = t.copy()
-    return s
-
 def cmatdot(cmat, vec, transp=False):
     cmat = np.asarray(cmat)
     cmat = cmat.T if transp else cmat
@@ -257,7 +245,7 @@ def cmatdot(cmat, vec, transp=False):
         tosum = []
         for j, item in enumerate(row):
             tosum.append(item*vec[j])
-        ret[i] = kahan_sum(tosum)
+        ret[i] = afsum(tosum)
     return ret
 
 def bracket(evec, cmat):
@@ -269,7 +257,7 @@ def bracket(evec, cmat):
     for i,j in zip(np.conj(evec), right):
         retsum.append(i*j/2)
         retsum.append(np.conj(i*j)/2)
-    ret = kahan_sum(retsum)
+    ret = afsum(np.asarray(retsum, dtype=np.complex128))
     assert ret != 0
     return ret
 
@@ -476,7 +464,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
             assert 'sigma' not in name
             tosub = proc_folder(name, timeij)
             tosub = variance_reduction(tosub,
-                                       np.mean(tosub, axis=0))
+                                       em.acmean(tosub, axis=0))
             if zeroit:
                 tosub = np.real(tosub)*0
             else:
@@ -484,7 +472,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
             if len(cmat.shape) == 3:
                 assert len(cmat) == len(tosub),\
                     "number of configs mismatch:"+str(len(cmat))
-                #cmat[:, i, i] = cmat[:, i, i]-np.mean(tosub, axis=0)
+                #cmat[:, i, i] = cmat[:, i, i]-em.acmean(tosub, axis=0)
                 if not i:
                     pass
                     #print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
@@ -502,10 +490,10 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
                     assert (item or zeroit) and not np.isnan(item)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(NORMS[i][i])
             else:
-                cmat[i, i] -= np.mean(tosub, axis=0)*np.abs(NORMS[i][i])
+                cmat[i, i] -= em.acmean(tosub, axis=0)*np.abs(NORMS[i][i])
                 #if not reverseatw:
-                    #print(i, np.mean(tosub, axis=0)/ cmat[i,i])
-                assert not np.mean(tosub, axis=0).shape
+                    #print(i, em.acmean(tosub, axis=0)/ cmat[i,i])
+                assert not em.acmean(tosub, axis=0).shape
                 #print(cmat)
     assert cmat.shape == origshape
     return cmat
@@ -796,7 +784,8 @@ def checkgteq0(eigfin):
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^\dagger)/2"""
-    return kahan_sum([np.conj(gevp_mat).T, gevp_mat])/2
+    gevp_mat = np.asarray(gevp_mat, dtype=np.complex128)
+    return afsum([np.conj(gevp_mat).T, gevp_mat])/2
 
 
 class ImaginaryEigenvalue(Exception):
@@ -928,7 +917,7 @@ def evals_pionratio(timeij, delta_t, switch=False):
         ret.append(app)
     ret = np.swapaxes(ret, 0, 1)
     ret = np.real(ret)
-    ret = variance_reduction(ret, np.mean(ret, axis=0))
+    ret = variance_reduction(ret, em.acmean(ret, axis=0))
     if not MATRIX_SUBTRACTION and not NOATWSUB:
         ret = atwsub(ret, timeij, delta_t, reverseatw=switch)
     return np.asarray(ret)
@@ -938,9 +927,9 @@ def energies_pionratio(timeij, delta_t):
     lhs = evals_pionratio(timeij, delta_t)
     lhs_p1 = evals_pionratio(timeij+1, delta_t)
     rhs = evals_pionratio(timeij-delta_t, delta_t, switch=True)
-    avglhs = np.asarray(np.mean(lhs, axis=0))
-    avglhs_p1 = np.asarray(np.mean(lhs_p1, axis=0))
-    avgrhs = np.asarray(np.mean(rhs, axis=0))
+    avglhs = np.asarray(em.acmean(lhs, axis=0))
+    avglhs_p1 = np.asarray(em.acmean(lhs_p1, axis=0))
+    avgrhs = np.asarray(em.acmean(rhs, axis=0))
     exclsave = [list(i) for i in latfit.config.FIT_EXCL]
     try:
         pass
@@ -987,12 +976,12 @@ def sort_addzero(addzero, enint):
     ret = np.zeros(addzero.shape, np.float)
     disp = np.asarray(disp())
     if not isinstance(disp()[0], float):
-        disp = np.mean(disp(), axis=0)
+        disp = em.acmean(disp(), axis=0)
         eint = np.swapaxes(enint, 0, 1)
     else:
-        eint = np.mean(enint, axis=0)
+        eint = em.acmean(enint, axis=0)
     assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
-    for i, mean in enumerate(np.mean(enint, axis=0)):
+    for i, mean in enumerate(em.acmean(enint, axis=0)):
         if np.isnan(mean):
             continue
 
@@ -1043,7 +1032,7 @@ def sort_addzero(addzero, enint):
         fromj, toi = mapel
         #assert toi != 1,\
         #    "index bug, rho/sigma should not get a correlated 0"
-        print("add zero mean (", j, "):", np.mean(addzero[:,fromj]))
+        print("add zero mean (", j, "):", em.acmean(addzero[:,fromj]))
         ret[:, toi] = np.copy(addzero[:, fromj])
     if not mapi:
         assert None, "bug"
@@ -1055,7 +1044,7 @@ def sort_addzero(addzero, enint):
         # check to see if this raises the energy
         # assuming excited states are the main sys. err,
         # additive zero should always be 0 or < 0
-        if np.mean(ret[:, i]) > 0 and MINIMIZE_STAT_ERROR_PR:
+        if em.acmean(ret[:, i]) > 0 and MINIMIZE_STAT_ERROR_PR:
             print("correcting index", i, "of add zero avg")
             assert None, "hold"
             ret[:, i] = make_avg_zero(ret[:, i])
@@ -1063,7 +1052,7 @@ def sort_addzero(addzero, enint):
 
 def make_avg_zero(arr):
     """Subtract the average of the array to make the new average 0"""
-    avg = np.mean(arr, axis=0)
+    avg = em.acmean(arr, axis=0)
     ret = arr - avg
     return ret
 
@@ -1101,19 +1090,19 @@ def show_original_data(jkarr, jkarr2):
             print(i, orig[i], orig2[i])
             diffarr_small.append(diff)
     print(np.std(orig)/np.sqrt(len(orig)))
-    print("early diff avg:", np.mean(diffarr_early), "error:", sterr(diffarr_early))
-    print("late diff avg:", np.mean(diffarr_late), "error:", sterr(diffarr_late))
+    print("early diff avg:", em.acmean(diffarr_early), "error:", sterr(diffarr_early))
+    print("late diff avg:", em.acmean(diffarr_late), "error:", sterr(diffarr_late))
     if diffarr_small:
-        print("small diff avg:", np.mean(diffarr_small), "error:", sterr(diffarr_small))
+        print("small diff avg:", em.acmean(diffarr_small), "error:", sterr(diffarr_small))
     if diffarr:
-        print("large diff avg:", np.mean(diffarr), "error:", sterr(diffarr))
+        print("large diff avg:", em.acmean(diffarr), "error:", sterr(diffarr))
     print("early errors (up to 70) (int, nonint):", sterr(jkarr2[:70]), sterr(jkarr[:70]))
     print("later errors (70 to 140) (int, nonint):", sterr(jkarr2[70:140]), sterr(jkarr[70:140]))
-    print("total diff avg:", np.mean(diffarr_total), "error:", sterr(diffarr_total))
+    print("total diff avg:", em.acmean(diffarr_total), "error:", sterr(diffarr_total))
     suma = 0
     for i in reversed(diffarr_total):
-        #suma+=i-np.mean(diffarr_total)
-        print(i-np.mean(diffarr_total))
+        #suma+=i-em.acmean(diffarr_total)
+        print(i-em.acmean(diffarr_total))
     return orig
 
 def jkerr(arr):
@@ -1233,7 +1222,7 @@ if EFF_MASS:
                       'sample', blkdict[dt1][0])
                 check_length = len(blkdict[dt1])
                 relerr = np.abs(np.std(blkdict[dt1], ddof=1, axis=0)*(
-                    len(blkdict[dt1])-1)/np.mean(blkdict[dt1], axis=0))
+                    len(blkdict[dt1])-1)/em.acmean(blkdict[dt1], axis=0))
                 errdict[dt1] = 0
                 if not all(np.isnan(relerr)):
                     errdict[dt1] = np.nanargmax(relerr)
@@ -1253,7 +1242,7 @@ if EFF_MASS:
             ret = getblock_gevp_singlerhs(
                 file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
             relerr = np.abs(np.std(ret, ddof=1, axis=0)*(
-                len(ret)-1)/np.mean(ret, axis=0))
+                len(ret)-1)/em.acmean(ret, axis=0))
             print('dt1' , delta_t, 'timeij', timeij, 'elim hint',
                   solve_gevp.hint,
                   "operator eliminations", allowedeliminations(),
@@ -1467,7 +1456,7 @@ if EFF_MASS:
             pass
             #chisq_bad, pval, dof = pval_commutator(norms_comm)
             #print("average commutator norm,
-            #(t =", timeij, ") =", np.mean(norm_comm),
+            #(t =", timeij, ") =", em.acmean(norm_comm),
             #"chi^2/dof =", chisq_bad, "p-value =", pval, "dof =", dof)
         if GEVP_DEBUG:
             if not np.isnan(np.array(check_variance)).any():
@@ -1541,7 +1530,7 @@ def pval_commutator(norms_comm):
     results_pca = PCA(pca_list, standardize=False)
     dof = len([i for i in results_pca.fracs if i > 0])
     #print("frac=", results_pca.fracs, "dof=", dof)
-    #print("mean=", np.mean(results_pca.Y, axis=0))
+    #print("mean=", em.acmean(results_pca.Y, axis=0))
     results_pca.Y = np.asarray(results_pca.Y)[:, dimops:dof]
     dof = results_pca.Y.shape[1]
     #print("original dimensions", dimops,

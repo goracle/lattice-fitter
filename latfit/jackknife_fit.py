@@ -31,6 +31,7 @@ from latfit.utilities.zeta.zeta import zeta, ZetaError
 import latfit.finalout.mkplot
 import latfit.config
 import latfit.analysis.misc as misc
+from latfit.utilities import exactmean as em
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
@@ -149,10 +150,10 @@ if JACKKNIFE_FIT == 'FROZEN':
                   result_min_jack.fun/result_min.dof)
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
-        result_min.x = np.mean(min_arr, axis=0)
+        result_min.x = em.acmean(min_arr, axis=0)
         param_err = np.sqrt(params.prefactor*np.sum(
             (min_arr-result_min.x)**2, 0))
-        result_min.fun = np.mean(chisq_min_arr)
+        result_min.fun = em.acmean(chisq_min_arr)
         result_min.chisq_err = np.sqrt(params.prefactor*np.sum(
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
@@ -356,7 +357,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 jack_mean_err(result_min.systematics_arr)
 
         # average the point by point error bars
-        result_min.error_bars = np.mean(result_min.error_bars, axis=0)
+        result_min.error_bars = em.acmean(result_min.error_bars, axis=0)
 
 
         # compute phase shift and error in phase shift
@@ -370,7 +371,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute mean, jackknife uncertainty of chi^2 (t^2)
         result_min.chisq_arr = np.array(chisq_min_arr) # remove this redundancy
         result_min.fun, result_min.chisq_err = jack_mean_err(chisq_min_arr)
-        assert np.mean(chisq_min_arr) == result_min.fun
+        assert em.acmean(chisq_min_arr) == result_min.fun
         print(torchi(), result_min.fun/result_min.dof)
 
         return result_min, param_err
@@ -385,7 +386,7 @@ def toomanybadfitsp(result_min, chisq_min_arr):
     the average chi^2 (t^2) is not going to be good so abort the fit
     (test)
     """
-    avg = np.mean(chisq_min_arr)
+    avg = em.acmean(chisq_min_arr)
     pvalue = result_min.funpvalue(avg)
     if pvalue < PVALUE_MIN:
         raise TooManyBadFitsError(chisq=avg, pvalue=pvalue)
@@ -624,8 +625,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     # calculate error on exact and sloppy
     if sjcut:
         errexact = exact_prefactor*np.sum(
-            (arr[:sjcut]-np.mean(arr[:sjcut], axis=0))*(
-                arr2[:sjcut]-np.mean(arr2[:sjcut], axis=0)),
+            (arr[:sjcut]-em.acmean(arr[:sjcut], axis=0))*(
+                arr2[:sjcut]-em.acmean(arr2[:sjcut], axis=0)),
             axis=0)
     else:
         errexact = 0
@@ -638,8 +639,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
         assert errexact == 0, "non-zero error in the non-existent"+\
             " exact samples"
     errsloppy = sloppy_prefactor*np.sum(
-        (arr[sjcut:]-np.mean(arr[sjcut:], axis=0))*(
-            arr2[sjcut:]-np.mean(arr2[sjcut:], axis=0)),
+        (arr[sjcut:]-em.acmean(arr[sjcut:], axis=0))*(
+            arr2[sjcut:]-em.acmean(arr2[sjcut:], axis=0)),
         axis=0)
     if isinstance(errsloppy, numbers.Number):
         assert not np.isnan(errsloppy), "sloppy err is nan"
@@ -658,7 +659,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
 
     # calculate the mean
-    mean = np.mean(arr, axis=0)
+    mean = em.acmean(arr, axis=0)
     if isinstance(mean, numbers.Number):
         mean = float(mean)
         assert not np.isnan(mean), "mean is nan"
@@ -1135,7 +1136,7 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         DOUBLE elimination jackknife
         """
         return np.array([
-            np.mean(np.delete(np.delete(
+            em.acmean(np.delete(np.delete(
                 reuse_inv, config_num,
                 axis=0), i, axis=0), axis=0)
             for i in range(params.num_configs-1)]) - reuse[config_num]

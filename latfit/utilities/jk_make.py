@@ -8,6 +8,7 @@ import numpy as np
 import read_file as rf
 # from traj_list import traj_list
 import traj_list as tl
+from latfit.utilities import exactmean as em
 
 # this may be broken.
 
@@ -31,7 +32,7 @@ def write_blocks(trajl, basename, outfiles):
         data = rf.get_linejk(basename2, time, trajl)
         for i, _ in enumerate(trajl):
             # avg = 0
-            avg = np.mean(np.delete(data, i))
+            avg = em.acmean(np.delete(data, i))
             # line to write in the block file
             avg = complex('{0:.{1}f}'.format(avg, sys.float_info.dig))
             avg = str(avg.real)+" "+str(avg.imag)+'\n'

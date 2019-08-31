@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 from latfit.config import DISP_ENERGIES, ORIGL
+from latfit.utilities import exactmean as em
 
 DISP_ENERGIES = np.asarray(DISP_ENERGIES)
 
@@ -12,11 +13,11 @@ def best_times(coord, cov, index, times):
     chisq (t^2) = num/denom
     """
     if hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) > 1:
-        dispmean = np.mean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
+        dispmean = em.acmean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
     elif hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) == 1:
         dispmean = DISP_ENERGIES
     else:
-        dispmean = np.mean(DISP_ENERGIES) if DISP_ENERGIES else 0
+        dispmean = em.acmean(DISP_ENERGIES) if DISP_ENERGIES else 0
     dist = []
     for i, ycoord in enumerate(coord):
         chisq = None
@@ -34,7 +35,7 @@ def best_times(coord, cov, index, times):
             assert denom != 0, "Error: variance is 0"
             assert not np.any(np.isnan(num/denom)),\
                 "chisq (t^2) is not a number."
-            chisq = np.mean(num/denom)
+            chisq = em.acmean(num/denom)
         dist.append([times[i], chisq])
     dist = np.array(sorted(dist, key=lambda row: row[1]))
     return dist

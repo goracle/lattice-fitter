@@ -4,23 +4,10 @@ import sys
 import re
 from pathlib import Path
 import numpy as np
+from accupy import fsum as afsum
 import h5py
 
 OUTNAME = ''
-
-# from here
-# https://github.com/numpy/numpy/issues/8786
-def kahan_sum(a, axis=0):
-    a = np.asarray(a)
-    s = np.zeros(a.shape[:axis] + a.shape[axis+1:])
-    c = np.zeros(s.shape)
-    for i in range(a.shape[axis]):
-        # http://stackoverflow.com/a/42817610/353337
-        y = a[(slice(None), ) * axis + (i, )] - c
-        t = s + y
-        c = (t - s) - y
-        s = t.copy()
-    return s
 
 def main(*args):
     """Average the datasets from the command line"""
@@ -53,8 +40,8 @@ def main(*args):
         print('adding in dataset=', setname, "in file=", data, 'i=', i)
         if i == 1:
             avg = []
-        avg.append(np.asarray(fn[setname]))
-    avg = kahan_sum(avg)
+        avg.append(np.asarray(fn[setname], dtype=np.complex128))
+    avg = afsum(np.asarray(avg))
     print("multiplying by norm=", norm)
     avg *= norm
     name = str(input("output name?")) if not OUTNAME else OUTNAME

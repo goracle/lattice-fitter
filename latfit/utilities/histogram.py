@@ -8,6 +8,7 @@ import pickle
 import operator
 from matplotlib.backends.backend_pdf import PdfPages
 import gvar
+from latfit.utilities import exactmean as em
 
 
 def main():
@@ -117,7 +118,7 @@ def make_hist(fname):
                 print("zero division error:")
                 print(np.array(median_err))
                 sys.exit(1)
-            # print(freq, np.mean(freq))
+            # print(freq, em.acmean(freq))
             hist, bins = np.histogram(freq, bins=10)
             hist = addoffset(hist)
             # print(hist)

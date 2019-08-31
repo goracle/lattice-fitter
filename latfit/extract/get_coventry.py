@@ -3,6 +3,7 @@ import sys
 import numpy as np
 
 from latfit.config import UNCORR, GEVP
+from latfit.utilities import exactmean as em
 
 if UNCORR:
     def get_coventry_gevp(reuse, sameblk, avgi):
@@ -33,7 +34,7 @@ else:
         else:
             coventry = np.sum([np.outer(
                 (avgi-reuse['i'][k]),
-                (np.mean(reuse['j'], axis=0)-reuse['j'][k]))
+                (em.acmean(reuse['j'], axis=0)-reuse['j'][k]))
                                for k in range(num_configs)], axis=0)
         return coventry
 
@@ -53,7 +54,7 @@ else:
             coventry = np.dot(reuse['i']-avgi, reuse['i']-avgi)
         else:
             coventry = np.dot(reuse['i']-avgi,
-                              reuse['i']-np.mean(reuse['j']))
+                              reuse['i']-em.acmean(reuse['j']))
         return coventry
 
 if GEVP:

@@ -7,6 +7,7 @@ from os.path import isfile, join
 from collections import namedtuple
 import re
 import numpy as np
+from latfit.utilities import exactmean as em
 
 import read_file as rf
 import combine as cb
@@ -232,8 +233,8 @@ def get_data(bubs, sepval, lookup, onlyreal=False, lookup_local=()):
     print("combining:", bubs.dsrc, bubs.dsnk)
     print("sub bubs:", bubs.dsrc_sub, bubs.dsnk_sub)
     # arr_plus = cb.comb_dis(src, snk, sepval)
-    arr_minus = cb.comb_dis(src-np.mean(arr_minus_src),
-                            snk-np.mean(arr_minus_snk), sepval)
+    arr_minus = cb.comb_dis(src-em.acmean(arr_minus_src),
+                            snk-em.acmean(arr_minus_snk), sepval)
     # get the  <><> subtraction array (<> indicates avg over trajectories)
     # return arr_plus, arr_minus
     return arr_minus, lookup_local

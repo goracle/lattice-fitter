@@ -65,6 +65,7 @@ from latfit.config import PHASE_SHIFT_ERR_CUT, SKIP_LARGE_ERRORS
 from latfit.config import ONLY_SMALL_FIT_RANGES
 import latfit.config
 import latfit.jackknife_fit
+from latfit.utilities import exactmean as em
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -974,7 +975,7 @@ if EFF_MASS:
             arr = arrlist[errlist.index(err)]
         else:
             err = np.asarray(errlist)
-            arr = np.mean(np.asarray(arrlist), axis=1)
+            arr = em.acmean(np.asarray(arrlist), axis=1)
             if isinstance(arr[0], float):
                 # add structure in arr for backwards compatibility
                 arr = np.asarray([[i] for i in arr])
@@ -1191,7 +1192,7 @@ def errerr(param_err_arr):
     for i, _ in enumerate(err):
         err[i] = np.std(param_err_arr[:, i], ddof=1)/np.sqrt(
             len(err))/np.sqrt(MPISIZE)
-        avgerr[i] = np.mean(param_err_arr[:, i])
+        avgerr[i] = em.acmean(param_err_arr[:, i])
     return err, avgerr
 
 @PROFILE

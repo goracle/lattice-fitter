@@ -7,6 +7,7 @@ from latfit.extract.getblock import getblock
 from latfit.extract.get_coventry import get_coventry
 
 from latfit.config import BINNUM
+from latfit.utilities import exactmean as em
 
 
 def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=None):
@@ -25,7 +26,7 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=N
     except TypeError:
         reuse['i'] = getblock(ifile_tup, reuse, timeij[0], delta_t=delta_t)
         num_configs = len(reuse['i'])
-    avg_i = np.mean(reuse['i'], axis=0)
+    avg_i = em.acmean(reuse['i'], axis=0)
 
     # print num of configs
     if proc_ijfile.CONFIGSENT != 0:

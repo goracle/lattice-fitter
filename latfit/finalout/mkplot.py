@@ -48,6 +48,7 @@ from latfit.config import AINVERSE, SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import ADD_CONST_VEC
 from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD, FIT_SPACING_CORRECTION
+from latfit.utilities import exactmean as em
 import latfit.analysis.misc as misc
 import latfit.config
 
@@ -69,9 +70,9 @@ def update_result_min_nofit(plotdata):
         " matrix subtraction is being performed"
     if not PIONRATIO:
         for i, _ in enumerate(plotdata.coords):
-            plotdata.coords[i][1] += np.mean(DELTA_E_AROUND_THE_WORLD)
+            plotdata.coords[i][1] += em.acmean(DELTA_E_AROUND_THE_WORLD)
             if DELTA_E2_AROUND_THE_WORLD is not None:
-                plotdata.coords[i][1] += np.mean(DELTA_E2_AROUND_THE_WORLD)
+                plotdata.coords[i][1] += em.acmean(DELTA_E2_AROUND_THE_WORLD)
             if FIT_SPACING_CORRECTION and GEVP:
                 print("correcting plotted time slice ", i,
                       " for lattice spacing errors.")
@@ -174,7 +175,7 @@ def plot_dispersive(xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
     for i, energy in enumerate(DISP_ENERGIES):
         if hasattr(energy, '__iter__'):
-            energy = np.mean(energy, axis=0)
+            energy = em.acmean(energy, axis=0)
             assert not hasattr(energy, '__iter__'), "index bug."
         # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),

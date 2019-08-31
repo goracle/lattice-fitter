@@ -28,6 +28,7 @@ from scipy.optimize import minimize_scalar
 import h5jack
 from h5jack import getwork, gatherdicts, check_ids
 from mpi4py import MPI
+from latfit.utilities import exactmean as em
 
 TSTEP = int(TSTEP)
 
@@ -100,7 +101,7 @@ def agree(arr1, arr2):
     err2 = np.std(arr2, axis=0)*np.sqrt(len(arr2)-1)
     assert len(arr1) == len(arr2)
     diff = np.abs(np.real(arr1)-np.real(arr2))
-    diff = np.mean(diff, axis=0)
+    diff = em.acmean(diff, axis=0)
     ret = True
     assert err1.shape == err2.shape
     assert diff.shape == err1.shape
@@ -259,16 +260,16 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
         agreement, errstr = agree(amps1, amps2)
         assert agreement
     except AssertionError:
-        if np.mean(energies, axis=0) < 5 and np.mean(
-                energies, axis=0) > 1e-8 and not np.isnan(np.mean(amps1))\
-                and not np.isnan(np.mean(amps2)):
+        if em.acmean(energies, axis=0) < 5 and em.acmean(
+                energies, axis=0) > 1e-8 and not np.isnan(em.acmean(amps1))\
+                and not np.isnan(em.acmean(amps2)):
             print("amplitudes of cosh do not agree:")
             print(errstr)
             print("failing rank:", MPIRANK)
             print("times:", dt1, dt2)
-            print(np.mean(amps1, axis=0),
-                  np.mean(amps2, axis=0),
-                  np.mean(energies, axis=0))
+            print(em.acmean(amps1, axis=0),
+                  em.acmean(amps2, axis=0),
+                  em.acmean(energies, axis=0))
             print("setting amplitudes to NaN")
         amps1 = np.nan*np.zeros(len(amps1), dtype=np.complex)
         amps2 = np.nan*np.zeros(len(amps2), dtype=np.complex)
@@ -424,7 +425,7 @@ def avgtsrc(top):
         top1 = np.delete(top, skiplist(), axis=1)
     else:
         top1 = top
-    ret = np.mean(top1, axis=1)
+    ret = em.acmean(top1, axis=1)
     return ret
 
 def zerosimple(blk):
@@ -600,10 +601,10 @@ def piondirect(atw=False, reverseatw=False):
                'mom1src000_mom2src001_mom1snk001' in key2:
                 #print(save1)
                 #print(save2)
-                temp = np.mean(top2,axis=0)
+                temp = em.acmean(top2,axis=0)
                 temp = np.real(temp)
-                temp2 = np.mean(toppi, axis=0)
-                temp2 = np.mean(temp2, axis=0)
+                temp2 = em.acmean(toppi, axis=0)
+                temp2 = em.acmean(temp2, axis=0)
                 temp2= np.real(temp2)
                 #print(np.log(temp[5]/temp[6]))
                 #print(np.log(temp2[5]/temp2[6]))

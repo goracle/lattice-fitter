@@ -10,6 +10,7 @@ import itertools
 import ast
 import subprocess
 import numpy as np
+from accupy import fsum as afsum
 from mpi4py import MPI
 import h5py
 import read_file as rf
@@ -20,6 +21,7 @@ import write_discon as wd
 import aux_write as aux
 import avg_hdf5
 import pickle
+import exactmean as em
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd
@@ -406,7 +408,7 @@ def dojackknife(blk):
             assert len(blk) > 1,\
                 "block length should be greater than 1 for jackknife"
             for i, _ in enumerate(blk):
-                np.mean(np.delete(blk, i, axis=0), axis=0, out=out[i])
+                out[i] = em.acmean(np.delete(blk, i, axis=0))
     return out
 
 
@@ -560,7 +562,7 @@ def get_polreq(op1):
 def jackknife_err(blk):
     """Get jackknife error from block with shape=(L_traj, L_time)"""
     len_t = len(blk)
-    avg = np.mean(blk, axis=0)
+    avg = em.acmean(blk)
     prefactor = (len_t-1)/len_t
     err = np.sqrt(prefactor*np.sum((blk-avg)**2, axis=0))
     return avg, err
@@ -743,7 +745,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 flag = 1
                 break
         assert np.all(outblk == 0.0), "out block not zero'd"
-        outblk += avg_hdf5.kahan_sum(outsum)
+        outblk += afsum(np.asarray(outsum,dtype=np.complex128))
         if printt:
             printt = debugprint(outblk, pstr='outblk=')
         if flag == 0:
@@ -840,7 +842,7 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
             outarr = outarr[rows, cols]
         outarr *= TSTEP if 'pioncorrChk' not in base else 1
         if avgtsrc:
-            np.mean(outarr, axis=0, out=blk[i])
+            blk[i] = em.acmean(outarr)
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
@@ -933,12 +935,12 @@ def bubsub(bubbles):
         if JACKBUB:
             sub[bubkey] = dojackknife(bubbles[bubkey])
             if TIMEAVGD:
-                sub[bubkey] = np.mean(sub[bubkey], axis=1)
+                sub[bubkey] = em.acmean(sub[bubkey], axis=1)
         else:
             if TIMEAVGD:
-                sub[bubkey] = np.mean(bubbles[bubkey])
+                sub[bubkey] = em.acmean(bubbles[bubkey])
             else:
-                sub[bubkey] = np.mean(bubbles[bubkey], axis=0)
+                sub[bubkey] = em.acmean(bubbles[bubkey])
     #print("Done getting averaged bubbles.")
     return sub
 
@@ -1071,7 +1073,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         # mean is over tsrc
                         # len(src) division is average over configs
                         # (except for excluded one)
-                    np.mean(outcome, axis=0, out=out[outkey][excl])
+                    out[outkey][excl] = em.acmean(outcome)
                     testkey2(outkey, outcome, 0, excl)
             else:
                 if OUTERSUB:
@@ -1084,7 +1086,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                             src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
                         # np.mean is avg over tsrc
-                        np.mean(outcome, axis=0, out=out[outkey][excl])
+                        out[outkey][excl] = em.acmean(outcome)
                 else:
                     src = bubbles[srckey]-sub[srckey]
                     snk = conjbub(bubbles[snkkey]-sub[snkkey])
@@ -1092,7 +1094,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         outcome = np.outer(src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
                         # np.mean is avg over tsrc
-                        np.mean(outcome, axis=0, out=out[outkey][excl])
+                        out[outkey][excl] = em.acmean(outcome)
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])
                 testkey2(outkey, out[outkey], 2)
@@ -1156,9 +1158,9 @@ def aux_jack(basl, trajl, numt, openlist):
         # get block from which to construct the auxdiagram
         # mean is avg over tsrc
         blk = np.zeros((numt, LT), dtype=np.complex)
-        np.mean(TSTEP*getgenconblk(base, trajl, openlist=openlist,
-                                   avgtsrc=False, rowcols=[rows, cols]),
-                axis=1, out=blk)
+        blk = TSTEP*em.acmean(getgenconblk(base, trajl, openlist=openlist,
+                                           avgtsrc=False,
+                                           rowcols=[rows, cols]), axis=1)
         # now do the jackknife.
         # apply -1 coefficient if doing aux to a vector T
         # (ccw/cw switch in mirror)
@@ -1479,8 +1481,8 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
                 len_exact+len_sloppy, LT, LT)
             retblks[blk] = np.zeros(shape, dtype=np.complex)
 
-            sloppy_central_value = np.mean(sloppyblks[blk], axis=0)
-            correction_central_value = np.mean(correction, axis=0)
+            sloppy_central_value = em.acmean(sloppyblks[blk])
+            correction_central_value = em.acmean(correction)
 
             exact = correction+sloppy_central_value
             sloppy = sloppyblks[blk]+correction_central_value

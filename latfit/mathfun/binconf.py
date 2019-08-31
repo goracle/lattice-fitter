@@ -7,6 +7,7 @@ import numpy as np
 from latfit.config import BINNUM
 from latfit.config import JACKKNIFE
 import latfit.finalout.mkplot
+from latfit.utilities import exactmean as em
 
 
 def binconf(jkblk):
@@ -24,10 +25,10 @@ def binconf(jkblk):
         assert len(jkblk)%BINNUM == 0,\
             "non divisible BINNUM not supported:"+str(len(jkblk))
         inv = np.sum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
-        inv2 = np.array([np.mean(inv[j*BINNUM:(j+1)*BINNUM],
+        inv2 = np.array([em.acmean(inv[j*BINNUM:(j+1)*BINNUM],
                                  axis=0) for j in range(int(
                                      len(jkblk)/BINNUM))])
-        ret = np.array([np.mean(np.delete(inv2, j, axis=0), axis=0)
+        ret = np.array([em.acmean(np.delete(inv2, j, axis=0), axis=0)
                         for j in range(len(inv2))])
     latfit.finalout.mkplot.NUM_CONFIGS = len(ret)
     return ret
