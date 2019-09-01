@@ -1,6 +1,7 @@
 """Gets rid of some configs in extracted jackknife blocks"""
 import sys
 import numpy as np
+import accupy
 
 ELIM_JKCONF_LIST = None
 HALF = ''
@@ -40,11 +41,10 @@ def elim_jkconfigs(jkblk, elim_list=None):
 
         # each of the unwanted configs appears k_elim-1 times in skip_sum
         # each of the wanted configs appears k_elim times in skip_sum
-        skip_sum = np.sum([jkblk[skip]
-                           for skip in elim_list], axis=0)
+        skip_sum = accupy.fsum([jkblk[skip]
+                           for skip in elim_list])
 
-        sum_blk = np.sum(
-            jkblk, axis=0) # same as sum over original set, no norm
+        sum_blk = accupy.fsum(jkblk) # same as sum over original set, no norm
 
         # delete the blocks corresponding to the unwanted configs
         inner = np.delete(jkblk, elim_list, axis=0)+skip_sum

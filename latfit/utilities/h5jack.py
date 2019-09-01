@@ -10,7 +10,6 @@ import itertools
 import ast
 import subprocess
 import numpy as np
-from accupy import fsum as afsum
 from mpi4py import MPI
 import h5py
 import read_file as rf
@@ -454,9 +453,9 @@ def overall_coeffs(iso, irr):
     """
     ocs = {}
     print("getting overall projection coefficients")
-    for iso_dir in iso:
-        for operator in irr:
-            pol_req, pol_coeffs = get_polreq(operator)
+    for operator in irr:
+        pol_req, pol_coeffs = get_polreq(operator)
+        for iso_dir in iso:
             mat = re.search(r'I(\d+)/', iso_dir)
             if not mat:
                 print("Error: No isopsin info found")
@@ -745,7 +744,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                 flag = 1
                 break
         assert np.all(outblk == 0.0), "out block not zero'd"
-        outblk += afsum(np.asarray(outsum,dtype=np.complex128))
+        outblk += em.acsum(np.asarray(outsum,dtype=np.complex128))
         if printt:
             printt = debugprint(outblk, pstr='outblk=')
         if flag == 0:
