@@ -4,8 +4,8 @@ import sys
 import re
 from pathlib import Path
 import numpy as np
-from accupy import fsum as afsum
 import h5py
+from latfit.utilities import exactmean as em
 
 OUTNAME = ''
 
@@ -41,7 +41,7 @@ def main(*args):
         if i == 1:
             avg = []
         avg.append(np.asarray(fn[setname], dtype=np.complex128))
-    avg = afsum(np.asarray(avg))
+    avg = em.acsum(np.asarray(avg))
     print("multiplying by norm=", norm)
     avg *= norm
     name = str(input("output name?")) if not OUTNAME else OUTNAME

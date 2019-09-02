@@ -13,7 +13,6 @@ import math
 from matplotlib.mlab import PCA
 from scipy.stats import pearsonr
 import numpy as np
-from accupy import fsum as afsum
 from latfit.utilities import exactmean as em
 import h5py
 
@@ -245,7 +244,7 @@ def cmatdot(cmat, vec, transp=False):
         tosum = []
         for j, item in enumerate(row):
             tosum.append(item*vec[j])
-        ret[i] = afsum(tosum)
+        ret[i] = em.acsum(tosum)
     return ret
 
 def bracket(evec, cmat):
@@ -257,7 +256,7 @@ def bracket(evec, cmat):
     for i,j in zip(np.conj(evec), right):
         retsum.append(i*j/2)
         retsum.append(np.conj(i*j)/2)
-    ret = afsum(np.asarray(retsum, dtype=np.complex128))
+    ret = em.acsum(np.asarray(retsum, dtype=np.complex128))
     assert ret != 0
     return ret
 
@@ -785,7 +784,7 @@ def checkgteq0(eigfin):
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^\dagger)/2"""
     gevp_mat = np.asarray(gevp_mat, dtype=np.complex128)
-    return afsum([np.conj(gevp_mat).T, gevp_mat])/2
+    return em.acsum([np.conj(gevp_mat).T, gevp_mat])/2
 
 
 class ImaginaryEigenvalue(Exception):
