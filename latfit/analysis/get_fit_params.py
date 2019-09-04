@@ -3,7 +3,7 @@ from warnings import warn
 from collections import namedtuple
 import numpy as np
 
-from latfit.config import JACKKNIFE
+from latfit.config import JACKKNIFE, JACKKNIFE_BLOCK_SIZE
 
 
 def get_fit_params(cov, reuse, xmin, fitrange, xstep):
@@ -15,7 +15,9 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     params = namedtuple('fit_params', ['dimops', 'num_configs', 'energyind',
                                        'prefactor', 'time_range', 'xstep'])
     params.xstep = xstep
-    params.num_configs = len(reuse[xmin])
+    params.num_configs = len(reuse[xmin])/JACKKNIFE_BLOCK_SIZE
+    assert int(params.num_configs) == params.num_configs,\
+        "block size does not evenly divide dataset length"
     params.energyind = None
     try:
         params.dimops = len(cov[0][0])

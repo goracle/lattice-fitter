@@ -3,65 +3,71 @@ import sys
 import numpy as np
 
 from latfit.config import UNCORR, GEVP
+from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.utilities import exactmean as em
+from latfit.mathfun import block_ensemble
 
 if UNCORR:
-    def get_coventry_gevp(reuse, sameblk, avgi):
+    def get_coventry_gevp(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., GEVP, uncorr"""
         dimops = len(avgi)
         coventry = np.zeros((dimops, dimops))
-        num_configs = len(reuse['i'])
+        num_configs = len(reuse_blocked['i'])
         if sameblk:
             for opa in range(dimops):
-                coventry[opa][opa] = np.sum(
-                    [(avgi[opa]-reuse['i'][k][opa])*(
-                        avgi[opa]-reuse['i'][k][opa])
+                coventry[opa][opa] = em.acsum(
+                    [(avgi[opa]-reuse_blocked['i'][k][opa])*(
+                        avgi[opa]-reuse_blocked['i'][k][opa])
                      for k in range(num_configs)], axis=0)
         else:
             pass  # keep it zero, off diagonals are zero
         return coventry
 
 else:
-    def get_coventry_gevp(reuse, sameblk, avgi):
+    def get_coventry_gevp(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., GEVP"""
         dimops = len(avgi)
         coventry = np.zeros((dimops, dimops))
-        num_configs = len(reuse['i'])
+        num_configs = len(reuse_blocked['i'])
         if sameblk:
-            coventry = np.sum([np.outer(
-                (avgi-reuse['i'][k]),
-                (avgi-reuse['i'][k])) for k in range(num_configs)], axis=0)
+            coventry = em.acsum([np.outer(
+                (avgi-reuse_blocked['i'][k]),
+                (avgi-reuse_blocked['i'][k])) for k in range(num_configs)], axis=0)
         else:
-            coventry = np.sum([np.outer(
-                (avgi-reuse['i'][k]),
-                (em.acmean(reuse['j'], axis=0)-reuse['j'][k]))
+            coventry = em.acsum([np.outer(
+                (avgi-reuse_blocked['i'][k]),
+                (em.acmean(reuse_blocked['j'], axis=0)-reuse_blocked['j'][k]))
                                for k in range(num_configs)], axis=0)
         return coventry
 
 if UNCORR:
-    def get_coventry_simple(reuse, sameblk, avgi):
+    def get_coventry_simple(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., uncorr"""
         if sameblk:
-            coventry = np.dot(reuse['i']-avgi, reuse['i']-avgi)
+            coventry = np.dot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
         else:
             coventry = 0
         return coventry
 
 else:
-    def get_coventry_simple(reuse, sameblk, avgi):
+    def get_coventry_simple(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat."""
         if sameblk:
-            coventry = np.dot(reuse['i']-avgi, reuse['i']-avgi)
+            coventry = np.dot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
         else:
-            coventry = np.dot(reuse['i']-avgi,
-                              reuse['i']-em.acmean(reuse['j']))
+            coventry = np.dot(reuse_blocked['i']-avgi,
+                              reuse_blocked['i']-em.acmean(reuse_blocked['j']))
         return coventry
 
 if GEVP:
     def get_coventry(reuse, sameblk, avgi):
         """get the entry in the cov. mat. (GEVP)"""
-        return get_coventry_gevp(reuse, sameblk, avgi)
+        nconfigs = len(reuse)/JACKKNIFE_BLOCK_SIZE
+        reuse_blocked = block_ensemble(nconfigs, reuse)
+        return get_coventry_gevp(reuse_blocked, sameblk, avgi)
 else:
     def get_coventry(reuse, sameblk, avgi):
         """get the entry in the cov. mat."""
-        return get_coventry_simple(reuse, sameblk, avgi)
+        nconfigs = len(reuse)/JACKKNIFE_BLOCK_SIZE
+        reuse_blocked = block_ensemble(nconfigs, reuse)
+        return get_coventry_simple(reuse_blocked, sameblk, avgi)

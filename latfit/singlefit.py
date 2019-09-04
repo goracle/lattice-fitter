@@ -13,6 +13,7 @@ from latfit.finalout.geterr import geterr
 from latfit.mathfun.covinv_avg import covinv_avg
 from latfit.jackknife_fit import jackknife_fit
 from latfit.analysis.get_fit_params import get_fit_params
+from latfit.mathfun.block_ensemble import block_ensemble
 
 # import global variables
 from latfit.config import FIT
@@ -49,6 +50,11 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                                        'prefactor', 'time_range'])
     params = get_fit_params(cov_full, reuse, xmin, fitrange, xstep)
 
+    # block the ensemble
+    if singlefireuse_blocked is None:
+        singlefireuse_blocked = block_ensemble(params.num_configs, reuse)
+        
+    
     # correct covariance matrix for jackknife factor
     if singlefit.sent is None:
         cov_full *= params.prefactor
@@ -102,6 +108,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                     covinv[i][j] = np.nan
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
             result_min, param_err = jackknife_fit(params, reuse,
+                                                  singlefit.reuse_blocked,
                                                   coords, covinv)
         else:
             result_min = mkmin(covinv, coords)
@@ -124,6 +131,7 @@ singlefit.coords_full = None
 singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
+singlefireuse_blocked = None
 
 @PROFILE
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
@@ -148,12 +156,13 @@ def fit_select(coords_full, cov_full, selection):
 # do this so reuse goes from reuse[time][config]
 # to more convenient reuse[config][time]
 @PROFILE
-def rearrange_reuse_dict(params, reuse):
+def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
     """reuse = swap(reuse, 0, 1), turn it into an array
     detail:
     make reuse, the original unjackknifed data,
     into a numpy array, swap indices
     """
+    total_configs = bsize*params.num_configs
     return np.array([[reuse[time][config]
                       for time in params.time_range]
-                     for config in range(params.num_configs)])
+                     for config in range(total_configs)])

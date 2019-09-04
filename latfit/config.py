@@ -231,6 +231,10 @@ SLOPPYONLY = False
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 
+# block size of blocked jackknifed technique
+# usual jackknife sets this to 1
+JACKKNIFE_BLOCK_SIZE = 1
+
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False
