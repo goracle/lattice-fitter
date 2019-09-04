@@ -1084,7 +1084,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         outcome = outcome + np.outer(
                             src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
-                        # np.mean is avg over tsrc
+                        # em.acmean is avg over tsrc
                         out[outkey][excl] = em.acmean(outcome)
                 else:
                     src = bubbles[srckey]-sub[srckey]
@@ -1092,7 +1092,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                     for excl in range(numt):
                         outcome = np.outer(src[excl], snk[excl])[ROWS, cols]
                         testkey2(outkey, outcome, 0, excl)
-                        # np.mean is avg over tsrc
+                        # em.acmean is avg over tsrc
                         out[outkey][excl] = em.acmean(outcome)
                 testkey2(outkey, out[outkey], 1)
                 out[outkey] = dojackknife(out[outkey])

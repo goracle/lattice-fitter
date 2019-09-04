@@ -732,7 +732,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
 def find_mean_and_err(meta, min_arr):
     """Find the mean and error from results of fit"""
     result_min = {}
-    weight_sum = np.sum([getattr(
+    weight_sum = em.acsum([getattr(
         i[0], "pvalue_arr") for i in min_arr], axis=0)
     for name in min_arr[0][0].__dict__:
         if min_arr[0][0].__dict__[name] is None:
@@ -750,7 +750,7 @@ def find_mean_and_err(meta, min_arr):
 
             # compute the jackknife errors as a check
             # (should give same result as error propagation)
-            res_mean, err_check = jack_mean_err(np.sum([
+            res_mean, err_check = jack_mean_err(em.acsum([
                 divbychisq(getattr(i[0], avgname), getattr(
                     i[0], 'pvalue_arr')/weight_sum)\
                 for i in min_arr], axis=0))
@@ -761,7 +761,7 @@ def find_mean_and_err(meta, min_arr):
                            res_mean, err_check)
 
             # error propagation
-            result_min[name] = np.sum([
+            result_min[name] = em.acsum([
                 jack_mean_err(
                     divbychisq(
                         getattr(
@@ -816,10 +816,10 @@ def find_mean_and_err(meta, min_arr):
 
         # find the weighted mean
         else:
-            result_min[name] = np.sum(
+            result_min[name] = em.acsum(
                 [getattr(i[0], name)*getattr(i[0], 'pvalue')
                  for i in min_arr],
-                axis=0)/np.sum([
+                axis=0)/em.acsum([
                     getattr(i[0],
                             'pvalue') for i in min_arr])
     # result_min.x = np.mean(
@@ -1060,7 +1060,7 @@ def dump_fit_range(meta, min_arr, avgname, res_mean, err_check):
     errname = re.sub('_arr', '_err', avgname)
     avgname = re.sub('_arr', '', avgname)
     avgname = 'fun' if avgname == 'chisq' else avgname
-    #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/np.sum(
+    #pickl_res = [getattr(i[0], avgname)*getattr(i[0], 'pvalue')/em.acsum(
     #    [getattr(i[0], 'pvalue') for i in min_arr]) for i in min_arr]
     pickl_res = pickle_res(avgname, min_arr)
     pickl_res_err = pickle_res_err(errname, min_arr)

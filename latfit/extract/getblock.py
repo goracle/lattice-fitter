@@ -1059,8 +1059,8 @@ def show_original_data(jkarr, jkarr2):
     """Show original (unjackknifed) data for diagnostic purposes"""
     orig = np.zeros(np.asarray(jkarr).shape)
     orig2 = np.zeros(np.asarray(jkarr2).shape)
-    jsum = np.sum(jkarr, axis=0)
-    jsum2 = np.sum(jkarr2, axis=0)
+    jsum = em.acsum(jkarr, axis=0)
+    jsum2 = em.acsum(jkarr2, axis=0)
     diffarr = []
     diffarr_total = []
     diffarr_small = []
@@ -1552,7 +1552,7 @@ def pval_commutator(norms_comm):
     #print("dev:", np.std(chisq_arr, ddof=1))
     #for i in sorted(list(chisq_arr)):
     #    print(i, ",")
-    #print(np.sum(chisq_arr)/len(chisq_arr), fsum(chisq_arr)/len(chisq_arr))
+    #print(em.acsum(chisq_arr)/len(chisq_arr), fsum(chisq_arr)/len(chisq_arr))
     return chisq, pval, dof
 
 if EFF_MASS:

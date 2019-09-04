@@ -24,7 +24,7 @@ def binconf(jkblk):
     else:
         assert len(jkblk)%BINNUM == 0,\
             "non divisible BINNUM not supported:"+str(len(jkblk))
-        inv = np.sum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
+        inv = em.acsum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
         inv2 = np.array([em.acmean(inv[j*BINNUM:(j+1)*BINNUM],
                                  axis=0) for j in range(int(
                                      len(jkblk)/BINNUM))])
@@ -43,8 +43,8 @@ def binconf(jkblk):
 #        range(first_len)[-(first_len % BINNUM):]))
 #    newblk = jkblk
 #    alen = len(newblk)
-#    sum_blk = np.sum(newblk, axis=0)
-#    newblk = np.array([np.sum(newblk[j*BINNUM:(j+1)*BINNUM], axis=0)
+#    sum_blk = em.acsum(newblk, axis=0)
+#    newblk = np.array([em.acsum(newblk[j*BINNUM:(j+1)*BINNUM], axis=0)
 #                       for j in range(int(alen/BINNUM))])
 #    newblk *= (alen-1.0)
 #    newblk -= (BINNUM-1.0)*sum_blk

@@ -242,7 +242,7 @@ def dispersive(momentum, mass=None, box_length=None, continuum=False):
         else:
             ret = None
     if momentum is not None:
-        if not np.sum(momentum):
+        if not em.acsum(momentum):
             try:
                 assert np.allclose(ret, mass, rtol=1e-8), "precision gain"
             except AssertionError:

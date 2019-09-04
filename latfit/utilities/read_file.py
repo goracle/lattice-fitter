@@ -11,6 +11,7 @@ import linecache as lc
 import numpy as np
 import h5py
 from collections import Iterable
+import latfit.utilities.exactmean as em
 
 FORMAT = 'ASCII'
 
@@ -695,10 +696,10 @@ def sum_rows(inmat, avg=False):
     """
     ncol = int(sqrt(inmat.size))
     if avg:
-        col = [np.sum(inmat.item(i, j)
+        col = [em.acsum(inmat.item(i, j)
                       for i in range(ncol))/(ncol) for j in range(ncol)]
     else:
-        col = [np.sum(inmat.item(i, j)
+        col = [em.acsum(inmat.item(i, j)
                       for i in range(ncol)) for j in range(ncol)]
     return col
 

@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from czeta import czeta
 import latfit.utilities.read_file as rf
+import latfit.utilities.exactmean as em
 
 COMP = 0.0
 L_BOX = 0.0
@@ -118,7 +119,7 @@ def getcot(wlm):
 
     # initial starting value to cotangent
     cot = wlm(0,0)
-    units = np.sum(np.abs(COMP))
+    units = em.acsum(np.abs(COMP))
 
     foundirr = True
     if units == 1:

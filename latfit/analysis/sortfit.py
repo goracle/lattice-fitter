@@ -81,9 +81,9 @@ def sample_norms(sampler, tsorted, lenfit):
     norm = 1.0/total
     probs = np.array(probs)*norm
     assert np.allclose(
-        np.sum(probs, axis=0),
+        em.acsum(probs, axis=0),
         1.0, rtol=1e-8),\
-        "Probabilities chosen do not sum to 1:"+str(np.sum(probs, axis=0))
+        "Probabilities chosen do not sum to 1:"+str(em.acsum(probs, axis=0))
     #for i, j in zip(samp, probs):
     #    print(i, j)
     #sys.exit(0)

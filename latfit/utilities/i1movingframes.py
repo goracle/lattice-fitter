@@ -6,6 +6,7 @@ import sys
 import numpy as np
 from math import sqrt
 import read_file as rf
+import latfit.utilities.exactmean as em
 current_module = sys.modules[__name__]
 cmod = current_module
 
@@ -995,7 +996,7 @@ def sumabs(mom):
     """Sum the absolute value of the momentum
     [1,-1,0] => 2
     """
-    ret = np.sum(np.abs(mom))
+    ret = em.acsum(np.abs(mom))
     return ret
 
 def sortmom(irrvar, irr):

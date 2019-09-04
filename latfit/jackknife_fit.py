@@ -151,10 +151,10 @@ if JACKKNIFE_FIT == 'FROZEN':
             chisq_min_arr[config_num] = result_min_jack.fun
             min_arr[config_num] = result_min_jack.x
         result_min.x = em.acmean(min_arr, axis=0)
-        param_err = np.sqrt(params.prefactor*np.sum(
+        param_err = np.sqrt(params.prefactor*em.acsum(
             (min_arr-result_min.x)**2, 0))
         result_min.fun = em.acmean(chisq_min_arr)
-        result_min.chisq_err = np.sqrt(params.prefactor*np.sum(
+        result_min.chisq_err = np.sqrt(params.prefactor*em.acsum(
             (chisq_min_arr-result_min.fun)**2))
         return result_min, param_err
 
@@ -624,7 +624,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
 
     # calculate error on exact and sloppy
     if sjcut:
-        errexact = exact_prefactor*np.sum(
+        errexact = exact_prefactor*em.acsum(
             (arr[:sjcut]-em.acmean(arr[:sjcut], axis=0))*(
                 arr2[:sjcut]-em.acmean(arr2[:sjcut], axis=0)),
             axis=0)
@@ -638,7 +638,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     if sjcut == 0:
         assert errexact == 0, "non-zero error in the non-existent"+\
             " exact samples"
-    errsloppy = sloppy_prefactor*np.sum(
+    errsloppy = sloppy_prefactor*em.acsum(
         (arr[sjcut:]-em.acmean(arr[sjcut:], axis=0))*(
             arr2[sjcut:]-em.acmean(arr2[sjcut:], axis=0)),
         axis=0)
@@ -762,7 +762,7 @@ def prune_phase_shift_arr(arr):
     """
     dellist = []
     for i, phi in enumerate(arr):
-        if np.isnan(np.sum(phi)):  # delete the config
+        if np.isnan(em.acsum(phi)):  # delete the config
             print("Bad phase shift in jackknife block # "+
                   str(i)+", omitting.")
             dellist.append(i)
