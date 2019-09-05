@@ -14,6 +14,7 @@ from scipy.optimize import fsolve
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
 from latfit.mathfun.block_ensemble import delblock
+from latfit.mathfun.block_ensemble import bootstrap_ensemble
 
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT
@@ -898,7 +899,7 @@ if JACKKNIFE_FIT == 'SINGLE':
     def normalize_covinv(covinv_jack, params, bsize=JACKKNIFE_BLOCK_SIZE):
         """do the proper normalization of the covinv (single jk)"""
         total_configs = params.num_configs*bsize
-        num_configs_minus_block = total_configs-bsize
+        num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
         return covinv_jack * ((nsize)*(nsize-1))
 
@@ -906,7 +907,7 @@ if JACKKNIFE_FIT == 'SINGLE':
         """do the proper normalization of the
         covariance matrix (single jk)"""
         total_configs = params.num_configs*bsize
-        num_configs_minus_block = total_configs-bsize
+        num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
         return covjack / ((nsize)*(nsize-1))
 
@@ -915,7 +916,7 @@ elif JACKKNIFE_FIT == 'DOUBLE':
     def normalize_covinv(covinv_jack, params, bsize=JACKKNIFE_BLOCK_SIZE):
         """do the proper normalization of the covinv (double jk)"""
         total_configs = params.num_configs*bsize
-        num_configs_minus_block = total_configs-bsize
+        num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
         return covinv_jack * ((nsize)/(nsize-1))
 
@@ -924,9 +925,22 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         """do the proper normalization of the
         covariance matrix (double jk)"""
         total_configs = params.num_configs*bsize
-        num_configs_minus_block = total_configs-bsize
+        num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
         return covjack / ((nsize)/(nsize-1))
+
+
+def nconfigs_minus_block(total_configs, bsize):
+    """Number of configs less block size
+    used for normalizing cov
+    block reduction is eliminated if bootstrapping
+    """
+    if latfit.config.BOOTSTRAP:
+        ret = total_configs
+    else:
+        ret = total_configs-bsize
+    return ret
+
 
 
 @PROFILE
@@ -940,6 +954,11 @@ def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
 
     # original data, obtained by reversing single jackknife procedure
     reuse_inv = inverse_jk(reuse, params.num_configs)
+
+    # bootstrap ensemble
+    reuse_blocked = bootstrap_ensemble(reuse_inv, reuse_blocked)
+
+    # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
 
     flag = 2
@@ -951,10 +970,10 @@ def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
             assert None, "Not supported."
             coords_jack = coords_jack[1::2]
             cov_factor = np.delete(
-                getcovfactor(params, reuse, config_num, reuse_inv_red),
+                getcovfactor(params, reuse_blocked, config_num, reuse_inv_red),
                 np.s_[::2], axis=1)
         else:
-            cov_factor = getcovfactor(params, reuse, config_num, reuse_inv_red)
+            cov_factor = getcovfactor(params, reuse_blocked, config_num, reuse_inv_red)
         covjack = get_covjack(cov_factor, params)
         covinv_jack_pruned, flag = prune_covjack(params, covjack,
                                                  coords_jack, flag)
@@ -1133,19 +1152,21 @@ class BadChisq(Exception):
 
 
 if JACKKNIFE_FIT == 'SINGLE':
-    def getcovfactor(_, reuse, config_num, reuse_inv_red):
+    def getcovfactor(_, reuse_blocked, config_num, reuse_inv_red):
         """Get the factor which will be squared
         when computing jackknife covariance matrix
         (for this config number == config)
         inverse block == reuse_inv
         block == reuse
         SINGLE elimination jackknife
+        SINGLE case is just the usual way to calculate the covariance matrix
+(no jackknifing after the first jackknife)
         """
-        return reuse_inv_red-reuse[config_num]
+        return reuse_inv_red-reuse_blocked[config_num]
 
 elif JACKKNIFE_FIT == 'DOUBLE':
     @PROFILE
-    def getcovfactor(params, reuse, config_num,
+    def getcovfactor(params, reuse_blocked, config_num,
                      reuse_inv_red, bsize=JACKKNIFE_BLOCK_SIZE):
         """Get the factor which will be squared
         when computing jackknife covariance matrix
@@ -1156,8 +1177,11 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         block == reuse
         DOUBLE elimination jackknife
         """
-        num_configs_reduced = (params.num_configs-1)*bsize
-        ret = np.array([
-            em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
-            for i in range(num_configs_reduced)]) - reuse[config_num]
+        if latfit.config.BOOTSTRAP:
+            ret = reuse_blocked-em.acmean(reuse_blocked, axis=0)
+        else:
+            num_configs_reduced = (params.num_configs-1)*bsize
+            ret = np.array([
+                em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
+                for i in range(num_configs_reduced)]) - reuse[config_num]
         return ret

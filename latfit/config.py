@@ -235,6 +235,13 @@ BINNUM = 1
 # usual jackknife sets this to 1
 JACKKNIFE_BLOCK_SIZE = 1
 
+# Bootstrap params
+NBOOT = 1000 # until it saturates (should be infinity)
+# whether to get accurate p-values.  usually best to leave this false
+# it is automatically turned on for final fit
+BOOTSTRAP = True
+BOOTSTRAP = False
+
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False

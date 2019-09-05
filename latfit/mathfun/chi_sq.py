@@ -7,6 +7,8 @@ import numpy as np
 from latfit.config import fit_func
 from latfit.config import GEVP, START_PARAMS, SYSTEMATIC_EST
 
+CONST_SHIFT = 0
+
 if SYSTEMATIC_EST:
 
     def fit_func_systematic(ctime, trial_params):
@@ -22,6 +24,12 @@ else:
         """blank copy of fit func"""
         return fit_func(ctime, trial_params)
 
+def fit_func_chisq(ctime, trial_params):
+    """Fit function to be used in chi^2"""
+    ret = fit_func(ctime, trial_params)
+    ret += CONST_SHIFT
+    return ret
+
 if GEVP:
     def chi_sq(trial_params, covinv, coords):
         """Compute chi^2 (or, more likely, Hotelling's t^2)
@@ -33,19 +41,19 @@ if GEVP:
         # print("break 2")
         # print(coords[0][1]-fit_func(coords[0][0], trial_params))
         retval = np.sum([dot(dot(
-            (coords[outer][1] - fit_func_systematic(
+            (coords[outer][1] - fit_func_chisq(
                 coords[outer][0], trial_params)),
             covinv[outer][inner]), (
-                coords[inner][1]-fit_func_systematic(
+                coords[inner][1]-fit_func_chisq(
                     coords[inner][0], trial_params)))
                          for outer in range(len(coords))
                          for inner in range(len(coords))])
         if retval.imag != 0 and not np.isnan(retval.imag):
             llll = [dot(dot((
-                coords[outer][1] - fit_func_systematic(
+                coords[outer][1] - fit_func_chisq(
                     coords[outer][0], trial_params)),
                             covinv[outer][inner]),
-                        (coords[inner][1]-fit_func_systematic(
+                        (coords[inner][1]-fit_func_chisq(
                             coords[inner][0], trial_params)))
                     for outer in range(len(coords))
                     for inner in range(len(coords))]
@@ -56,12 +64,12 @@ if GEVP:
             print(coords[0][1])
             print("sep1")
             print("trial_params:", trial_params)
-            print((coords[0][1]-fit_func_systematic(
+            print((coords[0][1]-fit_func_chisq(
                 coords[0][0][0], trial_params)))
             print("sep2")
             print(covinv[0][0])
             print("sep3")
-            print(dot((coords[0][1] - fit_func_systematic(
+            print(dot((coords[0][1] - fit_func_chisq(
                 coords[0][0], trial_params)), covinv[0][0]))
             print("sep4")
             print(llll)
