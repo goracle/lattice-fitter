@@ -6,7 +6,8 @@ import sys
 import numpy as np
 from math import sqrt
 import read_file as rf
-import latfit.utilities.exactmean as em
+from latfit.utilities import exactmean as em
+
 current_module = sys.modules[__name__]
 cmod = current_module
 

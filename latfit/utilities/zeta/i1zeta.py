@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from czeta import czeta
 import latfit.utilities.read_file as rf
-import latfit.utilities.exactmean as em
+from latfit.utilities import exactmean as em
 
 COMP = 0.0
 L_BOX = 0.0

@@ -1,6 +1,6 @@
 """get the original data from the jackknife blocks"""
 import numpy as np
-import latfit.utilities.exactmean as em
+from latfit.utilities import exactmean as em
 
 def inverse_jk(reuse, num_configs=-1):
     """get the original data from the jackknife blocks

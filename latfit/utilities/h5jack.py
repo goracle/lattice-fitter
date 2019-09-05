@@ -20,7 +20,7 @@ import write_discon as wd
 import aux_write as aux
 import avg_hdf5
 import pickle
-import exactmean as em
+from latfit.utilities import exactmean as em
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd

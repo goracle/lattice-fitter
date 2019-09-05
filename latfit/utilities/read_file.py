@@ -11,7 +11,7 @@ import linecache as lc
 import numpy as np
 import h5py
 from collections import Iterable
-import latfit.utilities.exactmean as em
+from latfit.utilities import exactmean as em
 
 FORMAT = 'ASCII'
 
