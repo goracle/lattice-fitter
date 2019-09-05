@@ -113,7 +113,7 @@ def make_hist(fname):
             if median_diff != 0:
                 freq_median = (freq_median+half)/2
             try:
-                sys_err = np.std(freq, ddof=1)
+                sys_err = np.acstd(freq, ddof=1)
             except ZeroDivisionError:
                 print("zero division error:")
                 print(np.array(median_err))

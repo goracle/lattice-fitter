@@ -97,8 +97,8 @@ def agree(arr1, arr2):
     in array 1 and array 2
     agree within errors
     """
-    err1 = np.std(arr1, axis=0)*np.sqrt(len(arr1)-1)
-    err2 = np.std(arr2, axis=0)*np.sqrt(len(arr2)-1)
+    err1 = em.acstd(arr1, axis=0)*np.sqrt(len(arr1)-1)
+    err2 = em.acstd(arr2, axis=0)*np.sqrt(len(arr2)-1)
     assert len(arr1) == len(arr2)
     diff = np.abs(np.real(arr1)-np.real(arr2))
     diff = em.acmean(diff, axis=0)

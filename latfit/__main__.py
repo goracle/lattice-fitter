@@ -826,7 +826,7 @@ def find_mean_and_err(meta, min_arr):
     # [i[0].x for i in min_arr], axis=0)
     # param_err = np.sqrt(np.mean([np.array(
     # i[1])**2 for i in min_arr], axis=0))
-    # param_err = np.std([
+    # param_err = em.acstd([
     # getattr(i[0], 'x') for i in min_arr], axis=0, ddof=1)
     param_err = np.array(result_min['x_err'])
     assert not any(np.isnan(param_err)), \
@@ -892,10 +892,10 @@ def compare_eff_mass_to_range(arr, err, errmin, mindim=None):
         if errmin == erreff:
             arr = arreff
             err = erreff
-    # the error is not going to be a simple np.std if we do sample AMA
+    # the error is not going to be a simple em.acstd if we do sample AMA
     # so skip the check in this case
     if not SUPERJACK_CUTOFF:
-        errcheck = np.std(arr)*np.sqrt(len(arr-1))
+        errcheck = em.acstd(arr)*np.sqrt(len(arr-1))
         try:
             assert np.allclose(errcheck, errmin, rtol=1e-6)
         except AssertionError:
@@ -1190,7 +1190,7 @@ def errerr(param_err_arr):
     avgerr = np.zeros(param_err_arr[0].shape)
     param_err_arr = np.asarray(param_err_arr)
     for i, _ in enumerate(err):
-        err[i] = np.std(param_err_arr[:, i], ddof=1)/np.sqrt(
+        err[i] = em.acstd(param_err_arr[:, i], ddof=1)/np.sqrt(
             len(err))/np.sqrt(MPISIZE)
         avgerr[i] = em.acmean(param_err_arr[:, i])
     return err, avgerr

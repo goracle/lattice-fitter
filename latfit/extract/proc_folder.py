@@ -88,7 +88,7 @@ if STYPE == 'hdf5':
         arr = np.asarray(arr)
         larr = len(arr)
         assert larr > 1
-        err = np.std(arr, ddof=1, axis=0)*np.sqrt(len(arr)-1)
+        err = em.acstd(arr, ddof=1, axis=0)*np.sqrt(len(arr)-1)
         avg = em.acmean(arr, axis=0)
         assert not hasattr(avg, '__iter__')
         if abs(avg) < err and opdim[0] == opdim[1] and opdim[0] is not None:

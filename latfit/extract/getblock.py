@@ -1001,7 +1001,7 @@ def sort_addzero(addzero, enint):
                 addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
 
             # std error in finsum
-            dev = np.std(finsum)*np.sqrt(len(finsum)-1)
+            dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
 
             # which additive zero
             # has a corresponding disp energy
@@ -1088,7 +1088,7 @@ def show_original_data(jkarr, jkarr2):
         else:
             print(i, orig[i], orig2[i])
             diffarr_small.append(diff)
-    print(np.std(orig)/np.sqrt(len(orig)))
+    print(em.acstd(orig)/np.sqrt(len(orig)))
     print("early diff avg:", em.acmean(diffarr_early), "error:", sterr(diffarr_early))
     print("late diff avg:", em.acmean(diffarr_late), "error:", sterr(diffarr_late))
     if diffarr_small:
@@ -1106,12 +1106,12 @@ def show_original_data(jkarr, jkarr2):
 
 def jkerr(arr):
     """Calculate the jackknife error in array arr"""
-    ret = np.std(arr)*np.sqrt(len(arr)-1)
+    ret = em.acstd(arr)*np.sqrt(len(arr)-1)
     return ret
     
 def sterr(arr):
     """Calculate the standard error in array arr"""
-    ret = np.std(arr,ddof=1)/np.sqrt(len(arr))
+    ret = em.acstd(arr,ddof=1)/np.sqrt(len(arr))
     return ret
 
 sterr=jkerr
@@ -1158,7 +1158,7 @@ if PIONRATIO:
                 sys.exit(1)
         ret = np.asarray(ret)
         print(timeij,"before - after (diff):",
-              np.std(enint[:,0])-np.std(ret[:,0]))
+              em.acstd(enint[:,0])-em.acstd(ret[:,0]))
         return ret
 else:
     def modenergies(energies, *unused):
@@ -1220,7 +1220,7 @@ if EFF_MASS:
                       "operator eliminations", allowedeliminations(),
                       'sample', blkdict[dt1][0])
                 check_length = len(blkdict[dt1])
-                relerr = np.abs(np.std(blkdict[dt1], ddof=1, axis=0)*(
+                relerr = np.abs(em.acstd(blkdict[dt1], ddof=1, axis=0)*(
                     len(blkdict[dt1])-1)/em.acmean(blkdict[dt1], axis=0))
                 errdict[dt1] = 0
                 if not all(np.isnan(relerr)):
@@ -1240,7 +1240,7 @@ if EFF_MASS:
         else:
             ret = getblock_gevp_singlerhs(
                 file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
-            relerr = np.abs(np.std(ret, ddof=1, axis=0)*(
+            relerr = np.abs(em.acstd(ret, ddof=1, axis=0)*(
                 len(ret)-1)/em.acmean(ret, axis=0))
             print('dt1' , delta_t, 'timeij', timeij, 'elim hint',
                   solve_gevp.hint,
@@ -1534,7 +1534,7 @@ def pval_commutator(norms_comm):
     dof = results_pca.Y.shape[1]
     #print("original dimensions", dimops,
     #      "reduced dimensions:", results_pca.Y.shape)
-    sample_stddev = np.std(
+    sample_stddev = em.acstd(
         results_pca.Y, ddof=0, axis=0)
     # assuming the population mean of our statistic is 0
     chisq_arr = []
@@ -1549,7 +1549,7 @@ def pval_commutator(norms_comm):
         pval_arr = stats.f.sf(chisq_arr*(len(chisq_arr)-dof)/(len(chisq_arr)-1)/dof, dof, len(chisq_arr)-dof)
     pval = fsum(pval_arr)/len(chisq_arr)
     chisq = fsum(chisq_arr)/len(chisq_arr)
-    #print("dev:", np.std(chisq_arr, ddof=1))
+    #print("dev:", em.acstd(chisq_arr, ddof=1))
     #for i in sorted(list(chisq_arr)):
     #    print(i, ",")
     #print(em.acsum(chisq_arr)/len(chisq_arr), fsum(chisq_arr)/len(chisq_arr))

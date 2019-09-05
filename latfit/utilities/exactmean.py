@@ -14,6 +14,20 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def convert_arr(arr):
+    """Convert dtype since ksum only likes np.float64 types"""
+    if arr.dtype != 'float64':
+        arr = np.array(arr, dtype=np.float64)
+    return arr
+
+def acstd(arr, axis=0, ddof=0, fsum=False):
+    """Compute standard deviation given ddof degrees of freedom"""
+    ret = acsum((arr-acmean(arr, axis=axis, fsum=fsum))**2,
+                 axis=axis, fsum=fsum)
+    ret /= len(arr)-ddof
+    ret = np.sqrt(ret)
+    return ret
+    
 def acsum(arr, axis=0, fsum=False):
     """Peform accurate summation"""
     assert isinstance(arr, np.ndarray), "input is not a numpy array"
@@ -49,6 +63,7 @@ def dosum(arr, fsum):
     if fsum:
         ret = accupy.fsum(arr)
     else:
+        arr = convert_arr(arr)
         ret = accupy.ksum(arr)
     return ret
 
