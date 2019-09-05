@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 import numpy as np
+from accupy import kdot
 from latfit.utilities import h5jack
 
 # import kaondecompose # decompose the results,
@@ -186,7 +187,7 @@ jackknife_ops.complete = False
 # def ptokey(momdiag):
 #     """Turns a momentum key into a momentum, then finds |p|"""
 #     mom = rf.mom(momdiag)
-#     key = np.dot(mom, mom)
+#     key = kdot(mom, mom)
 # return key
 
 

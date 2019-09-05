@@ -4,6 +4,7 @@ from math import sqrt, fsum
 import numdifftools as nd
 from numpy.linalg import inv
 import numpy as np
+from accupy import kdot
 
 from latfit.config import fit_func
 from latfit.config import SCALE
@@ -69,26 +70,26 @@ def compute_hess(grad, covinv, l_params, l_coords):
     if l_params != 1:
         # use numeric second deriv of fit fit func.
         # also unstable (and often wrong) and out of date
-        # Hess = [[2*fsum(np.dot(
+        # Hess = [[2*fsum(kdot(
         # fhess[i][a][b]*covinv[i][j],
         # (g(result_min.x)[j]-coords[j][1]))
-        # +np.dot(grad[i][a]*covinv[i][j],
+        # +kdot(grad[i][a]*covinv[i][j],
         # grad[j][b]) for i in range(l_coords)
         # for j in range(l_coords)) for
         # b in range(l_params)] for a in range(l_params)]
         hess = [[2*fsum(
-            np.dot(np.dot(grad[i][a], covinv[i][j]), grad[j][b])
+            kdot(kdot(grad[i][a], covinv[i][j]), grad[j][b])
             for i in range(l_coords) for j in range(l_coords))
                  for b in range(l_params)] for a in range(l_params)]
     else:
         # see above about instability of fit func hessian.
         # this else block is for one parameter fits.
         # hess = [[2*fsum(
-        # np.dot(fhess[i]*covinv[i][j],
-        # (g(result_min.x)[j]-coords[j][1]))+np.dot(grad[i]*covinv[i][j],
+        # kdot(fhess[i]*covinv[i][j],
+        # (g(result_min.x)[j]-coords[j][1]))+kdot(grad[i]*covinv[i][j],
         # grad[j]) for i in range(l_coords) for j in range(l_coords))]]
         hess = [[2*fsum(
-            np.dot(np.dot(grad[i], covinv[i][j]), grad[j])
+            kdot(kdot(grad[i], covinv[i][j]), grad[j])
             for i in range(l_coords) for j in range(l_coords))]]
     return hess
 
@@ -118,16 +119,16 @@ def compute_err(hinv, grad, covinv, l_coords, l_params):
     #
     if l_params != 1:
         delta = [[4*fsum(
-            hinv[a][c]*np.dot(
-                np.dot(grad[i][c], covinv[i][j]),
+            hinv[a][c]*kdot(
+                kdot(grad[i][c], covinv[i][j]),
                 grad[j][d])*hinv[d][b]
             for i in range(l_coords) for j in range(l_coords)
             for c in range(l_params) for d in range(l_params))
                   for b in range(l_params)] for a in range(l_params)]
     else:
         delta = [[4*fsum(
-            hinv[a][c]*np.dot(
-                np.dot(grad[i], covinv[i][j]), grad[j])*hinv[d][b]
+            hinv[a][c]*kdot(
+                kdot(grad[i], covinv[i][j]), grad[j])*hinv[d][b]
             for i in range(l_coords) for j in range(l_coords)
             for c in range(l_params) for d in range(l_params))
                   for b in range(l_params)] for a in range(l_params)]

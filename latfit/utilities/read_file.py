@@ -11,6 +11,7 @@ import linecache as lc
 import numpy as np
 import h5py
 from collections import Iterable
+from accupy import kdot
 from latfit.utilities import exactmean as em
 
 FORMAT = 'ASCII'
@@ -67,7 +68,7 @@ def compare_pols(pol1, pol2):
 def momrelnorm(mom1, mom2):
     """Find the norm of the relative momentum"""
     ret = np.array(mom1)-np.array(mom2)
-    return np.sqrt(np.dot(ret, ret))
+    return np.sqrt(kdot(ret, ret))
 
 def compare_momenta(fn1, fn2):
     """Compare two different momenta

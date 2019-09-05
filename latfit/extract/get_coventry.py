@@ -6,6 +6,7 @@ from latfit.config import UNCORR, GEVP
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.utilities import exactmean as em
 from latfit.mathfun import block_ensemble
+from accupy import kdot
 
 if UNCORR:
     def get_coventry_gevp(reuse_blocked, sameblk, avgi):
@@ -44,7 +45,7 @@ if UNCORR:
     def get_coventry_simple(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., uncorr"""
         if sameblk:
-            coventry = np.dot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
+            coventry = kdot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
         else:
             coventry = 0
         return coventry
@@ -53,9 +54,9 @@ else:
     def get_coventry_simple(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat."""
         if sameblk:
-            coventry = np.dot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
+            coventry = kdot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
         else:
-            coventry = np.dot(reuse_blocked['i']-avgi,
+            coventry = kdot(reuse_blocked['i']-avgi,
                               reuse_blocked['i']-em.acmean(reuse_blocked['j']))
         return coventry
 

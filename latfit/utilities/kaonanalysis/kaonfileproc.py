@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 import numpy as np
 import h5py
+from accupy import kdot
 import kaonprojop
 import kaonpostproc as kpp
 import kaondecompose
@@ -24,7 +25,7 @@ def gen_key(momdiag):
             assert mom, "Bad diagram name : "+str(momdiag)
     if len(mom) == 2:
         mom = mom[1]
-    keyirr = str(np.dot(mom, mom))+'@'+str(kpitsep)
+    keyirr = str(kdot(mom, mom))+'@'+str(kpitsep)
     return keyirr
 
 def deltat(momdiag):

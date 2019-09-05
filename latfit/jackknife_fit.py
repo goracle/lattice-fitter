@@ -10,6 +10,7 @@ from numpy import swapaxes as swap
 from numpy.linalg import inv, tensorinv
 from scipy import stats
 from scipy.optimize import fsolve
+from accupy import kdot
 
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
@@ -862,8 +863,8 @@ if CORRMATRIX:
             corrjack = np.zeros(covjack.shape)
             weightings = np.sqrt(np.diag(covjack))
             reweight = np.diagflat(1./weightings)
-            np.dot(reweight, np.dot(covjack, reweight), out=corrjack)
-            covinv_jack = np.dot(np.dot(reweight, inv(corrjack)), reweight)
+            kdot(reweight, kdot(covjack, reweight), out=corrjack)
+            covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
             reweight = np.zeros((lent, params.dimops, lent, params.dimops))

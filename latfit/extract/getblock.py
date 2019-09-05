@@ -14,6 +14,7 @@ from matplotlib.mlab import PCA
 from scipy.stats import pearsonr
 import numpy as np
 from latfit.utilities import exactmean as em
+from accupy import kdot
 import h5py
 
 from latfit.mathfun.proc_meff import proc_meff
@@ -296,7 +297,7 @@ def calleig(c_lhs, c_rhs=None):
     if c_rhs is not None and LOGFORM:
         rhs = log_matrix(c_rhs)
         lhs = log_matrix(c_lhs)
-        c_lhs_check = np.dot(linalg.inv(c_rhs), c_lhs)
+        c_lhs_check = kdot(linalg.inv(c_rhs), c_lhs)
         c_lhs = rhs-lhs
         try:
             assert np.allclose(linalg.eigvals(c_lhs_check),
@@ -708,7 +709,7 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
         # compute commutator divided by norm
         # to see how close rhs and lhs bases
         try:
-            commutator_norms = (np.dot(c_rhs_inv, c_lhs)-np.dot(
+            commutator_norms = (kdot(c_rhs_inv, c_lhs)-kdot(
                 c_lhs, c_rhs_inv))
         except FloatingPointError:
             print("bad denominator:")
@@ -716,13 +717,13 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
             print(np.linalg.norm(c_lhs))
             print(c_lhs)
             raise FloatingPointError
-        assert np.allclose(np.dot(c_rhs_inv, c_rhs),
+        assert np.allclose(kdot(c_rhs_inv, c_rhs),
                            np.eye(dimops), rtol=1e-8),\
                            "Bad C_rhs inverse. Numerically unstable."
         assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv,
                            rtol=1e-8),\
                            "Inverse failed (result is not hermite)."
-        c_lhs_new = (np.dot(c_rhs_inv, c_lhs)+np.dot(c_lhs, c_rhs_inv))/2
+        c_lhs_new = (kdot(c_rhs_inv, c_lhs)+kdot(c_lhs, c_rhs_inv))/2
         commutator_norm = np.linalg.norm(commutator_norms)
         try:
             assert np.allclose(np.matrix(c_lhs_new).H, c_lhs_new, rtol=1e-8)
@@ -1293,7 +1294,7 @@ if EFF_MASS:
             checkgteq0(eigvals_mean_tp2)
             checkgteq0(eigvals_mean_tp3)
 
-        dotprod = np.dot(np.conj(evecs_mean_t[0]),evecs_mean_t[0])
+        dotprod = kdot(np.conj(evecs_mean_t[0]),evecs_mean_t[0])
         assert np.allclose(dotprod, 1.0, rtol=1e-8), str(dotprod)
         print("evecs of avg gevp", np.real(evecs_mean_t))
         avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
@@ -1508,7 +1509,7 @@ def norms(evecs):
     """Get norms of evecs"""
     ret = []
     for i in evecs:
-        ret.append(np.dot(i,i))
+        ret.append(kdot(i,i))
     ret = np.asarray(ret)
     return ret
 

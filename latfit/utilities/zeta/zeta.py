@@ -8,6 +8,7 @@ from math import sqrt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+from accupy import kdot
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.config import IRREP, ISOSPIN
@@ -50,11 +51,11 @@ if CALC_PHASE_SHIFT:
         if epipi:
             try:
                 if FIT_SPACING_CORRECTION:
-                    arg = epipi**2-(2*np.pi/L_BOX)**2*np.dot(comp, comp)
+                    arg = epipi**2-(2*np.pi/L_BOX)**2*kdot(comp, comp)
                     gamma = epipi/sqrt(arg)
                 else:
                     arg = epipi**2-4*np.sin(
-                        np.pi/L_BOX)**2*np.dot(comp, comp)
+                        np.pi/L_BOX)**2*kdot(comp, comp)
                     gamma = epipi/sqrt(arg)
             except (ValueError, FloatingPointError):
                 print("zeta.py, bad gamma value for epipi=", epipi)
