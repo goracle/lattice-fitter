@@ -36,6 +36,7 @@ import latfit.finalout.mkplot
 import latfit.config
 import latfit.analysis.misc as misc
 from latfit.utilities import exactmean as em
+from latfit.utilities.actensordot import actensordot
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
@@ -871,15 +872,15 @@ if CORRMATRIX:
             for i in range(lent):
                 for j in range(params.dimops):
                     reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])
-            corrjack = np.tensordot(
-                np.tensordot(reweight, covjack), reweight)
+            corrjack = actensordot(
+                actensordot(reweight, covjack), reweight)
             if UNCORR:
                 diagcorr = np.zeros(corrjack.shape)
                 for i in range(lent):
                     for j in range(params.dimops):
                         diagcorr[i][j][i][j] = corrjack[i][j][i][j]
                 corrjack = diagcorr
-            covinv_jack = swap(np.tensordot(reweight, np.tensordot(
+            covinv_jack = swap(actensordot(reweight, actensordot(
                 tensorinv(corrjack), reweight)), 1, 2)
         return covinv_jack
 

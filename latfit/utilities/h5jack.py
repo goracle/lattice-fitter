@@ -21,6 +21,7 @@ import aux_write as aux
 import avg_hdf5
 import pickle
 from latfit.utilities import exactmean as em
+from latfit.utilities.actensordot import actensordot
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd
@@ -1053,7 +1054,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         src = np.delete(bubbles[srckey], excl, axis=0)
                         snk = conjbub(np.delete(bubbles[snkkey],
                                                 excl, axis=0))
-                        outcome = np.tensordot(
+                        outcome = actensordot(
                             src, snk, axes=(0, 0))[ROWS, cols]/(
                                 len(src)*1.0)-np.outer(
                                     sub[srckey][excl], sub[snkkey][excl])
@@ -1066,7 +1067,7 @@ def dobubjack(bubbles, sub, skip_v_bub2=False):
                         # test 44 is over a single config,
                         # so this won't be correct,
                         # but it avoids an error message.
-                        outcome = np.tensordot(src, snk, axes=(0, 0))[
+                        outcome = actensordot(src, snk, axes=(0, 0))[
                             ROWS, cols]/(len(
                                 src)*1.0 if not TEST44 and not FREEFIELD else 1.0)
                         # mean is over tsrc
