@@ -167,7 +167,7 @@ if JACKKNIFE_FIT == 'FROZEN':
 
 elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
     @PROFILE
-    def jackknife_fit(params, reuse, coords, covinv=None):
+    def jackknife_fit(params, reuse, reuse_blocked, coords, covinv=None):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -235,20 +235,23 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # on more stable sloppy samples
 
         # blocked ensemble
-        reuse_blocked = block_ensemble(params, reuse)
+        # reuse_blocked = block_ensemble(params, reuse)
 
         for config_num in (np.array(range(params.num_configs))+
                            SUPERJACK_CUTOFF)%params.num_configs:
 
+            assert isinstance(config_num, np.int64), str(config_num)
             # if config_num>160: break # for debugging only
 
             # copy the jackknife block into coords_jack
-            copy_block(params, reuse_blocked[config_num], coords_jack)
+            assert np.all(reuse[config_num] == reuse_blocked[config_num])
+            copy_block(params, reuse[config_num], coords_jack)
 
             # get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.error_bars[
                 config_num] = get_doublejk_data(params, coords_jack,
-                                                reuse, config_num)
+                                                reuse, reuse_blocked,
+                                                config_num)
 
             # minimize chi^2 (t^2) given the inv. covariance matrix and data
             result_min_jack = mkmin(covinv_jack, coords_jack)
@@ -864,7 +867,7 @@ if CORRMATRIX:
             corrjack = np.zeros(covjack.shape)
             weightings = np.sqrt(np.diag(covjack))
             reweight = np.diagflat(1./weightings)
-            kdot(reweight, kdot(covjack, reweight), out=corrjack)
+            corrjack = kdot(reweight, kdot(covjack, reweight))
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
@@ -1185,5 +1188,5 @@ elif JACKKNIFE_FIT == 'DOUBLE':
             num_configs_reduced = (params.num_configs-1)*bsize
             ret = np.array([
                 em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
-                for i in range(num_configs_reduced)]) - reuse[config_num]
+                for i in range(num_configs_reduced)]) - reuse_blocked[config_num]
         return ret

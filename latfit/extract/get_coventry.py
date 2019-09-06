@@ -5,7 +5,7 @@ import numpy as np
 from latfit.config import UNCORR, GEVP
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.utilities import exactmean as em
-from latfit.mathfun import block_ensemble
+from latfit.mathfun.block_ensemble import block_ensemble
 from accupy import kdot
 
 if UNCORR:

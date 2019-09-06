@@ -1,5 +1,6 @@
 """Block the ensemble by dropping JACKKNIFE_BLOCK_SIZE configs"""
 
+import sys
 import numpy as np
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.config import BOOTSTRAP
@@ -47,18 +48,20 @@ else:
 
         # blocked
         retblked = []
-        for i in in range(num_configs):
+        for i in range(num_configs):
             newblk = delblock(i, reuse_inv)
             retblked.append(em.acmean(newblk, axis=0))
         assert len(retblked) == num_configs, "bug"
         ret = np.array(retblked, dtype=reuse.dtype)
+        assert ret.shape == reuse.shape, "reuse blocked size != reuse size"
         return retblked
 
 def delblock(config_num, reuse_inv, bsize=JACKKNIFE_BLOCK_SIZE):
     """Delete JACKKNIFE_BLOCK_SIZE configs
     at block position config_num
     """
-    assert isinstance(config_num, int)
+    assert isinstance(config_num, int) or int(config_num) == config_num
+    config_num = int(config_num)
     ret = np.delete(reuse_inv,
                     np.arange(config_num*bsize, (config_num+1)*bsize, 1),
                     axis=0)

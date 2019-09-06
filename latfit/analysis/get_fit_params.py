@@ -18,6 +18,7 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     params.num_configs = len(reuse[xmin])/JACKKNIFE_BLOCK_SIZE
     assert int(params.num_configs) == params.num_configs,\
         "block size does not evenly divide dataset length"
+    params.num_configs = int(params.num_configs)
     params.energyind = None
     try:
         params.dimops = len(cov[0][0])

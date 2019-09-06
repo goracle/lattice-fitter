@@ -18,10 +18,11 @@ from latfit.utilities import exactmean as em
 
 # import global variables
 from latfit.config import FIT
-from latfit.config import JACKKNIFE_FIT
+from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
 from latfit.config import GEVP
+import latfit.config
 
 import latfit.mathfun.chi_sq as chisq
 
@@ -53,9 +54,12 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                                        'prefactor', 'time_range'])
     params = get_fit_params(cov_full, reuse, xmin, fitrange, xstep)
 
+    # make reuse into an array, rearrange
+    reuse = rearrange_reuse_dict(params, reuse)
+
     # block the ensemble
-    if singlefireuse_blocked is None:
-        singlefireuse_blocked = block_ensemble(params.num_configs, reuse)
+    if singlefit.reuse_blocked is None:
+        singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
         
     
     # correct covariance matrix for jackknife factor
@@ -76,9 +80,6 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # select subset of data for fit
     selection = index_select(xmin, xmax, xstep, fitrange, coords_full)
     coords, cov = fit_select(coords_full, cov_full, selection)
-
-    # make reuse into an array, rearrange
-    reuse = rearrange_reuse_dict(params, reuse)
 
     # error handling for Degrees of Freedom <= 0 (it should be > 0).
     # number of points plotted = len(cov).
@@ -155,7 +156,7 @@ singlefit.coords_full = None
 singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
-singlefireuse_blocked = None
+singlefit.reuse_blocked = None
 
 def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     """Get the array of p-values"""
@@ -227,6 +228,8 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
     into a numpy array, swap indices
     """
     total_configs = bsize*params.num_configs
+    assert int(total_configs) == total_configs
+    total_configs = int(total_configs)
     return np.array([[reuse[time][config]
                       for time in params.time_range]
                      for config in range(total_configs)])

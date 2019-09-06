@@ -33,20 +33,25 @@ def acstd(arr, axis=0, ddof=0, fsum=False):
 @PROFILE
 def acsum(arr, axis=0, fsum=False):
     """Peform accurate summation"""
+    arr = np.asarray(arr)
     assert isinstance(arr, np.ndarray), "input is not a numpy array"
     if not axis:
         ret = complexsum(arr, fsum)
     else:
         arr = swap(arr, 0, axis)
-        ret = complexum(arr, fsum)
+        ret = complexsum(arr, fsum)
         arr = swap(arr, 0, axis)
     return ret
 
 @PROFILE
 def acmean(arr, axis=0, fsum=False):
     """Take the average of the array"""
-    ret = acsum(arr, axis, fsum)
-    ret /= (arr.shape)[axis]
+    ret = arr
+    if hasattr(arr, '__iter__'):
+        larr = (arr.shape)[axis]
+        if larr:
+            ret = acsum(arr, axis, fsum)
+            ret /= larr
     return ret
 
 @PROFILE
