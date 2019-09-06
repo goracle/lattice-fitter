@@ -853,6 +853,14 @@ def get_covjack(cov_factor, params):
         covjack = np.einsum('aim, ajn->imjn', cov_factor, cov_factor)
     return covjack
 
+def dropimag(arr):
+    """Drop the imaginary part if it's all 0"""
+    if np.all(np.imag(arr) == 0.0):
+        ret = np.real(arr)
+    else:
+        ret = arr
+    return ret
+
 
 if CORRMATRIX:
     @PROFILE
@@ -864,8 +872,9 @@ if CORRMATRIX:
         if params.dimops == 1:  # i.e. if not using the GEVP
             if UNCORR:
                 covjack = np.diagflat(np.diag(covjack))
+            covjack = dropimag(covjack)
             corrjack = np.zeros(covjack.shape)
-            weightings = np.sqrt(np.diag(covjack))
+            weightings = dropimag(np.sqrt(np.diag(covjack)))
             reweight = np.diagflat(1./weightings)
             corrjack = kdot(reweight, kdot(covjack, reweight))
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)

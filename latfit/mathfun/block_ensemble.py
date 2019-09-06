@@ -18,9 +18,8 @@ def bootstrap_ensemble(reuse_inv, reuse_blocked):
         retblk = []
         for i in choices:
             elem = reuse_inv[np.random.choice(choices)]
-            elem += CONST_SHIFT
             retblk.append(elem)
-        ret = np.array(retblk, dtype=reuse.dtype)
+        ret = np.array(retblk, dtype=reuse_inv.dtype)
         ret = dojackknife(ret)
     else:
         ret = reuse_blocked

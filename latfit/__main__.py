@@ -327,6 +327,8 @@ def main():
                                                meta.xmin, meta.xmax,
                                                meta.xstep)
                     print("Test fit succeeded.")
+                    params_save = [input_f, meta.fitwindow, meta.xmin,
+                                   meta.xmax, meta.xstep] 
                     test_success = True
             except (NegChisq, RelGammaError, OverflowError, NoConvergence,
                     BadJackknifeDist, DOFNonPos, EnergySortError,
@@ -460,23 +462,26 @@ def main():
 
                     result_min = find_mean_and_err(meta, min_arr)
 
-                    # do the best fit again, with good stopping condition
-                    # latfit.config.FIT_EXCL = min_excl(min_arr)
                     latfit.config.FIT_EXCL = closest_fit_to_avg(
                         result_min['x'], min_arr)
+                    # do the best fit again, with good stopping condition
+                    # latfit.config.FIT_EXCL = min_excl(min_arr)
                     print("fit excluded points (indices):",
                           latfit.config.FIT_EXCL)
 
+                latfit.config.BOOTSTRAP = True
                 if (not (meta.skiploop and latfit.config.MINTOL)\
                    and METHOD == 'NaN') or not test_success\
                    and (len(min_arr) + len(overfit_arr) > 1):
                         latfit.config.MINTOL = True
-                        latfit.config.BOOTSTRAP = True
                         retsingle = singlefit(input_f, meta.fitwindow,
                                               meta.xmin, meta.xmax,
                                               meta.xstep)
                 else:
                     retsingle = retsingle_save
+                    _ = singlefit(input_f, meta.fitwindow,
+                                  meta.xmin, meta.xmax,
+                                  meta.xstep)
                 result_min_close, param_err_close, \
                     plotdata.coords, plotdata.cov = retsingle
 
