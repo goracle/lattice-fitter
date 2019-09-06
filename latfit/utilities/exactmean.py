@@ -14,20 +14,23 @@ except NameError:
         return arg2
     PROFILE = profile
 
+@PROFILE
 def convert_arr(arr):
     """Convert dtype since ksum only likes np.float64 types"""
     if arr.dtype != 'float64':
         arr = np.array(arr, dtype=np.float64)
     return arr
 
+@PROFILE
 def acstd(arr, axis=0, ddof=0, fsum=False):
     """Compute standard deviation given ddof degrees of freedom"""
     ret = acsum((arr-acmean(arr, axis=axis, fsum=fsum))**2,
                  axis=axis, fsum=fsum)
-    ret /= len(arr)-ddof
+    ret /= (arr.shape)[axis]-ddof
     ret = np.sqrt(ret)
     return ret
     
+@PROFILE
 def acsum(arr, axis=0, fsum=False):
     """Peform accurate summation"""
     assert isinstance(arr, np.ndarray), "input is not a numpy array"
@@ -35,7 +38,7 @@ def acsum(arr, axis=0, fsum=False):
         ret = complexsum(arr, fsum)
     else:
         arr = swap(arr, 0, axis)
-        ret = complexum(arr)
+        ret = complexum(arr, fsum)
         arr = swap(arr, 0, axis)
     return ret
 
@@ -43,9 +46,10 @@ def acsum(arr, axis=0, fsum=False):
 def acmean(arr, axis=0, fsum=False):
     """Take the average of the array"""
     ret = acsum(arr, axis, fsum)
-    ret /= len(arr)
+    ret /= (arr.shape)[axis]
     return ret
 
+@PROFILE
 def complexsum(arr, fsum):
     """ Handles complex arrays
     """
@@ -58,6 +62,7 @@ def complexsum(arr, fsum):
     return ret
 
 
+@PROFILE
 def dosum(arr, fsum):
     """Perform the average"""
     if fsum:

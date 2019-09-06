@@ -13,12 +13,35 @@ from latfit.utilities import exactmean as em
 
 import numpy as np
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
 
-newaxis = None
 
 # copy from numpy, but replace dot product with kdot from accupy
 
+@PROFILE
 def actensordot(a, b, axes=2):
+    """Handle complex numbers"""
+    a, b = np.asarray(a), np.asarray(b)
+    if 'complex' not in str(a.dtype) and 'complex' not in str(b.dtype):
+        ret = ac_real_tensordot(a, b, axes)
+    else:
+        ret1 = ac_real_tensordot(np.real(a), np.real(b), axes)
+        ret2 = ac_real_tensordot(np.imag(a), np.real(b), axes)*1j
+        ret3 = ac_real_tensordot(np.real(a), np.imag(b), axes)*1j
+        ret4 = ac_real_tensordot(np.imag(a), np.imag(b), axes)*(-1)
+        retsum = [ret1, ret2, ret3, ret4]
+        retsum = np.array(retsum)
+        ret = em.acsum(retsum)
+    return ret
+
+@PROFILE
+def ac_real_tensordot(a, b, axes=2):
     """
     Compute tensor dot product along specified axes for arrays >= 1-D.
     Given two tensors (arrays of dimension greater than or equal to one),
@@ -141,7 +164,6 @@ def actensordot(a, b, axes=2):
         axes_b = [axes_b]
         nb = 1
 
-    a, b = np.asarray(a), np.asarray(b)
     assert 'complex' not in str(a.dtype)
     assert 'complex' not in str(b.dtype)
     a = em.convert_arr(a)
@@ -187,5 +209,7 @@ def actensordot(a, b, axes=2):
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     
     res = kdot(at, bt) # the replacement line
+    res = np.asarray(res, dtype=at.dtype)
+    assert at.dtype == bt.dtype, "input type mismatch"
     return res.reshape(olda + oldb)
 
