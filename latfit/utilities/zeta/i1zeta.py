@@ -6,7 +6,7 @@ from czeta import czeta
 import latfit.utilities.read_file as rf
 from latfit.utilities import exactmean as em
 
-COMP = 0.0
+COMP = [None, None, None]
 L_BOX = 0.0
 IRREP = None
 MPION = 0.0
@@ -14,9 +14,8 @@ MPION = 0.0
 def zetalm(l_arg, m_arg, qtwo, gamma):
     """Compute generalized Luscher zeta function"""
     zeta = czeta()
-    dlist = []
-    dx, dy, dz = COMP
-    zeta.set_dgam(dx,dy,dz, gamma)
+    dx1, dy1, dz1 = COMP
+    zeta.set_dgam(dx1, dy1, dz1, gamma)
     zeta.set_lm(l_arg, m_arg)
     ret = zeta.evaluate(qtwo)
     return ret
@@ -37,7 +36,7 @@ def main():
     return phase(epipi)
 
 
-class wfun:
+class Wfun:
     """Compute wlm"""
     def __init__(self):
         """init"""
@@ -58,7 +57,7 @@ class wfun:
         self._kmom = kmom
         self.qarg = (self.kmom*self.lbox/np.pi/2)
 
-    def wfun(self, l_arg, m_arg):
+    def wfunfun(self, l_arg, m_arg):
         """computes w_lm, l_arg==l, m_arg==m"""
         key = (l_arg, m_arg)
         if key in self.cache:
@@ -70,7 +69,7 @@ class wfun:
             denom = np.complex(denom)
             ret = zlm/denom
             if not ret:
-                print("alert! w_"+str(l_arg)+","+str(m_arg)+" = 0")
+                print("alert! w_"+str(l_arg)+", "+str(m_arg)+" = 0")
             self.cache[key] = ret
         return ret
 
@@ -88,9 +87,10 @@ def computek(epipi):
     """Get the k (relative pipi momentum for zeta)"""
     return np.sqrt(epipi*epipi/4 - MPION**2)
 
-def computegamma(epipi):
+def computegamma(epipi, comp):
     """Compute relativistic gamma given energy"""
-    arg = epipi**2-(2*np.pi/L_BOX)**2*comp**2
+    dotprod = np.dot(comp, comp)
+    arg = epipi**2-(2*np.pi/L_BOX)**2*dotprod
     ret = epipi/np.sqrt(arg)
     return ret
 
@@ -100,13 +100,13 @@ def phase(epipi):
     assert L_BOX, "box length not set"
     assert MPION, "mass of pion not set"
     # sort this, per quantization conditions given in https://arxiv.org/pdf/1704.05439.pdf
-    COMP = np.asarray(sorted(list(COMP)))
-    COMP = np.abs(COMP)
+    comp = np.asarray(sorted(list(COMP)))
+    comp = np.abs(comp)
 
     # set up wlm
-    wlm = wfun()
+    wlm = Wfun()
     wlm.kmom = computek(epipi)
-    wlm.gamma = computegamma(epipi)
+    wlm.gamma = computegamma(epipi, comp)
 
     cot = getcot(wlm)
     tan = 1/cot
@@ -118,37 +118,34 @@ def getcot(wlm):
     assert IRREP is not None, "irrep not set"
 
     # initial starting value to cotangent
-    cot = wlm(0,0)
+    cot = wlm(0, 0)
     units = em.acsum(np.abs(COMP))
 
     foundirr = True
     if units == 1:
+        foundirr = False
         if IRREP == 'A_1PLUS_mom1':
-            cot += 2*wlm(2,0)
+            cot += 2*wlm(2, 0)
         elif IRREP == 'B_mom1':
-            cot += -wlm(2,0)
-        else:
-            foundirr = False
-    if units == 2:
+            cot += -wlm(2, 0)
+    elif units == 2:
+        foundirr = False
         if IRREP == 'A_1PLUS_mom11':
-            cot += wlm(2,0)/2
-            cot += 1j*np.sqrt(6)*wlm(2,1)-sqrt(3/2)*wlm(2,2)
+            cot += wlm(2, 0)/2
+            cot += 1j*np.sqrt(6)*wlm(2, 1)-np.sqrt(3/2)*wlm(2, 2)
         elif IRREP == 'A_2PLUS_mom11':
-            cot += wlm(2,0)/2
-            cot += -1j*np.sqrt(6)*wlm(2,1)-sqrt(3/2)*wlm(2,2)
+            cot += wlm(2, 0)/2
+            cot += -1j*np.sqrt(6)*wlm(2, 1)-np.sqrt(3/2)*wlm(2, 2)
         elif IRREP == 'A_2MINUS_mom11':
-            cot += wlm(2,0)+sqrt(6)*wlm(2,2)
-        else:
-            foundirr = False
-    if units == 3:
+            cot += wlm(2, 0)+np.sqrt(6)*wlm(2, 2)
+    elif units == 3:
+        foundirr = False
         if IRREP == 'A_1PLUS_avg_mom111':
-            cot += -1j*wlm(2,2)*np.sqrt(8/3)
-            cot += np.real(wlm(2,1))*np.sqrt(8/3)
-            cot += np.imag(wlm(2,1))*np.sqrt(8/3)
+            cot += -1j*wlm(2, 2)*np.sqrt(8/3)
+            cot += np.real(wlm(2, 1))*np.sqrt(8/3)
+            cot += np.imag(wlm(2, 1))*np.sqrt(8/3)
         elif IRREP == 'B_mom111':
-            cot += 1j*np.sqrt(6)*wlm(2,2)
-        else:
-            foundirr = False
+            cot += 1j*np.sqrt(6)*wlm(2, 2)
     assert foundirr, "bad irrep specified:"+str(IRREP)
     return cot
 

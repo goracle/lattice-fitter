@@ -33,7 +33,6 @@ from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
 from latfit.config import NO_PLOT
-from latfit.config import ASSISTED_FIT
 from latfit.config import GEVP
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
@@ -104,7 +103,7 @@ def mkplot(plotdata, input_f,
 
     # get dimension of GEVP,
     # or set to one if not doing gevp (this is needed in several places)
-    dimops = get_dimops(plotdata.cov, result_min, plotdata.coords)
+    dimops = get_dimops(plotdata.cov, plotdata.coords)
 
 
     dimops_mod, result_min_mod = modmissingdim(dimops, plotdata, result_min)
@@ -173,14 +172,14 @@ def modmissingdim(dimops, plotdata, result_min):
 
 def plot_dispersive(xcoord):
     """Plot lines corresponding to dispersive analysis energies"""
-    for i, energy in enumerate(DISP_ENERGIES):
+    for _, energy in enumerate(DISP_ENERGIES):
         if hasattr(energy, '__iter__'):
             energy = em.acmean(energy, axis=0)
             assert not hasattr(energy, '__iter__'), "index bug."
         # estring = trunc_prec(energy)
         plt.plot(xcoord, list([energy])*len(xcoord),
                  label='Disp('+str(trunc_prec(energy))+')')
-    
+
     if PLOT_LEGEND:
         plt.legend(loc='lower left')
 
@@ -211,7 +210,7 @@ def get_prelim_errbars(result_min):
     return error2
 
 
-def get_dimops(cov, result_min, coords):
+def get_dimops(cov, coords):
     """Get dimension of GEVP matrix or return 1 if not GEVP
     """
     try:
@@ -377,12 +376,9 @@ def print_messages(result_min, param_err, param_chisq):
     """
     startp = np.array(START_PARAMS)
     # print plot info
-    print("Minimizer thinks that it worked.  Plotting fit.")
-    print("Fit info:")
+    print("Minimizer thinks that it worked.  Plotting fit.\nFit info:")
     print("looped over fit ranges:", (not NOLOOP))
     print("Model includes additive constant:", ADD_CONST)
-    if EFF_MASS:
-        print("Effective mass method:", EFF_MASS_METHOD)
     # print("Assisted Fit:", ASSISTED_FIT)
     print("GEVP derivative taken:", GEVP_DERIV)
     print("GEVP delta t:", int(T0[6:]))
@@ -394,6 +390,7 @@ def print_messages(result_min, param_err, param_chisq):
         print("Bounds:", BINDS)
     print("Guessed params:  ", np.array2string(startp, separator=', '))
     if EFF_MASS:
+        print("Effective mass method:", EFF_MASS_METHOD)
         print("Energies (MeV):", np.array2string(
             1000*AINVERSE*np.array(result_min.x), separator=', '))
         print("Error in energies (MeV):", np.array2string(
@@ -416,6 +413,10 @@ def print_messages(result_min, param_err, param_chisq):
                                                   separator=', '))
         else:
             print("extra systematic parameters: None.")
+    print2(result_min, param_err, param_chisq)
+
+def print2(result_min, param_err, param_chisq):
+    """Split print messages into two functions"""
     chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
         result_min.fun, result_min.chisq_err)
     chisq_str = str(chisq_str)
@@ -433,7 +434,10 @@ def print_messages(result_min, param_err, param_chisq):
         if UNCORR:
             print("p-value of avg chi^2 = ", 1 -  stats.chi2.cdf(result_min.fun, result_min.dof))
         else:
-            print("p-value of avg t^2 = ", stats.f.sf(result_min.fun*(NUM_CONFIGS-result_min.dof)/(NUM_CONFIGS-1)/result_min.dof, result_min.dof, NUM_CONFIGS-result_min.dof))
+            print("p-value of avg t^2 = ", stats.f.sf(
+                result_min.fun*(NUM_CONFIGS-result_min.dof)/(
+                    NUM_CONFIGS-1)/result_min.dof,
+                result_min.dof, NUM_CONFIGS-result_min.dof))
     redchisq_str = str(param_chisq.redchisq)
     if UNCORR:
         print("chi^2/dof = ", redchisq_str)
@@ -553,8 +557,7 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
                                for i in range(lcoord)])
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
             plt.errorbar(xcoord, ycurve, yerr=yerr,
-                         linestyle='None', ms=3.75, marker=next(marker),
-                         )
+                         linestyle='None', ms=3.75, marker=next(marker),)
     else:
         plt.errorbar(xcoord, ycoord, yerr=error2,
                      linestyle='None', ms=3.75, marker='o')
@@ -571,7 +574,7 @@ def interleave_energies_systematic(result_min):
         sys_per_en = len(syst[:-1])/dimops
         spe = sys_per_en
         spe = int(spe)
-        for i,energy in enumerate(result_min.x):
+        for i, energy in enumerate(result_min.x):
             ret = list(ret)
             ret.append(energy)
             for j in range(int(spe)):

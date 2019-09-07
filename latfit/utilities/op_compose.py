@@ -5,22 +5,21 @@ import os
 import sys
 import re
 import numpy as np
-from copy import deepcopy
 from sum_blks import sum_blks
 import write_discon as wd
 import read_file as rf
-from oplist import *
+from oplist import OPLIST, AVG_ROWS
 from latfit.utilities import exactmean as em
 
 
 OPLIST_STRIPPED = {}
-for opa in list(OPLIST): # get rid of polarization information
-    opa_strip = opa.split('?')[0]
-    OPLIST_STRIPPED[opa] = OPLIST[opa]
-    if opa != opa_strip:
-        OPLIST_STRIPPED[opa_strip] = OPLIST[opa]
-        del OPLIST_STRIPPED[opa]
-        assert opa_strip in OPLIST_STRIPPED
+for OPA in list(OPLIST): # get rid of polarization information
+    OPA_STRIP = OPA.split('?')[0]
+    OPLIST_STRIPPED[OPA] = OPLIST[OPA]
+    if OPA != OPA_STRIP:
+        OPLIST_STRIPPED[OPA_STRIP] = OPLIST[OPA]
+        del OPLIST_STRIPPED[OPA]
+        assert OPA_STRIP in OPLIST_STRIPPED
 
 assert 'T_1_1MINUS_mom000' in OPLIST_STRIPPED, "bug"
 
@@ -103,10 +102,9 @@ def write_mom_comb():
         fn1.write('}\n}')
 
 def ptonewlinelist(mom):
-   """make mom into a new line separated momentum string
-   """ 
-   return 'int p[0] = '+str(mom[0])+'\nint p[1] = '+\
-       str(mom[1])+'\nint p[2] = '+str(mom[2])+'\n'
+    """make mom into a new line separated momentum string """
+    return 'int p[0] = '+str(mom[0])+'\nint p[1] = '+\
+        str(mom[1])+'\nint p[2] = '+str(mom[2])+'\n'
 
 def free_energies(irrep, pionmass, lbox):
     """return a list of free energies."""
@@ -126,15 +124,15 @@ def free_energies(irrep, pionmass, lbox):
         for pin in mom:
             # print(pionmass, pin, lbox)
             if hasattr(pionmass, '__iter__') and np.asarray(pionmass).shape:
-                toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(pin)) for i in pionmass]
+                toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(
+                    pin)) for i in pionmass]
             else:
                 toadd = sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
             toadd = np.array(toadd)
             energy += toadd
         retlist.append(energy)
-    averages = [em.acmean(i) for i in retlist]
     sortedret = []
-    for i,mean in enumerate(averages):
+    for i, mean in enumerate([em.acmean(i) for i in retlist]):
         if em.acmean(retlist[i]) == mean:
             sortedret.append(retlist[i])
     if isinstance(sortedret[0], float):
@@ -142,6 +140,7 @@ def free_energies(irrep, pionmass, lbox):
     return sortedret
 
 def representative_row(irrep):
+    """Get a representative row from an irrep"""
     if irrep in AVG_ROWS:
         for irr in AVG_ROWS[irrep]:
             irrep = irr
@@ -150,12 +149,10 @@ def representative_row(irrep):
 
 def get_comp_str(irrep):
     """Get center of mass momentum of an irrep, return as a string for latfit"""
-    retlist = []
     takeabs = False
     if rf.mom(irrep) is None:
         takeabs = True
     irrep = representative_row(irrep)
-    opprev = ''
     momtotal = np.array([0, 0, 0])
     assert irrep in OPLIST_STRIPPED, "irrep not found:"+str(irrep)
     for _, _, mom in OPLIST_STRIPPED[irrep]:
@@ -170,59 +167,61 @@ def get_comp_str(irrep):
         momtotal = np.abs(momtotal)
     return 'mom'+rf.ptostr(momtotal)
 
-def mom2ndorder(irrep):
-    """Find the two momenta for the second order
-    around the world subtraction
-    """
-    retlist = []
+def firstrep(irrep):
+    """Get first representative row"""
     if irrep in AVG_ROWS:
         for irr in AVG_ROWS[irrep]:
             irrep = irr
             break
-    opprev = ''
-    momtotal = np.array([0, 0, 0])
+    return irrep
+
+def mom2ndorder(irrep):
+    """Find the two momenta for the second order
+    around the world subtraction
+    """
+    irrep = firstrep(irrep)
     minp = np.inf
     for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
-        p1, p2 = mom
-        minp = min(rf.norm2(p1), rf.norm2(p2), minp)
+        p1a, p2a = mom
+        minp = min(rf.norm2(p1a), rf.norm2(p2a), minp)
     minp2 = np.inf
     for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
-        p1, p2 = mom
-        if rf.norm2(p1) == minp or rf.norm2(p2) == minp:
+        p1a, p2a = mom
+        if rf.norm2(p1a) == minp or rf.norm2(p2a) == minp:
             continue
-        minp2 = min(rf.norm2(p1), rf.norm2(p2), minp2)
+        minp2 = min(rf.norm2(p1a), rf.norm2(p2a), minp2)
     ret = None
     mindiff = np.inf
     for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
-        p1, p2 = mom
-        if rf.norm2(p1) == minp2:
-            mindiff = min(mindiff, rf.norm2(p2)-minp2)
+        p1a, p2a = mom
+        if rf.norm2(p1a) == minp2:
+            mindiff = min(mindiff, rf.norm2(p2a)-minp2)
             if mindiff == 0:
                 ret = mom
             break
     for _, _, mom in OPLIST_STRIPPED[irrep]:
         if isinstance(mom[0], int):
             continue
-        p1, p2 = mom
-        if rf.norm2(p1) == minp2 and rf.norm2(p2)-minp2 == mindiff:
+        p1a, p2a = mom
+        if rf.norm2(p1a) == minp2 and rf.norm2(p2a)-minp2 == mindiff:
             ret = mom if ret is None else ret
     ret = [None, None] if ret is None else ret
     return ret
 
 
-def generateChecksums(isospin):
+def generate_checksums(isospin):
     """Generate a sum of expected diagrams for each operator"""
     isospin = int(isospin)
     checks = {}
     for oplist in OPLIST_STRIPPED:
         newl = len(OPLIST_STRIPPED[oplist])
-        for coeff, opa, mom in OPLIST_STRIPPED[oplist]:
+        for _, opa, _ in OPLIST_STRIPPED[oplist]:
             if 'sigma' in opa and isospin != 0:
                 newl -= 1
             elif 'rho' in opa and isospin != 1:
@@ -266,6 +265,19 @@ def sepmod(dur, opa):
         dur = 'sep4/'+dur
     return dur
 
+def checkdups(opa, src, snk, chkidx, chkidx2):
+    """Check for duplicate operators"""
+    dup_flag = True
+    for pcheck, pcheck2 in zip(src[2], snk[2]):
+        if isinstance(pcheck, int):
+            dup_flag = pcheck == pcheck2
+        elif rf.ptostr(pcheck) != rf.ptostr(pcheck2):
+            dup_flag = False
+    if dup_flag:
+        assert chkidx == chkidx2,\
+            "Duplicate operator found in "+str(
+                opa)+" "+str(src)+" "+str(snk)
+
 
 def op_list(stype='ascii'):
     """Compose irrep operators at source and sink to do irrep projection.
@@ -277,27 +289,18 @@ def op_list(stype='ascii'):
         for chkidx, src in enumerate(OPLIST[opa]):
             for chkidx2, snk in enumerate(OPLIST[opa]):
                 if src[1] == snk[1]:
-                    dup_flag = True
-                    for pcheck, pcheck2 in zip(src[2], snk[2]):
-                        if isinstance(pcheck, int):
-                            dup_flag = pcheck == pcheck2
-                        elif rf.ptostr(pcheck) != rf.ptostr(pcheck2):
-                            dup_flag = False
-                    if dup_flag:
-                        assert chkidx == chkidx2, "Duplicate operator found in "+str(opa)+" "+str(src)+" "+str(snk)
-                assert cons_mom(src, snk, momchk), "operator does not conserve momentum "+str(opa)
+                    checkdups(opa, src, snk, chkidx, chkidx2)
+                assert cons_mom(src, snk, momchk),\
+                    "operator does not conserve momentum "+str(opa)
                 part_str = partstr(src[1], snk[1])
-                coeff = src[0]*snk[0]
-                p_str = momstr(src[2], snk[2])
-                dur = part_str+"_"+p_str
+                dur = part_str+"_"+momstr(src[2], snk[2])
                 dur = re.sub('S_', '', dur)
                 dur = re.sub('UU', '', dur)
                 for i in range(10):
                     dur = re.sub('U'+str(i), '', dur)
                 dur = re.sub('pipipipi', 'pipi', dur)
-                if stype == 'ascii':
-                    dur = sepmod(dur, opa)
-                coeffs_tuple.append((dur, coeff, part_str))
+                dur = sepmod(dur, opa) if stype == 'ascii' else dur
+                coeffs_tuple.append((dur, src[0]*snk[0], part_str))
         coeffs_arr = []
         if stype == 'ascii':
             print("trying", opa)
@@ -330,19 +333,19 @@ def cons_mom(src, snk, momtotal=None):
     else:
         check = True
     return check and conssrcsnk
-    
+
 
 
 def main():
     """Do irrep projection (main)"""
-    l = op_list('hdf5')
-    for i in l:
+    llist = op_list('hdf5')
+    for i in llist:
         print(i)
         #print(l[i])
 
-    print(l['pipisigma_A_1PLUS_mom000'])
-    print(l['rhorho_T_1_1MINUS?pol=1'])
-    generateOperatorMomenta()
+    print(llist['pipisigma_A_1PLUS_mom000'])
+    print(llist['rhorho_T_1_1MINUS?pol=1'])
+    #generate_operator_momenta()
 
 
 if __name__ == "__main__":
