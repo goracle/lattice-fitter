@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from accupy import kdot
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
-from latfit.config import IRREP, ISOSPIN
+from latfit.config import IRREP
 from latfit.utilities import read_file as rf
 import latfit.utilities.zeta.i1zeta as i1z
 
@@ -83,7 +83,7 @@ if CALC_PHASE_SHIFT:
 
         try:
             if not np.isnan(epipi):
-                if (ISOSPIN !=1 or not np.any(comp)):
+                if ISOSPIN != 1 or not np.any(comp):
                     out = subprocess.check_output(arglist)
                 else:
                     out = i1z.phase(epipi)

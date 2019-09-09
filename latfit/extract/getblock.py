@@ -3,33 +3,31 @@ import sys
 from collections import deque
 import re
 from math import fsum
-from sympy import exp, N, S
+import math
+from sympy import N, S
 from sympy.matrices import Matrix
 import scipy
 import scipy.linalg
-from scipy import linalg
 from scipy import stats
-import math
-from matplotlib.mlab import PCA
 from scipy.stats import pearsonr
+from matplotlib.mlab import PCA
 import numpy as np
-from latfit.utilities import exactmean as em
 from accupy import kdot
-import h5py
+from mpi4py import MPI
 
+from latfit.utilities import exactmean as em
 from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.extract.proc_folder import proc_folder
 from latfit.jackknife_fit import jack_mean_err
-from latfit.utilities import pionratio
 
-from latfit.config import EFF_MASS, MULT, NOATWSUB
+from latfit.config import EFF_MASS, MULT, NOATWSUB, UNCORR
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import OPERATOR_NORMS, GEVP_DEBUG, USE_LATE_TIMES
-from latfit.config import BINNUM, LOGFORM, GEVP_DERIV
+from latfit.config import LOGFORM, GEVP_DERIV
 from latfit.config import STYPE, GEVP_DIRS
 from latfit.config import PIONRATIO, ADD_CONST_VEC
 from latfit.config import MATRIX_SUBTRACTION
@@ -40,27 +38,25 @@ from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION
+import latfit.config
+import latfit.analysis.misc as misc
 if PIONRATIO:
     from latfit.config import MINIMIZE_STAT_ERROR_PR
 else:
     MINIMIZE_STAT_ERROR_PR = False
-import latfit.config
-import latfit.analysis.misc as misc
-
-from mpi4py import MPI
 
 NORMS = [[(1+0j) for _ in range(len(OPERATOR_NORMS))]
          for _ in range(len(OPERATOR_NORMS))]
 
-for i, norm in enumerate(OPERATOR_NORMS):
-    for j, norm2 in enumerate(OPERATOR_NORMS):
-        NORMS[i][j] = norm*np.conj(norm2)
+for IDX, NORM1 in enumerate(OPERATOR_NORMS):
+    for IDX2, NORM2 in enumerate(OPERATOR_NORMS):
+        NORMS[IDX][IDX2] = NORM1*np.conj(NORM2)
 print("NORMS_ij =", NORMS)
 
 MPIRANK = MPI.COMM_WORLD.rank
 
 if MATRIX_SUBTRACTION and GEVP:
-    ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
+    ADD_CONST_VEC = [0 for _ in ADD_CONST_VEC]
 
 XMAX = 999
 
@@ -112,19 +108,6 @@ def binhalf_e(ear):
         ear = np.swapaxes(new_disp, 0, 1)
     return ear
 
-
-"""
-if PIONRATIO and GEVP:
-    PIONSTR = ['pioncorrChk_mom'+str(i)+'unit'+\
-               ('s' if i != 1 else '') for i in range(2)]
-    PION = []
-    for istr in PIONSTR:
-        print("using pion correlator:", istr)
-        GN1 = h5py.File(istr+'.jkdat', 'r')
-        PION.append(np.array(GN1[istr]))
-    PION = np.array(PION)
-"""
-
 #if STYPE == 'hdf5':
 def getline_loc(filetup, num):
     """The file tup is actually already a numpy array.
@@ -162,8 +145,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
             for opb in range(dimops):
                 corr = getline_loc(
                     file_tup[opa][opb], num+1)*NORMS[opa][opb]
-                assert isinstance(corr, np.complex) or \
-                    isinstance(corr, str)
+                assert isinstance(corr, (np.complex, str))
                 # takes the real
                 cmat[num][opa][opb] = proc_line(corr, file_tup[opa][opb])
                 if opa == opb and opa == 1 and not num:
@@ -172,11 +154,11 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
                 if opa != opb and ISOSPIN != 0:
                     pass
                     #assert cmat[num][opa][opb] > 0\
-                    #    or 'sigma' in GEVP_DIRS[opa][opb],\
-                    #    str(corr)+str((opa,opb))
-        #print(num, cmat[num][1,0],cmat[num][0,1])
+                    #    or 'sigma' in GEVP_DIRS[opa][opb], \
+                    #    str(corr)+str((opa, opb))
+        #print(num, cmat[num][1, 0], cmat[num][0, 1])
         cmat[num] = enforce_hermiticity(cmat[num])
-        #print(num, cmat[num][1,0],cmat[num][0,1])
+        #print(num, cmat[num][1, 0], cmat[num][0, 1])
         #sys.exit(0)
         if ISOSPIN != 0 and not MATRIX_SUBTRACTION:
             pass
@@ -205,11 +187,13 @@ def removerowcol(cmat, idx):
     """Delete the idx'th row and column"""
     return np.delete(np.delete(cmat, idx, axis=0), idx, axis=1)
 
-def is_pos_semidef(x):
-    return np.all(np.linalg.eigvals(x) >= 0)
+def is_pos_semidef(cmat):
+    """Check for positive semi-definiteness"""
+    return np.all(np.linalg.eigvals(cmat) >= 0)
 
-def defsign(x):
-    evals = np.linalg.eigvals(x)
+def defsign(cmat):
+    """Check for definite sign (pos def or neg def)"""
+    evals = np.linalg.eigvals(cmat)
     if np.all(evals > 0):
         ret = 1
     elif np.all(evals < 0):
@@ -224,6 +208,8 @@ def defsign(x):
 
 
 def log_matrix(cmat, check=False):
+    """Take the log of the matrix"""
+    assert None, "bad idea; introduces systematic error"
     if check:
         try:
             assert is_pos_semidef(cmat), \
@@ -237,6 +223,8 @@ def log_matrix(cmat, check=False):
     return ret
 
 def cmatdot(cmat, vec, transp=False):
+    """Dot gevp matrix into vec on rhs if not transp"""
+    assert None, "why does this exist?"
     cmat = np.asarray(cmat)
     cmat = cmat.T if transp else cmat
     vec = np.asarray(vec)
@@ -254,7 +242,7 @@ def bracket(evec, cmat):
     cmat += np.eye(len(cmat))*1e-11
     right = cmatdot(cmat, evec)
     retsum = []
-    for i,j in zip(np.conj(evec), right):
+    for i, j in zip(np.conj(evec), right):
         retsum.append(i*j/2)
         retsum.append(np.conj(i*j)/2)
     ret = em.acsum(np.asarray(retsum, dtype=np.complex128))
@@ -267,7 +255,7 @@ def convtosmat(cmat):
     """
     ll1 = len(cmat)
     cmat += np.eye(ll1)*1e-6
-    smat=[[S(str(cmat[i][j])) for i in range(ll1)] for j in range(ll1)]
+    smat = [[S(str(cmat[i][j])) for i in range(ll1)] for j in range(ll1)]
     mmat = Matrix(smat)
     return mmat
 
@@ -297,16 +285,17 @@ def calleig(c_lhs, c_rhs=None):
     if c_rhs is not None and LOGFORM:
         rhs = log_matrix(c_rhs)
         lhs = log_matrix(c_lhs)
-        c_lhs_check = kdot(linalg.inv(c_rhs), c_lhs)
+        c_lhs_check = kdot(scipy.linalg.inv(c_rhs), c_lhs)
         c_lhs = rhs-lhs
         try:
-            assert np.allclose(linalg.eigvals(c_lhs_check),
-                               linalg.eigvals(linalg.expm(-c_lhs)))
+            assert np.allclose(scipy.linalg.eigvals(c_lhs_check),
+                               scipy.linalg.eigvals(
+                                   scipy.linalg.expm(-c_lhs)))
         except AssertionError:
-            print(np.log(linalg.eigvals(c_lhs_check)))
-            print(linalg.eigvals(-c_lhs))
+            print(np.log(scipy.linalg.eigvals(c_lhs_check)))
+            print(scipy.linalg.eigvals(-c_lhs))
             print(c_lhs_check)
-            print(linalg.expm(c_lhs))
+            print(scipy.linalg.expm(c_lhs))
             sys.exit(1)
         assert np.allclose(c_lhs+lhs, rhs, rtol=1e-12)
         c_rhs = None
@@ -335,7 +324,7 @@ def calleig(c_lhs, c_rhs=None):
                                             overwrite_b=False,
                                             check_finite=True)
     for i, (eval1, evec) in enumerate(zip(eigenvals, evecs.T)):
-        for j,k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
+        for j, k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
             try:
                 if j and k:
                     assert np.allclose(eval1, j/k, rtol=1e-8)
@@ -350,11 +339,11 @@ def calleig(c_lhs, c_rhs=None):
             except AssertionError:
                 flag_nosolve = True
                 #print("GEVP solution does not solve GEVP")
-                #print(j,k,j/k,eval1)
+                #print(j, k, j/k, eval1)
                 #print("evec=", evec)
                 #print("lhs, rhs")
-                #print(np.array2string(c_lhs, separator=','))
-                #print(np.array2string(c_rhs, separator=','))
+                #print(np.array2string(c_lhs, separator=', '))
+                #print(np.array2string(c_rhs, separator=', '))
                 #print('trying symbolic extended precision',
                       #'calc of eigenvalues')
                 #sevals = sym_evals_gevp(c_lhs, c_rhs)
@@ -371,8 +360,8 @@ def calleig(c_lhs, c_rhs=None):
             print("Eigenvalue consistency check failed."+\
                   "  ratio and eigenvalue not equal.")
             print("bracket lhs, bracket rhs, ratio, eval")
-            print(bracket(evec,c_lhs), bracket(evec,c_rhs),
-                  bracket(evec,c_lhs)/bracket(evec,c_rhs), eval1)
+            print(bracket(evec, c_lhs), bracket(evec, c_rhs),
+                  bracket(evec, c_lhs)/bracket(evec, c_rhs), eval1)
             sys.exit(1)
     if flag:
         if all(np.imag(eigenvals) < 1e-8):
@@ -421,6 +410,7 @@ def makeneg(val):
     return ret
 
 def drop0imag(val):
+    """Get rid of complex type if the imaginary part is 0"""
     ret = val
     if isinstance(val, complex):
         if val.imag == 0:
@@ -429,12 +419,12 @@ def drop0imag(val):
         if isinstance(val[0], complex):
             if all(val.imag) == 0:
                 ret = val.real
-    return ret 
-            
+    return ret
+
 def propnan(vals):
     """propagate a nan in a complex value"""
     if hasattr(vals, '__iter__') and np.asarray(vals).shape:
-        for i,val in enumerate(vals):
+        for i, val in enumerate(vals):
             if np.isnan(val) and np.imag(val) != 0:
                 vals[i] = np.nan+2j*np.nan
     else:
@@ -451,8 +441,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
-            zeroit = False 
-            idx2 = i
+            zeroit = False
             if 'rho' in diag[i] or 'sigma' in diag[i]:
                 diag = GEVP_DIRS[i-1]
                 zeroit = True
@@ -470,12 +459,12 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
             else:
                 tosub = np.real(tosub)
             if len(cmat.shape) == 3:
-                assert len(cmat) == len(tosub),\
+                assert len(cmat) == len(tosub), \
                     "number of configs mismatch:"+str(len(cmat))
                 #cmat[:, i, i] = cmat[:, i, i]-em.acmean(tosub, axis=0)
                 if not i:
                     pass
-                    #print(timeij, cmat[0,0,0], (tosub*NORMS[i][i])[0], name)
+                    #print(timeij, cmat[0, 0, 0], (tosub*NORMS[i][i])[0], name)
                     #print(timeij, "pearsonr:", pearsonr(np.real(cmat[:, i, i]),
                     #                            np.real(tosub*NORMS[i][i])))
                 for item in tosub:
@@ -492,7 +481,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
             else:
                 cmat[i, i] -= em.acmean(tosub, axis=0)*np.abs(NORMS[i][i])
                 #if not reverseatw:
-                    #print(i, em.acmean(tosub, axis=0)/ cmat[i,i])
+                    #print(i, em.acmean(tosub, axis=0)/ cmat[i, i])
                 assert not em.acmean(tosub, axis=0).shape
                 #print(cmat)
     assert cmat.shape == origshape
@@ -504,7 +493,7 @@ def all0imag_ignorenan(vals):
     """
     ret = True
     if hasattr(vals, '__iter__') and np.asarray(vals).shape:
-        for i, val in enumerate(vals):
+        for _, val in enumerate(vals):
             if np.isnan(val):
                 continue
             if abs(np.imag(val)) > 1e-8 and not np.isnan(np.imag(val)):
@@ -520,14 +509,14 @@ def solve_gevp(c_lhs, c_rhs=None):
     """Solve the GEVP"""
     dimops_orig = len(c_lhs)
     dimops = len(c_lhs)
-    dimremaining, toelim  = nexthint()
+    dimremaining, toelim = nexthint()
     eigvals, evecs = calleig(c_lhs, c_rhs)
     remaining_operator_indices = set(range(dimops))
     # make eval negative to eliminate it
     if dimops == dimremaining:
         eigvals[toelim] = makeneg(eigvals[toelim])
     if solve_gevp.mean is not None:
-        assert 1/DECREASE_VAR > 1,\
+        assert 1/DECREASE_VAR > 1, \
             "variance is being reduced, but it should be increased here."
         eigvals = variance_reduction(eigvals, solve_gevp.mean,
                                      1/DECREASE_VAR)
@@ -646,9 +635,10 @@ def allowedeliminations(newelim=None, reset=False):
             newelim, set) and newelim else allowedeliminations.elims
     return allowedeliminations.elims
 allowedeliminations.elims = None
- 
+
 
 def nexthint(idx=None):
+    """Get the next operator to delete"""
     ret = (-1, -2)
     if isinstance(solve_gevp.hint, tuple):
         ret = solve_gevp.hint
@@ -657,7 +647,7 @@ def nexthint(idx=None):
         if len(solve_gevp.hint) > nexthint.idx+1:
             nexthint.idx += 1
     else:
-        assert solve_gevp.hint is None,\
+        assert solve_gevp.hint is None, \
             "inconsistency in assigning variable"
     dimremaining, toelim = ret
     assert toelim < dimremaining, "index error"
@@ -668,7 +658,7 @@ def nexthint(idx=None):
 nexthint.idx = 0
 
 
-def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
+def get_eigvals(c_lhs, c_rhs, print_evecs=False,
                 commnorm=False):
     """get the nth generalized eigenvalue from matrices of files
     file_tup_lhs, file_tup_rhs
@@ -677,7 +667,6 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
     """
     checkherm(c_lhs)
     checkherm(c_rhs)
-    overb = False # completely unnecessary and dangerous speedup
     print_evecs = False if not GEVP_DEBUG else print_evecs
     if not get_eigvals.sent and print_evecs:
         print("First solve, so printing norms "+\
@@ -696,16 +685,16 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
         print(c_lhs)
         print(c_rhs)
         print("determinants:")
-        print(linalg.det(c_lhs), linalg.det(c_rhs))
+        print(scipy.linalg.det(c_lhs), scipy.linalg.det(c_rhs))
         print("evals of lhs, rhs:")
-        print(linalg.eigvals(c_lhs))
-        print(linalg.eigvals(c_rhs))
+        print(scipy.linalg.eigvals(c_lhs))
+        print(scipy.linalg.eigvals(c_rhs))
         print("GEVP evals")
         print(eigvals)
         sys.exit(1)
     skip_late = False
     try:
-        c_rhs_inv = linalg.inv(c_rhs)
+        c_rhs_inv = scipy.linalg.inv(c_rhs)
         # compute commutator divided by norm
         # to see how close rhs and lhs bases
         try:
@@ -718,10 +707,10 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
             print(c_lhs)
             raise FloatingPointError
         assert np.allclose(kdot(c_rhs_inv, c_rhs),
-                           np.eye(dimops), rtol=1e-8),\
+                           np.eye(dimops), rtol=1e-8), \
                            "Bad C_rhs inverse. Numerically unstable."
         assert np.allclose(np.matrix(c_rhs_inv).H, c_rhs_inv,
-                           rtol=1e-8),\
+                           rtol=1e-8), \
                            "Inverse failed (result is not hermite)."
         c_lhs_new = (kdot(c_rhs_inv, c_lhs)+kdot(c_lhs, c_rhs_inv))/2
         commutator_norm = np.linalg.norm(commutator_norms)
@@ -733,8 +722,8 @@ def get_eigvals(c_lhs, c_rhs, overb=False, print_evecs=False,
             print(c_lhs_new.T)
             print(c_lhs_new)
             print("printing difference in rows:")
-            for l, m in zip(c_lhs_new.T, c_lhs_new):
-                print(l-m)
+            for lf1, mf1 in zip(c_lhs_new.T, c_lhs_new):
+                print(lf1-mf1)
             sys.exit(1)
     except np.linalg.linalg.LinAlgError:
         print("unable to symmetrize problem at late times")
@@ -783,7 +772,7 @@ def checkgteq0(eigfin):
             assert i >= 0, "negative eigenvalue found:"+str(eigfin)
 
 def enforce_hermiticity(gevp_mat):
-    """C->(C+C^\dagger)/2"""
+    """C->(C+C^dagger)/2"""
     gevp_mat = np.asarray(gevp_mat, dtype=np.complex128)
     return em.acsum([np.conj(gevp_mat).T, gevp_mat])/2
 
@@ -819,12 +808,11 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     apply y->(y_i-<y>)*decrease_var+<y>
     """
     orig = np.asarray(orig)
-    nanindices = []
     if hasattr(orig, '__iter__') and np.asarray(orig).shape:
         assert hasattr(avg, '__iter__') and np.asarray(avg).shape or len(
-            orig.shape)==1, "dimension mismatch"
+            orig.shape) == 1, "dimension mismatch"
         if len(orig.shape) == 1:
-            for i,j in enumerate(orig):
+            for i, j in enumerate(orig):
                 if np.isnan(j):
                     orig[i] = np.nan
                     if np.asarray(orig).shape == np.asarray(avg).shape:
@@ -836,7 +824,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     ret = (orig-avg)*decrease_var+avg
     check = (ret-avg)/decrease_var+avg
     try:
-        assert np.allclose(check, orig, rtol=1e-8, equal_nan=True),\
+        assert np.allclose(check, orig, rtol=1e-8, equal_nan=True), \
             "precision loss detected:"+str(orig)+" "+\
             str(check)+" "+str(decrease_var)
     except AssertionError:
@@ -881,7 +869,7 @@ def aroundtheworld_pionratio(diag_name, timeij):
         if exp is not None:
             sub = proc_folder(name, timeij-DELTA_T_MATRIX_SUBTRACTION)
             if hasattr(exp, '__iter__') and np.asarray(exp).shape:
-                for i in range(len(exp)):
+                for i, _ in enumerate(exp):
                     ret[i] *= math.exp(exp[i]*timeij)
                     sub[i] *= math.exp(exp[i]*(timeij-DELTA_T_MATRIX_SUBTRACTION))
             else:
@@ -901,8 +889,7 @@ def evals_pionratio(timeij, delta_t, switch=False):
     """Get the non-interacting eigenvalues"""
     ret = []
     for i, diag in enumerate(GEVP_DIRS):
-        zeroit = False 
-        idx2 = i
+        zeroit = False
         if 'rho' in diag[i] or 'sigma' in diag[i]:
             diag = GEVP_DIRS[i-1]
             zeroit = True
@@ -937,7 +924,7 @@ def energies_pionratio(timeij, delta_t):
     except AssertionError:
         print("(abs) lhs not greater than rhs in pion ratio")
         print("example config value of lhs, rhs:")
-        print(lhs[10],rhs[10])
+        print(lhs[10], rhs[10])
         sys.exit(1)
     energies = []
     np.seterr(divide='ignore', invalid='ignore')
@@ -974,13 +961,13 @@ def sort_addzero(addzero, enint):
     between interacting energies and dispersion relation energies"""
     mapi = []
     ret = np.zeros(addzero.shape, np.float)
-    disp = np.asarray(disp())
+    dispf = np.asarray(disp())
     if not isinstance(disp()[0], float):
-        disp = em.acmean(disp(), axis=0)
+        dispf = em.acmean(disp(), axis=0)
         eint = np.swapaxes(enint, 0, 1)
     else:
         eint = em.acmean(enint, axis=0)
-    assert addzero.shape[1] == len(disp), "array mismatch:"+str(disp)+" "+str(addzero[0])
+    assert addzero.shape[1] == len(dispf), "array mismatch:"+str(dispf)+" "+str(addzero[0])
     for i, mean in enumerate(em.acmean(enint, axis=0)):
         if np.isnan(mean):
             continue
@@ -991,7 +978,7 @@ def sort_addzero(addzero, enint):
         mindx = np.nan
         mindx2 = np.nan
 
-        for j, edisp in enumerate(disp):
+        for j, edisp in enumerate(dispf):
 
             # calculate distance
             dist = np.abs(mean-edisp)
@@ -999,7 +986,7 @@ def sort_addzero(addzero, enint):
             # proposal for final sum (to test)
             finsum = addzero[:, j]+eint[i]
             assert not np.any(np.isnan(finsum)), str(
-                addzero[0,j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
+                addzero[0, j])+" "+str(eint[i][0])+" "+str(i)+" "+str(j)
 
             # std error in finsum
             dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
@@ -1030,9 +1017,9 @@ def sort_addzero(addzero, enint):
     print("map:", mapi)
     for mapel in mapi:
         fromj, toi = mapel
-        #assert toi != 1,\
+        #assert toi != 1, \
         #    "index bug, rho/sigma should not get a correlated 0"
-        print("add zero mean (", j, "):", em.acmean(addzero[:,fromj]))
+        # print("add zero mean (", j, "):", em.acmean(addzero[:, fromj]))
         ret[:, toi] = np.copy(addzero[:, fromj])
     if not mapi:
         assert None, "bug"
@@ -1067,7 +1054,7 @@ def show_original_data(jkarr, jkarr2):
     diffarr_small = []
     diffarr_early = []
     diffarr_late = []
-    for i in range(len(jkarr)):
+    for i, _ in enumerate(jkarr):
         orig[i] = jkarr[i]
         orig2[i] = jkarr2[i]
         assert len(jkarr) == len(jkarr2), "array mismatch"
@@ -1099,7 +1086,6 @@ def show_original_data(jkarr, jkarr2):
     print("early errors (up to 70) (int, nonint):", sterr(jkarr2[:70]), sterr(jkarr[:70]))
     print("later errors (70 to 140) (int, nonint):", sterr(jkarr2[70:140]), sterr(jkarr[70:140]))
     print("total diff avg:", em.acmean(diffarr_total), "error:", sterr(diffarr_total))
-    suma = 0
     for i in reversed(diffarr_total):
         #suma+=i-em.acmean(diffarr_total)
         print(i-em.acmean(diffarr_total))
@@ -1109,13 +1095,13 @@ def jkerr(arr):
     """Calculate the jackknife error in array arr"""
     ret = em.acstd(arr)*np.sqrt(len(arr)-1)
     return ret
-    
+
 def sterr(arr):
     """Calculate the standard error in array arr"""
-    ret = em.acstd(arr,ddof=1)/np.sqrt(len(arr))
+    ret = em.acstd(arr, ddof=1)/np.sqrt(len(arr))
     return ret
 
-sterr=jkerr
+sterr = jkerr
 
 
 if PIONRATIO:
@@ -1129,13 +1115,13 @@ if PIONRATIO:
                 (timeij, delta_t)]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
-        for i, en in enumerate(ennon[:,0]):
+        for i, _ in enumerate(ennon[:, 0]):
             pass
-            #print(i, en, min(ennon[:,0]), max(ennon[:,0]))
+            #print(i, en, min(ennon[:, 0]), max(ennon[:, 0]))
         if timeij == 7.0 and False:
             print("original ground non interacting energies")
-            show_original_data(ennon[:,0], enint[:,0])
-        print(timeij, 'pearson r:', pearsonr(enint[:,0], ennon[:, 0]))
+            show_original_data(ennon[:, 0], enint[:, 0])
+        print(timeij, 'pearson r:', pearsonr(enint[:, 0], ennon[:, 0]))
         if timeij == 7.0 and False:
             sys.exit(0)
         if not np.all(energies_noninteracting.shape == np.asarray(disp()).shape):
@@ -1149,8 +1135,7 @@ if PIONRATIO:
         addzero = np.nan_to_num(addzero)
         #addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
-        newe = []
-        for i in range(len(addzero)):
+        for i, _ in enumerate(addzero):
             try:
                 assert not any(np.isnan(addzero[i]))
             except AssertionError:
@@ -1158,12 +1143,14 @@ if PIONRATIO:
                 print(addzero[i])
                 sys.exit(1)
         ret = np.asarray(ret)
-        print(timeij,"before - after (diff):",
-              em.acstd(enint[:,0])-em.acstd(ret[:,0]))
+        print(timeij, "before - after (diff):",
+              em.acstd(enint[:, 0])-em.acstd(ret[:, 0]))
         return ret
 else:
     def modenergies(energies, *unused):
         """pass"""
+        if unused:
+            pass
         return energies
 
 def callprocmeff(eigvals, timeij, delta_t):
@@ -1204,19 +1191,19 @@ if EFF_MASS:
         if hasattr(delta_t, '__iter__') and np.asarray(delta_t).shape:
             for i, dt1 in enumerate(delta_t):
                 try:
-                    assert len(file_tup[1]) == len(delta_t),\
+                    assert len(file_tup[1]) == len(delta_t), \
                         "rhs times dimensions do not match:"+\
-                        len(file_tup[1])+str(",")+len(delta_t)
+                        len(file_tup[1])+str(", ")+len(delta_t)
                 except TypeError:
                     print(file_tup)
                     print(delta_t)
                     assert None, "bug"
                 argtup = (file_tup[0], file_tup[1][i], *file_tup[2:])
-                for i,j in enumerate(argtup):
-                    assert j is not None, "file_tup["+str(i)+"] is None"
+                for idx, j in enumerate(argtup):
+                    assert j is not None, "file_tup["+str(idx)+"] is None"
                 blkdict[dt1] = getblock_gevp_singlerhs(argtup, dt1, timeij,
                                                        decrease_var)
-                print('dt1' , dt1, 'timeij', timeij, 'elim hint',
+                print('dt1', dt1, 'timeij', timeij, 'elim hint',
                       solve_gevp.hint,
                       "operator eliminations", allowedeliminations(),
                       'sample', blkdict[dt1][0])
@@ -1227,15 +1214,15 @@ if EFF_MASS:
                 if not all(np.isnan(relerr)):
                     errdict[dt1] = np.nanargmax(relerr)
                 count = 0
-                for config, blk in enumerate(blkdict[dt1]):
+                for _, blk in enumerate(blkdict[dt1]):
                     count = max(np.count_nonzero(~np.isnan(blk)), count)
                     countdict[count] = dt1
             keymax = countdict[max([count for count in countdict])]
             print("final tlhs, trhs =", timeij, timeij-keymax, "next hint:(",
                   np.count_nonzero(~np.isnan(blkdict[keymax][0])),
-                  ",", errdict[keymax], ")")
+                  ", ", errdict[keymax], ")")
             for key in blkdict:
-                assert len(blkdict[key]) == check_length,\
+                assert len(blkdict[key]) == check_length, \
                     "number of configs is not consistent for different times"
             ret = blkdict[keymax]
         else:
@@ -1243,13 +1230,13 @@ if EFF_MASS:
                 file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
             relerr = np.abs(em.acstd(ret, ddof=1, axis=0)*(
                 len(ret)-1)/em.acmean(ret, axis=0))
-            print('dt1' , delta_t, 'timeij', timeij, 'elim hint',
+            print('dt1', delta_t, 'timeij', timeij, 'elim hint',
                   solve_gevp.hint,
                   "operator eliminations", allowedeliminations(),
                   'sample', ret[0])
             print("final tlhs, trhs =", timeij,
                   timeij-delta_t, "next hint:(",
-                  np.count_nonzero(~np.isnan(ret[0])), ",",
+                  np.count_nonzero(~np.isnan(ret[0])), ", ",
                   np.nanargmax(relerr) if not all(np.isnan(relerr)) else 0,
                   ")")
         return ret
@@ -1257,12 +1244,11 @@ if EFF_MASS:
 
     def average_energies(mean_cmats_lhs, mean_crhs, delta_t, timeij):
         """get average energies"""
-        dimops = len(mean_crhs)
         cmat_lhs_t_mean = mean_cmats_lhs[0]
         cmat_lhs_tp1_mean = mean_cmats_lhs[1]
-        cmat_lhs_tp2_mean = mean_cmats_lhs[2]
-        cmat_lhs_tp3_mean = mean_cmats_lhs[3]
-        while 1<2:
+        # cmat_lhs_tp2_mean = mean_cmats_lhs[2]
+        # cmat_lhs_tp3_mean = mean_cmats_lhs[3]
+        while 1 < 2:
             eigvals_mean_t, evecs_mean_t = get_eigvals(
                 cmat_lhs_t_mean, mean_crhs)
             try:
@@ -1277,7 +1263,7 @@ if EFF_MASS:
 
 
         if GEVP_DERIV:
-            eigvals_mean_tp1, evecs_mean_tp1  = get_eigvals(
+            eigvals_mean_tp1, _ = get_eigvals(
                 cmat_lhs_tp1_mean, mean_crhs)
             for i, eva1 in enumerate(eigvals_mean_tp1):
                 if eva1 < 0:
@@ -1294,7 +1280,7 @@ if EFF_MASS:
             checkgteq0(eigvals_mean_tp2)
             checkgteq0(eigvals_mean_tp3)
 
-        dotprod = kdot(np.conj(evecs_mean_t[0]),evecs_mean_t[0])
+        dotprod = kdot(np.conj(evecs_mean_t[0]), evecs_mean_t[0])
         assert np.allclose(dotprod, 1.0, rtol=1e-8), str(dotprod)
         print("evecs of avg gevp", np.real(evecs_mean_t))
         avg_energies = callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
@@ -1311,7 +1297,7 @@ if EFF_MASS:
         cmats_lhs = []
         assert len(file_tup) == 5, "bad length:"+str(len(file_tup))
         for idx in range(5):
-            cmat , mean = readin_gevp_matrices(file_tup[idx], num_configs)
+            cmat, mean = readin_gevp_matrices(file_tup[idx], num_configs)
             if idx == 1:
                 cmat_rhs, mean_crhs = cmat, mean
             else:
@@ -1334,7 +1320,6 @@ if EFF_MASS:
         assert delta_t is not None, "delta_t is None"
         if not delta_t:
             delta_t = 1.0
-        dimops = len(file_tup[0])
         if STYPE == 'ascii':
             num_configs = sum(1 for _ in open(file_tup[0][0][0]))
         elif STYPE == 'hdf5':
@@ -1348,14 +1333,15 @@ if EFF_MASS:
 
         # subtract the non-interacting around the world piece
         #if '000' not in IRREP and not NOATWSUB:
-        #    assert pionratio.DELTAT == delta_t,\
-        #        "weak check of delta_t failed (file,config):"+str(
-        #            pionratio.DELTAT)+","+str(delta_t)
+        #    assert pionratio.DELTAT == delta_t, \
+        #        "weak check of delta_t failed (file, config):"+str(
+        #            pionratio.DELTAT)+", "+str(delta_t)
         for i, mean in enumerate(mean_cmats_lhs):
             assert mean_cmats_lhs[i].shape == mean.shape
             mean_cmats_lhs[i] = atwsub(mean, timeij+i, delta_t)
             cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i, delta_t)
-        mean_cmats_rhs = atwsub(mean_crhs, timeij-delta_t, delta_t, reverseatw=True)
+        # mean_cmats_rhs = atwsub(
+        # mean_crhs, timeij-delta_t, delta_t, reverseatw=True)
         cmat_rhs = atwsub(cmat_rhs, timeij-delta_t, delta_t, reverseatw=True)
 
         norm_comm = []
@@ -1379,7 +1365,7 @@ if EFF_MASS:
                     pass
                     #assert solve_gevp.mean is not None, "bug"
                 eigret = get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
-                                               print_evecs=True, commnorm=True)
+                                     print_evecs=True, commnorm=True)
                 if not num:
                     avg_evecs = np.zeros(eigret[1].shape)
                 avg_evecs += np.real(eigret[1])
@@ -1402,7 +1388,8 @@ if EFF_MASS:
                 tprob = None if not EFF_MASS else tprob
 
                 if GEVP_DERIV:
-                    eigvals2, evecs2 = get_eigvals(cmats_lhs[1][num], cmat_rhs[num])
+                    eigvals2, _ = get_eigvals(cmats_lhs[1][num],
+                                              cmat_rhs[num])
                     for i, eva1 in enumerate(eigvals2):
                         if eva1 < 0:
                             eigvals2[i] = np.nan
@@ -1422,9 +1409,9 @@ if EFF_MASS:
                 print('config_num:', num, 'time:', tprob)
                 if tprob is not None:
                     raise XmaxError(problemx=tprob)
-            
+
             # process the eigenvalues
-            
+
             energies = callprocmeff([eigvals, eigvals2,
                                      eigvals3, eigvals4],
                                     timeij, delta_t)
@@ -1442,14 +1429,14 @@ if EFF_MASS:
             print(i)
         if timeij == 3.0 and False:
             outlier = np.inf
-            for num,i in enumerate(retblk):
+            for num, i in enumerate(retblk):
                 if i[0] < outlier:
                     outlier = i[0]
                     print(num, i)
             sys.exit(0)
         retblk = modenergies(retblk, timeij, delta_t)
         retblk = deque(retblk)
-        assert len(retblk) == num_configs,\
+        assert len(retblk) == num_configs, \
             "number of configs should be the block length"
         #retblk = propagate_nans(retblk)
         if MPIRANK == 0:
@@ -1485,31 +1472,18 @@ else:
             num_configs = len(file_tup[0][0][0])
         for num in range(num_configs):
             try:
-                eigvals, evecs = get_eigvals(num, file_tup[0], file_tup[1])
+                eigvals, _ = get_eigvals(num, file_tup[0], file_tup[1])
             except ImaginaryEigenvalue:
                 print(num, timeij)
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk
 
-"""
-if PIONRATIO:
-div = np.array([np.real(
-    PION[i][num][int(timeij)]**2-PION[i][num][int(
-    timeij)+1]**2) for i in range(dimops)])/1e10
-eigvals /= div
-eigvals2 /= div
-eigvals3 /= div
-eigvals4 /= div
-for i, j in enumerate(ADD_CONST_VEC):
-    eigvals[i] -= eigvals2[i]*j
-    eigvals2[i] -= eigvals3[i]*j
-"""
 def norms(evecs):
     """Get norms of evecs"""
     ret = []
     for i in evecs:
-        ret.append(kdot(i,i))
+        ret.append(kdot(i, i))
     ret = np.asarray(ret)
     return ret
 
@@ -1547,12 +1521,13 @@ def pval_commutator(norms_comm):
     if UNCORR:
         pval_arr = 1- stats.chi2.cdf(chisq_arr, dof)
     else:
-        pval_arr = stats.f.sf(chisq_arr*(len(chisq_arr)-dof)/(len(chisq_arr)-1)/dof, dof, len(chisq_arr)-dof)
+        pval_arr = stats.f.sf(chisq_arr*(len(
+            chisq_arr)-dof)/(len(chisq_arr)-1)/dof, dof, len(chisq_arr)-dof)
     pval = fsum(pval_arr)/len(chisq_arr)
     chisq = fsum(chisq_arr)/len(chisq_arr)
     #print("dev:", em.acstd(chisq_arr, ddof=1))
     #for i in sorted(list(chisq_arr)):
-    #    print(i, ",")
+    #    print(i, ", ")
     #print(em.acsum(chisq_arr)/len(chisq_arr), fsum(chisq_arr)/len(chisq_arr))
     return chisq, pval, dof
 
@@ -1574,7 +1549,7 @@ if EFF_MASS:
                 line3 = np.real(line3)
                 line4 = np.real(line4)
                 toapp = proc_meff((line, line2, line3, line4),
-                    files=file_tup, time_arr=timeij)
+                                  files=file_tup, time_arr=timeij)
                 reuse[str(line)+"@"+str(line2)+"@"+str(line3)] = toapp
             if reuse[str(line)+'@'+str(line2)+'@'+str(line3)] == 0:
                 raise Exception("Something has gone wrong.")
