@@ -266,7 +266,7 @@ class FitFuncAdd:
         of pipi eff mass)"""
         lent = self._lent if lent is None else lent
         tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(3)]
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
         corrs = [trial_params[0]*(
@@ -397,6 +397,8 @@ class FitFunc:
         """
         # tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
         # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        if tstep_arr:
+            pass
         deltat = self._deltat
         lent = self._lent if lent is None else lent
         corrs = [exp(-trial_params[0]*(ctime-i*deltat)) +
@@ -419,7 +421,7 @@ class FitFunc:
         corrs = [trial_params[0]*(sinh((tpion[i]-1/2)*trial_params[
             1]-1/2*pionmass)+cosh(
                 (tpion[i]-1/2)*trial_params[1]-1/2*pionmass))/tanh(
-                2*tpion[i]*pionmass) for i in range(2)]
+                    2*tpion[i]*pionmass) for i in range(2)]
         #return self.ratio_pionratio(corrs, ctime, nocheck=True)
         return corrs[0]
 

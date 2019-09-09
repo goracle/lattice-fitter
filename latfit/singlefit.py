@@ -116,7 +116,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             reset_bootstrap_const_shift()
             result_min, param_err = jackknife_fit(params, reuse,
                                                   singlefit.reuse_blocked,
-                                                  coords, covinv)
+                                                  coords)
             if latfit.config.BOOTSTRAP:
 
                 # fit to find the null distribution
@@ -124,7 +124,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                 total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
                 params.num_configs = NBOOT
                 result_minq, _ = jackknife_fit(
-                    params, reuse, singlefit.reuse_blocked, coords, covinv)
+                    params, reuse, singlefit.reuse_blocked, coords)
 
                 # now use the fit results to find the null distribution
                 result_minq = bootstrap_pvalues(result_minq, total_configs)

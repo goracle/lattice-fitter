@@ -777,32 +777,6 @@ def enforce_hermiticity(gevp_mat):
     return em.acsum([np.conj(gevp_mat).T, gevp_mat])/2
 
 
-class ImaginaryEigenvalue(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, expression='', message=''):
-        print("***ERROR***")
-        print('imaginary eigenvalue found')
-        super(ImaginaryEigenvalue, self).__init__(message)
-        self.expression = expression
-        self.message = message
-
-class XmaxError(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, problemx=None, message=''):
-        print("***ERROR***")
-        print('xmax likely too large, decreasing')
-        super(XmaxError, self).__init__(message)
-        self.problemx = problemx
-        self.message = message
-
-class PrecisionLossError(Exception):
-    """Error if precision loss in eps prescription"""
-    def __init__(self, message=''):
-        print("***ERROR***")
-        print("Precision loss.")
-        super(PrecisionLossError, self).__init__(message)
-        self.message = message
-
 def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
     apply y->(y_i-<y>)*decrease_var+<y>

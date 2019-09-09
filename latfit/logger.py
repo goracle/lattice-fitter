@@ -60,4 +60,3 @@ def setup_logger():
     if len(gitlog.split()) == 1:
         print("current git commit:", gitlog)
     os.chdir(cwd)
-

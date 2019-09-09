@@ -13,22 +13,9 @@ from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.config import IRREP
 from latfit.utilities import read_file as rf
+from latfit.analysis.errorcodes import ZetaError, RelGammaError
 import latfit.utilities.zeta.i1zeta as i1z
 
-class ZetaError(Exception):
-    """Define an error for generic phase shift calc failure"""
-    def __init__(self, mismatch):
-        Exception.__init__(self, mismatch)
-
-class RelGammaError(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, gamma=None, epipi=None, message=''):
-        print("***ERROR***")
-        print("gamma < 1: gamma=", gamma, "Epipi=", epipi)
-        super(RelGammaError, self).__init__(message)
-        self.gamma = gamma
-        self.epipi = epipi
-        self.message = message
 if CALC_PHASE_SHIFT:
     def remove_epipi_indexing(epipi):
         """Remove the indexining on epipi"""
@@ -98,7 +85,7 @@ if CALC_PHASE_SHIFT:
             print("Error in zeta: calc of phase shift error:")
             print(epipi)
             errstr = subprocess.Popen(arglist,
-                                    stdout=subprocess.PIPE).stdout.read()
+                                      stdout=subprocess.PIPE).stdout.read()
             raise ZetaError(errstr)
         try:
             test = epipi*epipi/4-PION_MASS**2 < 0
