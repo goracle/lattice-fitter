@@ -20,7 +20,6 @@ from latfit.config import START_PARAMS
 from latfit.config import ADD_CONST
 from latfit.config import STYPE
 from latfit.config import FITS, LOGFORM
-from latfit.config import PIONRATIO
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import METHOD
 from latfit.config import ORIGL

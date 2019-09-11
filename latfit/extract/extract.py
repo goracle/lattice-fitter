@@ -20,13 +20,14 @@ def extract(input_f, xmin, xmax, xstep):
     folders.
     """
     # result is returned as a named tuple: resret
-    resret = namedtuple('ret', ['coord', 'covar', 'numblocks', 'returnblk'])
+    resret = namedtuple('ret', ['coord', 'covar', 'coords', 'cov',
+                                'numblocks', 'returnblk'])
 
     # if simple file, do that extraction
     if os.path.isfile(input_f) and STYPE == 'ascii':
         resret = simple_proc_file(input_f, xmin, xmax, EIGCUT)
-        cov = resret.covar
-        coords = resret.coord
+        # cov = resret.covar
+        # coords = resret.coord
 
     # test if directory
     elif os.path.isdir(input_f) or STYPE == 'hdf5':
@@ -36,7 +37,7 @@ def extract(input_f, xmin, xmax, xstep):
 
         # allocate space for return values
 
-        coords, cov = allocate(xmin, xmax, xstep)
+        resret.coords, resret.cov = allocate(xmin, xmax, xstep)
 
         tij = [None, None]
 
@@ -60,25 +61,26 @@ def extract(input_f, xmin, xmax, xstep):
                 tij[1] = timej
 
                 # get the cov entry and the block
-                resret = proc_ijfile(ifile_tup, jfile_tup,
-                                     reuse=reuse, timeij=tij, delta_t=delta_t)
+                resret_proc = proc_ijfile(ifile_tup, jfile_tup,
+                                          reuse=reuse, timeij=tij,
+                                          delta_t=delta_t)
 
                 # fill in the covariance matrix
-                cov[i][j] = resret.covar
+                resret.cov[i][j] = resret_proc.covar
 
                 # fill in dictionary for reusing already extracted blocks
                 # with the newest block
                 if i == 0:
-                    reuse[timej] = resret.returnblk
+                    reuse[timej] = resret_proc.returnblk
 
                 if j == 0:
                     # only when j=0 does the i block need updating
                     reuse['i'] = reuse[timei]
                     # only store coordinates once.
-                    coords[i][0] = timei
-                    coords[i][1] = resret.coord
+                    resret.coords[i][0] = timei
+                    resret.coords[i][1] = resret_proc.coord
 
-    return coords, cov, reuse
+    return resret.coords, resret.cov, reuse
 
 
 # side effects warning

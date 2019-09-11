@@ -10,7 +10,7 @@ def gevp_getfiles_onetime(time):
     (read from the gevp directories)
     """
     rdimops = range(len(GEVP_DIRS))
-    files = [[proc_folder(GEVP_DIRS[op1][op2], time, opdim=(op1,op2))
+    files = [[proc_folder(GEVP_DIRS[op1][op2], time, opdim=(op1, op2))
               for op1 in rdimops] for op2 in rdimops]
     return [[pre_proc_file(files[op1][op2], GEVP_DIRS[op1][op2])
              for op1 in rdimops] for op2 in rdimops]

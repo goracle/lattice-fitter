@@ -22,7 +22,9 @@ def elim_jkconfigs(jkblk, elim_list=None):
         print("but jackknife correction to covariance matrix is not enabled.")
         sys.exit(1)
     try:
-        assert elim_list or ELIM_JKCONF_LIST is not None, "missing elimination list"+str(ELIM_JKCONF_LIST)+" "+str(elim_list)
+        assert elim_list or ELIM_JKCONF_LIST is not None,\
+            "missing elimination list"+str(ELIM_JKCONF_LIST)+" "+str(
+                elim_list)
         if elim_list is None:
             elim_list = list(ELIM_JKCONF_LIST)
         if ELIM_JKCONF_LIST is not None and HALF == 'full':
@@ -42,7 +44,7 @@ def elim_jkconfigs(jkblk, elim_list=None):
         # each of the unwanted configs appears k_elim-1 times in skip_sum
         # each of the wanted configs appears k_elim times in skip_sum
         skip_sum = accupy.fsum([jkblk[skip]
-                           for skip in elim_list])
+                                for skip in elim_list])
 
         sum_blk = accupy.fsum(jkblk) # same as sum over original set, no norm
 
@@ -55,7 +57,7 @@ def elim_jkconfigs(jkblk, elim_list=None):
 
         # unormalize; only sums over configs now
         inner *= (num_configs-1)
-        
+
         # subtract the wanted configs we added in skip_sum
         # subtract the unwanted configs we added in skip_sum, plus one extra
         # this extra being the copy which shows up in the non-deleted blocks

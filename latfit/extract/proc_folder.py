@@ -2,9 +2,9 @@
 import re
 import os
 import sys
+import linecache
 import numpy as np
 import h5py
-import linecache
 
 from latfit.config import GEVP
 from latfit.config import STYPE
@@ -22,7 +22,7 @@ def binout(out):
     """Reduce the number of used configs
     """
     lout = len(out)
-    
+
     while len(out)%BINNUM != 0:
         out = elim_jkconfigs(out, [len(out)-1])
         lout = len(out)
@@ -39,7 +39,7 @@ if STYPE == 'hdf5':
         return np.array(fn1[prefix+'/'+hdf5_file.split('.')[
             0]][:, ctime])
 
-    def proc_folder(hdf5_file, ctime, other_regex="", opdim=(None, None)):
+    def proc_folder(hdf5_file, ctime, other_regex=""):
         """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:
             pass
@@ -70,7 +70,7 @@ if STYPE == 'hdf5':
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
         out = elim_jkconfigs(out)
-        out = halftotal(out, ctime=ctime, opdim=opdim)
+        out = halftotal(out)
         #out = halftotal(out, ctime=ctime,override='first half')
         #out = halftotal(out, ctime=ctime,override='second half')
         #out = halftotal(out, ctime=ctime,override='first half')
@@ -99,9 +99,9 @@ if STYPE == 'hdf5':
         else:
             ret = arr, False
         return ret
-            
 
-    def halftotal(out, override=None, ctime=None, opdim=(None, None)):
+
+    def halftotal(out, override=None):
         """First half second half analysis
         """
         sloppy = out[SUPERJACK_CUTOFF:]
@@ -132,35 +132,34 @@ if STYPE == 'hdf5':
         """Take half of the array"""
         larr = len(arr)
         halfswitch = HALF if override is None else override
-        if halfswitch == 'full':
-            ret = arr
-        elif halfswitch == 'first half':
+        ret = arr if halfswitch == 'full' else None
+        if halfswitch == 'first half':
             excl = np.array(range(len(arr)))[intceil(larr/2):]
             # ret = arr[:intceil(larr/2)]
         elif halfswitch == 'second half':
             excl = np.array(range(len(arr)))[:intceil(larr/2)]
             # ret = arr[intceil(larr/2):]
-        elif halfswitch =='drop first quarter':
+        elif halfswitch == 'drop first quarter':
             excl = np.array(range(len(arr)))[:intceil(larr/4)]
-        elif halfswitch =='drop second quarter':
+        elif halfswitch == 'drop second quarter':
             excl = np.array(
                 range(len(arr)))[intceil(larr/4):2*intceil(larr/4)]
-        elif halfswitch =='drop third quarter':
+        elif halfswitch == 'drop third quarter':
             excl = np.array(
                 range(len(arr)))[2*intceil(larr/4):3*intceil(larr/4)]
-        elif halfswitch =='drop fourth quarter':
+        elif halfswitch == 'drop fourth quarter':
             excl = np.array(
                 range(len(arr)))[3*intceil(larr/4):]
-        elif halfswitch =='drop first eighth':
+        elif halfswitch == 'drop first eighth':
             excl = np.array(
                 range(len(arr)))[:intceil(larr/8)]
-        elif halfswitch =='drop fourth eighth':
+        elif halfswitch == 'drop fourth eighth':
             excl = np.array(
                 range(len(arr)))[3*intceil(larr/8):4*intceil(larr/8)]
-        elif halfswitch =='drop third eighth':
+        elif halfswitch == 'drop third eighth':
             excl = np.array(
                 range(len(arr)))[2*intceil(larr/8):3*intceil(larr/8)]
-        elif halfswitch =='drop second eighth':
+        elif halfswitch == 'drop second eighth':
             excl = np.array(
                 range(len(arr)))[intceil(larr/8):2*intceil(larr/8)]
         else:
@@ -196,8 +195,8 @@ elif STYPE == 'ascii':
         """Process folder where blocks to be averaged are stored.
         Return file corresponding to current ensemble (lattice time slice).
         Assumes file is <anything>t<time><anything>
-        Assumes only 1 valid file per match, e.g. ...t3... doesn't happen more
-        than once.
+        Assumes only 1 valid file per match, e.g. ...t3...
+        doesn't happen more than once.
         Both the int and float versions of ctime are treated the same.
         """
         # build regex as a string
@@ -237,16 +236,21 @@ elif STYPE == 'ascii':
             print("regex = ", my_regex)
             sys.exit(1)
         if GEVP:
-            ret = []
-            with open(retname) as fn1:
-                for i, l in enumerate(fn1):
-                    line = linecache.getline(fn1, i+1)
-                    ret.append(np.complex(float(line[0]), float(line[1])))
-            ret = np.array(ret)
+            ret = proc_file_in_folder(retname)
         else:
             ret = retname
-        ret = halftotal(ret, opdim=opdim)
+        ret = halftotal(ret)
         ret = binout(ret)
+        return ret
+
+    def proc_file_in_folder(retname):
+        """Get the lines"""
+        ret = []
+        with open(retname) as fn1:
+            for i, _ in enumerate(fn1):
+                line = linecache.getline(fn1, i+1)
+                ret.append(np.complex(float(line[0]), float(line[1])))
+        ret = np.asarray(ret)
         return ret
 
     def lookat_dir(folder, my_regex, regex_reject, temp4, retname):

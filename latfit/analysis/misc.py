@@ -1,8 +1,8 @@
 """Misc. Functions"""
 import sys
-from math import sqrt, pi, sin
-import numpy as np
+from math import sqrt, pi
 import pickle
+import numpy as np
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
@@ -34,6 +34,7 @@ ELIM_JKCONF_LIST = []
 
 
 def massfunc():
+    """Return the pion mass"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
     pionstr = '_pioncorrChk_'
     if massfunc.MASS is None:
@@ -53,9 +54,9 @@ massfunc.MASS = None
 def update_binhalf():
     """after we set these functions update (the mass)"""
     massfunc.MASS = select_subset(massfunc.MASS, elimlist=[])
-    
 
-def p1():
+
+def p1f():
     """E_pi(|p|=1)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
     pionstr = '_pioncorrChk_'
@@ -63,20 +64,20 @@ def p1():
         ret = 0.29641
     elif LATTICE == '32c':
         ret = 0.22248
-    if p1.P1 is None:
+    if p1f.P1 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+pionstr+'p1.jkdat.p', 'rb')
-            p1.P1 = pickle.load(fn1)
+            fn1 = open('x_min_'+LATTICE+pionstr+'p1f.jkdat.p', 'rb')
+            p1f.P1 = pickle.load(fn1)
             print("load of jackknifed p1 energy successful")
         except FileNotFoundError:
             #print("jackknifed p1 energy not found")
             pass
-    if p1.P1 is not None:
-        ret = p1.P1
+    if p1f.P1 is not None:
+        ret = p1f.P1
     return ret
-p1.P1 = None
+p1f.P1 = None
 
-def p11():
+def p11f():
     """E_pi(|p|=11)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
     pionstr = '_pioncorrChk_'
@@ -84,20 +85,20 @@ def p11():
         ret = 0.39461
     elif LATTICE == '32c':
         ret = 0.2971
-    if p11.P11 is None:
+    if p11f.P11 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+pionstr+'p11.jkdat.p', 'rb')
-            p11.P11 = pickle.load(fn1)
+            fn1 = open('x_min_'+LATTICE+pionstr+'p11f.jkdat.p', 'rb')
+            p11f.P11 = pickle.load(fn1)
             print("load of jackknifed p11 energy successful")
         except FileNotFoundError:
             #print("jackknifed p11 energy not found")
             pass
-    if p11.P11 is not None:
-        ret = p11.P11
+    if p11f.P11 is not None:
+        ret = p11f.P11
     return ret
-p11.P11 = None
+p11f.P11 = None
 
-def p111():
+def p111f():
     """E_pi(|p|=11)"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
     pionstr = '_pioncorrChk_'
@@ -105,18 +106,18 @@ def p111():
         ret = 0.4715
     elif LATTICE == '32c':
         ret = 0.3514
-    if p111.P111 is None:
+    if p111f.P111 is None:
         try:
-            fn1 = open('x_min_'+LATTICE+pionstr+'p111.jkdat.p', 'rb')
-            p111.P111 = pickle.load(fn1)
+            fn1 = open('x_min_'+LATTICE+pionstr+'p111f.jkdat.p', 'rb')
+            p111f.P111 = pickle.load(fn1)
             print("load of jackknifed p111 energy successful")
         except FileNotFoundError:
             #print("jackknifed p111 energy not found")
             pass
-    if p111.P111 is not None:
-        ret = p111.P111
+    if p111f.P111 is not None:
+        ret = p111f.P111
     return ret
-p111.P111 = None
+p111f.P111 = None
 
 IRREP = None
 CONTINUUM = True
@@ -127,11 +128,11 @@ def fitepi(norm):
     if norm == 0:
         ret = massfunc()
     elif norm == 1:
-        ret = p1()
+        ret = p1f()
     elif norm == 2:
-        ret = p11()
+        ret = p11f()
     elif norm == 3:
-        ret = p111()
+        ret = p111f()
     else:
         assert ret is not None, ""
     ret = select_subset(ret)

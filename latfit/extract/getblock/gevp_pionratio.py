@@ -15,7 +15,7 @@ from scipy.stats import pearsonr
 
 from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
 from latfit.extract.getblock.gevp_linalg import make_avg_zero
-from latfit.extract.getblock.gevp_mod import variance_reduction
+from latfit.extract.getblock.gevp_linalg import variance_reduction
 
 from latfit.extract.proc_folder import proc_folder
 from latfit.utilities import exactmean as em

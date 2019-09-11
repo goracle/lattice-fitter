@@ -10,6 +10,15 @@ except NameError:
         return arg2
     PROFILE = profile
 
+class AvgCovSingular(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, message=''):
+        print("***ERROR***")
+        print("Average covariance matrix is singular")
+        super(AvgCovSingular, self).__init__(message)
+        self.message = message
+
+
 class TooManyBadFitsError(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
     @PROFILE

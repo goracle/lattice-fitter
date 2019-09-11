@@ -1,12 +1,11 @@
 """Get a single entry in the covariance matrix."""
-import sys
 import numpy as np
+from accupy import kdot
 
 from latfit.config import UNCORR, GEVP
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.utilities import exactmean as em
 from latfit.mathfun.block_ensemble import block_ensemble
-from accupy import kdot
 
 if UNCORR:
     def get_coventry_gevp(reuse_blocked, sameblk, avgi):
@@ -33,19 +32,21 @@ else:
         if sameblk:
             coventry = em.acsum([np.outer(
                 (avgi-reuse_blocked['i'][k]),
-                (avgi-reuse_blocked['i'][k])) for k in range(num_configs)], axis=0)
+                (avgi-reuse_blocked['i'][k])) for k in range(
+                    num_configs)], axis=0)
         else:
             coventry = em.acsum([np.outer(
                 (avgi-reuse_blocked['i'][k]),
-                (em.acmean(reuse_blocked['j'], axis=0)-reuse_blocked['j'][k]))
-                               for k in range(num_configs)], axis=0)
+                (em.acmean(reuse_blocked['j'], axis=0)-reuse_blocked['j'][
+                    k])) for k in range(num_configs)], axis=0)
         return coventry
 
 if UNCORR:
     def get_coventry_simple(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., uncorr"""
         if sameblk:
-            coventry = kdot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
+            coventry = kdot(reuse_blocked['i']-avgi, reuse_blocked[
+                'i']-avgi)
         else:
             coventry = 0
         return coventry
@@ -57,7 +58,8 @@ else:
             coventry = kdot(reuse_blocked['i']-avgi, reuse_blocked['i']-avgi)
         else:
             coventry = kdot(reuse_blocked['i']-avgi,
-                              reuse_blocked['i']-em.acmean(reuse_blocked['j']))
+                            reuse_blocked['i']-em.acmean(
+                                reuse_blocked['j']))
         return coventry
 
 if GEVP:

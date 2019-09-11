@@ -1,8 +1,7 @@
 """Get files"""
-import sys
 import math
-import numpy as np
 import copy
+import numpy as np
 
 from latfit.extract.gevp_getfiles_onetime import gevp_getfiles_onetime
 from latfit.extract.pencil_shift import pencil_shift_lhs, pencil_shift_rhs
@@ -11,15 +10,17 @@ from latfit.extract.proc_folder import proc_folder
 
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
-from latfit.config import GEVP, T0
-from latfit.config import IRREP
-from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION, DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
+from latfit.config import GEVP, T0, IRREP
+from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    assert 'mom000' not in IRREP,\
+        "only one subtraction required for center of mass frame"
 
 if EFF_MASS:
-    def getfiles_simple(time, input_f, xstep):
+    def getfiles_simple(time, input_f, xstep=1):
         """Get files for a given time slice."""
         # extract file
         ijfile = proc_folder(input_f, time)
@@ -42,19 +43,20 @@ else:
         ijfile = pre_proc_file(ijfile, input_f)
         return ijfile
 
-def getExtraTimes(time, time2, dt1, xstep):
+def get_extra_times(time, time2, dt1, xstep=1):
     """get extra time slices for around the world subtraction
     """
     if EFF_MASS:
-        extra_lhs_times = [time-dt1, time-dt1+xstep, time-dt1+2*xstep, time-dt1+3*xstep]
+        extra_lhs_times = [time-dt1, time-dt1+xstep, time-dt1+2*xstep,
+                           time-dt1+3*xstep]
     else:
         extra_lhs_times = [time-dt1]
     ret = []
-    for time in extra_lhs_times:
-        ret.append(max(time, 0))
+    for timei in extra_lhs_times:
+        ret.append(max(timei, 0))
     return ret, max(time2-dt1, 0)
 
-def getfiles_gevp(time, time2, xstep):
+def getfiles_gevp(time, time2, xstep=1):
     """Loop over time2"""
     rhs_files = []
     if hasattr(time2, '__iter__'):
@@ -62,7 +64,7 @@ def getfiles_gevp(time, time2, xstep):
         assert tupret[1] is not None, "rhs files not found."
         for time_rhs in time2:
             assert time >= time_rhs, "Bad rhs time. t values (lhs, rhs):"+\
-                str(time)+","+str(time_rhs)
+                str(time)+", "+str(time_rhs)
             if time_rhs not in getfiles_gevp_singlerhs.mats:
                 tuptemp = getfiles_gevp_singlerhs(time, time_rhs, xstep)
                 file_rhs = tuptemp[1]
@@ -74,20 +76,22 @@ def getfiles_gevp(time, time2, xstep):
         ret = (tupret[0], rhs_files, *tupret[2:])
     else:
         assert time >= time2, "Bad rhs time. t values (lhs, rhs):"+\
-            str(time)+","+str(time2)+","+str(xmin)
+            str(time)+", "+str(time2)+", "+str(xstep)
         ret = getfiles_gevp_singlerhs(time, time2, xstep)
     assert len(ret) == 5, "return tuple is wrong length:"+str(len(ret))
     return ret
 
-def getfiles_gevp_singlerhs(time, time2, xstep):
+def getfiles_gevp_singlerhs(time, time2, xstep=1):
     """Get files, gevp, eff_mass for single t0 (rhs time)"""
     # extract files
     files = {}
     sub = {}
     dt1 = DELTA_T_MATRIX_SUBTRACTION*xstep
     dt2 = DELTA_T2_MATRIX_SUBTRACTION*xstep
-    extra_lhs_times, extra_rhs_time = getExtraTimes(time, time2, dt1, xstep)
-    extra_lhs_times2, extra_rhs_time2 = getExtraTimes(time, time2, dt2, xstep)
+    extra_lhs_times, extra_rhs_time = get_extra_times(time, time2,
+                                                      dt1, xstep)
+    extra_lhs_times2, extra_rhs_time2 = get_extra_times(time, time2,
+                                                        dt2, xstep)
     extra_lhs_times = [*extra_lhs_times, *extra_lhs_times2]
     extra_rhs_times = [extra_rhs_time, extra_rhs_time2]
     if NUM_PENCILS < 1:
@@ -97,10 +101,9 @@ def getfiles_gevp_singlerhs(time, time2, xstep):
             files[time+xstep] = gevp_getfiles_onetime(time+xstep)
             files[time+2*xstep] = gevp_getfiles_onetime(time+2*xstep)
             files[time+3*xstep] = gevp_getfiles_onetime(time+3*xstep)
-        if MATRIX_SUBTRACTION:
-            for timeidx in [*extra_lhs_times, *extra_rhs_times]:
-                if timeidx not in files:
-                    sub[timeidx] = gevp_getfiles_onetime(timeidx)
+        for timeidx in [*extra_lhs_times, *extra_rhs_times]:
+            sub[timeidx] = gevp_getfiles_onetime(timeidx) if\
+                timeidx not in files and MATRIX_SUBTRACTION else None
     else:
         files[time] = pencil_shift_lhs(time, xstep)
         files[time2] = pencil_shift_rhs(time2, xstep)
@@ -111,28 +114,25 @@ def getfiles_gevp_singlerhs(time, time2, xstep):
         if MATRIX_SUBTRACTION:
             for timeidx in extra_lhs_times:
                 if timeidx not in files:
-                    sub[timeidx] = pencil_shift_lhs(timeidx)
+                    sub[timeidx] = pencil_shift_lhs(timeidx, xstep)
             for timeidx in extra_rhs_times:
                 if timeidx not in files:
-                    sub[timeidx] = pencil_shift_rhs(timeidx)
+                    sub[timeidx] = pencil_shift_rhs(timeidx, xstep)
 
     # do matrix subtraction to eliminate leading order around the world term
     if MATRIX_SUBTRACTION:
         files, sub = matsub(files, sub, dt1)
-        assert 'mom' in IRREP, "no subtraction for I=1"
-        if DELTA_E2_AROUND_THE_WORLD is not None:
-            assert 'mom000' not in IRREP,\
-                "only one subtraction required for center of mass frame"
-            files, sub = matsub(files, sub, dt2, 'Two')
+        files, sub = matsub(files, sub, dt2, 'Two') if\
+            DELTA_E2_AROUND_THE_WORLD is not None else (files, sub)
 
-    if EFF_MASS:
-        ret = (files[time], files[time2], files[time+xstep],
-               files[time+2*xstep], files[time+3*xstep])
-    else:
-        ret = (files[time], files[time2])
+    ret = (files[time], files[time2], files[time+xstep],
+           files[time+2*xstep], files[time+3*xstep]) if EFF_MASS else (
+               files[time], files[time2])
+
     for savedt in files:
-        if savedt not in getfiles_gevp_singlerhs.mats:
-            getfiles_gevp_singlerhs.mats[savedt] = copy.deepcopy(np.array(files[savedt]))
+        getfiles_gevp_singlerhs.mats[savedt] = copy.deepcopy(np.array(
+            files[savedt])) if savedt not in getfiles_gevp_singlerhs.mats\
+            else getfiles_gevp_singlerhs.mats[savedt]
     return ret
 getfiles_gevp_singlerhs.mats = {}
 
@@ -140,19 +140,20 @@ def matsub(files, sub, dt1, dt12='One'):
     """Do the around the world subtraction"""
     subterm = {}
     assert MATRIX_SUBTRACTION
-    delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else DELTA_E2_AROUND_THE_WORLD
+    delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else\
+        DELTA_E2_AROUND_THE_WORLD
     for timeidx in sub:
         sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))
         if hasattr(delta_e, '__iter__'):
-            for i in range(len(delta_e)):
-                sub[timeidx][:,:,i] *= math.exp(delta_e[i]*timeidx)
+            for i, _ in enumerate(delta_e):
+                sub[timeidx][:, :, i] *= math.exp(delta_e[i]*timeidx)
         else:
             sub[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
         files[timeidx] = copy.deepcopy(np.asarray(files[timeidx]))
         if hasattr(delta_e, '__iter__'):
-            for i in range(len(delta_e)):
-                files[timeidx][:,:,i] *= math.exp(delta_e[i]*timeidx)
+            for i, _ in enumerate(delta_e):
+                files[timeidx][:, :, i] *= math.exp(delta_e[i]*timeidx)
         else:
             files[timeidx] *= math.exp(delta_e*timeidx)
     for timeidx in files:
@@ -162,10 +163,10 @@ def matsub(files, sub, dt1, dt12='One'):
         #print("C_weighted(", timeidx, ") -= C_weighted(", subidx, ")", "check with delta_t=", dt1)
     for timeidx in files:
         subtraction = copy.deepcopy(subterm[timeidx])
-        files[timeidx] -= subterm[timeidx]
+        files[timeidx] -= subtraction
     assert isinstance(files, dict)
     return (files, sub)
-    
+
 
 def roundup(time, xstep, xmin):
     """ceil(t/2) with xstep factored in"""
@@ -189,7 +190,7 @@ if GEVP:
             time2 = T0
         elif T0 == 'LOOP':
             time2 = sorted(list(np.arange(roundup(
-                time,xstep,xmin), time, xstep)), reverse=True)
+                time, xstep, xmin), time, xstep)), reverse=True)
             if not len(time2) > 1:
                 time2 = roundup(time, xstep, xmin)
             #time2 = 4 if time == 5 else time2

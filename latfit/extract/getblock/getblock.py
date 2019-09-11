@@ -19,8 +19,8 @@ from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
 from latfit.extract.getblock.gevp_linalg import degenerate_subspace_check
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity, norms
 from latfit.extract.getblock.gevp_linalg import checkherm
-from latfit.extract.getblock.gevp_mod import allowedeliminations
-from latfit.extract.getblock.gevp_mod import variance_reduction
+from latfit.extract.getblock.gevp_solve import allowedeliminations
+from latfit.extract.getblock.gevp_linalg import variance_reduction
 import latfit.extract.getblock.gevp_solve as gsolve
 from latfit.extract.getblock.gevp_pionratio import atwsub_cmats, modenergies
 import latfit.extract.getblock.disp_hacks as gdisp

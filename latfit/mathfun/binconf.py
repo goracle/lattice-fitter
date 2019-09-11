@@ -26,8 +26,8 @@ def binconf(jkblk):
             "non divisible BINNUM not supported:"+str(len(jkblk))
         inv = em.acsum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
         inv2 = np.array([em.acmean(inv[j*BINNUM:(j+1)*BINNUM],
-                                 axis=0) for j in range(int(
-                                     len(jkblk)/BINNUM))])
+                                   axis=0) for j in range(int(
+                                       len(jkblk)/BINNUM))])
         ret = np.array([em.acmean(np.delete(inv2, j, axis=0), axis=0)
                         for j in range(len(inv2))])
     latfit.finalout.mkplot.NUM_CONFIGS = len(ret)

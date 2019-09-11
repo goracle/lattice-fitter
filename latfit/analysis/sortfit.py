@@ -1,5 +1,4 @@
 """Find the worst fit coordinates"""
-import sys
 import numpy as np
 from latfit.config import DISP_ENERGIES, ORIGL
 from latfit.utilities import exactmean as em

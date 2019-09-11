@@ -1,5 +1,4 @@
 """Get common fit parameters"""
-from warnings import warn
 from collections import namedtuple
 import numpy as np
 

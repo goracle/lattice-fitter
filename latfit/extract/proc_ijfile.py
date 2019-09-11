@@ -3,7 +3,7 @@ import sys
 from collections import namedtuple
 import numpy as np
 
-from latfit.extract.getblock import getblock
+from latfit.extract.getblock.getblock import getblock
 from latfit.extract.get_coventry import get_coventry
 
 from latfit.config import BINNUM

@@ -1,12 +1,10 @@
 """Block the ensemble by dropping JACKKNIFE_BLOCK_SIZE configs"""
 
-import sys
 import numpy as np
 from latfit.config import JACKKNIFE_BLOCK_SIZE
-from latfit.config import BOOTSTRAP
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.utilities import exactmean as em
-from latfit.utilities.h5jack import dojackknife
+from latfit.utilities.postprod.h5jack import dojackknife
 import latfit.config
 
 def bootstrap_ensemble(reuse_inv, reuse_blocked):
@@ -16,7 +14,7 @@ def bootstrap_ensemble(reuse_inv, reuse_blocked):
     if latfit.config.BOOTSTRAP:
         choices = list(range(len(reuse_inv)))
         retblk = []
-        for i in choices:
+        for _ in choices:
             elem = reuse_inv[np.random.choice(choices)]
             retblk.append(elem)
         ret = np.array(retblk, dtype=reuse_inv.dtype)
@@ -65,4 +63,3 @@ def delblock(config_num, reuse_inv, bsize=JACKKNIFE_BLOCK_SIZE):
                     np.arange(config_num*bsize, (config_num+1)*bsize, 1),
                     axis=0)
     return ret
-
