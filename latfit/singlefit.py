@@ -17,7 +17,7 @@ from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.utilities import exactmean as em
 
 # import global variables
-from latfit.config import FIT
+from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
@@ -60,13 +60,13 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # block the ensemble
     if singlefit.reuse_blocked is None:
         singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
-        
-    
+
+
     # correct covariance matrix for jackknife factor
     if singlefit.sent is None:
         cov_full *= params.prefactor
         singlefit.sent = object()
-    
+
     # debug branch
     if PRINT_CORR:
         print(coords_full)
@@ -90,15 +90,16 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # at this point we have the covariance matrix, and coordinates
 
     if GEVP:
-        singlefit.error2 = np.array([np.sqrt(np.diag(cov_full[i][i])
-        ) for i in range(len(
-            coords_full))]) if singlefit.error2 is None else singlefit.error2
+        singlefit.error2 = np.array([np.sqrt(np.diag(
+            cov_full[i][i])) for i in range(len(coords_full))]) if\
+            singlefit.error2 is None else singlefit.error2
         #print("(Rough) scale of errors in data points = ",
         #np.sqrt(np.diag(cov[0][0])))
     else:
-        singlefit.error2 = np.array([np.sqrt(cov_full[i][i]
-        ) for i in range(len(
-            coords_full))]) if singlefit.error2 is None else singlefit.error2
+        singlefit.error2 = np.array([np.sqrt(cov_full[i][i])
+                                     for i in range(len(coords_full))]) if\
+                                         singlefit.error2 is None else\
+                                         singlefit.error2
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
     if FIT:
@@ -107,8 +108,8 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             covinv = covinv_avg(cov, params.dimops)
         except np.linalg.linalg.LinAlgError:
             covinv = np.zeros(cov.shape)
-            for i in range(len(covinv)):
-                for j in range(len(covinv)):
+            for i, _ in enumerate(covinv):
+                for j, _ in enumerate(covinv):
                     covinv[i][j] = np.nan
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
@@ -121,19 +122,19 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
                 # fit to find the null distribution
                 apply_bootstrap_shift(result_min)
-                total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
+                # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
                 params.num_configs = NBOOT
                 result_minq, _ = jackknife_fit(
                     params, reuse, singlefit.reuse_blocked, coords)
 
-                # now use the fit results to find the null distribution
-                result_minq = bootstrap_pvalues(result_minq, total_configs)
-
                 # overwrite initial fit with the accurate p-value info
-                result_min.pvalue_arr = chisq_arr_to_pvalue_arr(result_minq.chisq_arr, result_min.chisq_arr)
-                result_min.pvalue = em.acmean(result_min.pvalue_arr)
-                result_min.pvalue_err = em.acmean((result_min.pvalue_arr-result_min.pvalue)**2)
-                result_min.pvalue_err *= np.sqrt((len(result_min.pvalue_arr)-1)/len(result_min.pvalue_arr))
+                result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
+                    result_minq.chisq.arr, result_min.chisq.arr)
+                result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
+                result_min.pvalue_err = em.acmean((
+                    result_min.pvalue.arr-result_min.pvalue.val)**2)
+                result_min.pvalue_err *= np.sqrt((len(
+                    result_min.pvalue.arr)-1)/len(result_min.pvalue.arr))
 
         else:
             result_min = mkmin(covinv, coords)
@@ -164,12 +165,12 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     chisq_arr_boot = np.asarray(chisq_arr_boot)
     chisq_arr = np.asarray(chisq_arr)
     pvalue_arr_boot = []
-    for i, chisq in enumerate(chisq_arr_boot):
+    for i, _ in enumerate(chisq_arr_boot):
         pvalue_arr_boot.append((NBOOT-i-1)/NBOOT)
     pvalue_arr_boot = np.array(pvalue_arr_boot)
     pvalue_arr = []
-    for chisq in chisq_arr:
-        subarr = np.abs(chisq-chisq_arr_boot)
+    for chisq1 in chisq_arr:
+        subarr = np.abs(chisq1-chisq_arr_boot)
         minidx = subarr.index(min(subarr))
         pvalue_arr.append(pvalue_arr_boot[minidx])
     pvalue_arr = np.array(pvalue_arr)
@@ -183,9 +184,9 @@ def apply_bootstrap_shift(result_min):
     """
     coords = singlefit.coords_full
     assert coords is not None
-    part1 = [-fit_func(result_min,
+    part1 = [-1*fit_func(result_min,
                       i[0]) for i in coords]
-    part1 = np.array(shift, dtype=np.float128)
+    part1 = np.array(part1, dtype=np.float128)
     part2 = [i[1] for i in coords]
     part2 = np.array(part2, dtype=np.float128)
     shift = part1+part2

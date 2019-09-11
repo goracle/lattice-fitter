@@ -28,6 +28,11 @@ class FitFunctions:
             self.f[func] = [getattr(self._fitfunc, func),
                             getattr(self._fitfuncadd, func)]
 
+    def use(self, func):
+        """Use a specific function"""
+        func = str(func)
+        return self._select[func]
+
     def select(self, upd):
         """Select which set of functions to use"""
         index = 1 if upd.add_const else 0

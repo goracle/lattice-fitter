@@ -1,7 +1,6 @@
 """Config for lattice fitter."""
 import sys
-import re
-from math import sqrt, pi, exp
+from math import exp
 from collections import namedtuple
 from copy import copy
 import numpy as np
@@ -14,7 +13,7 @@ import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
-from latfit.utilities.h5jack import check_ids
+from latfit.utilities.postprod.checkblks import check_ids
 setup_logger()
 
 
@@ -155,7 +154,7 @@ if LATTICE_ENSEMBLE == '32c':
     SUPERJACK_CUTOFF = 17
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
-    AINVERSE = 1.015 
+    AINVERSE = 1.015
     PION_MASS = 0.13975*AINVERSE
     LT = 64
     SUPERJACK_CUTOFF = 15
@@ -171,7 +170,7 @@ SUPERJACK_CUTOFF = 0 if not check_ids()[-2] else SUPERJACK_CUTOFF
 # Simply set this to a list of ints indexing the configs,
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-#ELIM_JKCONF_LIST = [7,8,9,10,11,12,13,14,15,186,187,188,189,190]
+#ELIM_JKCONF_LIST = [7, 8, 9, 10, 11, 12, 13, 14, 15, 186, 187, 188, 189, 190]
 ELIM_JKCONF_LIST = []
 misc.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
 elim.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
@@ -219,7 +218,9 @@ if HALF != 'full':
     SUPERJACK_CUTOFF = 0
     print("HALF spec:", HALF)
     print("setting superjackknife cutoff to 0 (assuming no AMA)")
-    assert not SUPERJACK_CUTOFF, "AMA first half second half analysis not supported:"+str(SUPERJACK_CUTOFF)
+    assert not SUPERJACK_CUTOFF, \
+        "AMA first half second half analysis not supported:"+str(
+            SUPERJACK_CUTOFF)
 elim.HALF = HALF
 
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
@@ -279,7 +280,9 @@ DELTA_E2_AROUND_THE_WORLD = None
 #DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
 #    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
 #        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
-# DELTA_E2_AROUND_THE_WORLD = misc.dispersive(opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1]) if ISOSPIN == 2 else None # too many time slices eliminated currently
+# DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
+#opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
+# if ISOSPIN == 2 else None # too many time slices eliminated currently
 
 
 
@@ -341,8 +344,8 @@ FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0],
             [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0],
-            [6,7,12.0, 13.0, 14.0, 15.0, 16.0],
-            [6,7,9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]] 
+            [6, 7, 12.0, 13.0, 14.0, 15.0, 16.0],
+            [6, 7, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 assert len(FIT_EXCL) == DIM or not GEVP
 
@@ -374,10 +377,10 @@ HINTS_ELIM[15] = [(3, 0), (2, 0)]
 HINTS_ELIM[15] = [(5, 0), (4, 0), (3, 0)]
 HINTS_ELIM = {}
 if ISOSPIN == 1:
-    HINTS_ELIM[15] = [(4,0), (3,0), (2,1)]
-    HINTS_ELIM[16] = [(4,0), (3,0), (2,0)]
-    HINTS_ELIM[11] = [(4,0)]
-    HINTS_ELIM[12] = [(4,3), (3,2)]
+    HINTS_ELIM[15] = [(4, 0), (3, 0), (2, 1)]
+    HINTS_ELIM[16] = [(4, 0), (3, 0), (2, 0)]
+    HINTS_ELIM[11] = [(4, 0)]
+    HINTS_ELIM[12] = [(4, 3), (3, 2)]
 
 # Cut fit points when the relative error in the error bar is > ERR_CUT
 ERR_CUT = 0.20
@@ -400,7 +403,9 @@ USE_FIXED_MASS = True
 # (bad for all cases; DO NOT USE.  It doesn't converge very often.)
 # EFF_MASS_METHOD 3: one param fit
 # EFF_MASS_METHOD 4: same as 2, but equations have one free parameter (
-# traditional effective mass method), typically a fast version of 3 (3 may have better different error properties, though)
+# traditional effective mass method),
+# typically a fast version of 3
+# (3 may have better different error properties, though)
 
 EFF_MASS_METHOD = 4
 
@@ -470,8 +475,8 @@ PICKLE = None
 
 # title prefix
 
-# p_cm = 001, no need to modify 
-PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+","
+# p_cm = 001, no need to modify
+PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+", "
 
 if GEVP:
     if SIGMA and ISOSPIN == 0:
@@ -482,7 +487,7 @@ if GEVP:
             r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
     elif ISOSPIN == 1:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I1, $\pi\pi, \rho$,' + \
+            r' GEVP, I1, $\pi\pi, \rho$, ' + \
             irr2tex(IRREP) + PSTR_TITLE + ' '
     else:
         TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
@@ -496,7 +501,7 @@ else:
 if GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 't-t0=' + T0[6:] + " "
 if GEVP_DERIV:
-    TITLE_PREFIX = TITLE_PREFIX + '$\partial t$,' + " "
+    TITLE_PREFIX = TITLE_PREFIX + r'$\partial t$, ' + " "
 if SUPERJACK_CUTOFF and not SLOPPYONLY:
     TITLE_PREFIX = TITLE_PREFIX + 'exact '
 else:
@@ -506,7 +511,7 @@ else:
         TITLE_PREFIX = TITLE_PREFIX + '(sloppy) '
 if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
-        str(DELTA_T_MATRIX_SUBTRACTION)+','+\
+        str(DELTA_T_MATRIX_SUBTRACTION)+', '+\
         str(DELTA_T2_MATRIX_SUBTRACTION)+' '
 elif MATRIX_SUBTRACTION and GEVP:
     TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
@@ -766,8 +771,8 @@ ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
 FITS = FitFunctions()
 
-UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep',
-                           'pionmass', 'pionratio'])
+UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep', 'tstep2',
+                           'pionmass', 'deltat', 'pionratio'])
 UP.add_const = ADD_CONST
 UP.log = LOG
 UP.c = C
@@ -822,7 +827,7 @@ if EFF_MASS:
                 if SYS_ENERGY_GUESS is not None:
                     START_PARAMS.append(SYS_ENERGY_GUESS)
                     assert not (
-                        len(START_PARAMS)-1) % 2,\
+                        len(START_PARAMS)-1) % 2, \
                         "bad start parameter spec:"+str(START_PARAMS)
                     if not (len(START_PARAMS)-1) % 2 and\
                        DELTA_E2_AROUND_THE_WORLD is None:
@@ -831,9 +836,9 @@ if EFF_MASS:
                             """
                             return [trial_params[2*i]+trial_params[
                                 2*i+1]*exp(-(
-                                trial_params[-1]-trial_params[2*i])*ctime)
-                                    for i in range(int((
-                                            len(START_PARAMS)-1)/2))]
+                                    trial_params[-1]-trial_params[
+                                        2*i])*ctime) for i in range(
+                                            int((len(START_PARAMS)-1)/2))]
                     elif not (len(START_PARAMS)-1) % 3:
                         # estimate around the world via fit
                         assert GEVP
@@ -854,7 +859,7 @@ if EFF_MASS:
                                 -1*LT*misc.massfunc())*exp(
                                     -1*ctime*DELTA_E_AROUND_THE_WORLD)
                                      for i in rrl]
-                            #print(term1,term2,term3)
+                            #print(term1, term2, term3)
                             return [term1[i]+term2[i]+term3[i] for i in rrl]
                     elif not (len(START_PARAMS)-1) % 4:
                         # estimate around the world via fit
@@ -877,9 +882,11 @@ if EFF_MASS:
                                         trial_params[
                                             4*i]-DELTA_E_AROUND_THE_WORLD))
                                      for i in rrl]
-                            term4 = [trial_params[4*i+3]*exp(-1*LT*MINE2)*exp(-1*ctime*(trial_params[4*i]-DELTA_E_AROUND_THE_WORLD))
+                            term4 = [trial_params[4*i+3]*exp(
+                                -1*LT*MINE2)*exp(-1*ctime*(trial_params[
+                                    4*i]-DELTA_E_AROUND_THE_WORLD))
                                      for i in rrl]
-                            #print(term1,term2,term3,term4)
+                            #print(term1, term2, term3, term4)
                             return [term1[i]+term2[i]+term3[i]+term4[i] for i in rrl]
                 else:
                     def prefit_func(_, trial_params):
@@ -933,8 +940,8 @@ else:
                 """gevp fit func, non eff mass"""
                 return [
                     RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
-                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
-                        for j in range(MULT)]
+                        ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
+                    for j in range(MULT)]
         else:
             def prefit_func(ctime, trial_params):
                 """gevp fit func, non eff mass"""
@@ -972,8 +979,7 @@ else:
                 def prefit_func(ctime, trial_params):
                     """Prefit function, copy of
                     exponential fit function."""
-                    return FITS._select[
-                        'fit_func_exp'](ctime, trial_params)
+                    return FITS.use('fit_func_exp')(ctime, trial_params)
         else:
             def prefit_func(__, _):
                 """fit function doesn't do anything because FIT = False"""
@@ -1006,7 +1012,7 @@ print("GEVP directories:", GEVP_DIRS)
 MULT = len(GEVP_DIRS) if GEVP else 1
 if GEVP:
     assert DIM == MULT, "Error in GEVP_DIRS length."
-#assert not(LOG and PIONRATIO),\
+#assert not(LOG and PIONRATIO), \
 #    "Taking a log is improper when doing a pion ratio fit."
 assert len(LT_VEC) == MULT, "Must set time separation separately for"+\
     " each diagonal element of GEVP matrix"
@@ -1035,7 +1041,7 @@ if EFF_MASS:
         RESCALE = 1.0
 print(
     "Assuming slowest around the world term particle is stationary.  Emin=",
-      DELTA_E_AROUND_THE_WORLD)
+    DELTA_E_AROUND_THE_WORLD)
 print("2nd order around the world term, delta E=",
       DELTA_E2_AROUND_THE_WORLD)
 assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix"+\
@@ -1046,17 +1052,17 @@ assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
 assert NUM_PENCILS == 0, "this feature is less tested, "+\
     " use at your own risk (safest to have NUM_PENCILS==0)"
 assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
-assert 'avg' in IRREP or 'mom111' not in IRREP or 'A' not in IRREP,\
+assert 'avg' in IRREP or 'mom111' not in IRREP or 'A' not in IRREP, \
     "A1_avg_mom111 is the "+\
     "averaged over rows, A1_mom111 is one row.  "+\
     "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
-assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO,\
+assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO, \
     "isospin 2 is the only user of this"+\
     " lattice spacing correction method"
 if rf.norm2(rf.procmom(MOMSTR)) == 0:
-    assert np.all(DELTA_E_AROUND_THE_WORLD == 0.0),\
+    assert np.all(DELTA_E_AROUND_THE_WORLD == 0.0), \
         "only 1 constant in COMP frame:"+str(DELTA_E_AROUND_THE_WORLD)
-    assert DELTA_E2_AROUND_THE_WORLD is None,\
+    assert DELTA_E2_AROUND_THE_WORLD is None, \
         "only 1 constant in COMP frame"
 if GEVP:
     print("GEVP derivative being taken:", GEVP_DERIV)
@@ -1064,7 +1070,7 @@ if GEVP:
 #assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
 print("Binning configs.  Bin size =", BINNUM)
 assert not USE_LATE_TIMES, "method is based on flawed assumptions."
-assert not T0 == "ROUND", "bad systematic errors result from this option"
+assert T0 != "ROUND", "bad systematic errors result from this option"
 assert not BIASED_SPEEDUP, "it is biased.  do not use."
 assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
 assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
