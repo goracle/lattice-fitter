@@ -3,13 +3,13 @@
 
 ## p1 == A1^+ \circleplus B
 import sys
-import numpy as np
 from math import sqrt
-import read_file as rf
+import numpy as np
+from latfit.utilities import read_file as rf
 from latfit.utilities import exactmean as em
 
-current_module = sys.modules[__name__]
-cmod = current_module
+CURRENT_MODULE = sys.modules[__name__]
+CMOD = CURRENT_MODULE
 
 
 A_1PLUS_mom_100 = [
@@ -969,8 +969,9 @@ B_0_mom_111 = [
 ]
 
 
-def row(irr):
-    ret = irr.split('_')[1]
+def row(irrf):
+    """Find row number of irrep from string"""
+    ret = irrf.split('_')[1]
     return int(ret)
 
 
@@ -993,86 +994,87 @@ def lstr(arr):
     ret = str(ret)
     return ret
 
-def sumabs(mom):
+def sumabs(momf):
     """Sum the absolute value of the momentum
     [1,-1,0] => 2
     """
-    ret = em.acsum(np.abs(mom))
+    ret = em.acsum(np.abs(momf))
     return ret
 
-def sortmom(irrvar, irr):
+def sortmom(irrvarf, irrf):
     """Enforce Luchang's condition
     that inner pions should be higher energy
     """
     ret = []
-    for i in irrvar:
+    for i in irrvarf:
         moms = list(i[2])
         if len(moms) == 2:
             if sumabs(moms[0]) > sumabs(moms[1]):
                 moms[0], moms[1] = moms[1], moms[0]
                 toapp = (i[0], i[1], moms)
                 assert str(toapp) != str(i)
-                if toapp in irrvar:
-                    ret = irrvar
-                    print(irr, "has reverse")
+                if toapp in irrvarf:
+                    ret = irrvarf
+                    print(irrf, "has reverse")
                     break
             else:
                 toapp = i
         ret.append(toapp)
-    assert len(ret) == len(irrvar), "bad return length:"+\
-        str(ret)+" "+str(irrvar)
+    assert len(ret) == len(irrvarf), "bad return length:"+\
+        str(ret)+" "+str(irrvarf)
     return ret
 
 # add the rho operator via this hack
 OPLIST = {}
-for irr in dir(cmod):
-    if 'mom' not in irr:
+for IRR in dir(CMOD):
+    if 'mom' not in IRR:
         continue
     else:
-        irrvar = getattr(cmod, irr)
-        if not hasattr(irrvar, '__iter__'):
+        IRRVAR = getattr(CMOD, IRR)
+        if not hasattr(IRRVAR, '__iter__'):
             continue
-        irrvar = sortmom(irrvar, irr)
-        mom = rf.mom(irr)
-        assert len(mom) == 3, "bad momentum specified:"+str(mom)
-        for i in mom:
-            assert isinstance(i, int), "momentum has non-int value:"+str(mom)
-        toadd = [(1, 'rho', list(mom))]
-        irrvar.insert(0, *toadd)
-        key = str(irr)+'?pol='
-        tarr = [bool(i) for i in mom]
+        IRRVAR = sortmom(IRRVAR, IRR)
+        MOM = rf.mom(IRR)
+        assert len(MOM) == 3, "bad momentum specified:"+str(MOM)
+        for IDX in MOM:
+            assert isinstance(IDX, int),\
+                "momentum has non-int value:"+str(MOM)
+        TOADD = [(1, 'rho', list(MOM))]
+        IRRVAR.insert(0, *TOADD)
+        KEY = str(IRR)+'?pol='
+        TARR = [bool(IDX) for IDX in MOM]
 
         #pols for p1
-        if 'A_1PLUS' in irr and sum(np.abs(mom)) == 1:
-            key += str(tarr.index(True)+1)
-        elif 'B' in irr and sum(np.abs(mom)) == 1:
-            if row(irr):
-                tarr[tarr.index(False)] = True
-            pol = int(tarr.index(False)) + 1
-            key += str(pol)
+        if 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 1:
+            KEY += str(TARR.index(True)+1)
+        elif 'B' in IRR and sum(np.abs(MOM)) == 1:
+            if row(IRR):
+                TARR[TARR.index(False)] = True
+            POL = int(TARR.index(False)) + 1
+            KEY += str(POL)
 
         #pols for p11
-        elif 'A_1PLUS' in irr and sum(np.abs(mom)) == 2:
-            key += lstr(mom)
-        elif 'A_2PLUS' in irr and sum(np.abs(mom)) == 2:
-            key += str(tarr.index(False)+1)
-        elif 'A_2MINUS' in irr and sum(np.abs(mom)) == 2:
-            key += lstr(np.cross(mom, [(1 if not i else 0) for i in tarr]))
+        elif 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 2:
+            KEY += lstr(MOM)
+        elif 'A_2PLUS' in IRR and sum(np.abs(MOM)) == 2:
+            KEY += str(TARR.index(False)+1)
+        elif 'A_2MINUS' in IRR and sum(np.abs(MOM)) == 2:
+            KEY += lstr(np.cross(MOM, [(1 if not i else 0) for i in TARR]))
 
         #pols for p111
-        elif 'A_1PLUS' in irr and sum(np.abs(mom)) == 3:
-            key += lstr(mom)
-        elif 'B' in irr and sum(np.abs(mom)) == 3:
-            pollist = pol_coeff(mom)
-            if row(irr):
-                key += lstr(np.cross(pollist, mom))
+        elif 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 3:
+            KEY += lstr(MOM)
+        elif 'B' in IRR and sum(np.abs(MOM)) == 3:
+            POLLIST = pol_coeff(MOM)
+            if row(IRR):
+                KEY += lstr(np.cross(POLLIST, MOM))
             else:
-                key += lstr(pollist)
+                KEY += lstr(POLLIST)
 
         # default
         else:
-            assert None, "bad irrep specified:"+str(irr)
-        OPLIST[key] = irrvar
+            assert None, "bad irrep specified:"+str(IRR)
+        OPLIST[KEY] = IRRVAR
 
 AVG_ROWS = {
     'A_1PLUS_mom1': ('A_1PLUS_mom00_1',
@@ -1153,13 +1155,14 @@ AVG_ROWS = {
                            'A_1PLUS_mom_11_1',
                            'A_1PLUS_mom_1_11'),}
 
-for i in AVG_ROWS:
-    assert len(set(AVG_ROWS[i])) == len(list(AVG_ROWS[i])),\
-        "duplicate found:"+str(AVG_ROWS[i])
-    count = 0
-    for j in AVG_ROWS[i]:
-        assert j in dir(cmod), "unknown irrep:"+str(j)
-        irrvar = getattr(cmod, j)
-        count = len(irrvar) if not count else count
-        if 'B' not in j:
-            assert len(irrvar) == count, "bad irrep length:"+str(j)+" "+str(irrvar)
+for IDX in AVG_ROWS:
+    assert len(set(AVG_ROWS[IDX])) == len(list(AVG_ROWS[IDX])),\
+        "duplicate found:"+str(AVG_ROWS[IDX])
+    COUNT = 0
+    for JDX in AVG_ROWS[IDX]:
+        assert JDX in dir(CMOD), "unknown irrep:"+str(JDX)
+        IRRVAR = getattr(CMOD, JDX)
+        COUNT = len(IRRVAR) if not COUNT else COUNT
+        if 'B' not in JDX:
+            assert len(IRRVAR) == COUNT, "bad irrep length:"+str(JDX)+\
+                " "+str(IRRVAR)

@@ -20,16 +20,17 @@ from scipy.optimize import minimize_scalar
 import h5py
 from mpi4py import MPI
 
-from lafit.utilities.postprod.h5jack import getwork, gatherdicts, check_ids
-from lafit.utilities.postprod.h5jack import TSEP, LT, overall_coeffs,\
-    h5sum_blks
-from lafit.utilities.postprod.h5jack import avg_irreps, TSTEP
-from lafit.utilities.postprod.h5jack import tdismax
-import lafit.utilities.postprod.h5jack as h5jack
-import op_compose as opc
+from latfit.utilities.postprod.h5jack import getwork, gatherdicts
+from latfit.utilities.postprod.checkblks import check_ids
+from latfit.utilities.postprod.h5jack import TSEP, LT, overall_coeffs
+from latfit.utilities.postprod.h5jack import h5sum_blks
+from latfit.utilities.postprod.h5jack import avg_irreps, TSTEP
+from latfit.utilities.postprod.h5jack import tdismax
+import latfit.utilities.postprod.h5jack as h5jack
 from latfit.utilities import exactmean as em
-import read_file as rf
-from sum_blks import isoproj
+from latfit.utilities import read_file as rf
+from latfit.utilities import op_compose as opc
+from latfit.utilities.sum_blks import isoproj
 
 TSTEP = int(TSTEP)
 
