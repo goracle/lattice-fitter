@@ -1,9 +1,11 @@
 """Makes statements (and assertions)"""
+import numpy as np
 from latfit.utilities import read_file as rf
 import latfit.fit_funcs
 
-def gevp_statements(gevp_dirs, gevp, dim, lt_vec, add_const_vec):
+def gevp_statements(gevp_dirs, gevp, dim, mult, tvecs):
     """Make gevp related statements"""
+    lt_vec, add_const_vec = tvecs
     print("GEVP directories:", gevp_dirs)
     #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=1)
     #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=0)
@@ -18,7 +20,7 @@ def gevp_statements(gevp_dirs, gevp, dim, lt_vec, add_const_vec):
         " for each diagonal element of GEVP matrix"
 
 def start_params_pencils(start_params, origl, num_pencils,
-                           mult, sys_energy_guess):
+                         mult, sys_energy_guess):
     """start parameter statements"""
     if len(start_params) % 2 == 1 and origl > 1:
         start_params = list(start_params[:-1])*mult
@@ -84,13 +86,13 @@ def bin_time_statements(binnum, use_late_times, t0f, biased_speedup):
     """more statements"""
     print("Binning configs.  Bin size =", binnum)
     assert not use_late_times, "method is based on flawed assumptions."
-    assert tof != "ROUND", "bad systematic errors result from this option"
+    assert t0f != "ROUND", "bad systematic errors result from this option"
     assert not biased_speedup, "it is biased.  do not use."
-    assert tof != 'ROUND',\
+    assert t0f != 'ROUND',\
         "too much systematic error if t-t0!=const." # ceil(t/2)
-    assert tof != 'LOOP',\
+    assert t0f != 'LOOP',\
         "too much systematic error if t-t0!=const." # ceil(t/2)
-    assert 'TMINUS' in tof,\
+    assert 'TMINUS' in t0f,\
         "t-t0=const. for best known systematic error bound."
 
 def bin_statements(binnum, elim_jkconf_list, half,
@@ -101,7 +103,7 @@ def bin_statements(binnum, elim_jkconf_list, half,
     # we can't fit to 0 length subsets
     assert not only_small_fit_ranges or range_length_min
 
-def delta_e2_mod(systematic_est, matrix_subtraction, pionratio,
+def delta_e2_mod(systematic_est, pionratio,
                  delta_e2_around_the_world, delta_e_around_the_world):
     """some more statements"""
     assert not systematic_est, "cruft; should be removed eventually"
@@ -109,11 +111,11 @@ def delta_e2_mod(systematic_est, matrix_subtraction, pionratio,
     #assert MATRIX_SUBTRACTION or not PIONRATIO
     if delta_e2_around_the_world is not None:
         delta_e2_around_the_world -= delta_e_around_the_world
-    if PIONRATIO:
+    if pionratio:
         #assert ISOSPIN == 2
-        print("using pion ratio method, PIONRATIO:", PIONRATIO)
+        print("using pion ratio method, PIONRATIO:", pionratio)
     else:
-        print("not using pion ratio method, PIONRATIO:", PIONRATIO)
+        print("not using pion ratio method, PIONRATIO:", pionratio)
     return delta_e2_around_the_world
 
 def matsub_statements(matrix_subtraction, irrep, isospin, gevp, noatwsub):

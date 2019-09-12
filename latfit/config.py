@@ -791,8 +791,7 @@ fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
                                MATRIX_SUBTRACTION,
                                DELTA_E2_AROUND_THE_WORLD)
 # get initial blank fit function
-PREFIT_FUNC = fitfunc.prelimselect(EFF_MASS, EFF_MASS_METHOD,
-                                   RESCALE, START_PARAMS)
+PREFIT_FUNC = fitfunc.prelimselect()
 
 if EFF_MASS:
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
@@ -804,21 +803,20 @@ if EFF_MASS:
                                                     SYS_ENERGY_GUESS)
             if not (len(START_PARAMS)-1) % 2 and\
                DELTA_E2_AROUND_THE_WORLD is None:
-                PREFIT_FUNC = fitfunc.const_plus_exp()
+                PREFIT_FUNC = fitfunc.const_plus_exp(START_PARAMS)
             elif not (len(START_PARAMS)-1) % 3:
                 fitfunc.three_asserts(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
                 PREFIT_FUNC = fitfunc.atwfit(DELTA_E2_AROUND_THE_WORLD,
                                              DELTA_E_AROUND_THE_WORLD,
-                                             START_PARAMS, DIM)
+                                             START_PARAMS, DIM, LT)
             elif not (len(START_PARAMS)-1) % 4:
                 fitfunc.three_asserts(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
                 PREFIT_FUNC = fitfunc.atwfit_second_order(
-                    START_PARAMS, DIM, DELTA_E_AROUND_THE_WORLD, MINE2)
+                    START_PARAMS, DIM, LT, DELTA_E_AROUND_THE_WORLD, MINE2)
             else:
                 fitfunc.fit_func_die()
     elif EFF_MASS_METHOD == 3:
-        PREFIT_FUNC = fitfunc.eff_mass_3_func((ORIGL, MULT), FIT,
-                                              RESCALE, FITS,
+        PREFIT_FUNC = fitfunc.eff_mass_3_func((ORIGL, MULT), RESCALE, FITS,
                                               (ADD_CONST_VEC, LT_VEC))
     else:
         fitfunc.fit_func_die()
@@ -841,7 +839,7 @@ def fit_func(ctime, trial_params): # lower case hack
     return PREFIT_FUNC(ctime, trial_params)
 
 # make statements (asserts)
-sands.gevp_statements(GEVP_DIRS, GEVP, DIM, LT_VEC, ADD_CONST_VEC)
+sands.gevp_statements(GEVP_DIRS, GEVP, DIM, MULT, (LT_VEC, ADD_CONST_VEC))
 sands.start_params_pencils(START_PARAMS, ORIGL,
                            NUM_PENCILS, MULT, SYS_ENERGY_GUESS)
 sands.fit_func_statements(USE_FIXED_MASS, UP, TSTEP, FITS)
@@ -856,9 +854,7 @@ sands.asserts_three(MOMSTR, DELTA_E_AROUND_THE_WORLD,
 sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0, BIASED_SPEEDUP)
 sands.bin_statements(BINNUM, ELIM_JKCONF_LIST, HALF,
                      ONLY_SMALL_FIT_RANGES, RANGE_LENGTH_MIN)
-DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST,
-                                               MATRIX_SUBTRACTION,
-                                               PIONRATIO,
+DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST, PIONRATIO,
                                                DELTA_E2_AROUND_THE_WORLD,
                                                DELTA_E_AROUND_THE_WORLD)
 sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
