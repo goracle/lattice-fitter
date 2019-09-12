@@ -2,16 +2,10 @@
 
 from __future__ import division, absolute_import, print_function
 
-import collections
-import itertools
-import operator
-import sys
-import warnings
-import numbers
+import numpy as np
 from accupy import kdot
 from latfit.utilities import exactmean as em
 
-import numpy as np
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -207,9 +201,8 @@ def ac_real_tensordot(a, b, axes=2):
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
-    
+
     res = kdot(at, bt) # the replacement line
     res = np.asarray(res, dtype=at.dtype)
     assert at.dtype == bt.dtype, "input type mismatch"
     return res.reshape(olda + oldb)
-

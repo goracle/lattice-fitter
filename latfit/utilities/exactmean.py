@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """A wrapper for Shewchuk summation; to be used as an np.mean replacement"""
 
-import sys
 import accupy
 import numpy as np
 from numpy import swapaxes as swap
@@ -25,11 +24,11 @@ def convert_arr(arr):
 def acstd(arr, axis=0, ddof=0, fsum=False):
     """Compute standard deviation given ddof degrees of freedom"""
     ret = acsum((arr-acmean(arr, axis=axis, fsum=fsum))**2,
-                 axis=axis, fsum=fsum)
+                axis=axis, fsum=fsum)
     ret /= (arr.shape)[axis]-ddof
     ret = np.sqrt(ret)
     return ret
-    
+
 @PROFILE
 def acsum(arr, axis=0, fsum=False):
     """Peform accurate summation"""
@@ -79,15 +78,15 @@ def dosum(arr, fsum):
 
 
 @PROFILE
-def kahan_sum(a, axis=0):
+def kahan_sum(arr, axis=0):
     """Standard Kahan sum"""
-    a = np.asarray(a)
-    s = np.zeros(a.shape[:axis] + a.shape[axis+1:])
-    c = np.zeros(s.shape)
-    for i in range(a.shape[axis]):
+    arr = np.asarray(arr)
+    sarr = np.zeros(arr.shape[:axis] + arr.shape[axis+1:])
+    carr = np.zeros(sarr.shape)
+    for i in range(arr.shape[axis]):
         # http://stackoverflow.com/a/42817610/353337
-        y = a[(slice(None),) * axis + (i,)] - c
-        t = s + y
-        c = (t - s) - y
-        s = t.copy()
-    return s
+        yarr = arr[(slice(None),) * axis + (i,)] - carr
+        tarr = sarr + yarr
+        carr = (tarr - sarr) - yarr
+        sarr = tarr.copy()
+    return sarr

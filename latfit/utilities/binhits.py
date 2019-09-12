@@ -55,13 +55,13 @@ def ishitsdir(item):
     elif '0.hdf5' in item:
         ret = False
     return ret
-    
+
 def trajq(fil):
     """Get traj info"""
     ret = re.sub('_exact', '', fil)
     ret = ret.split('/')[-1]
     ret = ret.split('_')[-1]
-    ret = ret.split('.')[0] 
+    ret = ret.split('.')[0]
     ret = int(ret)
     return ret
 
@@ -73,14 +73,14 @@ def main():
     if ishitsdir(fs1[0]):
         print("assuming hits dir is", dir1)
         print("assuming base dir is", dir2)
-        hdir = dir1
+        # hdir = dir1
         hlist = fs1
         flist = fs2
         fdir = dir2
     elif ishitsdir(fs2[0]):
         print("assuming hits dir is", dir2)
         print("assuming base dir is", dir1)
-        hdir = dir2
+        # hdir = dir2
         hlist = fs2
         flist = fs1
         fdir = dir1
@@ -136,7 +136,7 @@ def main():
 
             # overwrite step, do not turn on unless checked!
             overwrite(nam1, fil, nblk)
-            started = True
+            # started = True
 
 def mark(traj, fdir, exact=False):
     """Mark the base trajectory data as modified"""
@@ -153,7 +153,9 @@ def mark(traj, fdir, exact=False):
         remove_write_permissions(name)
     return ret
 
-# taken from https://stackoverflow.com/questions/16249440/changing-file-permission-in-python/38511116
+# taken from
+# https://stackoverflow.com/questions/16249440/
+# changing-file-permission-in-python/38511116
 def remove_write_permissions(path):
     """Remove write permissions from this path,
     while keeping all other permissions intact.
@@ -191,7 +193,7 @@ def getblock(dname, fname):
     blk = np.asarray(fn1[dname])
     fn1.close()
     return blk
-    
+
 def h5hitget(fil, hlist):
     """Get the corresponding hit hdf5 file"""
     if 'exact' in fil:
@@ -216,8 +218,8 @@ def h5hitget(fil, hlist):
     if 'exact' in fil:
         print("exact match:", fil, ret[0])
     return ret[0]
-        
-    
+
+
 
 
 

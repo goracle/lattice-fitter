@@ -1,11 +1,10 @@
 #!/usr/bin/python3
+"""Make histograms from fit results over fit ranges"""
 import sys
 import re
-from collections import Counter as ctr
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
-import operator
 from matplotlib.backends.backend_pdf import PdfPages
 import gvar
 from latfit.utilities import exactmean as em
@@ -57,7 +56,8 @@ def make_hist(fname):
         pdat = np.array(pdat)
         pdat = np.real(pdat)
         try:
-            pdat_avg, pdat_err, pdat_freqarr, pdat_excl = pdat
+            # pdat_avg, pdat_err, pdat_freqarr, pdat_excl = pdat
+            _, _, pdat_freqarr, _ = pdat
         except ValueError:
             print("not the right number of values to unpack.  expected 3")
             print("but shape is", pdat.shape)
@@ -75,7 +75,7 @@ def make_hist(fname):
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
         errdat = np.real(np.array(errdat))
-    assert len(errdat) > 0, "error array not found"
+    assert errdat, "error array not found"
 
     print('shape:', freqarr.shape, avg)
     print('shape2:', errdat.shape)
@@ -96,11 +96,13 @@ def make_hist(fname):
             errlooparr = errdat[:, dim] if len(errdat.shape) > 1 else errdat
             #print(freqarr[:, dim], errlooparr)
             loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
-                          key = lambda elem: elem[2], reverse=True)
+                          key=lambda elem: elem[2], reverse=True)
             median_err = []
             for i, j, k, _ in loop:
                 # skip the single time slice points for GEVP
-                if j == 1.0 and hasattr(freqarr.shape, '__iter__') and hasattr(freqarr.shape[-1], '__iter__') and len(freqarr.shape[-1]) > 1: 
+                if j == 1.0 and hasattr(freqarr.shape, '__iter__') and\
+                   hasattr(freqarr.shape[-1], '__iter__') and\
+                   len(freqarr.shape[-1]) > 1:
                     continue
                 if abs(j - pdat_median) <= median_diff:
                     median_diff = abs(j-pdat_median)
@@ -128,9 +130,11 @@ def make_hist(fname):
             #                                   sys_err.sdev)).split('(')[1]
             median = gvar.gvar(freq_median, sys_err)
             maxdiff = 0
-            for j,(i,pval) in enumerate(median_err):
+            for j, (i, pval) in enumerate(median_err):
                 # skip the single time slice points for GEVP
-                if pval == 1.0 and hasattr(freqarr.shape[-1], '__iter__') and len(freqarr.shape[-1]) > 1: 
+                if pval == 1.0 and hasattr(
+                        freqarr.shape[-1], '__iter__') and len(
+                            freqarr.shape[-1]) > 1:
                     continue
                 pval = trunc(pval)
                 median_diff = i-median
@@ -139,21 +143,21 @@ def make_hist(fname):
                 avg_diff = i-avg[dim]
                 avg_diff = gvar.gvar(abs(avg_diff.val),
                                      max(i.sdev, avg[dim].sdev))
-                l = exclarr[list(freq).index(i.val)]
-                l = np.asarray(l)
-                if len(l.shape) > 1:
-                    l = l[dim]
+                lexcl = exclarr[list(freq).index(i.val)]
+                lexcl = np.asarray(lexcl)
+                if len(lexcl.shape) > 1:
+                    lexcl = lexcl[dim]
 
-                ind_diff = diff_ind(i, np.array(median_err)[:,0])
+                ind_diff = diff_ind(i, np.array(median_err)[:, 0])
 
                 if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
-                        median_diff.val)>abs(median_diff.sdev):
-                    print(i, pval, l)
+                        median_diff.val) > abs(median_diff.sdev):
+                    print(i, pval, lexcl)
                     #print("")
                     #print("diffs", ind_diff, median_diff, avg_diff)
                     #print("")
                 elif ind_diff.val or ind_diff.sdev:
-                    print(i, pval, l)
+                    print(i, pval, lexcl)
                     maxdiff = max(maxdiff, np.abs(
                         ind_diff.val-ind_diff.sdev)/ind_diff.sdev)
                     if maxdiff == np.abs(
@@ -162,7 +166,7 @@ def make_hist(fname):
                         print(ind_diff)
                         print("")
                 else:
-                    print(i, pval, l)
+                    print(i, pval, lexcl)
             print('p-value weighted median =', str(median))
             print("p-value weighted mean =", avg[dim])
             plt.ylabel('count')
@@ -201,7 +205,7 @@ def addoffset(hist):
                 dup[j] += 1
                 uniqs[j] = dup[i]
     print(uniqs)
-    for i in range(len(dup)):
+    for i in enumerate(dup):
         if dup[i]:
             offset = 0.1*uniqs[i]/dup[i]
             hist[i] += offset
@@ -224,20 +228,20 @@ def diff_ind(res, arr):
                 maxdiff = 0
                 maxerr = 0
     return gvar.gvar(maxdiff, maxerr)
-                
+
 
 def getxerr(freq, center, errdat_dim):
     """Get horiz. error bars"""
     err = np.zeros(len(center), dtype=np.float)
-    for n, cent in enumerate(center):
-        mindiff = np.inf 
+    for k, cent in enumerate(center):
+        mindiff = np.inf
         flag = False
-        for k, pair in enumerate(zip(freq, errdat_dim)):
+        for _, pair in enumerate(zip(freq, errdat_dim)):
             i, j = pair
             mindiff = min(abs(cent-i), abs(mindiff))
             if mindiff == abs(cent-i):
                 flag = True
-                err[n] = j
+                err[k] = j
         assert flag, "bug"
     return err
 
@@ -248,9 +252,10 @@ def gettitle(fname):
     """Get title for histograms"""
     # get title
     title = re.sub('_', " ", fname)
-    title = re.sub('\.p', '', title)
+    title = re.sub(r'\.p', '', title)
     for i in range(10):
-        if not i: continue
+        if not i:
+            continue
         if str(i) in title:
             title = re.sub('0', '', title)
             title = re.sub('mom', 'p', title)

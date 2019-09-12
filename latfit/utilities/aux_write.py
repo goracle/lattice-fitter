@@ -86,8 +86,7 @@ def aux_filen(filename, stype='ascii'):
             plist[1] = psrc # new sink (-1)
             plist[0] = psnk2 # new source (-1)
         else:
-            print("bad filename to apply aux to:", filename)
-            raise
+            assert None, "bad filename to apply aux to: "+str(filename)
         outfile = outfile.replace("pol_snk", "pol_SOURCE")
         outfile = outfile.replace("pol_src", "pol_SINK")
         outfile = outfile.replace("pol_SOURCE", "pol_src")

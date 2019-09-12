@@ -2,7 +2,6 @@
 """Link a single config's hdf5 files into
 one hdf5 file for the whole config"""
 import sys
-import re
 import os
 import re
 import glob
@@ -53,7 +52,7 @@ def main():
                 print("Bad symbol table in:", file2)
                 print("Dataset right before failure:", datal)
                 print("trying to link to", file1)
-                continue
+                # continue
                 raise
             gn1.close()
             for data in datal:

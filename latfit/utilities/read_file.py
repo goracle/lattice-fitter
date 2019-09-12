@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 """General utility functions"""
-# to get files
 import sys
-# to process file list
 import os.path
 from math import sqrt
+from collections import Iterable
 import re
 import warnings
 import linecache as lc
 import numpy as np
 import h5py
-from collections import Iterable
 from accupy import kdot
 from latfit.utilities import exactmean as em
 
@@ -106,9 +104,9 @@ def mom_suffix(fn1, prefix=None):
     assert prefix + '_' + ret == fn1, "bug in mom_(pre)(suf)fix"
     return ret
 
-def norm2(mom):
+def norm2(momf):
     """p[0]^2+p[1]^2"+p[2]^2"""
-    return mom[0]**2+mom[1]**2+mom[2]**2
+    return momf[0]**2+momf[1]**2+momf[2]**2
 
 def traj(filename, nowarn=False):
     """Get trajectory info from filename"""
@@ -137,15 +135,15 @@ def reverse_p(filename):
         boolp = False
     return boolp
 
-def allzero(mom):
+def allzero(momf):
     """Check if momentum components are all 0"""
-    if isinstance(mom[0], Iterable):
-        for onep in mom:
-            ret = all(0==np.asarray(onep))
+    if isinstance(momf[0], Iterable):
+        for onep in momf:
+            ret = not np.any(onep)
     else:
-        ret = all(0==np.asarray(mom))
+        ret = not np.any(momf)
     return ret
-            
+
 
 def checkp(filename):
     """determine if file contains check data on vector diagram
@@ -698,10 +696,10 @@ def sum_rows(inmat, avg=False):
     ncol = int(sqrt(inmat.size))
     if avg:
         col = [em.acsum(inmat.item(i, j)
-                      for i in range(ncol))/(ncol) for j in range(ncol)]
+                        for i in range(ncol))/(ncol) for j in range(ncol)]
     else:
         col = [em.acsum(inmat.item(i, j)
-                      for i in range(ncol)) for j in range(ncol)]
+                        for i in range(ncol)) for j in range(ncol)]
     return col
 
 

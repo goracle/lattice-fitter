@@ -21,17 +21,17 @@ def main(*args):
         if i == 0:
             continue
         try:
-            fn = h5py.File(data, 'r')
+            fn1 = h5py.File(data, 'r')
         except OSError:
             print("Not including:", data, "File doesn't exist.")
             norm = 1.0/(1.0/norm-1)
             sys.exit(1)
         print("Including", data)
-        for k in fn:
+        for k in fn1:
             isospin = k
-            for l in fn[k]:
+            for item in fn1[k]:
                 try:
-                    setname = k+'/'+l
+                    setname = k+'/'+item
                 except TypeError:
                     isospin = ''
                     setname = k
@@ -40,7 +40,7 @@ def main(*args):
         print('adding in dataset=', setname, "in file=", data, 'i=', i)
         if i == 1:
             avg = []
-        avg.append(np.asarray(fn[setname], dtype=np.complex128))
+        avg.append(np.asarray(fn1[setname], dtype=np.complex128))
     avg = em.acsum(np.asarray(avg))
     print("multiplying by norm=", norm)
     avg *= norm
@@ -48,14 +48,14 @@ def main(*args):
     name = re.sub('.jkdat', '', name)
     pathname = Path(name+'.jkdat')
     if not pathname.is_file():
-        fn = h5py.File(name+'.jkdat', 'w')
-        fn[isospin+'/'+name.split('/')[-1]] = avg
-        fn.close()
+        fn1 = h5py.File(name+'.jkdat', 'w')
+        fn1[isospin+'/'+name.split('/')[-1]] = avg
+        fn1.close()
         print("done.")
     else:
         print(name+'.jkdat', "exists. Skipping.")
 
-            
+
 
 
 if __name__ == '__main__':

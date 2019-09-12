@@ -9,11 +9,12 @@ import latfit.mathfun.elim_jkconfigs as elim
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.analysis.irr2tex import irr2tex
 from latfit.fit_funcs import FitFunctions
-import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
 from latfit.utilities.postprod.checkblks import check_ids
+import latfit.checks_and_statements as sands
+
 setup_logger()
 
 
@@ -793,312 +794,62 @@ FITS.select(UP)
 
 # -------END POSSIBLY OBSOLETE------#
 
-# FIT FUNCTION/PROCESSING FUNCTION SELECTION
-
-
-# select which of the above library functions to use
-
 ORIGL = len(START_PARAMS)
-if EFF_MASS:
 
-    # check len of start params
-    #if ORIGL != 1 and EFF_MASS_METHOD != 2 and not PIONRATIO and not (
-    if ORIGL != 1 and EFF_MASS_METHOD != 2 and not (
-            ORIGL == 2 and EFF_MASS_METHOD == 4):
-        if MATRIX_SUBTRACTION:
-            print("***ERROR***")
-            print("dimension of GEVP matrix and start params do not match")
-            print("(or for non-gevp fits, the start_param len>1)")
-            sys.exit(1)
-        else:
-            assert (DELTA_E2_AROUND_THE_WORLD is None and ORIGL == 3) or (
-                DELTA_E2_AROUND_THE_WORLD is not None and ORIGL == 4
-            )
-
-    # select fit function
-    if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
-        if RESCALE == 1.0:
-            if len(START_PARAMS) == 1:
-                def prefit_func(_, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return trial_params
-            else:
-                if SYS_ENERGY_GUESS is not None:
-                    START_PARAMS.append(SYS_ENERGY_GUESS)
-                    assert not (
-                        len(START_PARAMS)-1) % 2, \
-                        "bad start parameter spec:"+str(START_PARAMS)
-                    if not (len(START_PARAMS)-1) % 2 and\
-                       DELTA_E2_AROUND_THE_WORLD is None:
-                        def prefit_func(ctime, trial_params):
-                            """eff mass method 1, fit func, single const fit
-                            """
-                            return [trial_params[2*i]+trial_params[
-                                2*i+1]*exp(-(
-                                    trial_params[-1]-trial_params[
-                                        2*i])*ctime) for i in range(
-                                            int((len(START_PARAMS)-1)/2))]
-                    elif not (len(START_PARAMS)-1) % 3:
-                        # estimate around the world via fit
-                        assert GEVP
-                        assert not MATRIX_SUBTRACTION
-                        assert NOATWSUB
-                        assert DELTA_E2_AROUND_THE_WORLD is None
-                        assert len(range(int((
-                            len(START_PARAMS)-1)/3))) == DIM
-                        def prefit_func(ctime, trial_params):
-                            """eff mass method 1, fit func, single const fit
-                            """
-                            rrl = range(DIM)
-                            term1 = [trial_params[3*i] for i in rrl]
-                            term2 = [trial_params[3*i+1]*exp(
-                                -(trial_params[-1]-trial_params[3*i])*ctime)
-                                     for i in rrl]
-                            term3 = [trial_params[3*i+2]*exp(
-                                -1*LT*misc.massfunc())*exp(
-                                    -1*ctime*DELTA_E_AROUND_THE_WORLD)
-                                     for i in rrl]
-                            #print(term1, term2, term3)
-                            return [term1[i]+term2[i]+term3[i] for i in rrl]
-                    elif not (len(START_PARAMS)-1) % 4:
-                        # estimate around the world via fit
-                        assert GEVP
-                        assert not MATRIX_SUBTRACTION
-                        assert NOATWSUB
-                        assert len(range(int((
-                            len(START_PARAMS)-1)/4))) == DIM
-                        def prefit_func(ctime, trial_params):
-                            """eff mass method 1, fit func, single const fit
-                            """
-                            rrl = range(DIM)
-                            term1 = [trial_params[4*i] for i in rrl]
-                            term2 = [trial_params[4*i+1]*exp(
-                                -(trial_params[-1]-trial_params[4*i])*ctime)
-                                     for i in rrl]
-                            term3 = [trial_params[
-                                4*i+2]*exp(-1*LT*misc.massfunc())*exp(
-                                    -1*ctime*(
-                                        trial_params[
-                                            4*i]-DELTA_E_AROUND_THE_WORLD))
-                                     for i in rrl]
-                            term4 = [trial_params[4*i+3]*exp(
-                                -1*LT*MINE2)*exp(-1*ctime*(trial_params[
-                                    4*i]-DELTA_E_AROUND_THE_WORLD))
-                                     for i in rrl]
-                            #print(term1, term2, term3, term4)
-                            return [term1[i]+term2[i]+term3[i]+term4[i] for i in rrl]
-                else:
-                    def prefit_func(_, trial_params):
-                        """eff mass method 1, fit func, single const fit
-                        """
-                        return trial_params
-        else:
-            if len(START_PARAMS) == 1:
-                def prefit_func(_, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return RESCALE*trial_params
-            else:
-                def prefit_func(_, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return [RESCALE*trial_param for
-                            trial_param in trial_params]
-
-    elif EFF_MASS_METHOD == 3:
-        if RESCALE != 1.0:
-            def prefit_func(ctime, trial_params):
-                """eff mass 3, fit func, rescaled
-                """
-                return [RESCALE * FITS.f['fit_func_1p'][
-                    ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL],
-                                      LT_VEC[j])
-                        for j in range(MULT)]
-        else:
-            def prefit_func(ctime, trial_params):
-                """eff mass 3, fit func, rescaled
-                """
-                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](
-                    ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
-                        for j in range(MULT)]
-    else:
-        print("***ERROR***")
-        print("check config file fit func selection.")
-        sys.exit(1)
-
-else:
-    if GEVP:
-        # check len of start params
-        if ORIGL != 2 and FIT:
-            print("***ERROR***")
-            print("flag 1 length of start_params invalid")
-            sys.exit(1)
-        # select fit function
-        if RESCALE != 1.0:
-            def prefit_func(ctime, trial_params):
-                """gevp fit func, non eff mass"""
-                return [
-                    RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
-                        ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
-                    for j in range(MULT)]
-        else:
-            def prefit_func(ctime, trial_params):
-                """gevp fit func, non eff mass"""
-                return [FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
-                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
-                        for j in range(MULT)]
-    else:
-        if FIT:
-            # check len of start params
-            if ORIGL != (3 if ADD_CONST else 2):
-                print("***ERROR***")
-                print("flag 2 length of start_params invalid")
-                sys.exit(1)
-            # select fit function
-            if RESCALE != 1.0:
-
-#                if PIONRATIO:
-#                    def prefit_func(ctime, trial_params):
-#                        """Pion ratio"""
-#                        return RESCALE*FITS.f[
-#                            'pion_ratio'](ctime, trial_params)
-#                else:
-                def prefit_func(ctime, trial_params):
-                    """Rescaled exp fit function."""
-                    return RESCALE*FITS.f[
-                        'fit_func_exp'](ctime, trial_params)
-            else:
-#                if PIONRATIO:
-#                    def prefit_func(ctime, trial_params):
-#                        """Prefit function, copy of
-#                        exponential fit function."""
-#                        return FITS._select['pion_ratio'](
-#                            ctime, trial_params)
-                #else:
-                def prefit_func(ctime, trial_params):
-                    """Prefit function, copy of
-                    exponential fit function."""
-                    return FITS.use('fit_func_exp')(ctime, trial_params)
-        else:
-            def prefit_func(__, _):
-                """fit function doesn't do anything because FIT = False"""
-                pass
-
-# DO NOT EDIT BELOW THIS LINE
-# for general pencil of function
-
-if FIT:
-    FIT_FUNC_COPY = copy(prefit_func)
-
-if NUM_PENCILS > 0:
-    def fit_func(ctime, trial_params):
-        """Fit function (num_pencils > 0)."""
-        return np.hstack(
-            [RESCALE*FIT_FUNC_COPY(
-                ctime, trial_params[i*len(START_PARAMS):(i+1)*len(
-                    START_PARAMS)]) for i in range(2**NUM_PENCILS)])
-else:
-    def fit_func(ctime, trial_params):
-        """Fit function."""
-        return prefit_func(ctime, trial_params)
+fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
+                               MATRIX_SUBTRACTION,
+                               DELTA_E2_AROUND_THE_WORLD)
+PREFIT_FUNC = fitfunc.prelimselect(EFF_MASS, EFF_MASS_METHOD,
+                                   RESCALE, START_PARAMS)
+if EFF_MASS and (EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or\
+                 EFF_MASS_METHOD == 4) and RESCALE == 1.0 and\
+                 len(START_PARAMS) != 1:
+    START_PARAMS, PREFIT_FUNC, BRET = fitfunc.prelim2(
+        SYS_ENERGY_GUESS, PREFIT_FUNC, START_PARAMS,
+        DELTA_E2_AROUND_THE_WORLD)
+    if BRET:
+        if not (len(START_PARAMS)-1) % 3:
+            prelim3(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
+            PREFIT_FUNC = prelim4(DELTA_E2_AROUND_THE_WORLD,
+                                  DELTA_E_AROUND_THE_WORLD,
+                                  START_PARAMS, DIM)
+        elif not (len(START_PARAMS)-1) % 4:
+            prelim3(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
+            PREFIT_FUNC = prelim5(start_params, dim,
+                                  delta_e_around_the_world, mine2)
+if not EFF_MASS and not GEVP:
+    PREFIT_FUNC = noeff_mass_nogevp(fit, origl, add_const, rescale, fits)
+PREFIT_FUNC = pencil_mod(PREFIT_FUNC, FIT, NUM_PENCILS,
+                         RESCALE, START_PARAMS)
+def fit_func(ctime, trial_params):
+    """Function to fit; final form after config.py"""
+    return PREFIT_FUNC(ctime, trial_params)
 
 if ISOSPIN != 0:
     SIGMA = False
+
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
-print("GEVP directories:", GEVP_DIRS)
-#GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=1)
-#GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=0)
-MULT = len(GEVP_DIRS) if GEVP else 1
-if GEVP:
-    assert DIM == MULT, "Error in GEVP_DIRS length."
-#assert not(LOG and PIONRATIO), \
-#    "Taking a log is improper when doing a pion ratio fit."
-assert len(LT_VEC) == MULT, "Must set time separation separately for"+\
-    " each diagonal element of GEVP matrix"
-assert len(ADD_CONST_VEC) == MULT, "Must separately set, whether or"+\
-    " not to use an additive constant in the fit function, for each diagonal element of GEVP matrix"
-#assert not (PIONRATIO and EFF_MASS_METHOD == 1), "No exact inverse"+\
-#    " function exists for pion ratio method."
-#assert not (PIONRATIO and EFF_MASS_METHOD == 2), "Symbolic solve"+\
-#" not supported for pion ratio method."
-if len(START_PARAMS) % 2 == 1 and ORIGL > 1:
-    START_PARAMS = list(START_PARAMS[:-1])*MULT
-    START_PARAMS.append(SYS_ENERGY_GUESS)
-    START_PARAMS = START_PARAMS*2**NUM_PENCILS
-else:
-    START_PARAMS = (list(START_PARAMS)*MULT)*2**NUM_PENCILS
-latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
-UP.tstep = TSTEP # revert back
-# MINTOL = True if not BIASED_SPEEDUP else MINTOL # probably better, but too slow
-FITS.select(UP)
-#NOLOOP = True if not GEVP else NOLOOP
-#if PIONRATIO:
-#    FITS.test()
-if EFF_MASS:
-    if EFF_MASS_METHOD in [1, 3, 4]:
-        print("rescale set to 1.0")
-        RESCALE = 1.0
-print(
-    "Assuming slowest around the world term particle is stationary.  Emin=",
-    DELTA_E_AROUND_THE_WORLD)
-print("2nd order around the world term, delta E=",
-      DELTA_E2_AROUND_THE_WORLD)
-assert EFF_MASS_METHOD == 4 or not MATRIX_SUBTRACTION, "Matrix"+\
-    " subtraction supported"+\
-    " only with eff mass method 4"
-assert JACKKNIFE_FIT == 'DOUBLE', "Other jackknife fitting"+\
-    " methods no longer supported."
-assert NUM_PENCILS == 0, "this feature is less tested, "+\
-    " use at your own risk (safest to have NUM_PENCILS==0)"
-assert JACKKNIFE == 'YES', "no jackknife correction if not YES"
-assert 'avg' in IRREP or 'mom111' not in IRREP or 'A' not in IRREP, \
-    "A1_avg_mom111 is the "+\
-    "averaged over rows, A1_mom111 is one row.  "+\
-    "(Comment out if one row is what was intended).  IRREP="+str(IRREP)
-assert not FIT_SPACING_CORRECTION or ISOSPIN == 2 or PIONRATIO, \
-    "isospin 2 is the only user of this"+\
-    " lattice spacing correction method"
-if rf.norm2(rf.procmom(MOMSTR)) == 0:
-    assert np.all(DELTA_E_AROUND_THE_WORLD == 0.0), \
-        "only 1 constant in COMP frame:"+str(DELTA_E_AROUND_THE_WORLD)
-    assert DELTA_E2_AROUND_THE_WORLD is None, \
-        "only 1 constant in COMP frame"
-if GEVP:
-    print("GEVP derivative being taken:", GEVP_DERIV)
-#assert not FIT_SPACING_CORRECTION
-#assert not SUPERJACK_CUTOFF or BINNUM == 1, "binning over superjackknife is unsupported"
-print("Binning configs.  Bin size =", BINNUM)
-assert not USE_LATE_TIMES, "method is based on flawed assumptions."
-assert T0 != "ROUND", "bad systematic errors result from this option"
-assert not BIASED_SPEEDUP, "it is biased.  do not use."
-assert T0 != 'ROUND', "too much systematic error if t-t0!=const." # ceil(t/2)
-assert T0 != 'LOOP', "too much systematic error if t-t0!=const." # ceil(t/2)
-assert 'TMINUS' in T0, "t-t0=const. for best known systematic error bound."
-#assert MATRIX_SUBTRACTION or not ((ISOSPIN == 2 or ISOSPIN == 0) and GEVP\
-#                                  and not PIONRATIO and SYS_ENERGY_GUESS is None) or not FIT
-assert BINNUM == 1 or not ELIM_JKCONF_LIST, "not supported"
-assert not ELIM_JKCONF_LIST or HALF == "full", "not supported"
-# we can't fit to 0 length subsets
-assert not ONLY_SMALL_FIT_RANGES or RANGE_LENGTH_MIN
-assert not SYSTEMATIC_EST, "cruft; should be removed eventually"
-#assert not PIONRATIO or ISOSPIN == 2
-#assert MATRIX_SUBTRACTION or not PIONRATIO
-if DELTA_E2_AROUND_THE_WORLD is not None:
-    DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
-assert not MATRIX_SUBTRACTION or '000' in IRREP or ISOSPIN == 0 or ISOSPIN == 1, IRREP
-if PIONRATIO:
-    #assert ISOSPIN == 2
-    print("using pion ratio method, PIONRATIO:", PIONRATIO)
-else:
-    print("not using pion ratio method, PIONRATIO:", PIONRATIO)
-if ISOSPIN == 2 and GEVP:
-    assert not NOATWSUB
-    assert MATRIX_SUBTRACTION or IRREP != 'A_1PLUS_mom000'
-if not NOATWSUB:
-    print("matrix subtraction:", MATRIX_SUBTRACTION)
-assert ISOSPIN != 1 or NOATWSUB, "I=1 has no ATW terms."
-if check_ids()[-2]:
-    assert SUPERJACK_CUTOFF, "AMA is turned on.  super jackknife cutoff should be non-zero"
-else:
-    assert not SUPERJACK_CUTOFF, "AMA is turned off.  super jackknife cutoff should be zero"
+
+# make statements (asserts)
+MULT = sands.gevp_statements(GEVP_DIRS, GEVP, DIM, LT_VEC, ADD_CONST_VEC)
+sands.start_params_pencils(START_PARAMS, ORIGL,
+                           NUM_PENCILS, MULT, SYS_ENERGY_GUESS)
+sands.fit_func_statements(USE_FIXED_MASS, UP, TSTEP, FITS)
+RESCALE = sands.rescale_and_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
+                                       DELTA_E_AROUND_THE_WORLD,
+                                       DELTA_E2_AROUND_THE_WORLD)
+sands.asserts_one(EFF_MASS_METHOD, MATRIX_SUBTRACTION,
+                  JACKKNIFE_FIT, NUM_PENCILS, JACKKNIFE)
+sands.asserts_two(IRREP, FIT_SPACING_CORRECTION, ISOSPIN, PIONRATIO)
+sands.asserts_three(MOMSTR, DELTA_E_AROUND_THE_WORLD,
+                    DELTA_E2_AROUND_THE_WORLD, GEVP, GEVP_DERIV)
+sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0F, BIASED_SPEEDUP)
+sands.bin_statements(BINNUM, ELIM_JKCONF_LIST, HALF,
+                     ONLY_SMALL_FIT_RANGES, RANGE_LENGTH_MIN)
+DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST,
+                                               MATRIX_SUBTRACTION,
+                                               PIONRATIO,
+                                               DELTA_E2_AROUND_THE_WORLD,
+                                               DELTA_E_AROUND_THE_WORLD)
+sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
+sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
