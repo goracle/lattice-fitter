@@ -7,7 +7,6 @@ def gevp_statements(gevp_dirs, gevp, dim, lt_vec, add_const_vec):
     print("GEVP directories:", gevp_dirs)
     #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=1)
     #GEVP_DIRS = np.delete(GEVP_DIRS, 1, axis=0)
-    mult = len(GEVP_DIRS) if GEVP else 1
     if gevp:
         assert dim == mult, "Error in GEVP_DIRS length."
         #assert not(LOG and PIONRATIO), \
@@ -17,7 +16,6 @@ def gevp_statements(gevp_dirs, gevp, dim, lt_vec, add_const_vec):
     assert len(add_const_vec) == mult, "Must separately set, whether or"+\
         " not to use an additive constant in the fit function,"+\
         " for each diagonal element of GEVP matrix"
-    return mult
 
 def start_params_pencils(start_params, origl, num_pencils,
                            mult, sys_energy_guess):
@@ -36,14 +34,14 @@ def fit_func_statements(use_fixed_mass, update, tstep, fits):
     update.tstep = tstep # revert back
     fits.select(update)
 
-def rescale_and_statements(eff_mass, eff_mass_method, rescale,
-                           delta_e_around_the_world,
-                           delta_e2_around_the_world):
+def rescale_and_atw_statements(eff_mass, eff_mass_method, rescale,
+                               delta_e_around_the_world,
+                               delta_e2_around_the_world):
     """effective mass statements"""
     if eff_mass:
         if eff_mass_method in [1, 3, 4]:
             print("rescale set to 1.0")
-            rescale = 1.0
+            assert rescale == 1.0, "rescale:"+str(rescale)
     print("Assuming slowest around the world term particle is stationary.")
     print("delta E around the world (first term)=", delta_e_around_the_world)
     print("2nd order around the world term, delta E=",
@@ -138,3 +136,8 @@ def superjackknife_statements(check_ids_minus_2, superjack_cutoff):
     else:
         assert not superjack_cutoff,\
             "AMA is turned off.  super jackknife cutoff should be zero"
+
+def deprecated(use_late_times, logform):
+    """check to make sure deprecated methods are not turned on"""
+    assert not use_late_times, "no known solution for complex energies"
+    assert not logform, "log form of GEVP introduces systematic error"

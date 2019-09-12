@@ -26,59 +26,41 @@ def check_start_params_len(eff_mass, eff_mass_method, origl,
                     or (delta_e2_around_the_world is not None and origl == 4)
 
 def prelimselect(eff_mass, eff_mass_method, rescale, start_params):
-    """Select the fit function"""
+    """Select the preliminary fit function"""
     def prefit_func(ctime, trial_params):
         """initial function; blocked"""
         assert None
         if ctime or trial_params:
             pass
-    if EFF_MASS:
-
-        # select fit function
-        if eff_mass_method == 1 or eff_mass_method == 2 or\
-           eff_mass_method == 4:
-            if rescale == 1.0:
-                if len(start_params) == 1:
-                    def prefit_func(_, trial_params):
-                        """eff mass method 1, fit func, single const fit
-                        """
-                        return trial_params
     return prefit_func
 
-#tbool = EFF_MASS and (EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4) and RESCALE == 1.0 and len(START_PARAMS) != 1
-def prelim2(sys_energy_guess, prefit_func,
-            start_params, delta_e2_around_the_world):
-    """Continue the selection process"""
-    bret = False
-    if and sys_energy_guess is not None:
-        bret = True
-        start_params.append(sys_energy_guess)
-        assert not (
-            len(start_params)-1) % 2, \
-            "bad start parameter spec:"+str(start_params)
-        if not (len(start_params)-1) % 2 and\
-            delta_e2_around_the_world is None:
-            def prefit_func2(ctime, trial_params):
-                """eff mass method 1, fit func, single const fit
-                """
-                return [trial_params[2*i]+trial_params[
-                    2*i+1]*exp(-(
-                        trial_params[-1]-trial_params[
-                            2*i])*ctime) for i in range(
-                                int((len(start_params)-1)/2))]
-            prefit_func = prefit_func2
-    return (start_params, prefit_func, bret)
+def const_plus_exp():
+    """const (eff energy) + exp (systematic) fit"""
+    def prefit_func(ctime, trial_params):
+        """eff mass method 1, fit func, single const fit
+        """
+        return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
+            trial_params[-1]-trial_params[2*i])*ctime)\
+                for i in range(int((len(start_params)-1)/2))]
+    return prefit_func
 
-def prelim3(gevp, matrix_subtraction, noatwsub):
+def mod_start_params(start_params, sys_energy_guess):
+    """Modify start parameters for effective mass systematic energy fit"""
+    start_params.append(sys_energy_guess)
+    assert not (
+        len(start_params)-1) % 2, \
+        "bad start parameter spec:"+str(start_params)
+    return start_params
+
+def three_asserts(gevp, matrix_subtraction, noatwsub):
     """three asserts"""
     assert GEVP
     assert not MATRIX_SUBTRACTION
     assert NOATWSUB
 
-# if tbool:
-def prelim4(delta_e2_around_the_world, delta_e_around_the_world, start_params, dim):
-    """something"""
-    # estimate around the world via fit
+def atwfit(delta_e2_around_the_world, delta_e_around_the_world,
+           start_params, dim):
+    """estimate around the world via fit"""
     assert DELTA_E2_AROUND_THE_WORLD is None
     assert len(range(int((len(START_PARAMS)-1)/3))) == DIM
     def prefit_func(ctime, trial_params):
@@ -97,8 +79,9 @@ def prelim4(delta_e2_around_the_world, delta_e_around_the_world, start_params, d
         return [term1[i]+term2[i]+term3[i] for i in rrl]
     return prefit_func
 
-def prelim5(start_params, dim, delta_e_around_the_world, mine2):
-    """continue the process
+
+def atwfit_second_order(start_params, dim, delta_e_around_the_world, mine2):
+    """continue the selection process
     """
     assert len(range(int((len(START_PARAMS)-1)/4))) == DIM
     def prefit_func(ctime, trial_params):
@@ -117,68 +100,90 @@ def prelim5(start_params, dim, delta_e_around_the_world, mine2):
         #print(term1, term2, term3, term4)
         return [term1[i]+term2[i]+term3[i]+term4[i] for i in rrl]
     return prefit_func
-                else:
-                    def prefit_func(_, trial_params):
-                        """eff mass method 1, fit func, single const fit
-                        """
-                        return trial_params
-        else:
-            if len(START_PARAMS) == 1:
-                def prefit_func(_, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return RESCALE*trial_params
-            else:
-                def prefit_func(_, trial_params):
-                    """eff mass method 1, fit func, single const fit
-                    """
-                    return [RESCALE*trial_param for
-                            trial_param in trial_params]
 
-    elif EFF_MASS_METHOD == 3:
-        if RESCALE != 1.0:
-            def prefit_func(ctime, trial_params):
-                """eff mass 3, fit func, rescaled
+
+def constfit(len_start_params, rescale=1.0):
+    """prefit function just returns the trial params"""
+    if len_start_params == 1.0:
+        if rescale != 1.0:
+            def prefit_func(_, trial_params):
+                """eff mass method 1, fit func, single const fit
                 """
-                return [RESCALE * FITS.f['fit_func_1p'][
-                    ADD_CONST_VEC[j]](ctime, trial_params[j:j+1*ORIGL],
-                                      LT_VEC[j])
-                        for j in range(MULT)]
+                return rescale*trial_params
         else:
-            def prefit_func(ctime, trial_params):
-                """eff mass 3, fit func, rescaled
+            def prefit_func(_, trial_params):
+                """eff mass method 1, fit func, single const fit
                 """
-                return [FITS.f['fit_func_1p'][ADD_CONST_VEC[j]](
-                    ctime, trial_params[j:j+1*ORIGL], LT_VEC[j])
-                        for j in range(MULT)]
+                return trial_params
     else:
+        if rescale != 1.0:
+            def prefit_func(_, trial_params):
+                """eff mass method 1, fit func, single const fit
+                """
+                return [rescale*trial_param for trial_param in trial_params]
+        else:
+            def prefit_func(_, trial_params):
+                """eff mass method 1, fit func, single const fit
+                """
+                return trial_params
+    return prefit_func
+
+def eff_mass_3_func(lenparams, fit, rescale, fits, tvecs):
+    """fit function for effective mass method 3"""
+    origl, mult = lenparams
+    add_const_vec, lt_vec = tvecs
+
+    if rescale != 1.0:
+        def prefit_func(ctime, trial_params):
+            """eff mass 3, fit func, rescaled
+            """
+            return [rescale * fits.f['fit_func_1p'][
+                add_const_vec[j]](ctime, trial_params[j:j+1*origl],
+                                    lt_vec[j])
+                    for j in range(mult)]
+    else:
+        def prefit_func(ctime, trial_params):
+            """eff mass 3, fit func, rescaled
+            """
+            return [fits.f['fit_func_1p'][add_const_vec[j]](
+                ctime, trial_params[j:j+1*origl], lt_vec[j])
+                    for j in range(mult)]
+    return prefit_func
+
+def fit_func_die():
+    """exit; bad fit function selection"""
+    print("***ERROR***")
+    print("check config file fit func selection.")
+    sys.exit(1)
+
+def expfit_gevp(lenparams, fit, rescale, fits, tvecs):
+    """get prefit function if not fitting effective mass
+    and not using GEVP
+    """
+    origl, mult = lenparams
+    add_const_vec, lt_vec = tvecs
+    # check len of start params
+    if origl != 2 and fit:
         print("***ERROR***")
-        print("check config file fit func selection.")
+        print("flag 1 length of start_params invalid")
         sys.exit(1)
-
-else:
-    if GEVP:
-        # check len of start params
-        if ORIGL != 2 and FIT:
-            print("***ERROR***")
-            print("flag 1 length of start_params invalid")
-            sys.exit(1)
-        # select fit function
-        if RESCALE != 1.0:
-            def prefit_func(ctime, trial_params):
-                """gevp fit func, non eff mass"""
-                return [
-                    RESCALE*FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
-                        ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
-                    for j in range(MULT)]
-        else:
-            def prefit_func(ctime, trial_params):
-                """gevp fit func, non eff mass"""
-                return [FITS.f['fit_func_exp_gevp'][ADD_CONST_VEC[j]](
-                    ctime, trial_params[j*ORIGL:(j+1)*ORIGL], LT_VEC[j])
-                        for j in range(MULT)]
+    # select fit function
+    if rescale != 1.0:
+        def prefit_func(ctime, trial_params):
+            """gevp fit func, non eff mass"""
+            return [
+                rescale*fits.f['fit_func_exp_gevp'][add_const_vec[j]](
+                    ctime, trial_params[j*origl:(j+1)*origl], lt_vec[j])
+                for j in range(mult)]
     else:
-def noeff_mass_nogevp(fit, origl, add_const, rescale, fits):
+        def prefit_func(ctime, trial_params):
+            """gevp fit func, non eff mass"""
+            return [fits.f['fit_func_exp_gevp'][add_const_vec[j]](
+                ctime, trial_params[j*ORIGL:(j+1)*origl], lt_vec[j])
+                    for j in range(mult)]
+    return prefit_func
+
+def expfit(fit, origl, add_const, rescale, fits):
     """select a fit function if not fitting effective mass
     and not using gevp
     """

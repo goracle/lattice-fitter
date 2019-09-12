@@ -1,6 +1,4 @@
 """Config for lattice fitter."""
-import sys
-from math import exp
 from collections import namedtuple
 from copy import copy
 import numpy as np
@@ -13,6 +11,7 @@ from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
 from latfit.utilities.postprod.checkblks import check_ids
+from latfit import fitfunc
 import latfit.checks_and_statements as sands
 
 setup_logger()
@@ -189,8 +188,10 @@ DISP_ENERGIES = opc.free_energies(IRREP, misc.massfunc(), L_BOX) if GEVP else []
 # print(misc.dispersive([1, 1, 1]))
 # sys.exit(0)
 
-# don't include the sigma in the gevp fits
+# switch to include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
+
+# get dispersive energies
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
 DIM -= 2 if 'mom000' in IRREP and ISOSPIN == 0 else 0
 DIM = 1 if not GEVP else DIM
@@ -198,7 +199,6 @@ DIM = 3 if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP else DIM
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
-
 TSEP_VEC = [0]
 TSEP_VEC = [3, 3]
 TSEP_VEC = [3, 0, 3]
@@ -209,7 +209,7 @@ if LATTICE_ENSEMBLE == '32c':
 if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
 
-# halve the data to check for consistencies
+# halve the data to check for consistencies (debug options)
 HALF = 'first half'
 HALF = 'drop fourth eighth'
 HALF = 'first half'
@@ -276,16 +276,18 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modif
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
 
+##### Around the world delta energies.
+##### Should be automatic, no need to adjust
+
+## first delta E
+
+# change this if the slowest pion is not stationary
+DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
+    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.massfunc() if GEVP\
+    and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+
+## second delta E
 DELTA_E2_AROUND_THE_WORLD = None
-
-#DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
-#    [1, 1, 1], continuum=FIT_SPACING_CORRECTION)-misc.dispersive(
-#        [1, 0, 0], continuum=FIT_SPACING_CORRECTION)
-# DELTA_E2_AROUND_THE_WORLD = misc.dispersive(
-#opc.mom2ndorder(IRREP)[0])-misc.dispersive(opc.mom2ndorder(IRREP)[1])
-# if ISOSPIN == 2 else None # too many time slices eliminated currently
-
-
 
 if IRREP == 'A1_mom1':
     # the exception to the usual pattern for p1
@@ -298,13 +300,13 @@ else:
 assert E21 is None or (np.all(E21 > 0) and np.all(E22 > 0))
 assert E21 is None or (np.all(E22-E21) >= 0)
 DELTA_E2_AROUND_THE_WORLD = E22-E21 if E21 is not None and E22 is not None else None
-MINE2 = None # not supported
 #MINE2 = min(E21, E22)
-
+MINE2 = None # second order around the world fit no longer supported
 print("2nd order momenta for around the world:",
       opc.mom2ndorder('A1_mom1'),
       opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
-# DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD # (below)
+# we do the following subtraction to compensate below:
+# DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 
 # set to None if not GEVP
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
@@ -313,26 +315,18 @@ DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
 DELTA_E2_AROUND_THE_WORLD = None if rf.norm2(rf.procmom(MOMSTR)) == 0\
     else DELTA_E2_AROUND_THE_WORLD
 
-# set to None if not matrix subtraction
-#DELTA_E2_AROUND_THE_WORLD = None if not MATRIX_SUBTRACTION\
-#    else DELTA_E2_AROUND_THE_WORLD
-
 # set to None if doing Isospin = 1
 DELTA_E2_AROUND_THE_WORLD = None if ISOSPIN == 1\
     else DELTA_E2_AROUND_THE_WORLD
 
-# change this if the slowest pion is not stationary
-DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
-    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.massfunc() if GEVP\
-    and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
+if not MATRIX_SUBTRACTION:
+    DELTA_E2_AROUND_THE_WORLD = None
 
+### delta e around the world section conclusion
 if FIT_SPACING_CORRECTION:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
         DELTA_E2_AROUND_THE_WORLD)
-
-if not MATRIX_SUBTRACTION:
-    DELTA_E2_AROUND_THE_WORLD = None
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
@@ -413,15 +407,6 @@ EFF_MASS_METHOD = 4
 # starting values for fit parameters
 if EFF_MASS and EFF_MASS_METHOD != 2:
     START_PARAMS = [.5, .2]
-    if not MATRIX_SUBTRACTION:
-        pass
-        #START_PARAMS.append(10)
-        #assert len(START_PARAMS) == 3
-        #if DELTA_E2_AROUND_THE_WORLD is not None:
-        #    START_PARAMS.append(15)
-        #    assert len(START_PARAMS) == 4
-#    if PIONRATIO:
-#        START_PARAMS = [.05, 0.0005]
 else:
     if ADD_CONST:
         START_PARAMS = [0.0580294, -0.003, 0.13920]
@@ -430,7 +415,8 @@ else:
 
 print("start params:", START_PARAMS)
 
-START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else START_PARAMS
+START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else\
+    START_PARAMS
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
@@ -471,7 +457,7 @@ PICKLE = 'unpickle'
 PICKLE = 'pickle'
 PICKLE = None
 
-# DISPLAY PARAMETERS
+#### DISPLAY PARAMETERS
 # no title given takes the current working directory as the title
 
 # title prefix
@@ -796,54 +782,78 @@ FITS.select(UP)
 
 ORIGL = len(START_PARAMS)
 
+GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
+MULT = len(GEVP_DIRS) if GEVP else 1
+
+
+# perform check
 fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
                                MATRIX_SUBTRACTION,
                                DELTA_E2_AROUND_THE_WORLD)
+# get initial blank fit function
 PREFIT_FUNC = fitfunc.prelimselect(EFF_MASS, EFF_MASS_METHOD,
                                    RESCALE, START_PARAMS)
-if EFF_MASS and (EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or\
-                 EFF_MASS_METHOD == 4) and RESCALE == 1.0 and\
-                 len(START_PARAMS) != 1:
-    START_PARAMS, PREFIT_FUNC, BRET = fitfunc.prelim2(
-        SYS_ENERGY_GUESS, PREFIT_FUNC, START_PARAMS,
-        DELTA_E2_AROUND_THE_WORLD)
-    if BRET:
-        if not (len(START_PARAMS)-1) % 3:
-            prelim3(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
-            PREFIT_FUNC = prelim4(DELTA_E2_AROUND_THE_WORLD,
-                                  DELTA_E_AROUND_THE_WORLD,
-                                  START_PARAMS, DIM)
-        elif not (len(START_PARAMS)-1) % 4:
-            prelim3(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
-            PREFIT_FUNC = prelim5(start_params, dim,
-                                  delta_e_around_the_world, mine2)
-if not EFF_MASS and not GEVP:
-    PREFIT_FUNC = noeff_mass_nogevp(fit, origl, add_const, rescale, fits)
-PREFIT_FUNC = pencil_mod(PREFIT_FUNC, FIT, NUM_PENCILS,
-                         RESCALE, START_PARAMS)
-def fit_func(ctime, trial_params):
+
+if EFF_MASS:
+    if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
+        # if no systematic, fit to const
+        PREFIT_FUNC = fitfunc.constfit(len(START_PARAMS), RESCALE)
+        if SYS_ENERGY_GUESS is not None:
+            # append to start params the systematic parameter guess
+            START_PARAMS = fitfunc.mod_start_params(START_PARAMS,
+                                                    SYS_ENERGY_GUESS)
+            if not (len(START_PARAMS)-1) % 2 and\
+               DELTA_E2_AROUND_THE_WORLD is None:
+                PREFIT_FUNC = fitfunc.const_plus_exp()
+            elif not (len(START_PARAMS)-1) % 3:
+                fitfunc.three_asserts(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
+                PREFIT_FUNC = fitfunc.atwfit(DELTA_E2_AROUND_THE_WORLD,
+                                             DELTA_E_AROUND_THE_WORLD,
+                                             START_PARAMS, DIM)
+            elif not (len(START_PARAMS)-1) % 4:
+                fitfunc.three_asserts(GEVP, MATRIX_SUBTRACTION, NOATWSUB)
+                PREFIT_FUNC = fitfunc.atwfit_second_order(
+                    START_PARAMS, DIM, DELTA_E_AROUND_THE_WORLD, MINE2)
+            else:
+                fitfunc.fit_func_die()
+    elif EFF_MASS_METHOD == 3:
+        PREFIT_FUNC = fitfunc.eff_mass_3_func((ORIGL, MULT), FIT,
+                                              RESCALE, FITS,
+                                              (ADD_CONST_VEC, LT_VEC))
+    else:
+        fitfunc.fit_func_die()
+else:
+    if GEVP:
+        PREFIT_FUNC = fitfunc.expfit_gevp((ORIGL, MULT), FIT,
+                                          RESCALE, FITS,
+                                          (ADD_CONST_VEC, LT_VEC))
+    else:
+        PREFIT_FUNC = fitfunc.expfit(FIT, ORIGL, ADD_CONST, RESCALE, FITS)
+
+# we've now got the form of the fit function, but it needs some
+# code related modifications
+PREFIT_FUNC = copy(PREFIT_FUNC) if FIT else PREFIT_FUNC
+PREFIT_FUNC = fitfunc.pencil_mod(PREFIT_FUNC, FIT, NUM_PENCILS,
+                                 RESCALE, START_PARAMS)
+
+def fit_func(ctime, trial_params): # lower case hack
     """Function to fit; final form after config.py"""
     return PREFIT_FUNC(ctime, trial_params)
 
-if ISOSPIN != 0:
-    SIGMA = False
-
-GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
-
 # make statements (asserts)
-MULT = sands.gevp_statements(GEVP_DIRS, GEVP, DIM, LT_VEC, ADD_CONST_VEC)
+sands.gevp_statements(GEVP_DIRS, GEVP, DIM, LT_VEC, ADD_CONST_VEC)
 sands.start_params_pencils(START_PARAMS, ORIGL,
                            NUM_PENCILS, MULT, SYS_ENERGY_GUESS)
 sands.fit_func_statements(USE_FIXED_MASS, UP, TSTEP, FITS)
-RESCALE = sands.rescale_and_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
-                                       DELTA_E_AROUND_THE_WORLD,
-                                       DELTA_E2_AROUND_THE_WORLD)
+sands.rescale_and_atw_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
+                                 DELTA_E_AROUND_THE_WORLD,
+                                 DELTA_E2_AROUND_THE_WORLD)
 sands.asserts_one(EFF_MASS_METHOD, MATRIX_SUBTRACTION,
                   JACKKNIFE_FIT, NUM_PENCILS, JACKKNIFE)
 sands.asserts_two(IRREP, FIT_SPACING_CORRECTION, ISOSPIN, PIONRATIO)
 sands.asserts_three(MOMSTR, DELTA_E_AROUND_THE_WORLD,
                     DELTA_E2_AROUND_THE_WORLD, GEVP, GEVP_DERIV)
-sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0F, BIASED_SPEEDUP)
+sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0, BIASED_SPEEDUP)
 sands.bin_statements(BINNUM, ELIM_JKCONF_LIST, HALF,
                      ONLY_SMALL_FIT_RANGES, RANGE_LENGTH_MIN)
 DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST,
@@ -853,3 +863,4 @@ DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST,
                                                DELTA_E_AROUND_THE_WORLD)
 sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
 sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
+sands.deprecated(USE_LATE_TIMES, LOGFORM)
