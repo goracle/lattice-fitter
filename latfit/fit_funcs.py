@@ -68,16 +68,16 @@ class FitFunctions:
 
 LOG = False
 LOG = True
-LT = 1
-C = 0
-TSTEP = 1
-TSTEP2 = 1
-PION_MASS = 0
+LT = np.nan
+C = np.nan
+TSTEP = np.nan
+TSTEP2 = np.nan
+PION_MASS = np.nan
 PIONRATIO = False
 USE_FIXED_MASS = True
 TRHS = None
 GEVP = False
-DELTAT = 1
+DELTAT = np.nan
 
 def takelog(sol):
     """more permissive form of log"""

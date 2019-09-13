@@ -765,9 +765,9 @@ latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP or GEVP_DEBUG else\
     DELTA_T2_MATRIX_SUBTRACTION
 latfit.fit_funcs.TSTEP2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else\
     latfit.fit_funcs.TSTEP2
-latfit.fit_funcs.PIONMASS = misc.massfunc()
+latfit.fit_funcs.PION_MASS = misc.massfunc()
 latfit.fit_funcs.PIONRATIO = False
-latfit.fit_funcs.LENT = LT
+latfit.fit_funcs.LT = LT
 latfit.fit_funcs.GEVP = GEVP
 latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else int(T0[6:])
 latfit.fit_funcs.DELTAT = -1 if not GEVP else latfit.fit_funcs.DELTAT
