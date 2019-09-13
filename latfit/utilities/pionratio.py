@@ -14,7 +14,7 @@ import sys
 import re
 import copy
 import glob
-from numpy import log, exp
+from math import log, exp
 import numpy as np
 from scipy.optimize import minimize_scalar
 import h5py
@@ -751,7 +751,7 @@ def piondirect(atw=False, reverseatw=False):
     for _, fname in enumerate(baseglob):
         if MPIRANK:
             break
-        toppi, numt = top_pi(fname, atw, atwdict, numt)
+        toppi, numt = top_pi(fname, atw, reverseatw, atwdict, numt)
 
         for _, gname in enumerate(baseglob):
 
