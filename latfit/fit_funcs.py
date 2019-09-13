@@ -25,8 +25,8 @@ class FitFunctions:
 
     def _update_f(self):
         for func in self.flist:
-            self.f[func] = [getattr(self._fitfunc, func),
-                            getattr(self._fitfuncadd, func)]
+            self.fid[func] = [getattr(self._fitfunc, func),
+                              getattr(self._fitfuncadd, func)]
 
     def use(self, func):
         """Use a specific function"""
@@ -49,8 +49,8 @@ class FitFunctions:
         self._fitfuncadd.update(upd)
         self._fitfunc.update(upd)
         self._update_f()
-        for func in self.f:
-            self._select[func] = self.f[func][index]
+        for func in self.fid:
+            self._select[func] = self.fid[func][index]
 
     def __getitem__(self, key):
         """Get the function from the select set"""
@@ -98,9 +98,7 @@ class FitFuncAdd:
         self._log = LOG
         self._lent = LT
         self._c = C
-        self._tstep = TSTEP
-        self._tstep2 = TSTEP2
-        self._deltat = DELTAT
+        self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
@@ -110,10 +108,8 @@ class FitFuncAdd:
         self._log = upd.log
         self._lent = upd.lent
         self._c = upd.c
-        self._tstep = upd.tstep
-        self._tstep2 = upd.tstep2
+        self._tsteps = [upd.tstep, upd.tstep2, upd.deltat]
         self._pionmass = upd.pionmass
-        self._deltat = upd.deltat
         self._pionratio = upd.pionratio
         self._gevp = upd.gevp
 
@@ -206,13 +202,13 @@ class FitFuncAdd:
         for EFF_MASS_METHOD = 3
         """
         lent = self._lent if lent is None else lent
-        tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
+        tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
         if tstep_arr[0] is None:
-            assert not self._tstep
+            assert not self._tsteps[0]
         if tstep_arr[1] is None:
-            assert not self._tstep2
-        deltat = self._deltat
+            assert not self._tsteps[1]
+        deltat = self._tsteps[2]
         corrs_num = [exp(-trial_params[0]*(ctime-deltat+i*tstep+j*tstep2)) +
                      exp(-trial_params[0]*(lent-(
                          ctime-deltat+i*tstep+j*tstep2)))
@@ -271,8 +267,8 @@ class FitFuncAdd:
         """Find the pion ratio (single pions^2 in the denominator
         of pipi eff mass)"""
         lent = self._lent if lent is None else lent
-        tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
+        # tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(3)]
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
         corrs = [trial_params[0]*(
@@ -290,9 +286,7 @@ class FitFunc:
         self._log = LOG
         self._lent = LT
         self._c = C
-        self._tstep = TSTEP
-        self._tstep2 = TSTEP2
-        self._deltat = DELTAT
+        self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
@@ -302,9 +296,7 @@ class FitFunc:
         self._log = upd.log
         self._lent = upd.lent
         self._c = upd.c
-        self._tstep = upd.tstep
-        self._tstep2 = upd.tstep2
-        self._deltat = upd.deltat
+        self._tsteps = [upd.tstep, upd.tstep2, upd.deltat]
         self._pionmass = upd.pionmass
         self._pionratio = upd.pionratio
         self._gevp = upd.gevp
@@ -401,11 +393,11 @@ class FitFunc:
         """one parameter eff. mass fit function
         for EFF_MASS_METHOD = 3
         """
-        # tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        # tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
+        # tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
         if tstep_arr:
             pass
-        deltat = self._deltat
+        deltat = self._tsteps[2]
         lent = self._lent if lent is None else lent
         corrs = [exp(-trial_params[0]*(ctime-i*deltat)) +
                  exp(-trial_params[0]*(lent-(ctime-i*deltat)))
@@ -420,8 +412,8 @@ class FitFunc:
         for EFF_MASS_METHOD = 3
         """
         lent = self._lent if lent is None else lent
-        tstep = self._tstep if tstep_arr[0] is None else tstep_arr[0]
-        # tstep2 = self._tstep2 if tstep_arr[1] is None else tstep_arr[1]
+        tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
+        # tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(2)]
         corrs = [trial_params[0]*(sinh((tpion[i]-1/2)*trial_params[

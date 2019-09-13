@@ -185,7 +185,7 @@ def apply_bootstrap_shift(result_min):
     coords = singlefit.coords_full
     assert coords is not None
     part1 = [-1*fit_func(result_min,
-                      i[0]) for i in coords]
+                         i[0]) for i in coords]
     part1 = np.array(part1, dtype=np.float128)
     part2 = [i[1] for i in coords]
     part2 = np.array(part2, dtype=np.float128)
