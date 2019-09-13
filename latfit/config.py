@@ -11,7 +11,7 @@ from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
 from latfit.utilities.postprod.checkblks import check_ids
 from latfit import fitfunc
-import latfit.checks_and_statements as sands
+import latfit.checks.checks_and_statements as sands
 
 setup_logger()
 
