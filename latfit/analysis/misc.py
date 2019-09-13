@@ -5,7 +5,6 @@ import pickle
 import numpy as np
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
-from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.utilities import exactmean as em
 
 BOX_LENGTH = 1
@@ -27,10 +26,17 @@ P111 = None
 #P0 = 0.13957(19)
 def dummy(*x):
     """dummy function.  does nothing"""
+    assert None, "safety switch"
     return x
 BINOUT = dummy
 HALFTOTAL = dummy
 ELIM_JKCONF_LIST = []
+
+def elim_jkconfigs(ret, elimlist):
+    """dummy version"""
+    assert None
+    if ret or elimlist:
+        pass
 
 
 def massfunc():

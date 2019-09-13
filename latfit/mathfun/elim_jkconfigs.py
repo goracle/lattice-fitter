@@ -3,8 +3,9 @@ import sys
 import numpy as np
 import accupy
 
-ELIM_JKCONF_LIST = None
-HALF = ''
+import latfit.analysis.misc as misc
+from latfit.config import ELIM_JKCONF_LIST, HALF
+
 try:
     from latfit.config import JACKKNIFE
 except ImportError:
@@ -70,3 +71,4 @@ def elim_jkconfigs(jkblk, elim_list=None):
         new_jkblk = final_diff/(num_configs-1-k_elim)
 
     return new_jkblk
+misc.elim_jkconfigs = elim_jkconfigs

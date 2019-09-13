@@ -3,7 +3,6 @@ from collections import namedtuple
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
-import latfit.mathfun.elim_jkconfigs as elim
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.analysis.irr2tex import irr2tex
 from latfit.fit_funcs import FitFunctions
@@ -173,7 +172,6 @@ SUPERJACK_CUTOFF = 0 if not check_ids()[-2] else SUPERJACK_CUTOFF
 #ELIM_JKCONF_LIST = [7, 8, 9, 10, 11, 12, 13, 14, 15, 186, 187, 188, 189, 190]
 ELIM_JKCONF_LIST = []
 misc.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
-elim.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
 
 
 
@@ -222,7 +220,6 @@ if HALF != 'full':
     assert not SUPERJACK_CUTOFF, \
         "AMA first half second half analysis not supported:"+str(
             SUPERJACK_CUTOFF)
-elim.HALF = HALF
 
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
 # skips reading them in

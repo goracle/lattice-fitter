@@ -2,8 +2,6 @@
 import sys
 import numpy as np
 
-# from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
-
 from latfit.config import BINNUM
 from latfit.config import JACKKNIFE
 import latfit.finalout.mkplot

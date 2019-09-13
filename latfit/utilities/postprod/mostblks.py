@@ -6,7 +6,6 @@ from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.checkblks import convert_traj, printblk
 from latfit.utilities.postprod.checkblks import check_key
 from latfit.utilities.postprod.checkblks import TESTKEY2
-import latfit.utilities.postprod.auxblks as auxb
 
 #### DO NOT MODIFY THE BELOW
 
@@ -130,7 +129,6 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
         else:
             blk[i] = outarr
     return np.delete(blk, skip, axis=0)
-auxb.getgenconblk = getgenconblk
 
 
 @PROFILE

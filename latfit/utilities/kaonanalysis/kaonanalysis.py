@@ -13,6 +13,7 @@ import latfit.utilities.kaonanalysis.kaonmix as kaonmix # do mix subtraction
 import latfit.utilities.kaonanalysis.kaonvac as kaonvac # vacuum subtraction
 
 TSTEP12 = 2
+kfp.TSTEP12 = TSTEP12
 LT_CHECK = 4
 if checkblks.FREEFIELD:
     LT_CHECK = 32
