@@ -10,6 +10,10 @@ except NameError:
         return arg2
     PROFILE = profile
 
+class BoolThrowErr:
+    def __bool__(self):
+        assert None, "This bool has not been initialized."
+
 class AvgCovSingular(Exception):
     """Exception for bad jackknife distribution"""
     def __init__(self, message=''):

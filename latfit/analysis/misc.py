@@ -6,31 +6,23 @@ import numpy as np
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 from latfit.utilities import exactmean as em
+from latfit.analysis.errocodes import BoolErrorThrow
 
-BOX_LENGTH = 1
-MASS = 0
+BOX_LENGTH = np.nan
+MASS = np.nan
 LATTICE = None
-PIONRATIO = False
+PIONRATIO = BoolThrowErr()
+IRREP = None
+CONTINUUM = BoolThrowErr()
 
 
-P1 = None
-P11 = None
-P111 = None
-#p1
-#P1 = 0.29641(25)
-#p11
-#P11 = 0.39461(38)
-#p111
-#P111 = 0.4715(11)
-#p0
-#P0 = 0.13957(19)
 def dummy(*x):
     """dummy function.  does nothing"""
     assert None, "safety switch"
     return x
 BINOUT = dummy
 HALFTOTAL = dummy
-ELIM_JKCONF_LIST = []
+ELIM_JKCONF_LIST = [np.nan]
 
 def elim_jkconfigs(ret, elimlist):
     """dummy version"""
@@ -55,7 +47,7 @@ def massfunc():
             massfunc.MASS = MASS
             #raise
     return massfunc.MASS
-massfunc.MASS = None
+massfunc.MASS = np.nan
 
 def update_binhalf():
     """after we set these functions update (the mass)"""
@@ -81,7 +73,7 @@ def p1f():
     if p1f.P1 is not None:
         ret = p1f.P1
     return ret
-p1f.P1 = None
+p1f.P1 = np.nan
 
 def p11f():
     """E_pi(|p|=11)"""
@@ -102,7 +94,7 @@ def p11f():
     if p11f.P11 is not None:
         ret = p11f.P11
     return ret
-p11f.P11 = None
+p11f.P11 = np.nan
 
 def p111f():
     """E_pi(|p|=11)"""
@@ -123,10 +115,7 @@ def p111f():
     if p111f.P111 is not None:
         ret = p111f.P111
     return ret
-p111f.P111 = None
-
-IRREP = None
-CONTINUUM = True
+p111f.P111 = np.nan
 
 def fitepi(norm):
     """Select the right E_pi"""

@@ -6,6 +6,7 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
+from latfit.analysis.errorcodes import BoolThrowErr
 # from latfit.config import TRHS
 
 class FitFunctions:
@@ -66,17 +67,17 @@ class FitFunctions:
 #PIONRATIO = upd.pionratio
 #DELTAT = upd.deltat
 
-LOG = False
-LOG = True
+LOG = BoolThrowErr()
+LOG = BoolThrowErr()
 LT = np.nan
 C = np.nan
 TSTEP = np.nan
 TSTEP2 = np.nan
 PION_MASS = np.nan
-PIONRATIO = False
-USE_FIXED_MASS = True
+PIONRATIO = BoolThrowErr()
+USE_FIXED_MASS = BoolThrowErr()
 TRHS = None
-GEVP = False
+GEVP = BoolThrowErr()
 DELTAT = np.nan
 
 def takelog(sol):
