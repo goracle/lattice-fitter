@@ -68,18 +68,12 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
         singlefit.sent = object()
 
     # debug branch
-    if PRINT_CORR:
-        print(coords_full)
-        if GEVP:
-            print([sqrt(np.diag(cov_full[i][i])) for i in range(
-                len(cov_full))])
-        else:
-            print([sqrt(cov_full[i][i]) for i in range(len(cov_full))])
-        sys.exit(0)
+    debug_print(coords_full, cov_full)
 
     # select subset of data for fit
-    selection = index_select(xmin, xmax, xstep, fitrange, coords_full)
-    coords, cov = fit_select(coords_full, cov_full, selection)
+    coords, cov = fit_select(coords_full, cov_full,
+                             index_select(xmin, xmax, xstep,
+                                          fitrange, coords_full))
 
     # error handling for Degrees of Freedom <= 0 (it should be > 0).
     # number of points plotted = len(cov).
@@ -103,14 +97,6 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
     if FIT:
-        # compute inverse of covariance matrix
-        try:
-            covinv = covinv_avg(cov, params.dimops)
-        except np.linalg.linalg.LinAlgError:
-            covinv = np.zeros(cov.shape)
-            for i, _ in enumerate(covinv):
-                for j, _ in enumerate(covinv):
-                    covinv[i][j] = np.nan
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
             # initial fit
@@ -120,35 +106,13 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                                                   coords)
             if latfit.config.BOOTSTRAP:
 
-                # fit to find the null distribution
-                apply_bootstrap_shift(result_min)
-                # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
-                params.num_configs = NBOOT
-                result_minq, _ = jackknife_fit(
-                    params, reuse, singlefit.reuse_blocked, coords)
-
-                # overwrite initial fit with the accurate p-value info
-                result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
-                    result_minq.chisq.arr, result_min.chisq.arr)
-                result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
-                result_min.pvalue_err = em.acmean((
-                    result_min.pvalue.arr-result_min.pvalue.val)**2)
-                result_min.pvalue_err *= np.sqrt((len(
-                    result_min.pvalue.arr)-1)/len(result_min.pvalue.arr))
-
+                result_min = bootstrap_pvalue(params, reuse,
+                                              coords, result_min)
         else:
-            result_min = mkmin(covinv, coords)
-            # compute errors 8ab, print results (not needed for plot part)
-            param_err = geterr(result_min, covinv, coords)
+            result_min, param_err = non_jackknife_fit(params, cov, coords)
 
-        # use a consistent error bar scheme;
-        # if fitrange isn't max use conventional,
-        # otherwise use the new double jackknife estimate
-        if xmin != fitrange[0] or xmax != fitrange[1]:
-            try:
-                result_min.error_bars = None
-            except AttributeError:
-                pass
+        result_min = error_bar_scheme(result_min, fitrange, xmin, xmax)
+
         return result_min, param_err, coords_full, cov_full
     else:
         return coords, cov
@@ -158,6 +122,57 @@ singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
+
+def non_jackknife_fit(params, cov, coords):
+    """Compute using a very old fit style"""
+    covinv = covinv_compute(params, cov)
+    result_min = mkmin(covinv, coords)
+    # compute errors 8ab, print results (not needed for plot part)
+    param_err = geterr(result_min, covinv, coords)
+    return result_min, param_err
+
+def covinv_compute(params, cov):
+    """Compute inverse covariance matrix"""
+    try:
+        covinv = covinv_avg(cov, params.dimops)
+    except np.linalg.linalg.LinAlgError:
+        covinv = np.zeros(cov.shape)
+        for i, _ in enumerate(covinv):
+            for j, _ in enumerate(covinv):
+                covinv[i][j] = np.nan
+    return covinv
+
+def error_bar_scheme(result_min, fitrange, xmin, xmax):
+    """use a consistent error bar scheme;
+    if fitrange isn't max use conventional,
+    otherwise use the new double jackknife estimate
+    """
+    if xmin != fitrange[0] or xmax != fitrange[1]:
+        try:
+            result_min.error_bars = None
+        except AttributeError:
+            pass
+    return result_min
+
+def bootstrap_pvalue(params, reuse, coords, result_min):
+    """Get bootstrap p-values"""
+    # fit to find the null distribution
+    apply_bootstrap_shift(result_min)
+    # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
+    params.num_configs = NBOOT
+    result_minq, _ = jackknife_fit(
+        params, reuse, singlefit.reuse_blocked, coords)
+
+    # overwrite initial fit with the accurate p-value info
+    result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
+        result_minq.chisq.arr, result_min.chisq.arr)
+    result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
+    result_min.pvalue_err = em.acmean((
+        result_min.pvalue.arr-result_min.pvalue.val)**2)
+    result_min.pvalue_err *= np.sqrt((len(
+        result_min.pvalue.arr)-1)/len(result_min.pvalue.arr))
+    return result_min
+
 
 def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     """Get the array of p-values"""
@@ -197,6 +212,18 @@ def reset_bootstrap_const_shift():
     (for initial fit)
     """
     chisq.CONST_SHIFT = 0
+
+def debug_print(coords_full, cov_full):
+    """Debug print
+    """
+    if PRINT_CORR:
+        print(coords_full)
+        if GEVP:
+            print([sqrt(np.diag(cov_full[i][i])) for i in range(
+                len(cov_full))])
+        else:
+            print([sqrt(cov_full[i][i]) for i in range(len(cov_full))])
+        sys.exit(0)
 
 
 @PROFILE

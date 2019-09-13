@@ -52,26 +52,35 @@ def ascii_test(filename, stype):
             filename = None
     return filename
 
-
-def aux_filen(filename, stype='ascii'):
-    """Write aux diagram corresponding to filename"""
+def setup_aux_filen(filename, stype):
+    """initial setup for the function aux_filen"""
     filename = ascii_test(filename, stype)
     pret = np.array(rf.mom(filename))
     nmom = rf.nmom(filename)
     plist = nmom*[0]
     outfile = filename
+    return outfile, plist, nmom, pret
+
+def outfile_nmom3(pret, plist, outfile, filename, stype):
+    """Get output file name for a single momentum"""
+    psrc1 = pret[0]
+    psrc2 = pret[1]
+    psnk1 = pret[2]
+    plist[0] = psrc1+psrc2-psnk1
+    plist[1] = psnk1
+    plist[2] = psrc2
+    outfile = rf.pchange(outfile, -1*np.array(plist))  # cc
+    if outfile == filename:
+        if stype == 'ascii':
+            print("symmetric Momenta; skipping")
+        outfile = None
+    return outfile
+
+def aux_filen(filename, stype='ascii'):
+    """Write aux diagram corresponding to filename"""
+    outfile, plist, nmom, pret = setup_aux_filen(filename, stype)
     if nmom == 3:
-        psrc1 = pret[0]
-        psrc2 = pret[1]
-        psnk1 = pret[2]
-        plist[0] = psrc1+psrc2-psnk1
-        plist[1] = psnk1
-        plist[2] = psrc2
-        outfile = rf.pchange(outfile, -1*np.array(plist))  # cc
-        if outfile == filename:
-            if stype == 'ascii':
-                print("symmetric Momenta; skipping")
-            outfile = None
+        outfile = outfile_nmom3(pret, plist, outfile, filename, stype)
     elif nmom == 2:
         if 'pol_snk' in outfile or 'scalar_' in outfile:
             psrc1 = pret[0]

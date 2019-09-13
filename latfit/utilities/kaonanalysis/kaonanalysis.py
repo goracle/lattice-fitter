@@ -3,24 +3,23 @@
 
 from collections import defaultdict
 import numpy as np
-from accupy import kdot
-from latfit.utilities import h5jack
+from latfit.utilities.postprod import checkblks, bubblks, h5jack
 
 # import kaondecompose # decompose the results,
 # stored as 1d arrays, into multi-dimensional arrays
-import kaonfileproc as kfp # process kaon files
-import kaonpostproc as kpp # global container for results
-import kaonmix # do mix subtraction
-import kaonvac # vacuum subtraction
+import latfit.utilities.kaonanalysis.kaonfileproc as kfp # process kaon files
+import latfit.utilities.kaonanalysis.kaonpostproc as kpp # global container for results
+import latfit.utilities.kaonanalysis.kaonmix as kaonmix # do mix subtraction
+import latfit.utilities.kaonanalysis.kaonvac as kaonvac # vacuum subtraction
 
 TSTEP12 = 2
 LT_CHECK = 4
-if h5jack.FREEFIELD:
+if checkblks.FREEFIELD:
     LT_CHECK = 32
 assert h5jack.LT == LT_CHECK, "Time extents do not match"
 # the key structure is different,
 # key doesn't end with @momentum string, e.g. @000
-assert not h5jack.STILLSUB,\
+assert not bubblks.STILLSUB,\
     "Vacuum subtraction not backwards compatible with this option"
 
 # to do
@@ -59,7 +58,7 @@ def filter_out_ktopi(unfiltered):
 def analyze():
     """Read in the k->x diagrams"""
     trajl = h5jack.trajlist()
-    diags_unfiltered = h5jack.bublist()
+    diags_unfiltered = bubblks.bublist()
     diags_unfiltered = filter_out_ktopi(diags_unfiltered)
     diags = {}
     purefilterlist = ['type1', 'type2', 'type3', 'type4']
@@ -84,8 +83,8 @@ def analyze():
     # get bubbles
     diags['pipibubbles'] = filter_diags('Vdis', diags_unfiltered)
     diags['sigmabubbles'] = filter_diags('scalar-bubble', diags_unfiltered)
-    sigmabubbles = h5jack.getbubbles(diags['sigmabubbles'], trajl)
-    pipibubbles = h5jack.getbubbles(diags['pipibubbles'], trajl)
+    sigmabubbles = bubblks.getbubbles(diags['sigmabubbles'], trajl)
+    pipibubbles = bubblks.getbubbles(diags['pipibubbles'], trajl)
 
     # zeros the output to be safe
     for i in np.arange(1, 11):

@@ -7,10 +7,10 @@ QOPI0 = {} # operator dictionary
 QOPI2 = {} # operator dictionary, I2
 QOP_SIGMA = {} # sigma operator dictionary
 
-for j in np.arange(1, 11):
-    QOPI0[str(j)] = {} # momentum dictionary
-    QOPI2[str(j)] = {} # momentum dictionary, I2
-    QOP_SIGMA[str(j)] = {} # momentum dictionary
+for IDX in np.arange(1, 11):
+    QOPI0[str(IDX)] = {} # momentum dictionary
+    QOPI2[str(IDX)] = {} # momentum dictionary, I2
+    QOP_SIGMA[str(IDX)] = {} # momentum dictionary
 
 def querykeys(qop, descr):
     """For debug purposes.  Print keys in qop with description descr"""
@@ -24,7 +24,7 @@ def querykeys(qop, descr):
 def correct_dagger_factor():
     """Need an overall -1 due to dagger not being taken on K
     """
-    for i in np.arange(1,11):
+    for i in np.arange(1, 11):
         for keyirr in QOPI2[str(i)]:
             QOPI2[str(i)][keyirr] *= -1
         for keyirr in QOPI0[str(i)]:

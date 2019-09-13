@@ -65,8 +65,8 @@ def trajq(fil):
     ret = int(ret)
     return ret
 
-def main():
-    """main"""
+def proc_hits_dirs():
+    """process the directory structure"""
     dir1, dir2 = sys.argv[1], sys.argv[2]
     fs1 = h5list(dir1)
     fs2 = h5list(dir2)
@@ -87,7 +87,12 @@ def main():
     else:
         print("no hits directory found")
         sys.exit(1)
-    # get the dataset names from the hits directory
+    return hlist, flist, fdir
+
+def main():
+    """main"""
+    hlist, flist, fdir = proc_hits_dirs()
+     # get the dataset names from the hits directory
     dsets = datasets(hlist)
     # get the trajectories from the non-hits directory
     for fil in sorted(list(flist)):

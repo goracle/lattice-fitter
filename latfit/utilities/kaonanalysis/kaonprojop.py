@@ -3,7 +3,7 @@
 from collections import defaultdict
 import math
 import numpy as np
-from latfit.utilities.h5jack import LT as LT_CHECK
+from latfit.utilities.postprod.h5jack import LT as LT_CHECK
 print("Imported projectkop with LT=", LT_CHECK)
 
 def qi_proj_type1(pieces, i, isostr):

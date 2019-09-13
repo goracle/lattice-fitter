@@ -2,7 +2,7 @@
 from 1d arrays to multi-dimensional"""
 
 import numpy as np
-from latfit.utilities.h5jack import LT as LT_CHECK
+from latfit.utilities.postprod.h5jack import LT as LT_CHECK
 print("Imported kaondecompose with LT=", LT_CHECK)
 
 def decompose_mix(mixarr, avg_tk=False):

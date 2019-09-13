@@ -2,16 +2,16 @@
 
 from collections import defaultdict
 import numpy as np
-import kaonfileproc as kfp
-import kaonpostproc as kpp
-import latfit.utilities.h5jack
-from latfit.utilities.h5jack import LT as LT_CHECK
-import kaonprojop
+import latfit.utilities.kaonanalysis.kaonfileproc as kfp
+import latfit.utilities.kaonanalysis.kaonpostproc as kpp
+import latfit.utilities.postprod.h5jack
+from latfit.utilities.postprod.h5jack import LT as LT_CHECK
+import latfit.utilities.kaonanalysis.kaonprojop as kaonprojop
 
 def vac_subtract_mix4(mix4, sinkbubbles, trajl):
     """Vacuum subtract type4"""
 
-    sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
+    sinksub = latfit.utilities.postprod.bubblks.bubsub(sinkbubbles)
 
     # jackknife type 4
 
@@ -31,7 +31,7 @@ def vac_subtract_mix4(mix4, sinkbubbles, trajl):
             momdiagc = 'type4@000' # both vac subtractions are the same
             temp_dict = {}
             temp_dict[momdiagc] = mix4[:, fidx, tdis, :]
-            srcsub = latfit.utilities.h5jack.bubsub(temp_dict)
+            srcsub = latfit.utilities.postprod.bubblks.bubsub(temp_dict)
 
             # dict of averaged bubbles, to subtract
             subdict = {**srcsub, **sinksub}
@@ -41,7 +41,7 @@ def vac_subtract_mix4(mix4, sinkbubbles, trajl):
 
             print("vac: fidx, tdis =", fidx, tdis)
             # do the vac subtraction, avg over tk
-            bubblks = latfit.utilities.h5jack.dobubjack(
+            bubblks = latfit.utilities.postprod.bubblks.dobubjack(
                 bubbles, subdict, skip_v_bub2=True)
 
             for blkname in bubblks:
@@ -63,7 +63,7 @@ def vac_subtract_type4(type4, sinkbubbles, trajl, otype):
 
     # to do, loop over tsep_kpi
 
-    sinksub = latfit.utilities.h5jack.bubsub(sinkbubbles)
+    sinksub = latfit.utilities.postprod.bubblks.bubsub(sinkbubbles)
 
     aftersub = {}
     for conidx in range(8):
@@ -74,7 +74,7 @@ def vac_subtract_type4(type4, sinkbubbles, trajl, otype):
                 # for backwards compatibility,
                 # means key@ptotal, ptotal=000 since Kaon is at rest
                 temp_dict['type4@000'] = type4[:, conidx, gcombidx, tdis, :]
-                srcsub = latfit.utilities.h5jack.bubsub(temp_dict)
+                srcsub = latfit.utilities.postprod.bubblks.bubsub(temp_dict)
 
                 # dict of averaged bubbles, to subtract
                 subdict = {**srcsub, **sinksub}
@@ -85,7 +85,7 @@ def vac_subtract_type4(type4, sinkbubbles, trajl, otype):
                 # do the vac subtraction, avg over tk
                 print("vac: conidx, gcombidx, tdis =",
                       conidx, gcombidx, tdis)
-                bubblks = latfit.utilities.h5jack.dobubjack(
+                bubblks = latfit.utilities.postprod.bubblks.dobubjack(
                     bubbles, subdict, skip_v_bub2=True)
 
                 # now, use the result to create type4 diagrams,

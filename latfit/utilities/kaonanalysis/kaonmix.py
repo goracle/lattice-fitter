@@ -2,11 +2,11 @@
 
 from collections import defaultdict
 import numpy as np
-import kaonpostproc as kpp
-import kaonfileproc as kfp
-import kaonprojop
-from latfit.utilities.h5jack import LT as LT_CHECK
-from latfit.utilities.h5jack import dojackknife
+import latfit.utilities.kaonanalysis.kaonpostproc as kpp
+import latfit.utilities.kaonanalysis.kaonfileproc as kfp
+import latfit.utilities.kaonanalysis.kaonprojop as kaonprojop
+from latfit.utilities.postprod.h5jack import LT as LT_CHECK
+from latfit.utilities.postprod.h5jack import dojackknife
 
 def mix_coeffs(type4, mix4, trajl, fidx):
     """Extract the jackknifed alpha_i

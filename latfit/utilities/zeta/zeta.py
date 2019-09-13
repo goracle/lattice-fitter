@@ -28,13 +28,8 @@ if CALC_PHASE_SHIFT:
                 pass
         return epipi
 
-    def zeta(epipi):
-        """Calculate the I=0 scattering phase shift given the pipi energy
-        for that channel.
-        """
-        epipi = remove_epipi_indexing(epipi)
-        comp = np.array(rf.procmom(MOMSTR))
-        gamma = 1
+    def getgamma(epipi, comp):
+        """Ok"""
         if epipi:
             try:
                 if FIT_SPACING_CORRECTION:
@@ -52,6 +47,16 @@ if CALC_PHASE_SHIFT:
                 raise ZetaError("bad gamma, epipi = "+str(epipi))
         if gamma < 1:
             raise RelGammaError(gamma=gamma, epipi=epipi)
+        return gamma
+
+
+    def zeta(epipi):
+        """Calculate the I=0 scattering phase shift given the pipi energy
+        for that channel.
+        """
+        epipi = remove_epipi_indexing(epipi)
+        comp = np.array(rf.procmom(MOMSTR))
+        gamma = getgamma(epipi, comp)
         epipi = epipi*AINVERSE/gamma
         lbox = L_BOX/AINVERSE
         #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
@@ -84,38 +89,43 @@ if CALC_PHASE_SHIFT:
         except subprocess.CalledProcessError:
             print("Error in zeta: calc of phase shift error:")
             print(epipi)
-            errstr = subprocess.Popen(arglist,
-                                      stdout=subprocess.PIPE).stdout.read()
-            raise ZetaError(errstr)
-        try:
-            test = epipi*epipi/4-PION_MASS**2 < 0
-        except FloatingPointError:
-            print("floating point error")
-            print("epipi=", epipi)
-            sys.exit(1)
-        if test:
-            out = float(out)*1j
-        else:
-            try:
-                out = complex(float(out))
-            except ValueError:
-                print("unable to convert phase shift to number:", out)
-                print("check to make sure there does not exist"+\
-                      " debugging which needs to be turned off.")
-                print(out)
-                raise ZetaError("bad number conversion")
-            if ISOSPIN == 0:
-                if out.real < 0 and abs(out.real) > 90:
-                    out = np.complex(out.real+
-                                     math.ceil(-1*out.real/180)*180, out.imag)
-                if out.real > 180:
-                    out = np.complex(out.real-
-                                     math.floor(out.real/180)*180, out.imag)
+            raise ZetaError(subprocess.Popen(
+                arglist, stdout=subprocess.PIPE).stdout.read())
+        out = tocomplex(epipi, out)
         return out
 else:
     def zeta(_):
         """Blank function; do not calculate phase shift"""
         return
+
+def tocomplex(epipi, out):
+    """if the phase shift should be complex,
+    make the output (from the .C file) to a complex python type"""
+    try:
+        test = epipi*epipi/4-PION_MASS**2 < 0
+    except FloatingPointError:
+        print("floating point error")
+        print("epipi=", epipi)
+        sys.exit(1)
+    if test:
+        out = float(out)*1j
+    else:
+        try:
+            out = complex(float(out))
+        except ValueError:
+            print("unable to convert phase shift to number:", out)
+            print("check to make sure there does not exist"+\
+                    " debugging which needs to be turned off.")
+            print(out)
+            raise ZetaError("bad number conversion")
+        if ISOSPIN == 0:
+            if out.real < 0 and abs(out.real) > 90:
+                out = np.complex(out.real+
+                                 math.ceil(-1*out.real/180)*180, out.imag)
+            if out.real > 180:
+                out = np.complex(out.real-
+                                 math.floor(out.real/180)*180, out.imag)
+    return out
 
 if CALC_PHASE_SHIFT:
     def pheno(epipi):
@@ -140,9 +150,8 @@ if CALC_PHASE_SHIFT:
         except subprocess.CalledProcessError:
             print("Error in pheno: calc of phase shift error:")
             print(epipi)
-            errstr = subprocess.Popen(arglist,
-                                      stdout=subprocess.PIPE).stdout.read()
-            raise ZetaError(errstr)
+            raise ZetaError(
+                subprocess.Popen(arglist, stdout=subprocess.PIPE).stdout.read())
         return float(out)
 
 

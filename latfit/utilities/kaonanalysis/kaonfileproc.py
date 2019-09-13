@@ -5,11 +5,11 @@ from collections import defaultdict
 import numpy as np
 import h5py
 from accupy import kdot
-import kaonprojop
-import kaonpostproc as kpp
-import kaondecompose
-from kaonanalysis import TSTEP12
-from latfit.utilities.h5jack import LT as LT_CHECK
+import latfit.utilities.kaonanalysis.kaonprojop as kaonprojop
+import latfit.utilities.kaonanalysis.kaonpostproc as kpp
+import latfit.utilities.kaonanalysis.kaondecompose as kaondecompose
+from latfit.utilities.kaonanalysis.kaonanalysis import TSTEP12
+from latfit.utilities.postprod.h5jack import LT as LT_CHECK
 import latfit.utilities.read_file as rf
 
 print("Imported kaonfileproc with LT=", LT_CHECK)
