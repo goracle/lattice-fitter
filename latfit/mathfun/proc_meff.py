@@ -45,7 +45,7 @@ if EFF_MASS_METHOD == 1:
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
         sol = FITS['acosh_ratio'](corrs, times) if index is None else\
-            FITS.f['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
+            FITS.fid['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
         if sol < 1:
             print("***ERROR***")
             print("argument to acosh in effective mass" +
@@ -111,7 +111,7 @@ elif EFF_MASS_METHOD == 3:
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
         sol = FITS['ratio'](corrs, times) if index is None else\
-            FITS.f['ratio'][ADD_CONST_VEC[index]](corrs, times)
+            FITS.fid['ratio'][ADD_CONST_VEC[index]](corrs, times)
         return sol
 
 # sliding window, solved by minimizing a one parameter cost function
@@ -136,7 +136,7 @@ elif EFF_MASS_METHOD == 4:
         def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
-            return (FITS.f['fit_func_1p'][add_const_bool](
+            return (FITS.fid['fit_func_1p'][add_const_bool](
                 ctime, [energy], LT_VEC[ini], tstep_arr)-sol)**2
         return eff_mass_tomin
 
@@ -155,7 +155,7 @@ elif EFF_MASS_METHOD == 4:
         """Minimize this
         (find a root) to solve a sliding window problem."""
         assert None, 'not supported.'
-        return FITS.f['fit_func_1p'](ctime, [energy])-sol
+        return FITS.fid['fit_func_1p'](ctime, [energy])-sol
 
     def proc_meff4(corrs, index, _, times=(None)):
         """numerically solve a function with one free parameter
@@ -168,7 +168,7 @@ elif EFF_MASS_METHOD == 4:
         if not LOGFORM:
             try:
                 sol = FITS['ratio'](
-                    corrs, times) if index is None else FITS.f[
+                    corrs, times) if index is None else FITS.fid[
                         'ratio'][ADD_CONST_VEC[
                             index]](corrs, times)
                 assert not np.isnan(sol) or any(np.isnan(np.array(
@@ -236,7 +236,7 @@ elif EFF_MASS_METHOD == 4:
         else:
             test = sol < 0
         if test:
-            ratioval = FITS.f['ratio'] if index is None else FITS.f[
+            ratioval = FITS.fid['ratio'] if index is None else FITS.fid[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             ratioval = corrs[0] if LOGFORM else ratioval
             sol = np.array(sol)

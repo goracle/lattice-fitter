@@ -6,7 +6,7 @@ from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.checkblks import convert_traj, printblk
 from latfit.utilities.postprod.checkblks import check_key
 from latfit.utilities.postprod.checkblks import TESTKEY2
-import auxblks as auxb
+import latfit.utilities.postprod.auxblks as auxb
 
 #### DO NOT MODIFY THE BELOW
 

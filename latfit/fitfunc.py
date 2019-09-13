@@ -142,7 +142,7 @@ def eff_mass_3_func(lenparams, rescale, fits, tvecs):
         def prefit_func(ctime, trial_params):
             """eff mass 3, fit func, rescaled
             """
-            return [rescale * fits.f['fit_func_1p'][
+            return [rescale * fits.fid['fit_func_1p'][
                 add_const_vec[j]](ctime, trial_params[j:j+1*origl],
                                   lt_vec[j])
                     for j in range(mult)]
@@ -150,7 +150,7 @@ def eff_mass_3_func(lenparams, rescale, fits, tvecs):
         def prefit_func(ctime, trial_params):
             """eff mass 3, fit func, rescaled
             """
-            return [fits.f['fit_func_1p'][add_const_vec[j]](
+            return [fits.fid['fit_func_1p'][add_const_vec[j]](
                 ctime, trial_params[j:j+1*origl], lt_vec[j])
                     for j in range(mult)]
     return prefit_func
@@ -177,13 +177,13 @@ def expfit_gevp(lenparams, fit, rescale, fits, tvecs):
         def prefit_func(ctime, trial_params):
             """gevp fit func, non eff mass"""
             return [
-                rescale*fits.f['fit_func_exp_gevp'][add_const_vec[j]](
+                rescale*fits.fid['fit_func_exp_gevp'][add_const_vec[j]](
                     ctime, trial_params[j*origl:(j+1)*origl], lt_vec[j])
                 for j in range(mult)]
     else:
         def prefit_func(ctime, trial_params):
             """gevp fit func, non eff mass"""
-            return [fits.f['fit_func_exp_gevp'][add_const_vec[j]](
+            return [fits.fid['fit_func_exp_gevp'][add_const_vec[j]](
                 ctime, trial_params[j*origl:(j+1)*origl], lt_vec[j])
                     for j in range(mult)]
     return prefit_func
@@ -202,7 +202,7 @@ def expfit(fit, origl, add_const, rescale, fits):
         if rescale != 1.0:
             def prefit_func(ctime, trial_params):
                 """Rescaled exp fit function."""
-                return rescale*fits.f[
+                return rescale*fits.fid[
                     'fit_func_exp'](ctime, trial_params)
         else:
             def prefit_func(ctime, trial_params):

@@ -17,7 +17,7 @@ class FitFunctions:
                       'fit_func_1p', 'fit_func_sym', 'fit_func_exp_gevp',
                       'pion_ratio', 'fit_func_1p_exp', 'fit_func_1p_pionratio',
                       'ratio_pionratio', 'ratio_exp']
-        self.f = {}
+        self.fid = {}
         self._select = {}
         self._fitfunc = FitFunc()
         self._fitfuncadd = FitFuncAdd()
@@ -37,6 +37,7 @@ class FitFunctions:
         """Select which set of functions to use"""
         index = 1 if upd.add_const else 0
         global LOG, LT, C, TSTEP, TSTEP2, PION_MASS, PIONRATIO
+        global DELTAT
         LOG = upd.log
         LT = upd.lent
         C = upd.c
