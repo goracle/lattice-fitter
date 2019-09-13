@@ -1,6 +1,4 @@
 """All error classes for custom error handling"""
-from latfit.config import UNCORR
-import latfit.config
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -11,6 +9,7 @@ except NameError:
     PROFILE = profile
 
 class BoolThrowErr:
+    """object which throws an error if it's 'boolness' is examined"""
     def __bool__(self):
         assert None, "This bool has not been initialized."
 
@@ -26,9 +25,10 @@ class AvgCovSingular(Exception):
 class TooManyBadFitsError(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
     @PROFILE
-    def __init__(self, chisq=None, pvalue=None, message=''):
+    def __init__(self, chisq=None, pvalue=None, uncorr=BoolThrowErr(),
+                 message=''):
         print("***ERROR***")
-        if UNCORR:
+        if uncorr:
             print("Too many fits have bad chi^2")
             print("chi^2 average up to this point:", chisq)
         else:
@@ -52,9 +52,9 @@ class EnergySortError(Exception):
 class BadJackknifeDist(Exception):
     """Exception for bad jackknife distribution"""
     @PROFILE
-    def __init__(self, message=''):
+    def __init__(self, message='', uncorr=BoolThrowErr()):
         print("***ERROR***")
-        if UNCORR:
+        if uncorr:
             print("Bad jackknife distribution, variance in chi^2 too large")
         else:
             print("Bad jackknife distribution, variance in t^2 too large")
@@ -72,10 +72,10 @@ class NoConvergence(Exception):
 class DOFNonPos(Exception):
     """Exception for dof < 0"""
     @PROFILE
-    def __init__(self, dof=None, message=''):
+    def __init__(self, dof=None, message='', excl=None):
         print("***ERROR***")
         print("dof < 1: dof=", dof)
-        print("FIT_EXCL=", latfit.config.FIT_EXCL)
+        print("FIT_EXCL=", excl)
         super(DOFNonPos, self).__init__(message)
         self.dof = dof
         self.message = message
@@ -83,9 +83,10 @@ class DOFNonPos(Exception):
 class BadChisq(Exception):
     """Exception for bad chi^2 (t^2)"""
     @PROFILE
-    def __init__(self, chisq=None, message='', dof=None):
+    def __init__(self, chisq=None, message='', uncorr=BoolThrowErr(),
+                 dof=None):
         print("***ERROR***")
-        if UNCORR:
+        if uncorr:
             print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
                   chisq, "dof =", dof)
         else:

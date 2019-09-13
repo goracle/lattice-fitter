@@ -96,4 +96,4 @@ class ResultMin:
             print("dof < 1. dof =", self.misc.dof)
             print("fit window:", WINDOW)
             print("excl:", latfit.config.FIT_EXCL)
-            raise DOFNonPos(dof=self.misc.dof)
+            raise DOFNonPos(dof=self.misc.dof, excl=latfit.config.FIT_EXCL)

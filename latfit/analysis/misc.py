@@ -6,7 +6,7 @@ import numpy as np
 from latfit.utilities.op_compose import freemomenta
 import latfit.utilities.read_file as rf
 from latfit.utilities import exactmean as em
-from latfit.analysis.errocodes import BoolErrorThrow
+from latfit.analysis.errorcodes import BoolThrowErr
 
 BOX_LENGTH = np.nan
 MASS = np.nan

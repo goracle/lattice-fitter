@@ -227,7 +227,7 @@ def toomanybadfitsp(result_min):
     avg = em.acmean(result_min.chisq.arr)
     pvalue = result_min.funpvalue(avg)
     if pvalue < PVALUE_MIN:
-        raise TooManyBadFitsError(chisq=avg, pvalue=pvalue)
+        raise TooManyBadFitsError(chisq=avg, pvalue=pvalue, uncorr=UNCORR)
 
 
 @PROFILE
@@ -280,7 +280,7 @@ def skip_range(params, result_min, skip_votes,
     if skiprange:
         raise BadChisq(
             chisq=result_min_jack.fun/result_min.misc.dof,
-            dof=result_min.misc.dof)
+            dof=result_min.misc.dof, uncorr=UNCORR)
     elif skip_votes:
         # the second sample should never have a good fit
         # if the first one has that bad a fit
@@ -296,7 +296,7 @@ def skip_range(params, result_min, skip_votes,
                 str(result_min.pvalue.arr[0])+" "+\
                 str(result_min.pvalue.arr[1])+" ")
         #sys.exit(1)
-        raise BadJackknifeDist
+        raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE
 def chisqfiduc(num_configs, dof):
