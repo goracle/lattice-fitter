@@ -15,7 +15,8 @@ class FitFunctions:
         """Define functions from flist."""
         self.flist = ['fit_func_exp', 'ratio', 'acosh_ratio',
                       'fit_func_1p', 'fit_func_sym', 'fit_func_exp_gevp',
-                      'pion_ratio', 'fit_func_1p_exp', 'fit_func_1p_pionratio',
+                      'pion_ratio', 'fit_func_1p_exp',
+                      'fit_func_1p_pionratio',
                       'ratio_pionratio', 'ratio_exp']
         self.fid = {}
         self._select = {}
@@ -33,21 +34,11 @@ class FitFunctions:
         func = str(func)
         return self._select[func]
 
-    def select(self, upd):
+    def select_and_update(self, add_const):
         """Select which set of functions to use"""
-        index = 1 if upd.add_const else 0
-        global LOG, LT, C, TSTEP, TSTEP2, PION_MASS, PIONRATIO
-        global DELTAT
-        LOG = upd.log
-        LT = upd.lent
-        C = upd.c
-        TSTEP = upd.tstep
-        TSTEP2 = upd.tstep2
-        PION_MASS = upd.pionmass
-        PIONRATIO = upd.pionratio
-        DELTAT = upd.deltat
-        self._fitfuncadd.update(upd)
-        self._fitfunc.update(upd)
+        index = 1 if add_const else 0
+        self._fitfuncadd.update()
+        self._fitfunc.update()
         self._update_f()
         for func in self.fid:
             self._select[func] = self.fid[func][index]
@@ -63,6 +54,17 @@ class FitFunctions:
             print("Using fixed pion mass in pion ratio fits.")
         else:
             print("Not using fixed pion mass in pion ratio fits.")
+
+#global LOG, LT, C, TSTEP, TSTEP2, PION_MASS, PIONRATIO
+#global DELTAT
+#LOG = upd.log
+#LT = upd.lent
+#C = upd.c
+#TSTEP = upd.tstep
+#TSTEP2 = upd.tstep2
+#PION_MASS = upd.pionmass
+#PIONRATIO = upd.pionratio
+#DELTAT = upd.deltat
 
 LOG = False
 LOG = True
@@ -103,15 +105,15 @@ class FitFuncAdd:
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
-    def update(self, upd):
+    def update(self):
         """Update class params"""
-        self._log = upd.log
-        self._lent = upd.lent
-        self._c = upd.c
-        self._tsteps = [upd.tstep, upd.tstep2, upd.deltat]
-        self._pionmass = upd.pionmass
-        self._pionratio = upd.pionratio
-        self._gevp = upd.gevp
+        self._log = LOG
+        self._lent = LT
+        self._c = C
+        self._tsteps = [TSTEP, TSTEP2, DELTAT]
+        self._pionmass = PION_MASS
+        self._pionratio = PIONRATIO
+        self._gevp = GEVP
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -291,15 +293,15 @@ class FitFunc:
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
-    def update(self, upd):
+    def update(self):
         """Update the class components"""
-        self._log = upd.log
-        self._lent = upd.lent
-        self._c = upd.c
-        self._tsteps = [upd.tstep, upd.tstep2, upd.deltat]
-        self._pionmass = upd.pionmass
-        self._pionratio = upd.pionratio
-        self._gevp = upd.gevp
+        self._log = LOG
+        self._lent = LT
+        self._c = C
+        self._tsteps = [TSTEP, TSTEP2, DELTAT]
+        self._pionmass = PION_MASS
+        self._pionratio = PIONRATIO
+        self._gevp = GEVP
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,

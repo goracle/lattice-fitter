@@ -1,11 +1,11 @@
 """Config for lattice fitter."""
-from collections import namedtuple
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.analysis.irr2tex import irr2tex
 from latfit.fit_funcs import FitFunctions
+import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
@@ -755,23 +755,25 @@ ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 
 FITS = FitFunctions()
 
-UP = namedtuple('update', ['add_const', 'log', 'lt', 'c', 'tstep', 'tstep2',
-                           'pionmass', 'deltat', 'pionratio'])
-UP.add_const = ADD_CONST
-UP.log = LOG
-UP.c = C
-# make global tstep equal to delta t
-# so fit functions below will be setup correctly
-UP.tstep = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T_MATRIX_SUBTRACTION
-UP.tstep2 = TSTEP if not GEVP or GEVP_DEBUG else DELTA_T2_MATRIX_SUBTRACTION
-UP.tstep2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else UP.tstep2
-UP.pionmass = misc.massfunc()
-UP.pionratio = False
-UP.lent = LT
-UP.gevp = GEVP
-UP.deltat = -1 if GEVP_DERIV else int(T0[6:])
-UP.deltat = -1 if not GEVP else UP.deltat
-FITS.select(UP)
+# update module variables
+latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
+latfit.fit_funcs.LOG = LOG
+latfit.fit_funcs.C = C
+latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else\
+    DELTA_T_MATRIX_SUBTRACTION
+latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP or GEVP_DEBUG else\
+    DELTA_T2_MATRIX_SUBTRACTION
+latfit.fit_funcs.TSTEP2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else\
+    latfit.fit_funcs.TSTEP2
+latfit.fit_funcs.PIONMASS = misc.massfunc()
+latfit.fit_funcs.PIONRATIO = False
+latfit.fit_funcs.LENT = LT
+latfit.fit_funcs.GEVP = GEVP
+latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else int(T0[6:])
+latfit.fit_funcs.DELTAT = -1 if not GEVP else latfit.fit_funcs.DELTAT
+
+# selects fit func class and updates with module vars
+FITS.select_and_update(ADD_CONST)
 
 # END DO NOT MODIFY
 
@@ -839,7 +841,6 @@ def fit_func(ctime, trial_params): # lower case hack
 sands.gevp_statements(GEVP_DIRS, GEVP, DIM, MULT, (LT_VEC, ADD_CONST_VEC))
 sands.start_params_pencils(START_PARAMS, ORIGL,
                            NUM_PENCILS, MULT, SYS_ENERGY_GUESS)
-sands.fit_func_statements(USE_FIXED_MASS, UP, TSTEP, FITS)
 sands.rescale_and_atw_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
                                  DELTA_E_AROUND_THE_WORLD,
                                  DELTA_E2_AROUND_THE_WORLD)

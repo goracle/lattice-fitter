@@ -1,7 +1,6 @@
 """Makes statements (and assertions)"""
 import numpy as np
 from latfit.utilities import read_file as rf
-import latfit.fit_funcs
 
 def gevp_statements(gevp_dirs, gevp, dim, mult, tvecs):
     """Make gevp related statements"""
@@ -29,12 +28,6 @@ def start_params_pencils(start_params, origl, num_pencils,
     else:
         start_params = (list(start_params)*mult)*2**num_pencils
     return start_params
-
-def fit_func_statements(use_fixed_mass, update, tstep, fits):
-    """Fit function statements"""
-    latfit.fit_funcs.USE_FIXED_MASS = use_fixed_mass
-    update.tstep = tstep # revert back
-    fits.select(update)
 
 def rescale_and_atw_statements(eff_mass, eff_mass_method, rescale,
                                delta_e_around_the_world,
