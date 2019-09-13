@@ -113,7 +113,7 @@ def mkplot(plotdata, input_f,
     file_str = get_file_string(title)
 
     if FIT:
-        if result_min.status != 0:
+        if result_min.misc.status != 0:
             print("WARNING:  MINIMIZER FAILED TO CONVERGE AT LEAST ONCE")
         param_chisq = get_param_chisq(plotdata.coords, dimops,
                                       plotdata.fitcoord,
@@ -165,7 +165,7 @@ def modmissingdim(dimops, plotdata, result_min):
     if FIT:
         # delete the unwanted dimensions
         for idx in todel:
-            #result_min_mod.x = np.delete(result_min.x, todel)
+            #result_min_mod.x = np.delete(result_min.energy.val, todel)
             result_min_mod.x[idx] = np.nan
     return dimops_mod, result_min_mod
 
@@ -197,7 +197,7 @@ def get_prelim_errbars(result_min):
     Otherwise, defer to the user preference (from config).
     """
     try:
-        error2 = np.array(result_min.error_bars)
+        error2 = np.array(result_min.misc.error_bars)
     except AttributeError:
         error2 = None
     if ERROR_BAR_METHOD == 'avgcov':
@@ -392,22 +392,22 @@ def print_messages(result_min, param_err, param_chisq):
     if EFF_MASS:
         print("Effective mass method:", EFF_MASS_METHOD)
         print("Energies (MeV):", np.array2string(
-            1000*AINVERSE*np.array(result_min.x), separator=', '))
+            1000*AINVERSE*np.array(result_min.energy.val), separator=', '))
         print("Error in energies (MeV):", np.array2string(
             1000*AINVERSE*np.array(param_err), separator=', '))
         print("Energies (lattice units):", np.array2string(
-            np.array(result_min.x), separator=', '))
+            np.array(result_min.energy.val), separator=', '))
         print("Error in energies (lattice units):", np.array2string(
             np.array(param_err), separator=', '))
     else:
         print("Minimized params:", np.array2string(
-            result_min.x, separator=', '))
+            result_min.energy.val, separator=', '))
         print("Error in params :", np.array2string(np.array(param_err),
                                                    separator=', '))
     if hasattr(result_min, 'systematics'):
-        if not result_min.systematics is None:
-            systematics = gvar.gvar(result_min.systematics,
-                                    result_min.systematics_err)
+        if not result_min.systematics.val is None:
+            systematics = gvar.gvar(result_min.systematics.val,
+                                    result_min.systematics.err)
             interleave_energies_systematic.sys = systematics
             print("systematics:", np.array2string(systematics,
                                                   separator=', '))
@@ -417,27 +417,27 @@ def print_messages(result_min, param_err, param_chisq):
 
 def print2(result_min, param_err, param_chisq):
     """Split print messages into two functions"""
-    chisq_str = result_min.fun if not JACKKNIFE_FIT else gvar.gvar(
-        result_min.fun, result_min.chisq_err)
+    chisq_str = result_min.chisq.val if not JACKKNIFE_FIT else gvar.gvar(
+        result_min.chisq.val, result_min.chisq.err)
     chisq_str = str(chisq_str)
     if UNCORR:
         print("chi^2 minimized = ", chisq_str)
     else:
         print("t^2 minimized = ", chisq_str)
-    print("degrees of freedom = ", result_min.dof)
+    print("degrees of freedom = ", result_min.misc.dof)
     print("epsilon (inflation/deflation of GEVP parameter)", DECREASE_VAR)
     if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
        JACKKNIFE == 'YES':
-        print("avg p-value = ", gvar.gvar(result_min.pvalue,
-                                          result_min.pvalue_err))
+        print("avg p-value = ", gvar.gvar(result_min.pvalue.val,
+                                          result_min.pvalue.err))
         assert NUM_CONFIGS > 0, "num configs not set (bug):"+str(NUM_CONFIGS)
         if UNCORR:
-            print("p-value of avg chi^2 = ", 1 -  stats.chi2.cdf(result_min.fun, result_min.dof))
+            print("p-value of avg chi^2 = ", 1 -  stats.chi2.cdf(result_min.chisq.val, result_min.misc.dof))
         else:
             print("p-value of avg t^2 = ", stats.f.sf(
-                result_min.fun*(NUM_CONFIGS-result_min.dof)/(
-                    NUM_CONFIGS-1)/result_min.dof,
-                result_min.dof, NUM_CONFIGS-result_min.dof))
+                result_min.chisq.val*(NUM_CONFIGS-result_min.misc.dof)/(
+                    NUM_CONFIGS-1)/result_min.misc.dof,
+                result_min.misc.dof, NUM_CONFIGS-result_min.misc.dof))
     redchisq_str = str(param_chisq.redchisq)
     if UNCORR:
         print("chi^2/dof = ", redchisq_str)
@@ -450,19 +450,19 @@ def print_phase_info(result_min, param_err):
     """Print phase shift specific info"""
     if GEVP:
         print("sqrt(s), I="+str(ISOSPIN)+" phase shift(in degrees) = ")
-        energy = 1000*AINVERSE*np.array(result_min.x)
+        energy = 1000*AINVERSE*np.array(result_min.energy.val)
         mom = 1000*AINVERSE*np.sqrt(rf.norm2(
             rf.procmom(MOMSTR)))*(2*np.pi/L_BOX)
         print("mom =", mom)
         root_s = np.sqrt(energy**2-mom**2)
         err_energy = 1000*AINVERSE*np.array(param_err)*energy/root_s
         root_s_chk = 1000*AINVERSE*np.sqrt(
-            gvar.gvar(result_min.x, param_err)**2-(
+            gvar.gvar(result_min.energy.val, param_err)**2-(
                 2*np.pi/L_BOX)**2*rf.norm2(rf.procmom(MOMSTR)))
-        for i in range(len(result_min.scattering_length)):
-            shift = result_min.phase_shift[i]
+        for i in range(len(result_min.scattering_length.val)):
+            shift = result_min.phase_shift.val[i]
             shift = np.real(shift) if np.isreal(shift) else shift
-            err = result_min.phase_shift_err[i]
+            err = result_min.phase_shift.err[i]
             err = np.real(err) if np.isreal(err) else err
             energystr = str(gvar.gvar(root_s[i], err_energy[i]))
             chkstr = str(root_s_chk[i])
@@ -471,39 +471,39 @@ def print_phase_info(result_min, param_err):
             phasestr = str(gvar.gvar(shift, err))
             print(energystr, "MeV ;", "phase shift (degrees):", phasestr)
         print("[")
-        for i in range(len(result_min.scattering_length)):
-            shift = result_min.phase_shift[i]
+        for i in range(len(result_min.scattering_length.val)):
+            shift = result_min.phase_shift.val[i]
             shift = np.real(shift) if np.isreal(shift) else shift
-            err = result_min.phase_shift_err[i]
+            err = result_min.phase_shift.err[i]
             err = np.real(err) if np.isreal(err) else err
             commstr = " ," if i != len(
-                result_min.scattering_length)-1 else ""
+                result_min.scattering_length.val)-1 else ""
             print(np.array2string(np.array([root_s[i], shift,
                                             err_energy[i], err]),
                                   separator=', ')+commstr)
         print("]")
-        for i in range(len(result_min.scattering_length)):
+        for i in range(len(result_min.scattering_length.val)):
             if i == 0: # scattering length only meaningful as p->0
                 print("I="+str(ISOSPIN)+" scattering length = ",
-                      gvar.gvar(result_min.scattering_length[i],
-                                result_min.scattering_length_err[i]))
+                      gvar.gvar(result_min.scattering_length.val[i],
+                                result_min.scattering_length.err[i]))
     else:
         print("I="+str(ISOSPIN)+" phase shift(in degrees) = ",
-              gvar.gvar(result_min.phase_shift,
-                        result_min.phase_shift_err))
+              gvar.gvar(result_min.phase_shift.val,
+                        result_min.phase_shift.err))
         print("I="+str(ISOSPIN)+" scattering length = ",
-              gvar.gvar(result_min.scattering_length,
-                        result_min.scattering_length_err))
+              gvar.gvar(result_min.scattering_length.val,
+                        result_min.scattering_length.err))
 
 def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     """Get chi^2 parameters."""
     param_chisq = namedtuple('param_chisq',
                              ('redchisq', 'redchisq_round_str', 'dof'))
     if fitrange is None:
-        param_chisq.dof = int(len(coords)*dimops-len(result_min.x))
+        param_chisq.dof = int(len(coords)*dimops-len(result_min.energy.val))
     else:
         param_chisq.dof = int((fitrange[1]-fitrange[0]+1)*dimops-len(
-            result_min.x))
+            result_min.energy.val))
     # Do this because C parameter is a fit parameter,
     # it just happens to be guessed by hand
     if EFF_MASS and EFF_MASS_METHOD == 1 and C != 0.0:
@@ -511,18 +511,18 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
     #print("param_chisq.dof=", param_chisq.dof)
     print("FIT_EXCL=", latfit.config.FIT_EXCL)
     for k, i in enumerate(latfit.config.FIT_EXCL):
-        if k >= len(result_min.x): # if we leave off a gevp dimension
+        if k >= len(result_min.energy.val): # if we leave off a gevp dimension
             break
         for j in i:
             if j in xcoord:
                 param_chisq.dof -= 1
-    param_chisq.redchisq = result_min.fun/result_min.dof
+    param_chisq.redchisq = result_min.chisq.val/result_min.misc.dof
     if JACKKNIFE_FIT:
         # redchisq_str = str(param_chisq.redchisq)
-        # redchisq_str += '+/-'+str(result_min.chisq_err/param_chisq.dof)
+        # redchisq_str += '+/-'+str(result_min.chisq.err/param_chisq.misc.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
-                result_min.chisq_err/result_min.dof > 10
-                or result_min.chisq_err/result_min.dof < .1):
+                result_min.chisq.err/result_min.misc.dof > 10
+                or result_min.chisq.err/result_min.dof < .1):
             param_chisq.redchisq_round_str = format_chisq_str(
                 param_chisq.redchisq, plus=False)
         else:
@@ -570,11 +570,11 @@ def interleave_energies_systematic(result_min):
         syst = []
     ret = []
     if syst:
-        dimops = len(result_min.x)
+        dimops = len(result_min.energy.val)
         sys_per_en = len(syst[:-1])/dimops
         spe = sys_per_en
         spe = int(spe)
-        for i, energy in enumerate(result_min.x):
+        for i, energy in enumerate(result_min.energy.val):
             ret = list(ret)
             ret.append(energy)
             for j in range(int(spe)):
@@ -582,10 +582,10 @@ def interleave_energies_systematic(result_min):
         #    print("ret(", i ,"):", ret)
         ret.append(syst[-1])
         ret = np.asarray(ret)
-        #ret[0::2] = [*result_min.x, syst[-1]]
+        #ret[0::2] = [*result_min.energy.val, syst[-1]]
         #ret[1::2] = syst[:-1]
     else:
-        ret = result_min.x
+        ret = result_min.energy.val
     return ret
 interleave_energies_systematic.sys = None
 
@@ -601,12 +601,12 @@ def plot_fit(xcoord, result_min, dimops):
     else:
         pass
     xfit = get_xfit(dimops, xcoord)
-    min_params = result_min.x
+    min_params = result_min.energy.val
     if hasattr(result_min, 'systematics'):
-        if not result_min.systematics is None:
+        if not result_min.systematics.val is None:
             min_params = interleave_energies_systematic(result_min)
     for curve_num in range(dimops):
-        # result_min.x is is the array of minimized fit params
+        # result_min.energy.val is is the array of minimized fit params
         if dimops > 1:
             yfit = np.array([
                 fit_func(xfit[curve_num][i], min_params)[
@@ -618,7 +618,7 @@ def plot_fit(xcoord, result_min, dimops):
         if np.nan in yfit:
             continue
         # only plot fit function if minimizer result makes sense
-        # if result_min.status == 0:
+        # if result_min.misc.status == 0:
         plt.plot(xfit[curve_num], yfit)
 
 def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
@@ -655,7 +655,7 @@ def plot_box(xcoord, result_min, param_err, dimops):
     xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
     #xfit = [xfit] if dimops == 1 else xfit
     for i in range(dimops):
-        if np.isnan(result_min.x[i]):
+        if np.isnan(result_min.energy.val[i]):
             continue
         try:
             continuous = len(
@@ -666,7 +666,7 @@ def plot_box(xcoord, result_min, param_err, dimops):
                     xfit[i])-1]-xfit[i][0] if continuous else 0
                 axvar.add_patch((
                     plt.Rectangle(  # (11.0, 0.24514532441), 3,.001,
-                        (start-.5, result_min.x[i]-param_err[i]),  # (x, y)
+                        (start-.5, result_min.energy.val[i]-param_err[i]),  # (x, y)
                         1+delw,  # width
                         2*param_err[i],  # height
                         fill=True, color='k', alpha=0.5,
@@ -702,7 +702,7 @@ if GEVP:
             plt.legend(loc='upper center',
                        bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=nplots)
         #plt.legend(bbox_to_anchor=(1.24,1),loc='best')
-        for i, min_e in enumerate(result_min.x):
+        for i, min_e in enumerate(result_min.energy.val):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             estring = str(gvar.gvar(min_e, param_err[i]))
             plt.annotate(
@@ -717,15 +717,15 @@ else:
     def annotate_energy(result_min, param_err, ystart=YSTART):
         """Annotate plot with fitted energy (non GEVP)
         """
-        if len(result_min.x) > 1:
-            estring = trunc_prec(result_min.x[1])+"+/-"+trunc_prec(
+        if len(result_min.energy.val) > 1:
+            estring = trunc_prec(result_min.energy.val[1])+"+/-"+trunc_prec(
                 param_err[1], 2)
-            estring = str(gvar.gvar(result_min.x[1], param_err[1]))
+            estring = str(gvar.gvar(result_min.energy.val[1], param_err[1]))
         else:
             # for an effective mass plot
-            estring = trunc_prec(result_min.x[0])+"+/-"+trunc_prec(
+            estring = trunc_prec(result_min.energy.val[0])+"+/-"+trunc_prec(
                 param_err[0], 2)
-            estring = str(gvar.gvar(result_min.x[0], param_err[0]))
+            estring = str(gvar.gvar(result_min.energy.val[0], param_err[0]))
         plt.annotate("Energy="+estring, xy=(0.05, ystart),
                      xycoords='axes fraction')
 
@@ -758,7 +758,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
             rcp = anchisq(redchisq_round_str, dof)
-            plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.x)-2)),
+            plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.energy.val)-2)),
                          xycoords='axes fraction')
 
     else:
@@ -873,9 +873,9 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
     param_chisq=[redchisq, redchisq_round_str, dof]
     """
     annotate_energy(result_min, param_err)
-    # if result_min.status == 0 and param_chisq.redchisq < 2:
+    # if result_min.misc.status == 0 and param_chisq.redchisq < 2:
     if param_chisq.redchisq < 2:
         annotate_chisq(param_chisq.redchisq_round_str,
-                       result_min.dof, result_min)
+                       result_min.misc.dof, result_min)
     annotate_jack()
     annotate_uncorr(coords, dimops)

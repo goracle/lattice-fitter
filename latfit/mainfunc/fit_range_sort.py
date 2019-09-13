@@ -1,0 +1,257 @@
+"""Utilities to sort fit ranges, skip fit ranges"""
+import numpy as np
+from mpi4py import MPI
+import latfit.analysis.sortfit as sortfit
+from latfit.config import ISOSPIN, GEVP, MAX_RESULTS
+from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
+from latfit.config import ONLY_SMALL_FIT_RANGES
+from latfit.config import MULT, BIASED_SPEEDUP
+import latfit.config
+from latfit.mainfunc.metaclass import filter_sparse
+from latfit.singlefit import singlefit
+import latfit.singlefit
+
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
+def augment_excl(*xargs, **kwargs):
+    """dummy"""
+    assert None
+    if xargs or kwargs:
+        pass
+    return []
+
+@PROFILE
+def skip_large_errors(result_param, param_err):
+    """Skip on parameter errors greater than 100%
+    (fit range is too noisy)
+    return a bool if we should skip this fit range
+    """
+    ret = False
+    result_param = np.asarray(result_param)
+    param_err = np.asarray(param_err)
+    if result_param.shape:
+        for i, j in zip(result_param, param_err):
+            assert j >= 0, "negative error found:"+\
+                str(result_param)+" "+str(param_err)
+            ret = abs(i/j) < 1
+    return ret if SKIP_LARGE_ERRORS else False
+
+@PROFILE
+def cut_on_errsize(meta):
+    """Cut on the size of the error bars on individual points"""
+    err = singlefit.error2
+    coords = singlefit.coords_full
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    #assert GEVP, "other versions not supported yet"+str(
+    # err.shape)+" "+str(coords.shape)
+    start = str(latfit.config.FIT_EXCL)
+    for i, _ in enumerate(coords):
+        excl_add = coords[i][0]
+        actual_range = meta.actual_range()
+        if excl_add not in actual_range:
+            continue
+        if MULT > 1:
+            for j in range(len(coords[0][1])):
+                if err[i][j]/coords[i][1][j] > ERR_CUT:
+                    print("err =", err[i][j], "coords =", coords[i][1][j])
+                    print("cutting dimension", j,
+                          "for time slice", excl_add)
+                    print("err/coords > ERR_CUT =", ERR_CUT)
+                    latfit.config.FIT_EXCL[j].append(excl_add)
+                    latfit.config.FIT_EXCL[j] = list(set(
+                        latfit.config.FIT_EXCL[j]))
+        else:
+            if err[i]/coords[i][1] > ERR_CUT:
+                print("err =", err[i], "coords =", coords[i][1])
+                print("cutting dimension", 0, "for time slice", excl_add)
+                print("err/coords > ERR_CUT =", ERR_CUT)
+                latfit.config.FIT_EXCL[0].append(excl_add)
+                latfit.config.FIT_EXCL[0] = list(set(
+                    latfit.config.FIT_EXCL[0]))
+    ret = start == str(latfit.config.FIT_EXCL)
+    return ret
+
+def fit_range_combos(meta, plotdata):
+    """Generate fit range combinations"""
+    # generate all possible points excluded from fit range
+    prod, sampler = meta.generate_combinations()
+
+    # length of possibilities is useful to know,
+    # update powerset if brute force solution is possible
+    prod = meta.length_fit(prod, sampler)
+
+    tsorted = get_tsorted(plotdata)
+    sorted_fit_ranges = sort_fit_ranges(meta, tsorted, sampler)
+    return prod, sorted_fit_ranges
+
+@PROFILE
+def exitp(meta, min_arr, overfit_arr, idx):
+    """Test to exit the fit range loop"""
+    ret = False
+    if meta.skiploop:
+        print("skipping loop")
+        ret = True
+
+    if not ret and meta.random_fit:
+        if len(min_arr) >= MAX_RESULTS/MPISIZE or (
+                len(overfit_arr) >= MAX_RESULTS/MPISIZE
+                and not min_arr):
+            ret = True
+            print("a reasonably large set of indices"+\
+                " has been checked, exiting fit range loop."+\
+                " (number of fit ranges checked:"+str(idx+1)+")")
+            print("rank :", MPIRANK, "exiting fit loop")
+    return ret
+
+
+
+@PROFILE
+def excl_inrange(meta, excl):
+    """Find the excluded points in the actual fit window"""
+    ret = []
+    fullrange = meta.actual_range()
+    for _, exc in enumerate(excl):
+        newexc = []
+        for point in exc:
+            if point in fullrange:
+                newexc.append(point)
+        ret.append(newexc)
+    return ret
+
+@PROFILE
+def toosmallp(meta, excl):
+    """Skip a fit range if it has too few points"""
+    ret = False
+    excl = excl_inrange(meta, excl)
+    # each energy should be included
+    if max([len(i) for i in excl]) >= meta.fitwindow[
+            1]-meta.fitwindow[0]+meta.options.xstep:
+        print("skipped all the data points for a GEVP dim, "+\
+                "so continuing.")
+        ret = True
+
+    # each fit curve should be to more than one data point
+    if not ret and meta.fitwindow[1]-meta.fitwindow[0] in [
+            len(i) for i in excl] and\
+            not ONLY_SMALL_FIT_RANGES:
+        print("only one data point in fit curve, continuing")
+        # ret = True
+    if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.options.xstep > 0 and\
+        not ONLY_SMALL_FIT_RANGES:
+        if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
+            print("warning: only two data points in fit curve")
+            # allow for very noisy excited states in I=0
+            if not (ISOSPIN == 0 and GEVP):
+                #ret = True
+                pass
+    #cut on arithmetic sequence
+    if not ret and len(filter_sparse(
+            excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
+        print("not an arithmetic sequence")
+    ret = False if ISOSPIN == 0 and GEVP else ret
+    return ret
+
+
+
+@PROFILE
+def keyexcl(excl):
+    """Make a unique id for a set of excluded points"""
+    return str(list(excl))
+
+
+
+@PROFILE
+def get_one_fit_range(meta, prod, idx, samp_mult, checked):
+    """Choose one fit range from all combinations"""
+    key = None
+    if not meta.random_fit:
+        excl = prod[idx]
+    else: # large fit range, try to get lucky
+        if idx == 0:
+            excl = latfit.config.FIT_EXCL
+        else:
+            excl = [np.random.choice(
+                samp_mult[i][1], p=samp_mult[i][0])
+                    for i in range(MULT)]
+    # add user info
+    excl = augment_excl([[i for i in j] for j in excl])
+
+    key = keyexcl(excl)
+    ret = None
+    if key in checked:
+        print("key checked, continuing:", key)
+        ret = None
+    else:
+        ret = excl
+        checked.add(key)
+    return ret, checked
+
+# generate all possible points excluded from fit range
+
+@PROFILE
+def sort_fit_ranges(meta, tsorted, sampler):
+    """Sort fit ranges by likelihood of success
+    (if bias this introduces is not an issue)"""
+    samp_mult = []
+    if meta.random_fit:
+        # go in a random order if lenprod is small
+        # (biased by how likely fit will succeed),
+        for i in range(MULT):
+            #if MULT == 1:
+            #    break
+            if i == 0 and MPIRANK == 0 and BIASED_SPEEDUP:
+                print("Setting up biased sorting of"+\
+                        " (random) fit ranges")
+            if BIASED_SPEEDUP:
+                probs, sampi = sortfit.sample_norms(
+                    sampler, tsorted[i], meta.lenfit)
+            else:
+                probs = None
+                sampi = sorted(list(sampler))
+            samp_mult.append([probs, sampi])
+    else:
+        for i in range(MULT):
+            if meta.lenprod == 1:
+                break
+            #if MULT == 1 or lenprod == 1:
+            #    break
+            if i == 0 and MPIRANK == 0:
+                print("Setting up sorting of exhaustive "+\
+                        "list of fit ranges")
+            sampi = sortfit.sortcombinations(
+                sampler, tsorted[i], meta.lenfit)
+            samp_mult.append(sampi)
+    return samp_mult
+
+@PROFILE
+def get_tsorted(plotdata):
+    """Get list of best times (most likely to yield good fits)"""
+    tsorted = []
+    for i in range(MULT):
+        #if MULT == 1:
+        #    break
+        if i == 0 and MPIRANK == 0:
+            print("Finding best times ("+\
+                    "most likely to give small chi^2 (t^2) contributions)")
+        if MULT > 1:
+            coords = np.array([j[i] for j in plotdata.coords[:, 1]])
+        else:
+            coords = np.array([j for j in plotdata.coords[:, 1]])
+        times = np.array(list(plotdata.coords[:, 0]))
+        if MULT > 1:
+            tsorted.append(sortfit.best_times(
+                coords, plotdata.cov[:, :, i, i], i, times))
+        else:
+            tsorted.append(
+                sortfit.best_times(coords, plotdata.cov, 0, times))
+    return tsorted
