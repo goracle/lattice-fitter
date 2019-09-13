@@ -922,7 +922,8 @@ def invertmasked(params, len_time, excl, covjack):
         params2.num_configs = params.num_configs
     try:
         matrix = invert_cov(matrix, params2)
-        marray[~marray.mask] = normalize_covinv(matrix, params2).reshape(-1)
+        marray[np.logical_not(marray.mask)] = normalize_covinv(
+            matrix, params2).reshape(-1)
         flag = 0
     except np.linalg.linalg.LinAlgError as err:
         if str(err) == 'Singular matrix':
