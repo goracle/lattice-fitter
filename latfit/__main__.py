@@ -225,7 +225,7 @@ def post_loop(meta, loop_store, plotdata,
     print_res.print_fit_results(meta, min_arr)
     result_min, param_err = combine_results(
         result_min, result_min_close,
-        meta.skiploop, param_err, param_err_close)
+        meta, param_err, param_err_close)
 
     print("fit window = ", meta.fitwindow)
     # plot the result
@@ -234,10 +234,10 @@ def post_loop(meta, loop_store, plotdata,
 
 @PROFILE
 def combine_results(result_min, result_min_close,
-                    skip_loop, param_err, param_err_close):
+                    meta, param_err, param_err_close):
     """use the representative fit's goodness of fit in final print
     """
-    if skip_loop:
+    if meta.skip_loop:
         result_min, param_err = result_min_close, param_err_close
     else:
         result_min['chisq'].val = result_min_close.fun
