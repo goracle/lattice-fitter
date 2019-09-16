@@ -29,7 +29,9 @@ if CALC_PHASE_SHIFT:
         return epipi
 
     def getgamma(epipi, comp):
-        """Ok"""
+        """get relativistic gamma"""
+        comp = np.asarray(comp, dtype=np.float64)
+        assert len(comp) == 3, str(comp)
         if epipi:
             try:
                 if FIT_SPACING_CORRECTION:

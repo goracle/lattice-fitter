@@ -9,13 +9,8 @@ import h5py
 from latfit.config import GEVP
 from latfit.config import STYPE
 from latfit.config import GROUP_LIST
-from latfit.config import BINNUM
-from latfit.config import HALF, SUPERJACK_CUTOFF
-from latfit.config import SLOPPYONLY
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 import latfit
-import latfit.analysis.misc as misc
-import latfit.config as cfg
 from latfit.utilities import exactmean as em
 from latfit.extract.binout import binout, halftotal
 
@@ -89,10 +84,6 @@ if STYPE == 'hdf5':
         return ret
 
 
-
-    def intceil(num):
-        """Numpy returns a float when it should return an int for ceiling"""
-        return int(np.ceil(num))
 
     def test_prefix(hdf5_file, ctime, fn1, alts=None):
         """Test hdf5 group name,
@@ -206,4 +197,3 @@ elif STYPE == 'ascii':
                 else:
                     debug = [root, dirs]
         return retname, flag2, debug
-

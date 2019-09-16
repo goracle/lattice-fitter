@@ -813,7 +813,8 @@ def dofit_initial(meta, plotdata):
     retsingle_save = None
     try:
         retsingle_save = singlefit(meta.input_f, meta.fitwindow,
-                                   meta.options.xmin, meta.options.xmax, meta.options.xstep)
+                                   meta.options.xmin,
+                                   meta.options.xmax, meta.options.xstep)
         test_success = True
         if FIT:
             print("Test fit succeeded.")

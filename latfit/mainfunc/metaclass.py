@@ -1,6 +1,5 @@
 """Class containing meta data and related functions"""
 import sys
-from collections import namedtuple
 from itertools import combinations, chain, product
 import ast
 import numpy as np

@@ -186,6 +186,11 @@ HALF = 'drop fourth eighth'
 HALF = 'first half'
 HALF = 'drop fourth quarter'
 HALF = 'full'
+# jackknife correction? "YES" or "NO"
+# correction only happens if multiple files are processed
+# this JACKKNIFE paramter is obsolete.
+JACKKNIFE = 'YES'
+elimjk.JACKKNIFE = JACKKNIFE
 if HALF != 'full':
     SUPERJACK_CUTOFF = 0
     print("HALF spec:", HALF)
@@ -647,11 +652,6 @@ METHOD = 'L-BFGS-B'
 METHOD = 'Nelder-Mead'
 METHOD = 'minuit'
 
-# jackknife correction? "YES" or "NO"
-# correction only happens if multiple files are processed
-
-JACKKNIFE = 'YES'
-
 # print correlation function, and sqrt(diag(cov)) and exit
 
 PRINT_CORR = True
@@ -851,8 +851,9 @@ def fit_func(ctime, trial_params): # lower case hack
 
 # make statements (asserts)
 sands.gevp_statements(GEVP_DIRS, GEVP, DIM, MULT, (LT_VEC, ADD_CONST_VEC))
-sands.start_params_pencils(START_PARAMS, ORIGL,
-                           NUM_PENCILS, MULT, SYS_ENERGY_GUESS)
+START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
+                                          NUM_PENCILS, MULT,
+                                          SYS_ENERGY_GUESS)
 sands.rescale_and_atw_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
                                  DELTA_E_AROUND_THE_WORLD,
                                  DELTA_E2_AROUND_THE_WORLD)

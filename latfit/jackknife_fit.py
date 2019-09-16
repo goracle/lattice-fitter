@@ -118,6 +118,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # minimize chi^2 (t^2) given the inv. covariance matrix and data
             result_min_jack = mkmin(covinv_jack, coords_jack)
             if result_min_jack.status != 0:
+                assert not np.isnan(result_min_jack.status),\
+                    str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
 
@@ -440,7 +442,7 @@ def phase_shift_scatter_len_avg(result_min):
                                 prune_phase_shift_arr(
                                     result_min.phase_shift.arr), axis=0)
 
-    if phase_shift_arr:
+    if np.asarray(phase_shift_arr).shape:
 
         # calculate scattering length via energy, phase shift
         scattering_length = -1.0*np.tan(

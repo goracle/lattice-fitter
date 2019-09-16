@@ -4,12 +4,10 @@ import numpy as np
 
 from latfit.utilities import exactmean as em
 import latfit.analysis.misc as misc
+import latfit.extract.binout as binout
+from latfit.analysis.errorcodes import BoolThrowErr
 # from latfit.config import ELIM_JKCONF_LIST, HALF
-
-try:
-    from latfit.config import JACKKNIFE
-except ImportError:
-    JACKKNIFE = True
+JACKKNIFE = BoolThrowErr()
 
 
 def elim_jkconfigs(jkblk, elim_list=None):
@@ -29,7 +27,8 @@ def elim_jkconfigs(jkblk, elim_list=None):
         if elim_list is None:
             elim_list = list(ELIM_JKCONF_LIST)
         if ELIM_JKCONF_LIST is not None and HALF == 'full':
-            assert np.all(elim_list == ELIM_JKCONF_LIST), "list mismatch:"+str(elim_list)
+            assert np.all(elim_list == ELIM_JKCONF_LIST),\
+                "list mismatch:"+str(elim_list)
     except (NameError, TypeError):
         print("***ERROR***")
         print("Not eliminating any configs because of misconfigured")
@@ -72,3 +71,4 @@ def elim_jkconfigs(jkblk, elim_list=None):
 
     return new_jkblk
 misc.elim_jkconfigs = elim_jkconfigs
+binout.elim_jkconfigs = elim_jkconfigs

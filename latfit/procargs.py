@@ -1,7 +1,7 @@
 """Parses the command line."""
+import sys
 import getopt
 from recordtype import recordtype
-import sys
 
 
 def procargs(argv):

@@ -176,9 +176,9 @@ def sort_addzero(addzero, enint, sortbydist=True):
     dispf = np.asarray(gdisp.disp())
     if not isinstance(gdisp.disp()[0], float):
         dispf = em.acmean(gdisp.disp(), axis=0)
-        eint = np.swapaxes(enint, 0, 1)
-    else:
-        eint = em.acmean(enint, axis=0)
+        # eint = np.swapaxes(enint, 0, 1)
+    #else:
+    #    eint = em.acmean(enint, axis=0)
     assert addzero.shape[1] == len(dispf),\
         "array mismatch:"+str(dispf)+" "+str(addzero[0])
     for i, mean in enumerate(em.acmean(enint, axis=0)):
@@ -216,12 +216,12 @@ def sort_addzero(addzero, enint, sortbydist=True):
             mapi.append((mindx, i))
     check_map(mapi)
     for mapel in mapi:
-        fromj, toi = mapel
-        assert fromj == toi, str(mapi)
+        # fromj, toi = mapel
+        assert mapel[0] == mapel[1], str(mapi)
         #assert toi != 1, \
         #    "index bug, rho/sigma should not get a correlated 0"
         # print("add zero mean (", j, "):", em.acmean(addzero[:, fromj]))
-        ret[:, toi] = np.copy(addzero[:, fromj])
+        ret[:, mapel[1]] = np.copy(addzero[:, mapel[0]])
     if not mapi:
         assert None, "bug"
         ret = addzero

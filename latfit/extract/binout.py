@@ -1,13 +1,26 @@
-import numpy as np
+"""Various functions to eliminate/bin configs"""
 import sys
+import numpy as np
 
 from latfit.analysis.errorcodes import BoolThrowErr
 import latfit.analysis.misc as misc
 
-BINNUM = None 
+BINNUM = None
 SUPERJACK_CUTOFF = None
 SLOPPYONLY = BoolThrowErr()
 HALF = None
+
+def intceil(num):
+    """Numpy returns a float when it should return an int for ceiling"""
+    return int(np.ceil(num))
+
+def elim_jkconfigs(ret, elimlist):
+    """dummy version"""
+    assert None
+    if ret or elimlist:
+        pass
+
+
 
 def half(arr, override=None):
     """Take half of the array"""
