@@ -136,6 +136,17 @@ def getfiles_gevp_singlerhs(time, time2, xstep=1):
     return ret
 getfiles_gevp_singlerhs.mats = {}
 
+def mult_sub_by_delta(sub_timeidx, delta_e, timeidx):
+    """Multiply subtraction term by exponential to shift energy"""
+    if sub_timeidx is not None:
+        sub_timeidx = copy.deepcopy(np.asarray(sub_timeidx))
+        if hasattr(delta_e, '__iter__'):
+            for i, _ in enumerate(delta_e):
+                sub_timeidx[:, :, i] *= math.exp(delta_e[i]*timeidx)
+        else:
+            sub_timeidx *= math.exp(delta_e*timeidx)
+    return sub_timeidx
+
 def matsub(files, sub, dt1, dt12='One'):
     """Do the around the world subtraction"""
     subterm = {}
@@ -143,12 +154,7 @@ def matsub(files, sub, dt1, dt12='One'):
     delta_e = DELTA_E_AROUND_THE_WORLD if dt12 == 'One' else\
         DELTA_E2_AROUND_THE_WORLD
     for timeidx in sub:
-        sub[timeidx] = copy.deepcopy(np.asarray(sub[timeidx]))
-        if hasattr(delta_e, '__iter__'):
-            for i, _ in enumerate(delta_e):
-                sub[timeidx][:, :, i] *= math.exp(delta_e[i]*timeidx)
-        else:
-            sub[timeidx] *= math.exp(delta_e*timeidx)
+        sub[timeidx] = mult_sub_by_delta(sub[timeidx], delta_e, timeidx)
     for timeidx in files:
         files[timeidx] = copy.deepcopy(np.asarray(files[timeidx]))
         if hasattr(delta_e, '__iter__'):
