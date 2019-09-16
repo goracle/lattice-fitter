@@ -174,22 +174,15 @@ def sort_addzero(addzero, enint, sortbydist=True):
     mapi = []
     ret = np.zeros(addzero.shape, np.float)
     dispf = np.asarray(gdisp.disp())
-    # why is this here?
     if not isinstance(gdisp.disp()[0], float):
-        print("check this")
         dispf = em.acmean(gdisp.disp(), axis=0)
-        print(gdisp.disp())
         eint = np.swapaxes(enint, 0, 1)
-        print(enint)
-        print(eint)
-        assert None, "check indices for correctness"
     else:
         eint = em.acmean(enint, axis=0)
     assert addzero.shape[1] == len(dispf),\
         "array mismatch:"+str(dispf)+" "+str(addzero[0])
     for i, mean in enumerate(em.acmean(enint, axis=0)):
-        assert None, "should it be eint or enint?"+\
-            str(eint)+str(enint)
+
         if np.isnan(mean):
             continue
 
@@ -221,9 +214,10 @@ def sort_addzero(addzero, enint, sortbydist=True):
         # check
         if not np.isnan(mindx):
             mapi.append((mindx, i))
-    print("map:", mapi)
+    check_map(mapi)
     for mapel in mapi:
         fromj, toi = mapel
+        assert fromj == toi, str(mapi)
         #assert toi != 1, \
         #    "index bug, rho/sigma should not get a correlated 0"
         # print("add zero mean (", j, "):", em.acmean(addzero[:, fromj]))
@@ -243,6 +237,16 @@ def sort_addzero(addzero, enint, sortbydist=True):
             assert None, "hold"
             ret[:, i] = make_avg_zero(ret[:, i])
     return ret
+
+def check_map(mapi):
+    """check to make sure the map doesn't change from the trivial identity map
+    otherwise, our dispersive energy mapping to interacting energy is unstable
+    and can't be used when doing a continuum extrap.
+    """
+    for item in mapi:
+        i, j = item
+        assert i == j, str(mapi)
+
 
 if PIONRATIO:
     def modenergies(energies_interacting, timeij, delta_t):
@@ -264,8 +268,10 @@ if PIONRATIO:
         print(timeij, 'pearson r:', pearsonr(enint[:, 0], ennon[:, 0]))
         if timeij == 7.0 and False:
             sys.exit(0)
-        if not np.all(energies_noninteracting.shape == np.asarray(gdisp.disp()).shape):
-            energies_noninteracting = gdisp.binhalf_e(energies_noninteracting)
+        if not np.all(energies_noninteracting.shape == np.asarray(
+                gdisp.disp()).shape):
+            energies_noninteracting = gdisp.binhalf_e(
+                energies_noninteracting)
         # this fails if the binning didn't fix the broadcast incompatibility
         addzero = -1*energies_noninteracting+np.asarray(gdisp.disp())
         for i, energy in enumerate(addzero[0]):
@@ -273,7 +279,7 @@ if PIONRATIO:
                 assert 'rho' in GEVP_DIRS[
                     i][i] or 'sigma' in GEVP_DIRS[i][i]
         addzero = np.nan_to_num(addzero)
-        #addzero = sort_addzero(addzero, enint)
+        addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
         for i, _ in enumerate(addzero):
             try:

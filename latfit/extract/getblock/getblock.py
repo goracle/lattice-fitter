@@ -501,8 +501,10 @@ else:
         if timeij == 7.0 and False:
             ret = np.asarray(ret)
             print("error in eff mass at t=7:", sterr(ret))
-            print("error in eff mass at t=7 up to 70:", sterr(ret[16:70+16]))
-            print("error in eff mass at t=7 70 to 140:", sterr(ret[70+16:140+16]))
+            print("error in eff mass at t=7 up to 70:",
+                  sterr(ret[16:70+16]))
+            print("error in eff mass at t=7 70 to 140:",
+                  sterr(ret[70+16:140+16]))
             sys.exit(0)
         return ret
 
