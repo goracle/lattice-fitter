@@ -937,6 +937,8 @@ def dofit(meta, fit_range_data, results_store, plotdata):
         printerr(result_min.energy.val, param_err)
         if CALC_PHASE_SHIFT:
             print_res.print_phaseshift(result_min)
+    else:
+        retsingle = (None, None, plotdata.coords, plotdata.cov)
 
     return (skip, retsingle, retsingle_save), plotdata
 

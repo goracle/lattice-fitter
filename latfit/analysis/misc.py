@@ -30,7 +30,6 @@ def elim_jkconfigs(ret, elimlist):
     if ret or elimlist:
         pass
 
-
 def massfunc():
     """Return the pion mass"""
     pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
