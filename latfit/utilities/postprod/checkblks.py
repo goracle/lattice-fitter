@@ -119,14 +119,7 @@ def check_dup_configs(blks):
     if hasattr(blks, '__iter__'):
         for i in blks:
             try:
-                if isinstance(blks, dict):
-                    if len(blks[i].shape) == 2:
-                        assert blks[i][0, 0] != blks[i][1, 0]
-                    else:
-                        assert blks[i][0, 0, 0] != blks[i][1, 0, 0]
-                else:
-                    assert i[0, 0] != i[1, 0] or len(i.shape) != 2
-                    assert i[0, 0, 0] != i[1, 0, 0] or len(i.shape) == 2
+                try_check_dup(i, blks)
             except AssertionError:
                 print("config index 0 same as config",
                       "index 1 for block with name:")
@@ -138,6 +131,19 @@ def check_dup_configs(blks):
     else:
         check_dup_single(blks, i)
 
+def try_check_dup(iinblks, blks):
+    """Try block in check_dup_configs
+    """
+    if isinstance(blks, dict):
+        if len(blks[iinblks].shape) == 2:
+            assert blks[iinblks][0, 0] != blks[iinblks][1, 0]
+        else:
+            assert blks[iinblks][0, 0, 0] != blks[iinblks][1, 0, 0]
+    else:
+        if len(iinblks.shape) == 2:
+            assert iinblks[0, 0] != iinblks[1, 0]
+        else:
+            assert iinblks[0, 0, 0] != iinblks[1, 0, 0]
 
 def check_dup_single(blk, idx):
     """Check dup configs for a single block"""
