@@ -46,7 +46,7 @@ def massfunc():
             massfunc.MASS = MASS
             #raise
     return massfunc.MASS
-massfunc.MASS = np.nan
+massfunc.MASS = None
 
 def update_binhalf():
     """after we set these functions update (the mass)"""
@@ -123,13 +123,15 @@ def fitepi(norm):
         ret = massfunc()
     elif norm == 1:
         ret = p1f()
+        ret = select_subset(ret)
     elif norm == 2:
         ret = p11f()
+        ret = select_subset(ret)
     elif norm == 3:
         ret = p111f()
+        ret = select_subset(ret)
     else:
         assert ret is not None, ""
-    ret = select_subset(ret)
     return ret
 
 def select_subset(arr, elimlist=None):
