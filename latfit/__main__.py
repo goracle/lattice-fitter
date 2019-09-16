@@ -680,7 +680,7 @@ def divbychisq(param_arr, pvalue_arr):
                 "parameter array contains nan"
     else:
         try:
-            assert not any(np.isnan(param_arr)),\
+            assert not np.any(np.isnan(param_arr)),\
                 "parameter array contains nan"
         except AssertionError:
             for i in param_arr:
