@@ -37,7 +37,8 @@ setup(
         'h5py',
         'gvar',
         'iminuit',
-        'accupy'
+        'accupy',
+        'recordtype'
     ],
     entry_points={
         'console_scripts': [
