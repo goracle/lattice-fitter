@@ -1,6 +1,6 @@
 """Parses the command line."""
 import getopt
-from collections import namedtuple
+from recordtype import recordtype
 import sys
 
 
@@ -25,8 +25,7 @@ def procargs(argv):
     cfitmax = object()
     # cnextra = object()
     ctrials = object()
-    options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
-                                 'trials', 'fitmin', 'fitmax'])
+    options = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax')
     # Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
@@ -47,9 +46,13 @@ def procargs(argv):
     # exiting loop
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
-            retval = arg, options(xmin=cxmin, xmax=cxmax,
-                                  xstep=cxstep, trials=ctrials,
-                                  fitmin=cfitmin, fitmax=cfitmax)
+            options.xmin = cxmin
+            options.xmax = cxmax
+            options.xstep = cxstep
+            options.trials = ctrials
+            options.fitmin = cfitmin
+            options.fitmax = cfitmax
+            retval = arg, options
             break
     return retval
 
