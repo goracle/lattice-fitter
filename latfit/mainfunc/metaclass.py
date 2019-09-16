@@ -5,6 +5,7 @@ from itertools import combinations, chain, product
 import ast
 import numpy as np
 import h5py
+from recordtype import recordtype
 
 from latfit.extract.errcheck.trials_err import trials_err
 from latfit.extract.errcheck.xlim_err import xlim_err
@@ -105,8 +106,8 @@ class FitRangeMetaData:
         self.random_fit = True
         self.lenprod = 0
         self.input_f = None
-        self.options = namedtuple('ops', ['xmin', 'xmax', 'xstep',
-                                          'trials', 'fitmin', 'fitmax'])
+        self.options = recordtype('ops',
+                                  'xmin xmax xstep trials fitmin fitmax')
 
     @PROFILE
     def skip_loop(self):
@@ -150,7 +151,8 @@ class FitRangeMetaData:
     def fit_coord(self):
         """Get xcoord to plot fit function."""
         return np.arange(self.fitwindow[0],
-                         self.fitwindow[1]+self.options.xstep, self.options.xstep)
+                         self.fitwindow[1]+self.options.xstep,
+                         self.options.xstep)
 
 
     @PROFILE
@@ -182,7 +184,8 @@ class FitRangeMetaData:
     def actual_range(self):
         """Return the actual range spanned by the fit window"""
         ret = np.arange(self.fitwindow[0],
-                        self.fitwindow[1]+self.options.xstep, self.options.xstep)
+                        self.fitwindow[1]+self.options.xstep,
+                        self.options.xstep)
         ret = list(ret)
         latfit.jackknife_fit.WINDOW = ret
         return ret
