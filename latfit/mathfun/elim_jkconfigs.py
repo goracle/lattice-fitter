@@ -4,7 +4,7 @@ import numpy as np
 
 from latfit.utilities import exactmean as em
 import latfit.analysis.misc as misc
-from latfit.config import ELIM_JKCONF_LIST, HALF
+# from latfit.config import ELIM_JKCONF_LIST, HALF
 
 try:
     from latfit.config import JACKKNIFE
