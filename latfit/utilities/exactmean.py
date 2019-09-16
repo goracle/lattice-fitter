@@ -23,9 +23,10 @@ def convert_arr(arr):
 @PROFILE
 def acstd(arr, axis=0, ddof=0, fsum=False):
     """Compute standard deviation given ddof degrees of freedom"""
+    larr = (np.asarray(arr).shape)[axis]
     ret = acsum((arr-acmean(arr, axis=axis, fsum=fsum))**2,
                 axis=axis, fsum=fsum)
-    ret /= (arr.shape)[axis]-ddof
+    ret /= larr - ddof
     ret = np.sqrt(ret)
     return ret
 
@@ -45,11 +46,11 @@ def acsum(arr, axis=0, fsum=False):
 @PROFILE
 def acmean(arr, axis=0, fsum=False):
     """Take the average of the array"""
-    ret = arr
-    if hasattr(arr, '__iter__'):
-        larr = (arr.shape)[axis]
+    ret = np.asarray(arr)
+    if hasattr(ret, '__iter__'):
+        larr = (ret.shape)[axis]
         if larr:
-            ret = acsum(arr, axis, fsum)
+            ret = acsum(ret, axis, fsum)
             ret /= larr
     return ret
 
