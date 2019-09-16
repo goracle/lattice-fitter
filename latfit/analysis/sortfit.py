@@ -12,11 +12,12 @@ def best_times(coord, cov, index, times):
     chisq (t^2) = num/denom
     """
     if hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) > 1:
-        dispmean = em.acmean(DISP_ENERGIES, axis=1) if DISP_ENERGIES else 0
+        dispmean = em.acmean(DISP_ENERGIES, axis=1) if\
+            np.asarray(DISP_ENERGIES).shape else 0
     elif hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) == 1:
         dispmean = DISP_ENERGIES
     else:
-        dispmean = em.acmean(DISP_ENERGIES) if DISP_ENERGIES else 0
+        dispmean = em.acmean(DISP_ENERGIES) if np.asarray(DISP_ENERGIES).shape else 0
     dist = []
     for i, ycoord in enumerate(coord):
         chisq = None
