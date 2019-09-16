@@ -116,38 +116,42 @@ def check_key(key):
 @PROFILE
 def check_dup_configs(blks):
     """Check for the same config being written twice for some reason"""
-    if blks is not None:
-        if hasattr(blks, '__iter__'):
-            for i in blks:
-                try:
-                    if isinstance(blks, dict):
-                        assert blks[i][0, 0] != blks[i][1, 0] or\
-                            len(blks[i].shape) != 2
-                        assert blks[i][0, 0, 0] != blks[i][1, 0, 0] or\
-                            len(blks[i].shape) == 2
-                    else:
-                        assert i[0, 0] != i[1, 0] or len(i.shape) != 2
-                        assert i[0, 0, 0] != i[1, 0, 0] or len(i.shape) == 2
-                except AssertionError:
-                    print("config index 0 same as config",
-                          "index 1 for block with name:")
-                    if isinstance(blks, dict):
-                        print(i)
-                    else:
-                        print(None)
-                    sys.exit(1)
-        else:
-            blk = blks
+    if hasattr(blks, '__iter__'):
+        for i in blks:
             try:
-                if len(blk.shape) == 2:
-                    assert blk[0, 0] != blk[1, 0]
+                if isinstance(blks, dict):
+                    if len(blks[i].shape) == 2:
+                        assert blks[i][0, 0] != blks[i][1, 0]
+                    else:
+                        assert blks[i][0, 0, 0] != blks[i][1, 0, 0]
                 else:
-                    assert blk[0, 0, 0] != blk[1, 0, 0]
+                    assert i[0, 0] != i[1, 0] or len(i.shape) != 2
+                    assert i[0, 0, 0] != i[1, 0, 0] or len(i.shape) == 2
             except AssertionError:
                 print("config index 0 same as config",
                       "index 1 for block with name:")
-                print(i)
+                if isinstance(blks, dict):
+                    print(i)
+                else:
+                    print(None)
                 sys.exit(1)
+    else:
+        check_dup_single(blks, i)
+
+
+def check_dup_single(blk, idx):
+    """Check dup configs for a single block"""
+    if blk is not None:
+        try:
+            if len(blk.shape) == 2:
+                assert blk[0, 0] != blk[1, 0]
+            else:
+                assert blk[0, 0, 0] != blk[1, 0, 0]
+        except AssertionError:
+            print("config index 0 same as config",
+                  "index 1 for block with name:")
+            print(idx)
+            sys.exit(1)
 
 @PROFILE
 def debugprint(blk, base=None, pstr=None):
