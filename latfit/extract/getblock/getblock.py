@@ -142,7 +142,7 @@ if EFF_MASS:
         countdict = {}
         errdict = {}
         check_length = 0
-        gsolve.hint = HINTS_ELIM[timeij] if timeij in HINTS_ELIM\
+        gsolve.HINT = HINTS_ELIM[timeij] if timeij in HINTS_ELIM\
             else None
         assert len(file_tup) == 5, "bad file_tup length:"+str(len(file_tup))
         if hasattr(delta_t, '__iter__') and np.asarray(delta_t).shape:
@@ -151,7 +151,7 @@ if EFF_MASS:
                                            (delta_t, timeij),
                                            decrease_var)
                 print('dt1', dt1, 'timeij', timeij, 'elim hint',
-                      gsolve.hint,
+                      gsolve.HINT,
                       "operator eliminations", allowedeliminations(),
                       'sample', blkdict[dt1][0])
                 errdict, countdict, check_length = gevp_block_checks(
@@ -171,7 +171,7 @@ if EFF_MASS:
             relerr = np.abs(em.acstd(ret, ddof=1, axis=0)*(
                 len(ret)-1)/em.acmean(ret, axis=0))
             print('dt1', delta_t, 'timeij', timeij, 'elim hint',
-                  gsolve.hint,
+                  gsolve.HINT,
                   "operator eliminations", allowedeliminations(),
                   'sample', ret[0])
             print("final tlhs, trhs =", timeij,
@@ -384,9 +384,10 @@ if EFF_MASS:
         final_gevp_debug_print.check_variance = None
         final_gevp_debug_print.avg_evecs = None
     else:
-        def final_gevp_debug_print(_):
+        def final_gevp_debug_print(*xargs):
             """print nothing"""
-            pass
+            if xargs:
+                pass
 
 
 else:

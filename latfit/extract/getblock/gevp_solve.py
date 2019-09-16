@@ -20,15 +20,15 @@ from latfit.extract.getblock.gevp_linalg import sortevals, removerowcol
 from latfit.extract.getblock.gevp_linalg import bracket, cmatdot, defsign
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity
 from latfit.extract.getblock.gevp_linalg import is_pos_semidef
-from latfit.extract.getblock.gevp_linalg import log_matrix
+from latfit.extract.getblock.gevp_linalg import log_matrix, drop0imag
 import latfit.extract.getblock.disp_hacks as gdisp
 
 from latfit.config import UNCORR, USE_LATE_TIMES
 from latfit.config import GEVP_DEBUG, DECREASE_VAR, DELETE_NEGATIVE_OPERATORS
 from latfit.config import LOGFORM
 
-MEAN = []
-HINT = []
+MEAN = None
+HINT = None
 
 
 def calleig_logform(c_lhs, flag, c_rhs=None):
@@ -150,7 +150,7 @@ def solve_gevp(c_lhs, c_rhs=None):
             remaining_operator_indices.remove(orig_index)
         # do final solve in truncated basis
         eigvals, evecs = calleig(c_lhs, c_rhs)
-        if MEAN:
+        if MEAN is not None:
             eigvals = variance_reduction(eigvals, MEAN[:dimops],
                                          1/DECREASE_VAR)
             eigvals = sortevals(eigvals)
@@ -280,6 +280,8 @@ def comm_correct_evp(c_lhs, c_rhs, late, eigvals):
     """Try to eliminate eigenvalue imaginary piece via commutator"""
     dimops = len(c_lhs)
     skip_late = False
+    c_lhs = drop0imag(c_lhs)
+    c_rhs = drop0imag(c_rhs)
     try:
         c_rhs_inv = scipy.linalg.inv(c_rhs)
         # compute commutator divided by norm

@@ -132,7 +132,6 @@ def log_matrix(cmat, check=False):
 
 def cmatdot(cmat, vec, transp=False):
     """Dot gevp matrix into vec on rhs if not transp"""
-    assert None, "why does this exist?"
     cmat = np.asarray(cmat)
     cmat = cmat.T if transp else cmat
     vec = np.asarray(vec)
@@ -190,9 +189,8 @@ def drop0imag(val):
         if val.imag == 0:
             ret = val.real
     if hasattr(val, '__iter__') and np.asarray(val).shape:
-        if isinstance(val[0], complex):
-            if all(val.imag) == 0:
-                ret = val.real
+        if np.all(np.imag(val) == 0):
+            ret = np.real(val)
     return ret
 
 def propnan(vals):
@@ -243,6 +241,7 @@ def degenerate_subspace_check(evecs_mean_t):
     average norm of evecs should be far from 1
     """
     for evec in evecs_mean_t:
+        evec = drop0imag(evec)
         dotprod = kdot(np.conj(evec), evec)
         assert np.allclose(dotprod, 1.0, rtol=1e-8),\
             str(dotprod)
@@ -277,6 +276,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     """
     apply y->(y_i-<y>)*decrease_var+<y>
     """
+    assert np.asarray(avg).shape != (0,), str(avg)
     orig = np.asarray(orig)
     if hasattr(orig, '__iter__') and np.asarray(orig).shape:
         assert hasattr(avg, '__iter__') and np.asarray(avg).shape or len(
