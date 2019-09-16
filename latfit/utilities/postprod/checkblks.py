@@ -334,7 +334,8 @@ def check_count_of_diagrams(ocs, isospin_str='I0'):
 
 @PROFILE
 def check_match_oplist(ocs):
-    """A more stringent check:  Generate the momentum combinations for an operator
+    """A more stringent check:
+    Generate the momentum combinations for an operator
     and see if all the diagrams contain these.
     """
     opcheck = opc.op_list('hdf5')
@@ -354,8 +355,10 @@ def check_match_oplist(ocs):
                 momlist.add(rf.mom_suffix(diag))
             for prefix, suffix in itertools.product(figlist, momlist):
                 checkstr = prefix + '_' + suffix
-                assert checkstr in diaglist, "Missing momentum combination:"+\
-                    str(checkstr)+" in op="+str(opa)+"="+str(ocs[opa])+" figlist="+\
+                assert checkstr in diaglist,\
+                    "Missing momentum combination:"+\
+                    str(checkstr)+" in op="+str(opa)+"="+str(ocs[opa])+\
+                    " figlist="+\
                     str(figlist)+" momlist="+str(momlist)
 
 @PROFILE

@@ -523,20 +523,6 @@ def overall_coeffs(iso, irr):
                                                    pol_coeffs)
                     if not pol_coeff*outer_coeff*inner_coeff:
                         continue
-                    # pol_comparison is false if the polarizations
-                    # are different
-                    # otherwise it is None if there is no polarization
-                    # either in pols or pol_req
-                    #if cross_p(original_block):
-                    #    continue
-                    # if isospin_str+strip_op(operator) ==\
-                        # 'I1/rhorho_A_1PLUS_mom001':
-                    #  print(original_block)
-                    # print(rf.pol(original_block), pol_req, pol_coeffs)
-                    #if 'T_1_1MINUS' in operator:
-                    # print("test:", pol_coeff*outer_coeff*inner_coeff,
-                    # original_block, pol_comparison, pols,
-                    # pol_req, pol_coeffs, pol_coeff)
                     ocs.setdefault(
                         isospin_str+strip_op(operator),
                         []).append(
@@ -877,7 +863,8 @@ if __name__ == '__main__':
     try:
         open('ids.p', 'rb')
     except FileNotFoundError:
-        print("be sure to set TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC correctly")
+        print("be sure to set TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC",
+              "correctly")
         print("edit h5jack.py to remove the hold then rerun")
         # the hold
         sys.exit(1)
