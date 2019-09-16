@@ -9,9 +9,11 @@ import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.logger import setup_logger
-from latfit.utilities.postprod.checkblks import check_ids
+from latfit.utilities.postprod.h5jack import check_ids
 from latfit import fitfunc
 import latfit.checks.checks_and_statements as sands
+import latfit.mathfun.elim_jkconfigs as elimjk
+import latfit.extract.binout as binout
 
 setup_logger()
 
@@ -20,13 +22,13 @@ setup_logger()
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 
 # solve the generalized eigenvalue problem (GEVP)
 
-GEVP = True
 GEVP = False
+GEVP = True
 
 # METHODS/PARAMS
 
@@ -164,27 +166,53 @@ elif LATTICE_ENSEMBLE == '16c':
     LT = 32
     SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = 0 if not check_ids()[-2] else SUPERJACK_CUTOFF
+binout.SUPERJACK_CUTOFF = SUPERJACK_CUTOFF
+
+# If the first SUPERJACK_CUTOFF configs are exact, this simple switch
+# skips reading them in
+# and only looks at the jackknife blocks for the remaining configs
+# (but it doesn't and can't remove any ama constant)
+SLOPPYONLY = True
+SLOPPYONLY = False
+binout.SLOPPYONLY = SLOPPYONLY
+
+# dynamic binning of configs.  BINNUM is number of configs per bin.
+BINNUM = 1
+binout.BINNUM = BINNUM
+
+# halve the data to check for consistencies (debug options)
+HALF = 'first half'
+HALF = 'drop fourth eighth'
+HALF = 'first half'
+HALF = 'drop fourth quarter'
+HALF = 'full'
+if HALF != 'full':
+    SUPERJACK_CUTOFF = 0
+    print("HALF spec:", HALF)
+    print("setting superjackknife cutoff to 0 (assuming no AMA)")
+    assert not SUPERJACK_CUTOFF, \
+        "AMA first half second half analysis not supported:"+str(
+            SUPERJACK_CUTOFF)
+elimjk.HALF = HALF
+binout.HALF = HALF
 
 # eliminate problematic configs.
 # Simply set this to a list of ints indexing the configs,
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 #ELIM_JKCONF_LIST = [7, 8, 9, 10, 11, 12, 13, 14, 15, 186, 187, 188, 189, 190]
+
 ELIM_JKCONF_LIST = []
+elimjk.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
 misc.ELIM_JKCONF_LIST = list(ELIM_JKCONF_LIST)
-
-
 
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
 misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
 misc.PIONRATIO = PIONRATIO
-DISP_ENERGIES = opc.free_energies(IRREP, misc.massfunc(), L_BOX) if GEVP else []
-# manual, e.g.
-# DISP_ENERGIES = [2*misc.dispersive([0, 0, 1])]
-# print(misc.dispersive([1, 1, 1]))
-# sys.exit(0)
+DISP_ENERGIES = opc.free_energies(
+    IRREP, misc.massfunc(), L_BOX) if GEVP else []
 
 # switch to include the sigma in the gevp fits
 SIGMA = True if ISOSPIN == 0 else False
@@ -206,29 +234,6 @@ if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
-
-# halve the data to check for consistencies (debug options)
-HALF = 'first half'
-HALF = 'drop fourth eighth'
-HALF = 'first half'
-HALF = 'drop fourth quarter'
-HALF = 'full'
-if HALF != 'full':
-    SUPERJACK_CUTOFF = 0
-    print("HALF spec:", HALF)
-    print("setting superjackknife cutoff to 0 (assuming no AMA)")
-    assert not SUPERJACK_CUTOFF, \
-        "AMA first half second half analysis not supported:"+str(
-            SUPERJACK_CUTOFF)
-
-# If the first SUPERJACK_CUTOFF configs are exact, this simple switch
-# skips reading them in
-# and only looks at the jackknife blocks for the remaining configs
-SLOPPYONLY = True
-SLOPPYONLY = False
-
-# dynamic binning of configs.  BINNUM is number of configs per bin.
-BINNUM = 1
 
 # block size of blocked jackknifed technique
 # usual jackknife sets this to 1
@@ -324,6 +329,13 @@ if FIT_SPACING_CORRECTION:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
         DELTA_E2_AROUND_THE_WORLD)
+
+## final delta e processing
+if DELTA_E_AROUND_THE_WORLD is not None:
+    DELTA_E_AROUND_THE_WORLD = misc.select_subset(DELTA_E_AROUND_THE_WORLD)
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    DELTA_E2_AROUND_THE_WORLD = misc.select_subset(DELTA_E2_AROUND_THE_WORLD)
+
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
