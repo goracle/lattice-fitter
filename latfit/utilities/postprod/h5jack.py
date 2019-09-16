@@ -197,6 +197,10 @@ checkb.DOAMA = DOAMA
 checkb.SKIP_VEC = SKIP_VEC
 checkb.WRITE_INDIVIDUAL = WRITE_INDIVIDUAL
 
+def check_ids():
+    """Import hack"""
+    return checkb.check_ids()
+
 # Individual diagram's jackknife block to write
 
 #### list filling
