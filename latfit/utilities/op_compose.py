@@ -108,6 +108,10 @@ def ptonewlinelist(mom):
 
 def free_energies(irrep, pionmass, lbox):
     """return a list of free energies."""
+    assert pionmass is not None
+    if hasattr(pionmass, '__iter__'):
+        assert pionmass[0] is not None
+    assert not np.any(np.isnan(pionmass)), str(pionmass)
     retlist = []
     if irrep in AVG_ROWS:
         for irr in AVG_ROWS[irrep]:
