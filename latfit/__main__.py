@@ -44,6 +44,7 @@ from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
+from latfit.analysis.result_min import Param
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT
 from latfit.config import MULT
@@ -326,9 +327,11 @@ def mean_and_err_loop_continue(name, min_arr):
     """should we continue in the loop
     """
     ret = False
-    if min_arr[0][0].__dict__[name] is None:
-        print("name=", name, "is None, skipping")
-        ret = True
+    val = min_arr[0][0].__dict__[name].val
+    if not np.asarray(val).shape:
+        if np.isnan(val):
+            print("name=", name, "is NaN, skipping")
+            ret = True
     elif 'misc' in name:
         ret = True
     return ret
@@ -341,10 +344,17 @@ def fill_err_array(min_arr, name, weight_sum):
             fill.append(jack_mean_err(
                 divbychisq(getattr(i[0], name).arr,
                            getattr(i[0], 'pvalue').arr/weight_sum),
-                divbychisq(getattr(j[0], name),
+                divbychisq(getattr(j[0], name).arr,
                            getattr(j[0], 'pvalue').arr/weight_sum),
                 nosqrt=True)[1])
+    fill = em.acsum(fill, axis=0)
     return fill
+
+def parametrize_entry(result_min, name):
+    """Make into blank Param object"""
+    if name not in result_min:
+        result_min[name] = Param()
+    return result_min
 
 @PROFILE
 def find_mean_and_err(meta, min_arr):
@@ -372,13 +382,14 @@ def find_mean_and_err(meta, min_arr):
         dump_fit_range(meta, min_arr, name, res_mean, err_check)
 
         # error propagation check
-
+        result_min = parametrize_entry(result_min, name)
         result_min[name].err = fill_err_array(min_arr, name, weight_sum)
-        result_min[name] = em.acsum(result_min[name].err, axis=0)
+        result_min[name].val = em.acsum(result_min[name].err, axis=0)
         try:
             result_min[name].err = np.sqrt(result_min[name].err)
         except FloatingPointError:
-            print("floating point error")
+            print("floating point error in", name)
+            print(result_min[name].err)
             if hasattr(result_min[name].err, '__iter__'):
                 for i, res in enumerate(result_min[name].err):
                     if np.isreal(res) and res < 0:
@@ -387,7 +398,7 @@ def find_mean_and_err(meta, min_arr):
                 if np.isreal(result_min[name].err):
                     if res < 0:
                         result_min[name].err = np.nan
-            result_min[name].err = np.sqrt(result_min[name])
+            result_min[name].err = np.sqrt(result_min[name].val)
 
         # perform the comparison
         try:
@@ -686,6 +697,9 @@ def divbychisq(param_arr, pvalue_arr):
             for i in param_arr:
                 print(i)
             sys.exit(1)
+        except TypeError:
+            print("param_arr=", param_arr)
+            raise
         ret *= pvalue_arr
     assert ret.shape == param_arr.shape,\
         "return shape does not match input shape"
