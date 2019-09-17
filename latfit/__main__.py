@@ -327,13 +327,14 @@ def mean_and_err_loop_continue(name, min_arr):
     """should we continue in the loop
     """
     ret = False
-    val = min_arr[0][0].__dict__[name].val
-    if not np.asarray(val).shape:
-        if np.isnan(val):
+    if 'misc' in name:
+        ret = True
+    else:
+        print("examining", name, "for NaN's")
+        val = min_arr[0][0].__dict__[name].val
+        if not np.asarray(val).shape and np.isnan(val):
             print("name=", name, "is NaN, skipping")
             ret = True
-    elif 'misc' in name:
-        ret = True
     return ret
 
 def fill_err_array(min_arr, name, weight_sum):
@@ -384,7 +385,6 @@ def find_mean_and_err(meta, min_arr):
         # error propagation check
         result_min = parametrize_entry(result_min, name)
         result_min[name].err = fill_err_array(min_arr, name, weight_sum)
-        result_min[name].val = em.acsum(result_min[name].err, axis=0)
         try:
             result_min[name].err = np.sqrt(result_min[name].err)
         except FloatingPointError:
@@ -398,7 +398,7 @@ def find_mean_and_err(meta, min_arr):
                 if np.isreal(result_min[name].err):
                     if res < 0:
                         result_min[name].err = np.nan
-            result_min[name].err = np.sqrt(result_min[name].val)
+            result_min[name].err = np.sqrt(result_min[name].err)
 
         # perform the comparison
         try:
@@ -426,7 +426,7 @@ def find_mean_and_err(meta, min_arr):
              for i in min_arr],
             axis=0)/em.acsum([getattr(i[0], 'pvalue').val
                               for i in min_arr])
-    param_err = np.array(result_min['energy']).err
+    param_err = np.array(result_min['energy'].err)
     assert not any(np.isnan(param_err)), \
         "A parameter error is not a number (nan)"
     return result_min
@@ -672,6 +672,7 @@ def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq (t^2)"""
     assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
     ret = np.array(param_arr)
+    assert ret.shape and ret.shape[0], str(ret)
     if len(ret.shape) > 1:
         assert param_arr[:, 0].shape == pvalue_arr.shape,\
             "Mismatch between pvalue_arr"+\
@@ -696,11 +697,17 @@ def divbychisq(param_arr, pvalue_arr):
         except AssertionError:
             for i in param_arr:
                 print(i)
-            sys.exit(1)
+            raise
         except TypeError:
             print("param_arr=", param_arr)
             raise
-        ret *= pvalue_arr
+        try:
+            ret *= pvalue_arr
+        except ValueError:
+            print("could not be broadcast together")
+            print("ret=", ret)
+            print("pvalue_arr=", pvalue_arr)
+            raise
     assert ret.shape == param_arr.shape,\
         "return shape does not match input shape"
     return ret

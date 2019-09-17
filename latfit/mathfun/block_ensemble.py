@@ -7,7 +7,7 @@ from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 import latfit.config
 
-def bootstrap_ensemble(reuse_inv, reuse_blocked):
+def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """Generate a bootstrapped version of the ensemble
     with replacement, then jackknife it
     """
@@ -19,9 +19,12 @@ def bootstrap_ensemble(reuse_inv, reuse_blocked):
             retblk.append(elem)
         ret = np.array(retblk, dtype=reuse_inv.dtype)
         ret = dojackknife(ret)
+        mean = np.mean(ret, axis=0)
+        avg = [[avg[i][0], mean[i]] for i, _ in enumerate(mean)]
+        avg = np.array(avg)
     else:
         ret = reuse_blocked
-    return ret
+    return ret, avg
 
 if JACKKNIFE_BLOCK_SIZE == 1:
     def block_ensemble(_, reuse):
@@ -39,7 +42,8 @@ else:
         # original data, obtained by reversing single jackknife procedure
         reuse_inv = inverse_jk(reuse, num_configs)
         assert len(reuse_inv) == bsize*num_configs, "array mismatch"
-        assert isinstance(bsize, int), "jackknife block size should be integer"
+        assert isinstance(bsize, int),\
+            "jackknife block size should be integer"
         assert bsize > 1,\
             "jackknife block size should be greater than one for this setting"
 

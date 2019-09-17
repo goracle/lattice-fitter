@@ -44,6 +44,8 @@ from latfit.utilities.actensordot import actensordot
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
+CONST_SHIFT = np.zeros(1000)
+
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
@@ -61,6 +63,12 @@ def torchi():
     else:
         ret = 't^2/dof='
     return ret
+
+def apply_shift(coords_jack):
+    """apply the bootstrap constant shift to the averages"""
+    for i, coord in enumerate(coords_jack):
+        coords_jack[i][1] += CONST_SHIFT[int(coords_jack[i][0])]
+    return coords_jack
 
 if JACKKNIFE_FIT == 'FROZEN':
     pass
@@ -99,15 +107,28 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # rearrange loop order so we can check goodness of fit
         # on more stable sloppy samples
 
-        for config_num in (np.array(range(params.num_configs))+
-                           SUPERJACK_CUTOFF)%params.num_configs:
+        config_range = (np.array(range(
+            params.num_configs)) + SUPERJACK_CUTOFF) % params.num_configs
+        config_range = range(
+            params.num_configs) if latfit.config.BOOTSTRAP else config_range
 
-            assert isinstance(config_num, np.int64), str(config_num)
+        for config_num in config_range:
+
+            # assert isinstance(config_num, np.int64), str(config_num)
             # if config_num>160: break # for debugging only
 
             # copy the jackknife block into coords_jack
-            assert np.all(reuse[config_num] == reuse_blocked[config_num])
-            copy_block(params, reuse[config_num], coords_jack)
+            if config_num < len(reuse):
+                assert np.all(reuse[config_num] == reuse_blocked[
+                    config_num])
+            if not latfit.config.BOOTSTRAP:
+                coords_jack = copy_block(params, reuse[config_num],
+                                         coords_jack)
+            else:
+                # we still need the time data in coords (xmin, xmax, xstep)
+                coords_jack = copy_block(params, reuse[0],
+                                         coords_jack)
+                coords_jack = apply_shift(coords_jack)
 
             # get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.misc.error_bars[
@@ -140,10 +161,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                       result_min.systematics.arr[config_num][:-1])
 
             # we shifted the GEVP energy spectrum down
-            # to fix the leading order around the world term so shift it back
-            result_min.energy.arr[config_num] = np.asarray(
-                result_min.energy.arr[config_num])+\
-                correction_en(result_min, config_num)
+            # to fix the leading order around the world term
+            # so shift it back
+            if not latfit.config.BOOTSTRAP:
+                result_min.energy.arr[config_num] += correction_en(
+                    result_min, config_num)
 
             # compute phase shift, if necessary
             if CALC_PHASE_SHIFT:
@@ -228,7 +250,7 @@ def toomanybadfitsp(result_min):
     """
     avg = em.acmean(result_min.chisq.arr)
     pvalue = result_min.funpvalue(avg)
-    if pvalue < PVALUE_MIN:
+    if pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP:
         raise TooManyBadFitsError(chisq=avg, pvalue=pvalue, uncorr=UNCORR)
 
 
@@ -279,7 +301,7 @@ def skip_range(params, result_min, skip_votes,
             0+SUPERJACK_CUTOFF]) < 5*np.sqrt(
                 2*result_min.misc.dof/(
                     params.num_configs-1))
-    if skiprange:
+    if skiprange and not latfit.config.BOOTSTRAP:
         raise BadChisq(
             chisq=result_min_jack.fun/result_min.misc.dof,
             dof=result_min.misc.dof, uncorr=UNCORR)
@@ -298,7 +320,8 @@ def skip_range(params, result_min, skip_votes,
                 str(result_min.pvalue.arr[0])+" "+\
                 str(result_min.pvalue.arr[1])+" ")
         #sys.exit(1)
-        raise BadJackknifeDist(uncorr=UNCORR)
+        if not latfit.config.BOOTSTRAP:
+            raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE
 def chisqfiduc(num_configs, dof):
@@ -340,7 +363,8 @@ def correction_en(result_min, config_num):
     if hasattr(DELTA_E_AROUND_THE_WORLD, '__iter__') and\
        np.asarray(DELTA_E_AROUND_THE_WORLD).shape:
         latw = len(DELTA_E_AROUND_THE_WORLD)
-        assert latw == 1 or latw == len(result_min.energy.arr), "bug:  array mismatch"
+        assert latw == 1 or latw == len(result_min.energy.arr),\
+            "bug:  array mismatch"
         corre1 = DELTA_E_AROUND_THE_WORLD[config_num] if latw > 1 else\
             DELTA_E_AROUND_THE_WORLD[0]
     else:
@@ -375,10 +399,10 @@ def unpack_min_data(result_min, phase_shift_data, scattering_length_data):
     """Unpack the returned results of phase_shift_scatter_len_avg"""
     result_min.phase_shift.val,\
         result_min.phase_shift.err,\
-        result_min.phase_shift_arr = phase_shift_data
+        result_min.phase_shift.arr = phase_shift_data
     result_min.scattering_length.val,\
         result_min.scattering_length.err,\
-        result_min.scattering_length_arr = scattering_length_data
+        result_min.scattering_length.arr = scattering_length_data
     return result_min
 
 @PROFILE
@@ -463,6 +487,9 @@ def phase_shift_scatter_len_avg(result_min):
         scattering_length = None
         scattering_length_err = None
     phase_shift_data = (phase_shift, phase_shift_err, phase_shift_arr)
+    assert np.asarray(scattering_length_arr).shape and\
+        np.asarray(scattering_length_arr).shape[0],\
+        "scattering length array: "+str(np.asarray(scattering_length_arr))
     scattering_length_data = (scattering_length, scattering_length_err,
                               scattering_length_arr)
     return phase_shift_data, scattering_length_data
@@ -538,7 +565,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
         flag = False
     except FloatingPointError:
         flag = True
-    assert err.shape == np.array(arr)[0].shape, "Shape is not preserved (bug)."
+    assert err.shape == np.array(arr)[0].shape,\
+        "Shape is not preserved (bug)."
 
     mean = em.acmean(arr, axis=0)
 
@@ -694,6 +722,7 @@ def copy_block(params, blk, out):
             out[time, 1] = np.nan_to_num(blk[time])
     else:
         out[:, 1] = np.nan_to_num(blk)
+    return out
 
 
 @PROFILE
@@ -842,7 +871,8 @@ def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
     reuse_inv = inverse_jk(reuse, params.num_configs)
 
     # bootstrap ensemble
-    reuse_blocked = bootstrap_ensemble(reuse_inv, reuse_blocked)
+    reuse_blocked, coords_jack = bootstrap_ensemble(reuse_inv, coords_jack,
+                                                    reuse_blocked)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
@@ -856,10 +886,11 @@ def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
             assert None, "Not supported."
             coords_jack = coords_jack[1::2]
             cov_factor = np.delete(
-                getcovfactor(params, reuse_blocked, config_num, reuse_inv_red),
-                np.s_[::2], axis=1)
+                getcovfactor(params, reuse_blocked, config_num,
+                             reuse_inv_red), np.s_[::2], axis=1)
         else:
-            cov_factor = getcovfactor(params, reuse_blocked, config_num, reuse_inv_red)
+            cov_factor = getcovfactor(params, reuse_blocked,
+                                      config_num, reuse_inv_red)
         covjack = get_covjack(cov_factor, params)
         covinv_jack_pruned, flag = prune_covjack(params, covjack,
                                                  coords_jack, flag)
@@ -997,5 +1028,6 @@ elif JACKKNIFE_FIT == 'DOUBLE':
             num_configs_reduced = (params.num_configs-1)*bsize
             ret = np.array([
                 em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
-                for i in range(num_configs_reduced)]) - reuse_blocked[config_num]
+                for i in range(num_configs_reduced)]) - reuse_blocked[
+                        config_num]
         return ret

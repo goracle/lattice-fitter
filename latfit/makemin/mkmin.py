@@ -91,6 +91,12 @@ def mkmin(covinv, coords, method=METHOD):
     # print "chi^2 minimized = ", res_min.fun
     # print "chi^2 minimized check = ", chi_sq(res_min.x, covinv, coords)
     # print covinv
+    if res_min.status and latfit.config.BOOTSTRAP:
+        print("boostrap debug")
+        print("covinv =", covinv)
+        print("coords =", coords)
+        print("start_params =", start_params)
+        print("chisq =", chi_sq(start_params, covinv, coords))
     if not res_min.status:
         if res_min.fun < 0:
             print("negative chi^2 found:", res_min.fun)

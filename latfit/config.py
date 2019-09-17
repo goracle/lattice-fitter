@@ -22,8 +22,8 @@ setup_logger()
 
 # Do a fit at all?
 
-FIT = True
 FIT = False
+FIT = True
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -248,8 +248,8 @@ JACKKNIFE_BLOCK_SIZE = 1
 NBOOT = 1000 # until it saturates (should be infinity)
 # whether to get accurate p-values.  usually best to leave this false
 # it is automatically turned on for final fit
-BOOTSTRAP = True
 BOOTSTRAP = False
+BOOTSTRAP = True
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
@@ -440,7 +440,7 @@ MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
-MAX_RESULTS = 16
+MAX_RESULTS = 3
 
 # modify the configs used and bin
 

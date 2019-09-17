@@ -15,6 +15,8 @@ from latfit.jackknife_fit import jackknife_fit
 from latfit.analysis.get_fit_params import get_fit_params
 from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.utilities import exactmean as em
+from latfit.analysis.errorcodes import NoConvergence
+from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func
@@ -101,9 +103,17 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
             # initial fit
             reset_bootstrap_const_shift()
-            result_min, param_err = jackknife_fit(params, reuse,
-                                                  singlefit.reuse_blocked,
-                                                  coords)
+            assert latfit.config.BOOTSTRAP, str(latfit.config.BOOTSTRAP)
+            bstrap = bool(latfit.config.BOOTSTRAP)
+            latfit.config.BOOTSTRAP = False if bstrap else bstrap
+            try:
+                result_min, param_err = jackknife_fit(
+                    params, reuse, singlefit.reuse_blocked, coords)
+            except (BadChisq, BadJackknifeDist): # fix this
+                latfit.config.BOOTSTRAP = bstrap
+                raise
+            latfit.config.BOOTSTRAP = bstrap
+            assert latfit.config.BOOTSTRAP
             if latfit.config.BOOTSTRAP:
 
                 result_min = bootstrap_pvalue(params, reuse,
@@ -157,11 +167,21 @@ def error_bar_scheme(result_min, fitrange, xmin, xmax):
 def bootstrap_pvalue(params, reuse, coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
-    apply_bootstrap_shift(result_min)
-    # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
-    params.num_configs = NBOOT
-    result_minq, _ = jackknife_fit(
-        params, reuse, singlefit.reuse_blocked, coords)
+    if bootstrap_pvalue.result_minq is None: 
+        apply_bootstrap_shift(result_min)
+        # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
+        params.num_configs = NBOOT
+        print("starting computation of null distribution from bootstrap")
+        print("NBOOT =", NBOOT)
+        try:
+            result_minq, _ = jackknife_fit(
+                params, reuse, singlefit.reuse_blocked, coords)
+        except NoConvergence:
+            print("minimizer failed to converge during bootstrap")
+            assert None
+        print("done computing null dist.")
+    else:
+        result_minq = bootstrap_pvalue.result_minq
 
     # overwrite initial fit with the accurate p-value info
     result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
@@ -172,6 +192,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
     result_min.pvalue_err *= np.sqrt((len(
         result_min.pvalue.arr)-1)/len(result_min.pvalue.arr))
     return result_min
+bootstrap_pvalue.result_minq = None
 
 
 def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
@@ -186,7 +207,7 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     pvalue_arr = []
     for chisq1 in chisq_arr:
         subarr = np.abs(chisq1-chisq_arr_boot)
-        minidx = subarr.index(min(subarr))
+        minidx = list(subarr).index(min(subarr))
         pvalue_arr.append(pvalue_arr_boot[minidx])
     pvalue_arr = np.array(pvalue_arr)
     return pvalue_arr
@@ -199,19 +220,27 @@ def apply_bootstrap_shift(result_min):
     """
     coords = singlefit.coords_full
     assert coords is not None
-    part1 = [-1*fit_func(result_min,
-                         i[0]) for i in coords]
-    part1 = np.array(part1, dtype=np.float128)
-    part2 = [i[1] for i in coords]
-    part2 = np.array(part2, dtype=np.float128)
-    shift = part1+part2
-    chisq.CONST_SHIFT = shift
+    shift = {}
+    for i, ctime in enumerate(coords[:, 0]):
+        part1 = fit_func(ctime, result_min.energy.val)
+        part1 = np.array(part1, dtype=np.float128)
+        part2 = coords[i][1]
+        part2 = np.array(part2, dtype=np.float128)
+        try:
+            shift[int(ctime)] = part1 - part2
+        except ValueError:
+            print("could not sum part1 and part2")
+            print("part1 =", part1)
+            print("part2 =", part2)
+            raise
+    print("applying bootstrap shift to fit function with value:", shift)
+    jackknife_fit.CONST_SHIFT = shift
 
 def reset_bootstrap_const_shift():
     """Set const. shift to 0
     (for initial fit)
     """
-    chisq.CONST_SHIFT = 0
+    chisq.CONST_SHIFT = np.zeros(1000)
 
 def debug_print(coords_full, cov_full):
     """Debug print
