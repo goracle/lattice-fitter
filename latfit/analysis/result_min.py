@@ -23,9 +23,9 @@ class Param:
     and the error on the param
     """
     def __init__(self):
-        self.arr = np.array([])
-        self.err = np.nan
-        self.val = np.nan
+        self.arr = np.array(None)
+        self.err = None
+        self.val = None
 
     def zero(self, num_configs=None):
         """Zero out the array, value, and error"""

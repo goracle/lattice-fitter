@@ -488,8 +488,7 @@ def phase_shift_scatter_len_avg(result_min):
         scattering_length = None
         scattering_length_err = None
     phase_shift_data = (phase_shift, phase_shift_err, phase_shift_arr)
-    assert np.asarray(scattering_length_arr).shape and\
-        np.asarray(scattering_length_arr).shape[0],\
+    assert np.asarray(scattering_length_arr).shape,\
         "scattering length array: "+str(np.asarray(scattering_length_arr))
     scattering_length_data = (scattering_length, scattering_length_err,
                               scattering_length_arr)

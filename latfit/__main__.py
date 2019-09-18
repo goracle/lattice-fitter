@@ -330,10 +330,8 @@ def mean_and_err_loop_continue(name, min_arr):
     if 'misc' in name:
         ret = True
     else:
-        print("examining", name, "for NaN's")
         val = min_arr[0][0].__dict__[name].val
-        if not np.asarray(val).shape and np.isnan(val):
-            print("name=", name, "is NaN, skipping")
+        if val is None:
             ret = True
     return ret
 
@@ -672,7 +670,7 @@ def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq (t^2)"""
     assert not any(np.isnan(pvalue_arr)), "pvalue array contains nan"
     ret = np.array(param_arr)
-    assert ret.shape and ret.shape[0], str(ret)
+    assert ret.shape, str(ret)
     if len(ret.shape) > 1:
         assert param_arr[:, 0].shape == pvalue_arr.shape,\
             "Mismatch between pvalue_arr"+\
