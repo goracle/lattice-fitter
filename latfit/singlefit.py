@@ -103,21 +103,10 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
             # initial fit
             reset_bootstrap_const_shift()
-            assert latfit.config.BOOTSTRAP, str(latfit.config.BOOTSTRAP)
-            bstrap = bool(latfit.config.BOOTSTRAP)
-            latfit.config.BOOTSTRAP = False if bstrap else bstrap
-            try:
-                result_min, param_err = jackknife_fit(
-                    params, reuse, singlefit.reuse_blocked, coords)
-            except (BadChisq, BadJackknifeDist): # fix this
-                latfit.config.BOOTSTRAP = bstrap
-                raise
-            latfit.config.BOOTSTRAP = bstrap
-            assert latfit.config.BOOTSTRAP
-            if latfit.config.BOOTSTRAP:
-
-                result_min = bootstrap_pvalue(params, reuse,
-                                              coords, result_min)
+            latfit.config.BOOTSTRAP = False
+            result_min, param_err = jackknife_fit(
+                params, reuse, singlefit.reuse_blocked, coords)
+            result_min = bootstrap_pvalue(params, reuse, coords, result_min)
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
@@ -167,7 +156,8 @@ def error_bar_scheme(result_min, fitrange, xmin, xmax):
 def bootstrap_pvalue(params, reuse, coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
-    if bootstrap_pvalue.result_minq is None: 
+    if result_min.misc.dof not in bootstrap_pvalue.result_minq: 
+        latfit.config.BOOTSTRAP = True
         apply_bootstrap_shift(result_min)
         # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
         params.num_configs = NBOOT
@@ -180,25 +170,29 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
             print("minimizer failed to converge during bootstrap")
             assert None
         print("done computing null dist.")
+        bootstrap_pvalue.result_minq[result_min.misc.dof] = result_minq
     else:
-        result_minq = bootstrap_pvalue.result_minq
+        result_minq = bootstrap_pvalue.result_minq[result_min.misc.dof]
 
     # overwrite initial fit with the accurate p-value info
     result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
         result_minq.chisq.arr, result_min.chisq.arr)
     result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
-    result_min.pvalue_err = em.acmean((
+    result_min.pvalue.err = em.acmean((
         result_min.pvalue.arr-result_min.pvalue.val)**2)
-    result_min.pvalue_err *= np.sqrt((len(
+    result_min.pvalue.err *= np.sqrt((len(
         result_min.pvalue.arr)-1)/len(result_min.pvalue.arr))
     return result_min
-bootstrap_pvalue.result_minq = None
+bootstrap_pvalue.result_minq = {}
 
 
 def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     """Get the array of p-values"""
     chisq_arr_boot = sorted(list(chisq_arr_boot))
     chisq_arr_boot = np.asarray(chisq_arr_boot)
+    print("variance of null dist:", np.std(chisq_arr_boot)**2)
+    print("mean of null dist:", np.mean(chisq_arr_boot))
+    assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
     chisq_arr = np.asarray(chisq_arr)
     pvalue_arr_boot = []
     for i, _ in enumerate(chisq_arr_boot):
@@ -240,7 +234,7 @@ def reset_bootstrap_const_shift():
     """Set const. shift to 0
     (for initial fit)
     """
-    chisq.CONST_SHIFT = np.zeros(1000)
+    jackknife_fit.CONST_SHIFT = np.zeros(1000)
 
 def debug_print(coords_full, cov_full):
     """Debug print

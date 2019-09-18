@@ -67,7 +67,7 @@ def torchi():
 def apply_shift(coords_jack):
     """apply the bootstrap constant shift to the averages"""
     for i, coord in enumerate(coords_jack):
-        coords_jack[i][1] += CONST_SHIFT[int(coords_jack[i][0])]
+        coords_jack[i][1] += CONST_SHIFT[int(coord[0])]
     return coords_jack
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -128,7 +128,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 # we still need the time data in coords (xmin, xmax, xstep)
                 coords_jack = copy_block(params, reuse[0],
                                          coords_jack)
-                coords_jack = apply_shift(coords_jack)
 
             # get the data for the minimizer, and the error bars
             coords_jack, covinv_jack, result_min.misc.error_bars[
@@ -156,7 +155,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min.energy.arr[config_num] = getenergies(
                 params, result_min_jack.x)
 
-            if result_min_jack.fun/result_min.misc.dof < 10:
+            if result_min_jack.fun/result_min.misc.dof < 10 and\
+               list(result_min.systematics.arr[config_num][:-1]):
                 print('systematics:',
                       result_min.systematics.arr[config_num][:-1])
 
@@ -187,7 +187,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             assert not np.isnan(result_min.pvalue.arr[
                 config_num]), "pvalue is nan"
             # use sloppy configs to check if fit will work
-            if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
+            if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF] and\
+               not latfit.config.BOOTSTRAP:
 
                 # check if chi^2 (t^2) too big, too small
                 if result_min_jack.fun > chisq_fiduc_cut or\
@@ -873,6 +874,7 @@ def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
     # bootstrap ensemble
     reuse_blocked, coords_jack = bootstrap_ensemble(reuse_inv, coords_jack,
                                                     reuse_blocked)
+    coords_jack = apply_shift(coords_jack)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)

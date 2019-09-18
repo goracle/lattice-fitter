@@ -524,7 +524,7 @@ def get_param_chisq(coords, dimops, xcoord, result_min, fitrange=None):
         # redchisq_str += '+/-'+str(result_min.chisq.err/param_chisq.misc.dof)
         if (param_chisq.redchisq > 10 or param_chisq.redchisq < 0.1) or (
                 result_min.chisq.err/result_min.misc.dof > 10
-                or result_min.chisq.err/result_min.dof < .1):
+                or result_min.chisq.err/result_min.misc.dof < .1):
             param_chisq.redchisq_round_str = format_chisq_str(
                 param_chisq.redchisq, plus=False)
         else:

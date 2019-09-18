@@ -186,7 +186,7 @@ class FitRangeMetaData:
                         self.fitwindow[1]+self.options.xstep,
                         self.options.xstep)
         ret = list(ret)
-        latfit.jackknife_fit.WINDOW = ret
+        latfit.analysis.result_min.WINDOW = ret
         return ret
 
     @PROFILE

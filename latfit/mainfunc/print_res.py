@@ -59,10 +59,13 @@ def inverse_excl(meta, excl):
 def print_fit_results(meta, min_arr):
     """ Print the fit results
     """
-    print("Fit results:  pvalue, energies, err on energies, included fit points")
+    print("Fit results:  pvalue, energies,",
+          "err on energies, included fit points")
     res = []
     for i in min_arr:
-        res.append((getattr(i[0], "pvalue"), getattr(i[0], 'x'), i[1], inverse_excl(meta, i[2])))
+        res.append((getattr(i[0], "pvalue").val,
+                    getattr(i[0], 'energy').val,
+                    i[1], inverse_excl(meta, i[2])))
     res = sorted(res, key=lambda x: x[0])
     for i in res:
         print(i)
