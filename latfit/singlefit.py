@@ -25,6 +25,7 @@ from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
 from latfit.config import GEVP
 import latfit.config
+import latfit.analysis.result_min as resmin
 
 import latfit.mathfun.chi_sq as chisq
 
@@ -170,12 +171,14 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
             print("minimizer failed to converge during bootstrap")
             assert None
         print("done computing null dist.")
+        assert result_min.misc.dof == result_minq.misc.dof
         bootstrap_pvalue.result_minq[result_min.misc.dof] = result_minq
+        resmin.NULL_CHISQ_ARRS[result_min.misc.dof] = result_minq.chisq.arr
     else:
         result_minq = bootstrap_pvalue.result_minq[result_min.misc.dof]
 
     # overwrite initial fit with the accurate p-value info
-    result_min.pvalue.arr = chisq_arr_to_pvalue_arr(
+    result_min.pvalue.arr = resmin.chisq_arr_to_pvalue_arr(
         result_minq.chisq.arr, result_min.chisq.arr)
     result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
     result_min.pvalue.err = em.acmean((
@@ -185,26 +188,6 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
     return result_min
 bootstrap_pvalue.result_minq = {}
 
-
-def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
-    """Get the array of p-values"""
-    chisq_arr_boot = sorted(list(chisq_arr_boot))
-    chisq_arr_boot = np.asarray(chisq_arr_boot)
-    print("variance of null dist:", np.std(chisq_arr_boot)**2)
-    print("mean of null dist:", np.mean(chisq_arr_boot))
-    assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
-    chisq_arr = np.asarray(chisq_arr)
-    pvalue_arr_boot = []
-    for i, _ in enumerate(chisq_arr_boot):
-        pvalue_arr_boot.append((NBOOT-i-1)/NBOOT)
-    pvalue_arr_boot = np.array(pvalue_arr_boot)
-    pvalue_arr = []
-    for chisq1 in chisq_arr:
-        subarr = np.abs(chisq1-chisq_arr_boot)
-        minidx = list(subarr).index(min(subarr))
-        pvalue_arr.append(pvalue_arr_boot[minidx])
-    pvalue_arr = np.array(pvalue_arr)
-    return pvalue_arr
 
 def apply_bootstrap_shift(result_min):
     """Subtract any systematic difference

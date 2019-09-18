@@ -56,7 +56,8 @@ def aroundtheworld_pionratio(diag_name, timeij):
             if hasattr(exp, '__iter__') and np.asarray(exp).shape:
                 for i, _ in enumerate(exp):
                     ret[i] *= math.exp(exp[i]*timeij)
-                    sub[i] *= math.exp(exp[i]*(timeij-DELTA_T_MATRIX_SUBTRACTION))
+                    sub[i] *= math.exp(exp[i]*(
+                        timeij-DELTA_T_MATRIX_SUBTRACTION))
             else:
                 ret *= math.exp(exp*timeij)
                 sub *= math.exp(exp*(timeij-DELTA_T_MATRIX_SUBTRACTION))
@@ -347,9 +348,21 @@ def show_original_data(jkarr, jkarr2):
           sterr(jkarr2[70:140]), sterr(jkarr[70:140]))
     print("total diff avg:",
           em.acmean(diffarr_total), "error:", sterr(diffarr_total))
-    for i in reversed(diffarr_total):
-        print(i-em.acmean(diffarr_total))
+    print("running average-total avg, interacting energy, block of 10:")
+    for i in running_avg(jkarr2, 10):
+        print(i-em.acmean(jkarr2))
+    #for i in reversed(diffarr_total):
+    #    print(i-em.acmean(diffarr_total))
     return orig
+
+def running_avg(arr, blocksize):
+    """Get a running average of the array"""
+    arr = np.asarray(arr)
+    ret = []
+    for i in range(len(arr)-blocksize):
+        ret.append(em.acmean(arr[i:blocksize+i]))
+    ret = np.array(ret)
+    return ret
 
 ### around the world subtraction
 

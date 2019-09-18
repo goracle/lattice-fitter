@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
-from latfit.config import GEVP
+from latfit.config import GEVP, NBOOT
 from latfit.analysis.errorcodes import DOFNonPos
 import latfit.config
 
@@ -17,6 +17,29 @@ except NameError:
     PROFILE = profile
 
 WINDOW = []
+
+NULL_CHISQ_ARRS = {}
+
+def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
+    """Get the array of p-values"""
+    chisq_arr_boot = sorted(list(chisq_arr_boot))
+    chisq_arr_boot = np.asarray(chisq_arr_boot)
+    if len(chisq_arr) > 1:
+        print("variance of null dist:", np.std(chisq_arr_boot)**2)
+        print("mean of null dist:", np.mean(chisq_arr_boot))
+    assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
+    chisq_arr = np.asarray(chisq_arr)
+    pvalue_arr_boot = []
+    for i, _ in enumerate(chisq_arr_boot):
+        pvalue_arr_boot.append((NBOOT-i-1)/NBOOT)
+    pvalue_arr_boot = np.array(pvalue_arr_boot)
+    pvalue_arr = []
+    for chisq1 in chisq_arr:
+        subarr = np.abs(chisq1-chisq_arr_boot)
+        minidx = list(subarr).index(min(subarr))
+        pvalue_arr.append(pvalue_arr_boot[minidx])
+    pvalue_arr = np.array(pvalue_arr)
+    return pvalue_arr
 
 class Param:
     """Storage for the average param, the array of the param,
@@ -73,14 +96,19 @@ class ResultMin:
         is actually a sort of correlated chi^2)
         """
         ret = None
-        correction = (self.misc.num_configs-self.misc.dof)/(
-            self.misc.num_configs-1)
-        correction /= self.misc.dof
-        correction = 1 if UNCORR else correction
-        cor = correction
-        if self.misc.dof is not None:
+        nar = NULL_CHISQ_ARRS
+        if self.misc.dof is not None and\
+           self.misc.dof not in NULL_CHISQ_ARRS:
+            correction = (self.misc.num_configs-self.misc.dof)/(
+                self.misc.num_configs-1)
+            correction /= self.misc.dof
+            correction = 1 if UNCORR else correction
+            cor = correction
             ret = stats.f.sf(chisq*cor, self.misc.dof,
                              self.misc.num_configs-self.misc.dof)
+        elif self.misc.dof in nar:
+            ret = chisq_arr_to_pvalue_arr(nar[self.misc.dof],
+                                          np.asarray([chisq]))[0]
         return ret
 
     @PROFILE
