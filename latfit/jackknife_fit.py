@@ -14,7 +14,7 @@ from accupy import kdot
 
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
-from latfit.mathfun.block_ensemble import delblock
+from latfit.mathfun.block_ensemble import delblock, block_ensemble
 from latfit.mathfun.block_ensemble import bootstrap_ensemble
 
 from latfit.config import START_PARAMS
@@ -118,7 +118,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # if config_num>160: break # for debugging only
 
             # copy the jackknife block into coords_jack
-            if config_num < len(reuse):
+            if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
                 assert np.all(reuse[config_num] == reuse_blocked[
                     config_num])
             if not latfit.config.BOOTSTRAP:
@@ -346,10 +346,13 @@ def chisqfiduc(num_configs, dof):
         sol2 = float(fsolve(func2, dof))
         assert abs(func(sol)) < 1e-8, "fsolve failed."
         assert abs(func2(sol2)) < 1e-8, "fsolve2 failed."
-        # known variance of chi^2 is 2*dof, but skewed at low dof (here chosen to be < 10)
-        # thus, the notion of a "5 sigma fluctuation" is only defined as dof->inf
+        # known variance of chi^2 is 2*dof,
+        # but skewed at low dof (here chosen to be < 10)
+        # thus, the notion of a "5 sigma fluctuation" is only defined
+        # as dof->inf
         # so we have a factor of 2 to make low dof p-value cut less aggressive
-        #ret = sol+5*(2 if dof < 10 else 1)*np.sqrt(2*dof)/(num_configs-SUPERJACK_CUTOFF)
+        #ret = sol+5*(2 if dof < 10 else\
+        # 1)*np.sqrt(2*dof)/(num_configs-SUPERJACK_CUTOFF)
         diff = (sol-sol2)/(num_configs-SUPERJACK_CUTOFF-1)
         ret = sol2+diff
         #print(ret/dof, sol/dof, num_configs, dof, PVALUE_MIN,
@@ -361,21 +364,37 @@ chisqfiduc.mem = {}
 @PROFILE
 def correction_en(result_min, config_num):
     """Correct the jackknifed E_pipi"""
-    if hasattr(DELTA_E_AROUND_THE_WORLD, '__iter__') and\
-       np.asarray(DELTA_E_AROUND_THE_WORLD).shape:
-        latw = len(DELTA_E_AROUND_THE_WORLD)
-        assert latw == 1 or latw == len(result_min.energy.arr),\
-            "bug:  array mismatch"
-        corre1 = DELTA_E_AROUND_THE_WORLD[config_num] if latw > 1 else\
-            DELTA_E_AROUND_THE_WORLD[0]
+    delta_e_around_the_world = DELTA_E_AROUND_THE_WORLD
+    delta_e2_around_the_world = DELTA_E2_AROUND_THE_WORLD
+    if hasattr(delta_e_around_the_world, '__iter__') and\
+       np.asarray(delta_e_around_the_world).shape:
+        latw = len(delta_e_around_the_world)
+
+        # block the ensemble if needed
+        if latw != len(result_min.energy.arr):
+            delta_e_around_the_world = block_ensemble(
+                len(result_min.energy.arr), delta_e_around_the_world)
+
+            latw = len(delta_e_around_the_world)
+            assert latw == 1 or latw == len(result_min.energy.arr),\
+                "bug:  array mismatch"
+        if delta_e2_around_the_world is not None:
+            assert len(delta_e2_around_the_world) == latw
+
+            if latw != len(result_min.energy.arr):
+                delta_e2_around_the_world = block_ensemble(
+                    len(result_min.energy.arr), delta_e2_around_the_world)
+
+        corre1 = delta_e_around_the_world[config_num] if latw > 1 else\
+            delta_e_around_the_world[0]
     else:
-        corre1 = DELTA_E_AROUND_THE_WORLD
-    if hasattr(DELTA_E2_AROUND_THE_WORLD, '__iter__') and\
-       np.asarray(DELTA_E2_AROUND_THE_WORLD).shape:
-        corre2 = DELTA_E2_AROUND_THE_WORLD[config_num]
+        corre1 = delta_e_around_the_world
+    if hasattr(delta_e2_around_the_world, '__iter__') and\
+       np.asarray(delta_e2_around_the_world).shape:
+        corre2 = delta_e2_around_the_world[config_num]
     else:
-        corre2 = DELTA_E2_AROUND_THE_WORLD if\
-            DELTA_E2_AROUND_THE_WORLD is not None else 0
+        corre2 = delta_e2_around_the_world if\
+            delta_e2_around_the_world is not None else 0
     if FIT_SPACING_CORRECTION and not PIONRATIO:
         corre3 = misc.correct_epipi(result_min.energy.arr[config_num],
                                     config_num=config_num)

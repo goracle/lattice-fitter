@@ -65,12 +65,19 @@ else:
 if GEVP:
     def get_coventry(reuse, sameblk, avgi):
         """get the entry in the cov. mat. (GEVP)"""
-        nconfigs = len(reuse)/JACKKNIFE_BLOCK_SIZE
-        reuse_blocked = block_ensemble(nconfigs, reuse)
-        return get_coventry_gevp(reuse_blocked, sameblk, avgi)
+        return get_coventry_gevp(get_blocked(reuse), sameblk, avgi)
 else:
     def get_coventry(reuse, sameblk, avgi):
         """get the entry in the cov. mat."""
-        nconfigs = len(reuse)/JACKKNIFE_BLOCK_SIZE
-        reuse_blocked = block_ensemble(nconfigs, reuse)
-        return get_coventry_simple(reuse_blocked, sameblk, avgi)
+        return get_coventry_simple(get_blocked(reuse), sameblk, avgi)
+
+def get_blocked(reuse):
+    """Get the blocked ensemble from the dict"""
+    assert len(reuse['i']) == len(reuse['j'])
+    nconfigs = len(reuse['i'])/JACKKNIFE_BLOCK_SIZE
+    assert nconfigs == int(nconfigs), str(nconfigs)
+    nconfigs = int(nconfigs)
+    reuse_blocked = {}
+    reuse_blocked['i'] = block_ensemble(nconfigs, reuse['i'])
+    reuse_blocked['j'] = block_ensemble(nconfigs, reuse['j'])
+    return reuse_blocked
