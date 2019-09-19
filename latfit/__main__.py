@@ -241,11 +241,11 @@ def combine_results(result_min, result_min_close,
     if meta.skip_loop:
         result_min, param_err = result_min_close, param_err_close
     else:
-        result_min['chisq'].val = result_min_close.fun
-        result_min['chisq'].err = result_min_close.chisq_err
+        result_min['chisq'].val = result_min_close.chisq.val
+        result_min['chisq'].err = result_min_close.chisq.err
         result_min['dof'] = result_min_close.dof
         result_min['pvalue'] = result_min_close.pvalue
-        result_min['pvalue'].err = result_min_close.pvalue_err
+        result_min['pvalue'].err = result_min_close.pvalue.err
         print("closest representative fit result (lattice units):")
         # convert here since we can't set attributes afterwards
         result_min = convert_to_namedtuple(result_min)
@@ -898,7 +898,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             result = [result_min, list(param_err),
                       list(latfit.config.FIT_EXCL)]
             # don't overfit
-            if result_min.fun/result_min.dof >= 1 and SKIP_OVERFIT:
+            if result_min.chisq.val/result_min.misc.dof >= 1 and SKIP_OVERFIT:
                 min_arr.append(result)
             else:
                 overfit_arr.append(result)
