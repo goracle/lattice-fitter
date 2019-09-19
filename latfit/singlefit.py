@@ -149,7 +149,7 @@ def error_bar_scheme(result_min, fitrange, xmin, xmax):
     """
     if xmin != fitrange[0] or xmax != fitrange[1]:
         try:
-            result_min.error_bars = None
+            result_min.misc.error_bars = None
         except AttributeError:
             pass
     return result_min

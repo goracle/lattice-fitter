@@ -330,7 +330,11 @@ def mean_and_err_loop_continue(name, min_arr):
     if 'misc' in name:
         ret = True
     else:
-        val = min_arr[0][0].__dict__[name].val
+        try:
+            val = min_arr[0][0].__dict__[name].val
+        except AttributeError:
+            print("a Param got overwritten.  name:", name)
+            raise
         if val is None:
             ret = True
     return ret
