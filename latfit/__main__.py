@@ -207,7 +207,7 @@ def post_loop(meta, loop_store, plotdata,
         print("fit excluded points (indices):",
               latfit.config.FIT_EXCL)
 
-    latfit.config.BOOTSTRAP = True
+    #latfit.config.BOOTSTRAP = True
     if (not (meta.skiploop and latfit.config.MINTOL)\
         and METHOD == 'NaN') or not test_success\
         and (len(min_arr) + len(overfit_arr) > 1):

@@ -18,6 +18,14 @@ def gevp_statements(gevp_dirs, gevp, dim, mult, tvecs):
         " not to use an additive constant in the fit function,"+\
         " for each diagonal element of GEVP matrix"
 
+def mod_superjack(superjack_cutoff, jackknife_block_size, check_ids_minus_2):
+    superjack_cutoff /= jackknife_block_size
+    assert int(superjack_cutoff) == superjack_cutoff
+    superjack_cutoff = int(superjack_cutoff)
+    superjack_cutoff = 0 if not check_ids_minus_2 else superjack_cutoff
+    return superjack_cutoff
+
+
 def start_params_pencils(start_params, origl, num_pencils,
                          mult, sys_energy_guess):
     """start parameter statements"""

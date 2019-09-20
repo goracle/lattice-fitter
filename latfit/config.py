@@ -86,6 +86,7 @@ if LATTICE_ENSEMBLE == '24c':
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+T0 = 'TMINUS3' # t-1
 
 # print raw gevp info (for debugging source construction)
 
@@ -141,6 +142,10 @@ ONLY_SMALL_FIT_RANGES = True
 ONLY_SMALL_FIT_RANGES = False
 ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
 
+# block size of blocked jackknifed technique
+# usual jackknife sets this to 1
+JACKKNIFE_BLOCK_SIZE = 1
+
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
 SUPERJACK_CUTOFF = 0
@@ -165,9 +170,9 @@ elif LATTICE_ENSEMBLE == '16c':
     PION_MASS = 0.3*AINVERSE
     LT = 32
     SUPERJACK_CUTOFF = 0
-SUPERJACK_CUTOFF = 0 if not check_ids()[-2] else SUPERJACK_CUTOFF
+SUPERJACK_CUTOFF = sands.mod_superjack(SUPERJACK_CUTOFF,
+                                       JACKKNIFE_BLOCK_SIZE, check_ids()[-2])
 binout.SUPERJACK_CUTOFF = SUPERJACK_CUTOFF
-
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
 # skips reading them in
 # and only looks at the jackknife blocks for the remaining configs
@@ -239,10 +244,6 @@ if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
-
-# block size of blocked jackknifed technique
-# usual jackknife sets this to 1
-JACKKNIFE_BLOCK_SIZE = 1
 
 # Bootstrap params
 NBOOT = 1000 # until it saturates (should be infinity)

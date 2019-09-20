@@ -722,8 +722,7 @@ def copy_block_no_sidefx(params, blk):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
     if params.dimops > 1:
-        print("copy_block not supported in this form")
-        sys.exit(1)
+        assert None, "copy_block not supported in this form"
         retblk = np.array([
             blk[time] for time in range(len(params.time_range))
         ])
@@ -878,7 +877,8 @@ def nconfigs_minus_block(total_configs, bsize):
     return ret
 
 @PROFILE
-def get_doublejk_data(params, coords_jack, reuse, reuse_blocked, config_num):
+def get_doublejk_data(params, coords_jack, reuse,
+                      reuse_blocked, config_num):
     """Primarily, get the inverse covariance matrix for the particular
     double jackknife fit we are on (=config_num)
     reuse_inv is the original unjackknifed data

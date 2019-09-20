@@ -166,8 +166,8 @@ class FitRangeMetaData:
             assert self.lenprod == 1, "Number of fit ranges is too large."
         latfit.config.MINTOL = True if self.lenprod == 0 else\
             latfit.config.MINTOL
-        latfit.config.BOOTSTRAP = True if self.lenprod == 0 else\
-            latfit.config.BOOTSTRAP
+        #latfit.config.BOOTSTRAP = True if self.lenprod == 0 else\
+        #    latfit.config.BOOTSTRAP
         self.random_fit = True
         if self.lenprod < MAX_ITER: # fit range is small, use brute force
             self.random_fit = False
