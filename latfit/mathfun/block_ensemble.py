@@ -7,24 +7,28 @@ from latfit.extract.inverse_jk import inverse_jk
 from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
+from latfit.config import BOOTSTRAP_BLOCK_SIZE
 import latfit.config
 
-def bootstrap_ensemble(reuse_inv, avg, reuse_blocked, config_num):
+print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
+
+def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """Generate a bootstrapped version of the ensemble
     with replacement, then jackknife it
     """
     if latfit.config.BOOTSTRAP:
         reuse_inv = np.asarray(reuse_inv)
+        reuse_inv_mean = em.acmean(reuse_inv, axis=0)
         choices = list(range(len(reuse_inv)))
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         idx = 0
         for _ in choices:
-            block = len(reuse_inv)-5
+            block = BOOTSTRAP_BLOCK_SIZE
             if idx+block > len(reuse_inv):
                 block = len(reuse_inv)-idx
             #choice = np.random.randint(0, len(reuse_inv)-block)
             choice = 0 if len(reuse_inv) == block else np.random.randint(
-                0, len(reuse_inv)-block)
+                0, len(reuse_inv)-block+1)
             for j in range(block):
                 retblk[idx+j] = reuse_inv[choice+j]
             idx += block
