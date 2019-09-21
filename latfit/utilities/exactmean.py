@@ -50,7 +50,7 @@ def acmean(arr, axis=0, fsum=False):
     if hasattr(ret, '__iter__'):
         larr = (ret.shape)[axis]
         if larr:
-            ret = acsum(ret, axis, fsum)
+            ret = acsum(ret, axis=axis, fsum=fsum)
             ret /= larr
     return ret
 
