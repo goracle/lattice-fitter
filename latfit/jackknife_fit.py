@@ -718,20 +718,6 @@ def phase_shift_jk(params, epipi_arr):
 
 
 @PROFILE
-def copy_block_no_sidefx(params, blk):
-    """Copy a jackknife block (for a particular config)
-    for later possible modification"""
-    if params.dimops > 1:
-        assert None, "copy_block not supported in this form"
-        retblk = np.array([
-            blk[time] for time in range(len(params.time_range))
-        ])
-    else:
-        retblk = blk
-    return retblk
-
-
-@PROFILE
 def copy_block(params, blk, out):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
