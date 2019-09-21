@@ -25,6 +25,7 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     chisq_arr_boot = sorted(list(chisq_arr_boot))
     chisq_arr_boot = np.asarray(chisq_arr_boot)
     if len(chisq_arr) > 1:
+        assert len(np.asarray(chisq_arr).shape) == 1, str(np.asarray(chisq_arr))
         print("variance of null dist:", np.std(chisq_arr_boot)**2)
         print("mean of null dist:", np.mean(chisq_arr_boot))
     assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
