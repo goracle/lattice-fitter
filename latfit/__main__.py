@@ -834,6 +834,8 @@ def dofit_initial(meta, plotdata):
 
     test_success = False
     retsingle_save = None
+    print("Trying initial fit with excluded times:",
+          latfit.config.FIT_EXCL)
     try:
         retsingle_save = singlefit(meta.input_f, meta.fitwindow,
                                    meta.options.xmin,
@@ -876,6 +878,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     samerange = sfit.cut_on_errsize(meta) # did we make any cuts?
 
     fit_range_init = str(latfit.config.FIT_EXCL)
+    print("Trying second initial fit with excluded times:",
+          latfit.config.FIT_EXCL)
     try:
         if not samerange and FIT:
             print("Trying second test fit.")
