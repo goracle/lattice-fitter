@@ -64,11 +64,24 @@ def torchi():
         ret = 't^2/dof='
     return ret
 
-def apply_shift(coords_jack):
+def apply_shift(coords_jack_reuse):
     """apply the bootstrap constant shift to the averages"""
-    for i, coord in enumerate(coords_jack):
-        coords_jack[i][1] += CONST_SHIFT[int(coord[0])]
-    return coords_jack
+    coords_jack_reuse = np.asarray(coords_jack_reuse)
+    shift = 0 if not np.all(CONST_SHIFT) else CONST_SHIFT
+    sh1 = np.asarray(shift).shape
+    sh2 = coords_jack_reuse.shape
+    if np.all(sh2[1:] == sh1) or not sh1:
+        try:
+            coords_jack_reuse += shift
+        except TypeError:
+            print(coords_jack_reuse)
+            print(shift)
+            print(sh1, sh2)
+            raise
+    else:
+        for i, coord in enumerate(coords_jack_reuse):
+            coords_jack_reuse[i][1] += shift[int(coord[0])]
+    return coords_jack_reuse
 
 if JACKKNIFE_FIT == 'FROZEN':
     pass
@@ -336,8 +349,7 @@ def chisqfiduc(num_configs, dof):
     if key in chisqfiduc.mem:
         ret = chisqfiduc.mem[key]
     else:
-        func = lambda tau: PVALUE_MIN*3e-7-(stats.f.sf(tau*cor,
-                                                       dof,
+        func = lambda tau: PVALUE_MIN*3e-7-(stats.f.sf(tau*cor, dof,
                                                        num_configs-dof))
         func2 = lambda tau: PVALUE_MIN-(stats.f.sf(tau*cor, dof,
                                                    num_configs-dof))
@@ -872,36 +884,44 @@ def get_doublejk_data(params, coords_jack, reuse,
     if the fit fails.
     """
 
+    reuse = apply_shift(reuse)
+    reuse_blocked = apply_shift(reuse_blocked)
+
     # original data, obtained by reversing single jackknife procedure
     reuse_inv = inverse_jk(reuse, params.num_configs)
 
     # bootstrap ensemble
-    reuse_blocked, coords_jack = bootstrap_ensemble(reuse_inv, coords_jack,
-                                                    reuse_blocked)
-    coords_jack = apply_shift(coords_jack)
+    reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
+        reuse_inv, coords_jack, reuse_blocked)
+    # coords_jack_new = apply_shift(coords_jack_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
 
     flag = 2
     while flag > 0:
-        if flag == 1:
-            if len(coords_jack) == 1:
-                print("Continuation failed.")
-                sys.exit(1)
-            assert None, "Not supported."
-            coords_jack = coords_jack[1::2]
-            cov_factor = np.delete(
-                getcovfactor(params, reuse_blocked, config_num,
-                             reuse_inv_red), np.s_[::2], axis=1)
-        else:
-            cov_factor = getcovfactor(params, reuse_blocked,
-                                      config_num, reuse_inv_red)
+        cov_factor = getcovfactor(params, reuse_blocked_new,
+                                  config_num, reuse_inv_red)
         covjack = get_covjack(cov_factor, params)
         covinv_jack_pruned, flag = prune_covjack(params, covjack,
-                                                 coords_jack, flag)
-    covinv_jack = prune_fit_range(covinv_jack_pruned, coords_jack)
-    return coords_jack, covinv_jack, jack_errorbars(covjack, params)
+                                                 coords_jack_new, flag)
+    covinv_jack = prune_fit_range(covinv_jack_pruned, coords_jack_new)
+    return coords_jack_new, covinv_jack, jack_errorbars(covjack, params)
+
+def compare_correlations(coords_jack, coords_jack_new):
+    """Pearson r examination"""
+    cj1 = []
+    cjnew = []
+    for i, _ in enumerate(coords_jack):
+        cj1.append(coords_jack[i][1])
+        cjnew.append(coords_jack_new[i][1])
+    cj1 = np.asarray(cj1).T
+    cjnew = np.asarray(cjnew).T
+    for i, (ena, enb) in enumerate(zip(cj1, cjnew)):
+        print("pearson r of en:", i, ":", stats.pearsonr(ena, enb))
+        print("std of en:", i, ":", np.std(ena), np.std(enb))
+
+
 
 @PROFILE
 def prune_covjack(params, covjack, coords_jack, flag):

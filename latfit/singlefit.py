@@ -105,7 +105,6 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             # initial fit
             reset_bootstrap_const_shift()
             latfit.config.BOOTSTRAP = False
-            assert np.all(np.mean(reuse,axis=0)[0] == coords[0][1]), str(np.mean(reuse,axis=0))+" "+str(coords)
             result_min, param_err = jackknife_fit(
                 params, reuse, singlefit.reuse_blocked, coords)
             result_min = bootstrap_pvalue(params, reuse, coords, result_min)
