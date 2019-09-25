@@ -243,12 +243,12 @@ def get_tsorted(plotdata):
         if i == 0 and MPIRANK == 0:
             print("Finding best times ("+\
                     "most likely to give small chi^2 (t^2) contributions)")
-        if MULT > 1:
+        if MULT > 1 or GEVP:
             coords = np.array([j[i] for j in plotdata.coords[:, 1]])
         else:
             coords = np.array([j for j in plotdata.coords[:, 1]])
         times = np.array(list(plotdata.coords[:, 0]))
-        if MULT > 1:
+        if MULT > 1 or GEVP:
             tsorted.append(sortfit.best_times(
                 coords, plotdata.cov[:, :, i, i], i, times))
         else:

@@ -1,6 +1,7 @@
 """Block the ensemble by dropping JACKKNIFE_BLOCK_SIZE configs"""
 
 import sys
+import copy
 import numpy as np
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.extract.inverse_jk import inverse_jk
@@ -17,9 +18,10 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     with replacement, then jackknife it
     """
     if latfit.config.BOOTSTRAP:
-        reuse_inv = np.asarray(reuse_inv)
+        reuse_inv = np.array(copy.deepcopy(np.array(reuse_inv)))
         reuse_inv_mean = em.acmean(reuse_inv, axis=0)
         choices = list(range(len(reuse_inv)))
+        np.random.shuffle(choices)
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         idx = 0
         for _ in choices:
@@ -27,25 +29,24 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
             if idx+block > len(reuse_inv):
                 block = len(reuse_inv)-idx
             #choice = np.random.randint(0, len(reuse_inv)-block)
-            choice = 0 if len(reuse_inv) == block else np.random.randint(
-                0, len(reuse_inv)-block+1)
+            if block == len(reuse_inv):
+                choice = 0
+            else:
+                choice = np.random.randint(0, len(reuse_inv)-block+1)
             for j in range(block):
                 retblk[idx+j] = reuse_inv[choice+j]
             idx += block
         for i, item in enumerate(retblk):
             assert np.all(item != 0), str(item)+" "+str(i)
-        ret = np.array(retblk, dtype=reuse_inv.dtype)
+        ret = copy.deepcopy(np.array(retblk, dtype=reuse_inv.dtype))
         mean = em.acmean(ret, axis=0)
         ret = dojackknife(ret)
         assert np.allclose(mean, em.acmean(ret, axis=0), rtol=1e-12)
         #assert np.mean(np.delete(reuse_inv, config_num, axis=0), axis=0) == avg[:,1], str(avg[:,1])+" "+str(np.mean(np.delete(reuse_inv, config_num, axis=0), axis=0))
-        avg = np.asarray(avg)
+        avg = copy.deepcopy(np.asarray(avg))
         assert avg.shape[0] == mean.shape[0], "time extent does not match"
-        avg = [[avg[i][0], mean[i]] for i, _ in enumerate(mean)]
-        avg = np.asarray(avg)
-        #print(avg)
-        #print(mean)
-        #print(avg)
+        avg2 = [[avg[i][0], mean[i]] for i, _ in enumerate(mean)]
+        avg = copy.deepcopy(np.array(avg2))
     else:
         ret = reuse_blocked
     return ret, avg

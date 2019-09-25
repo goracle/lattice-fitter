@@ -1,5 +1,6 @@
 """Fit under a jackknife"""
 import sys
+import copy
 import os
 import numbers
 from collections import namedtuple
@@ -66,7 +67,7 @@ def torchi():
 
 def apply_shift(coords_jack_reuse):
     """apply the bootstrap constant shift to the averages"""
-    coords_jack_reuse = np.asarray(coords_jack_reuse)
+    coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
     shift = 0 if not np.all(CONST_SHIFT) else CONST_SHIFT
     sh1 = np.asarray(shift).shape
     sh2 = coords_jack_reuse.shape
@@ -104,7 +105,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.energy.arr = np.zeros((params.num_configs,
                                           len(START_PARAMS)
                                           if not GEVP else params.dimops))
-        coords_jack = np.copy(coords)
+        coords_jack = np.copy(copy.deepcopy(coords))
         result_min.misc.error_bars = alloc_errbar_arr(params, len(coords))
 
         # p-value fiducial cut:  cut below this pvalue
@@ -530,10 +531,10 @@ def phase_shift_scatter_len_avg(result_min):
 def alloc_phase_shift(params):
     """Get an empty array for Nconfig phase shifts"""
     nphase = 1 if not GEVP else params.dimops
-    ret = np.zeros((
-        params.num_configs, nphase), dtype=np.complex) if \
-        params.dimops > 1 else np.zeros((
-            params.num_configs), dtype=np.complex)
+    if GEVP:
+        ret = np.zeros((params.num_configs, nphase), dtype=np.complex)
+    else:
+        ret = np.zeros((params.num_configs), dtype=np.complex)
     return ret
 
 @PROFILE
@@ -719,7 +720,7 @@ def prune_phase_shift_arr(arr):
 def phase_shift_jk(params, epipi_arr):
     """Compute the nth jackknifed phase shift"""
     try:
-        if params.dimops > 1:
+        if params.dimops > 1 or GEVP:
             retlist = [zeta(epipi) for epipi in epipi_arr]
         else:
             retlist = zeta(epipi_arr)
@@ -733,11 +734,11 @@ def phase_shift_jk(params, epipi_arr):
 def copy_block(params, blk, out):
     """Copy a jackknife block (for a particular config)
     for later possible modification"""
-    if params.dimops > 1:
+    if params.dimops > 1 or GEVP:
         for time in range(len(params.time_range)):
-            out[time, 1] = np.nan_to_num(blk[time])
+            out[time, 1] = copy.deepcopy(np.nan_to_num(blk[time]))
     else:
-        out[:, 1] = np.nan_to_num(blk)
+        out[:, 1] = copy.deepcopy(np.nan_to_num(blk))
     return out
 
 
@@ -748,7 +749,7 @@ def alloc_errbar_arr(params, time_length):
     We store the error bars in this array, indexed
     by config.
     """
-    if params.dimops > 1:
+    if params.dimops > 1 or GEVP:
         errbar_arr = np.zeros((params.num_configs, time_length,
                                params.dimops),
                               dtype=np.float)
@@ -766,7 +767,7 @@ def get_covjack(cov_factor, params):
     Also, the GEVP covjack has indexing that goes
     time, gevp index, time, gevp index
     """
-    if params.dimops == 1:  # i.e. if not using the GEVP
+    if params.dimops == 1 and not GEVP:  # i.e. if not using the GEVP
         covjack = np.einsum('ai, aj->ij', cov_factor, cov_factor)
     else:
         covjack = np.einsum('aim, ajn->imjn', cov_factor, cov_factor)
@@ -783,12 +784,12 @@ def dropimag(arr):
 
 if CORRMATRIX:
     @PROFILE
-    def invert_cov(covjack, params):
+    def invert_cov(covjack, params2):
         """Invert the covariance matrix via correlation matrix
         assumes shape is time, time or time, dimops, time dimops;
         returns time, time or time, time, dimops, dimops
         """
-        if params.dimops == 1:  # i.e. if not using the GEVP
+        if params2.dimops == 1:  # i.e. if not using the GEVP
             if UNCORR:
                 covjack = np.diagflat(np.diag(covjack))
             covjack = dropimag(covjack)
@@ -799,16 +800,16 @@ if CORRMATRIX:
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
-            reweight = np.zeros((lent, params.dimops, lent, params.dimops))
+            reweight = np.zeros((lent, params2.dimops, lent, params2.dimops))
             for i in range(lent):
-                for j in range(params.dimops):
+                for j in range(params2.dimops):
                     reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])
             corrjack = actensordot(
                 actensordot(reweight, covjack), reweight)
             if UNCORR:
                 diagcorr = np.zeros(corrjack.shape)
                 for i in range(lent):
-                    for j in range(params.dimops):
+                    for j in range(params2.dimops):
                         diagcorr[i][j][i][j] = corrjack[i][j][i][j]
                 corrjack = diagcorr
             covinv_jack = swap(actensordot(reweight, actensordot(
@@ -817,12 +818,12 @@ if CORRMATRIX:
 
 else:
     @PROFILE
-    def invert_cov(covjack, params):
+    def invert_cov(covjack, params2):
         """Invert the covariance matrix,
         assumes shape is time, time or time, dimops, time dimops;
         returns time, time or time, time, dimops, dimops
         """
-        if params.dimops == 1:  # i.e. if not using the GEVP
+        if params2.dimops == 1:  # i.e. if not using the GEVP
             covinv_jack = inv(covjack)
         else:
             covinv_jack = swap(tensorinv(covjack), 1, 2)
@@ -884,16 +885,18 @@ def get_doublejk_data(params, coords_jack, reuse,
     if the fit fails.
     """
 
-    reuse = apply_shift(reuse)
-    reuse_blocked = apply_shift(reuse_blocked)
+    reuse_new = np.array(copy.deepcopy(np.array(reuse)))
+    reuse_blocked_new = np.array(copy.deepcopy(np.array(reuse_blocked)))
+    #reuse_new = apply_shift(reuse_new)
+    #reuse_blocked_new = apply_shift(reuse_blocked_new)
 
     # original data, obtained by reversing single jackknife procedure
-    reuse_inv = inverse_jk(reuse, params.num_configs)
+    reuse_inv = inverse_jk(reuse_new, params.num_configs)
 
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
         reuse_inv, coords_jack, reuse_blocked)
-    # coords_jack_new = apply_shift(coords_jack_new)
+    coords_jack_new = apply_shift(coords_jack_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
@@ -940,7 +943,7 @@ def prune_covjack(params, covjack, coords_jack, flag):
     # invert the pruned covariance matrix
     marray, flag = invertmasked(params, len_time, excl, covjack)
     covinv_jack = np.zeros(covjack.shape, dtype=float)
-    if params.dimops == 1:
+    if params.dimops == 1 and not GEVP:
         covinv_jack = np.copy(marray.data)
     else:
         # fill in the pruned dimensions with 0's
@@ -960,7 +963,7 @@ def invertmasked(params, len_time, excl, covjack):
     and fit range"""
     dim = int(np.sqrt(np.prod(list(covjack.shape))))
     matrix = np.zeros((dim, dim))
-    if params.dimops == 1:
+    if params.dimops == 1 and not GEVP:
         matrix = np.copy(covjack)
     else:
         for opa in range(params.dimops):
