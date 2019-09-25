@@ -159,7 +159,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
     # fit to find the null distribution
     if result_min.misc.dof not in bootstrap_pvalue.result_minq: 
         latfit.config.BOOTSTRAP = True
-        apply_bootstrap_shift(result_min)
+        set_bootstrap_shift(result_min)
         # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
         params.num_configs = NBOOT
         print("starting computation of null distribution from bootstrap")
@@ -189,7 +189,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
 bootstrap_pvalue.result_minq = {}
 
 
-def apply_bootstrap_shift(result_min):
+def set_bootstrap_shift(result_min):
     """Subtract any systematic difference
     to get the Null distribution for p-values
     This function informs the bootstrapping function
@@ -210,7 +210,7 @@ def apply_bootstrap_shift(result_min):
             print("part1 =", part1)
             print("part2 =", part2)
             raise
-    print("applying bootstrap shift to fit function with value:", shift)
+    print("setting bootstrap shift to fit function with value:", shift)
     jackknife_fit.CONST_SHIFT = shift
 
 def reset_bootstrap_const_shift():

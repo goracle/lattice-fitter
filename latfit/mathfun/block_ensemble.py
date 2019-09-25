@@ -2,6 +2,7 @@
 
 import sys
 import copy
+import random
 import numpy as np
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.extract.inverse_jk import inverse_jk
@@ -13,41 +14,60 @@ import latfit.config
 
 print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
 
+def build_choices_set(block, nconfigs):
+    """Find allowed indices for non-overlapping block
+    bootstrap"""
+    ret = set()
+    for i in range(nconfigs):
+        if i % block:
+            continue
+        ret.add(i)
+    remainder = nconfigs-(nconfigs % block)
+    if remainder < nconfigs:
+        ret.add(remainder)
+    return ret
+
 def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """Generate a bootstrapped version of the ensemble
     with replacement, then jackknife it
     """
     if latfit.config.BOOTSTRAP:
         reuse_inv = np.array(copy.deepcopy(np.array(reuse_inv)))
-        reuse_inv_mean = em.acmean(reuse_inv, axis=0)
-        choices = list(range(len(reuse_inv)))
-        np.random.shuffle(choices)
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
+        block = BOOTSTRAP_BLOCK_SIZE
+        assert block, str(block)
+        choices = build_choices_set(block, len(reuse_inv))
         idx = 0
-        for _ in choices:
-            block = BOOTSTRAP_BLOCK_SIZE
-            if idx+block > len(reuse_inv):
-                block = len(reuse_inv)-idx
-            #choice = np.random.randint(0, len(reuse_inv)-block)
-            if block == len(reuse_inv):
-                choice = 0
-            else:
-                choice = np.random.randint(0, len(reuse_inv)-block+1)
+        while idx < len(reuse_inv):
+
+            # pick random choice
+            choice = random.sample(choices, 1)[0]
+
+            # append the configs to our boostrap container
             for j in range(block):
                 retblk[idx+j] = reuse_inv[choice+j]
+
+            # increment
             idx += block
+
+        # check to see we've filled the whole ensemble
         for i, item in enumerate(retblk):
             assert np.all(item != 0), str(item)+" "+str(i)
+
+        # find bootstrap average
         ret = copy.deepcopy(np.array(retblk, dtype=reuse_inv.dtype))
         mean = em.acmean(ret, axis=0)
         ret = dojackknife(ret)
         assert np.allclose(mean, em.acmean(ret, axis=0), rtol=1e-12)
-        #assert np.mean(np.delete(reuse_inv, config_num, axis=0), axis=0) == avg[:,1], str(avg[:,1])+" "+str(np.mean(np.delete(reuse_inv, config_num, axis=0), axis=0))
         avg = copy.deepcopy(np.asarray(avg))
         assert avg.shape[0] == mean.shape[0], "time extent does not match"
+
+        # store the bootstrap average coordinates
+        # use 'avg' variable only for x (time) coordinates
         avg2 = [[avg[i][0], mean[i]] for i, _ in enumerate(mean)]
         avg = copy.deepcopy(np.array(avg2))
     else:
+        # do nothing
         ret = reuse_blocked
     return ret, avg
 
