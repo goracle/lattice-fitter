@@ -93,6 +93,11 @@ T0 = 'TMINUS3' # t-1
 GEVP_DEBUG = True
 GEVP_DEBUG = False
 
+# generate random gaussian data after reading in real data
+# noise is added to the average to simulate a constant + noise data set
+RANDOMIZE_ENERGIES = True
+RANDOMIZE_ENERGIES = False
+
 if LATTICE_ENSEMBLE == '24c':
     DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
