@@ -878,3 +878,4 @@ DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST, PIONRATIO,
 sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
 sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
+sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)

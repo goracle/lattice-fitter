@@ -18,7 +18,7 @@ from latfit.makemin.mkmin import mkmin
 from latfit.mathfun.block_ensemble import delblock, block_ensemble
 from latfit.mathfun.block_ensemble import bootstrap_ensemble
 
-from latfit.config import START_PARAMS
+from latfit.config import START_PARAMS, RANDOMIZE_ENERGIES
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
@@ -127,9 +127,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
 
         for config_num in config_range:
-
-            # assert isinstance(config_num, np.int64), str(config_num)
-            # if config_num>160: break # for debugging only
 
             # copy the jackknife block into coords_jack
             if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
@@ -891,7 +888,12 @@ def get_doublejk_data(params, coords_jack, reuse,
     #reuse_blocked_new = apply_shift(reuse_blocked_new)
 
     # original data, obtained by reversing single jackknife procedure
-    reuse_inv = inverse_jk(reuse_new, params.num_configs)
+    # we set the noise level to mimic the jackknifed data
+    # so the random data is in some sense already "jackknifed"
+    if RANDOMIZE_ENERGIES:
+        reuse_inv = np.array(copy.deepcopy(np.array(reuse_new)))
+    else:
+        reuse_inv = inverse_jk(reuse_new, params.num_configs)
 
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
@@ -1051,7 +1053,7 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         block == reuse
         DOUBLE elimination jackknife
         """
-        if latfit.config.BOOTSTRAP:
+        if latfit.config.BOOTSTRAP or RANDOMIZE_ENERGIES:
             ret = reuse_blocked-em.acmean(reuse_blocked, axis=0)
         else:
             num_configs_reduced = (params.num_configs-1)*bsize

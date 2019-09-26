@@ -144,3 +144,9 @@ def deprecated(use_late_times, logform):
     """check to make sure deprecated methods are not turned on"""
     assert not use_late_times, "no known solution for complex energies"
     assert not logform, "log form of GEVP introduces systematic error"
+
+def randomize_data_check(randomize_energies, eff_mass):
+    """Assert for random gaussian data"""
+    assert not randomize_energies or eff_mass,\
+        "only constant fits supported for random data"
+

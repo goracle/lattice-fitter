@@ -23,7 +23,7 @@ from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE
 from latfit.config import PRINT_CORR
-from latfit.config import GEVP
+from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
 
@@ -36,6 +36,32 @@ except NameError:
         """Line profiler default."""
         return arg2
     PROFILE = profile
+
+def randomize_data(params, reuse, reuse_blocked, coords):
+    """Replace data by avg + gaussian noise"""
+    if isinstance(reuse, dict):
+        reuse = rearrange_reuse_dict(params, reuse)
+    if isinstance(reuse_blocked, dict):
+        reuse_blocked = rearrange_reuse_dict(params, reuse_blocked)
+    dev = em.acstd(reuse)
+    avg = em.acmean(reuse, axis=0)
+    avgblkd = em.acmean(reuse_blocked, axis=0)
+    nconfigs = len(reuse)
+    assert nconfigs == len(reuse_blocked),\
+        str(nconfigs)+" "+str(len(reuse_blocked))
+    for i in range(nconfigs):
+        noise = np.random.normal(0, dev, avgblkd.shape)
+        reuse[i] = avg + noise
+        reuse_blocked[i] = avgblkd + noise
+        assert np.all(reuse[i] == reuse_blocked[i]),\
+            str(avg)+" "+str(avgblkd)
+    new_avg = em.acmean(reuse, axis=0)
+    # new_avgblked = em.acmean(reuse_blocked, axis=0)
+    for i, _ in enumerate(coords):
+        coords[i] = [coords[i][0], new_avg[i]]
+    coords = np.array(coords)
+    return reuse, reuse_blocked, coords
+
 
 @PROFILE
 def singlefit(input_f, fitrange, xmin, xmax, xstep):
@@ -61,7 +87,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     reuse = rearrange_reuse_dict(params, reuse)
 
     # block the ensemble
-    if singlefit.reuse_blocked is None:
+    if singlefit.reuse_blocked is None or RANDOMIZE_ENERGIES:
         singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
 
 
@@ -98,6 +124,10 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                                          singlefit.error2 is None else\
                                          singlefit.error2
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
+
+    if RANDOMIZE_ENERGIES:
+        reuse, singlefit.reuse_blocked, coords = randomize_data(
+            params, reuse, singlefit.reuse_blocked, coords)
 
     if FIT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':

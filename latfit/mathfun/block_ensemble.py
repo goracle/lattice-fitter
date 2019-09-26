@@ -10,6 +10,7 @@ from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
 from latfit.config import BOOTSTRAP_BLOCK_SIZE
+from latfit.config import RANDOMIZE_ENERGIES
 import latfit.config
 
 print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
@@ -57,7 +58,10 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
         # find bootstrap average
         ret = copy.deepcopy(np.array(retblk, dtype=reuse_inv.dtype))
         mean = em.acmean(ret, axis=0)
-        ret = dojackknife(ret)
+
+        # jackknife in prep for covariance matrix
+        if not RANDOMIZE_ENERGIES:
+            ret = dojackknife(ret)
         assert np.allclose(mean, em.acmean(ret, axis=0), rtol=1e-12)
         avg = copy.deepcopy(np.asarray(avg))
         assert avg.shape[0] == mean.shape[0], "time extent does not match"
