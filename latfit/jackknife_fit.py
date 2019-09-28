@@ -1055,8 +1055,10 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         block == reuse
         DOUBLE elimination jackknife
         """
+        lcon = len(reuse_blocked) if RANDOMIZE_ENERGIES else 1
         if latfit.config.BOOTSTRAP or RANDOMIZE_ENERGIES:
-            ret = reuse_blocked-em.acmean(reuse_blocked, axis=0)
+            ret = (reuse_blocked-em.acmean(
+                reuse_blocked, axis=0))/np.sqrt(lcon)
         else:
             num_configs_reduced = (params.num_configs-1)*bsize
             ret = np.array([
