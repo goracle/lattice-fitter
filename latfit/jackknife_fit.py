@@ -246,7 +246,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.chisq.val, result_min.chisq.err = jack_mean_err(
             result_min.chisq.arr)
 
-        print(torchi(), result_min.chisq.val/result_min.misc.dof)
+        print(torchi(), result_min.chisq.val/result_min.misc.dof,
+              "std error of", torchi(), result_min.chisq.err)
 
         return result_min, result_min.energy.err
 else:
@@ -797,7 +798,8 @@ if CORRMATRIX:
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
-            reweight = np.zeros((lent, params2.dimops, lent, params2.dimops))
+            reweight = np.zeros((lent, params2.dimops,
+                                 lent, params2.dimops))
             for i in range(lent):
                 for j in range(params2.dimops):
                     reweight[i][j][i][j] = 1.0/np.sqrt(covjack[i][j][i][j])

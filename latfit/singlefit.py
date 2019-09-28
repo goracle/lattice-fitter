@@ -37,15 +37,24 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def avgtime_replace(params, avg):
+    """Replace all the time slice data in the average
+    with average over time"""
+    tavg = em.acmean(avg, axis=0)
+    assert params.dimops == len(tavg)
+    for i, _ in enumerate(avg):
+        avg[i] = tavg
+    return avg
+
 def randomize_data(params, reuse, reuse_blocked, coords):
     """Replace data by avg + gaussian noise"""
     if isinstance(reuse, dict):
         reuse = rearrange_reuse_dict(params, reuse)
     if isinstance(reuse_blocked, dict):
         reuse_blocked = rearrange_reuse_dict(params, reuse_blocked)
-    dev = em.acstd(reuse)
-    avg = em.acmean(reuse, axis=0)
-    avgblkd = em.acmean(reuse_blocked, axis=0)
+    dev = em.acstd(reuse)*np.sqrt(len(reuse)-1)*np.sqrt(len(reuse))
+    avg = avgtime_replace(params, em.acmean(reuse, axis=0))
+    avgblkd = avgtime_replace(params, em.acmean(reuse_blocked, axis=0))
     nconfigs = len(reuse)
     assert nconfigs == len(reuse_blocked),\
         str(nconfigs)+" "+str(len(reuse_blocked))
