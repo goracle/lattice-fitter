@@ -10,7 +10,7 @@ from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
 from latfit.config import BOOTSTRAP_BLOCK_SIZE
-from latfit.config import RANDOMIZE_ENERGIES
+from latfit.config import RANDOMIZE_ENERGIES, GEVP, EFF_MASS
 import latfit.config
 
 print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
@@ -28,12 +28,33 @@ def build_choices_set(block, nconfigs):
         ret.add(remainder)
     return ret
 
+if GEVP and EFF_MASS:
+    
+    def test_avgs(reuse_inv):
+        """if EFF_MASS and GEVP,
+        then test to make sure all the averages have been shifted
+        to be constant with respect to time
+        """
+        avg = em.acmean(reuse_inv)
+        zero = avg-avg[0]
+        assert np.allclose(zero, 0.0, rtol=1e-14),\
+            "avg:\n"+str(avg)+" zero:\n"+str(zero)
+
+else:
+    def test_avgs(_):
+        """if EFF_MASS and GEVP,
+        then test to make sure all the averages have been shifted
+        to be constant with respect to time
+        """
+
+
 def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """Generate a bootstrapped version of the ensemble
     with replacement, then jackknife it
     """
     if latfit.config.BOOTSTRAP:
         reuse_inv = np.array(copy.deepcopy(np.array(reuse_inv)))
+        test_avgs(reuse_inv)
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         block = BOOTSTRAP_BLOCK_SIZE
         assert block, str(block)
