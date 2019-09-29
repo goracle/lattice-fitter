@@ -26,6 +26,7 @@ from latfit.config import PRINT_CORR
 from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
+import latfit.jackknife_fit as jack_module
 
 import latfit.mathfun.chi_sq as chisq
 
@@ -250,13 +251,13 @@ def set_bootstrap_shift(result_min):
             print("part2 =", part2)
             raise
     print("setting bootstrap shift to fit function with value:", shift)
-    jackknife_fit.CONST_SHIFT = shift
+    jack_module.CONST_SHIFT = shift
 
 def reset_bootstrap_const_shift():
     """Set const. shift to 0
     (for initial fit)
     """
-    jackknife_fit.CONST_SHIFT = np.zeros(1000)
+    jack_module.CONST_SHIFT = 0
 
 def debug_print(coords_full, cov_full):
     """Debug print

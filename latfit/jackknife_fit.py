@@ -45,7 +45,7 @@ from latfit.utilities.actensordot import actensordot
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
-CONST_SHIFT = np.zeros(1000)
+CONST_SHIFT = 0
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -65,15 +65,34 @@ def torchi():
         ret = 't^2/dof='
     return ret
 
+def convert_coord_dict(shift):
+    """Convert coord dict to array"""
+    ret = shift
+    if shift:
+        ret = []
+        keys = []
+        for i in shift:
+            keys.append(i)
+        keys = sorted(keys)
+        for i in keys:
+            ret.append(shift[i])
+        ret = np.array(ret)
+    return ret
+
 def apply_shift(coords_jack_reuse):
     """apply the bootstrap constant shift to the averages"""
+    check = copy.deepcopy(np.array(coords_jack_reuse))
     coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
-    shift = 0 if not np.all(CONST_SHIFT) else CONST_SHIFT
-    sh1 = np.asarray(shift).shape
+    shift = 0 if not CONST_SHIFT else CONST_SHIFT
+    shift_arr = convert_coord_dict(shift)
+    sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
     if np.all(sh2[1:] == sh1) or not sh1:
+        shift = shift_arr
         try:
-            coords_jack_reuse += shift
+            coords_jack_reuse = coords_jack_reuse + shift
+            assert np.allclose(check + shift, coords_jack_reuse,
+                               rtol=1e-14)
         except TypeError:
             print(coords_jack_reuse)
             print(shift)
@@ -82,6 +101,8 @@ def apply_shift(coords_jack_reuse):
     else:
         for i, coord in enumerate(coords_jack_reuse):
             coords_jack_reuse[i][1] += shift[int(coord[0])]
+            assert np.allclose(check[i][1] + shift[int(
+                coord[0])], coords_jack_reuse[i][1], rtol=1e-14)
     return coords_jack_reuse
 
 if JACKKNIFE_FIT == 'FROZEN':
@@ -886,8 +907,8 @@ def get_doublejk_data(params, coords_jack, reuse,
 
     reuse_new = np.array(copy.deepcopy(np.array(reuse)))
     reuse_blocked_new = np.array(copy.deepcopy(np.array(reuse_blocked)))
-    #reuse_new = apply_shift(reuse_new)
-    #reuse_blocked_new = apply_shift(reuse_blocked_new)
+    reuse_new = apply_shift(reuse_new)
+    reuse_blocked_new = apply_shift(reuse_blocked_new)
 
     # original data, obtained by reversing single jackknife procedure
     # we set the noise level to mimic the jackknifed data
@@ -900,7 +921,7 @@ def get_doublejk_data(params, coords_jack, reuse,
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
         reuse_inv, coords_jack, reuse_blocked)
-    coords_jack_new = apply_shift(coords_jack_new)
+    # coords_jack_new = apply_shift(coords_jack_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
