@@ -207,19 +207,17 @@ def post_loop(meta, loop_store, plotdata,
         print("fit excluded points (indices):",
               latfit.config.FIT_EXCL)
 
-    #latfit.config.BOOTSTRAP = True
     if (not (meta.skiploop and latfit.config.MINTOL)\
         and METHOD == 'NaN') or not test_success\
         and (len(min_arr) + len(overfit_arr) > 1):
         latfit.config.MINTOL = True
+        print("fitting for representative fit")
         retsingle = singlefit(meta.input_f, meta.fitwindow,
                               meta.options.xmin, meta.options.xmax,
                               meta.options.xstep)
     else:
+        print("reusing first successful fit result for representative fit")
         retsingle = retsingle_save
-        _ = singlefit(meta.input_f, meta.fitwindow,
-                      meta.options.xmin, meta.options.xmax,
-                      meta.options.xstep)
     result_min_close, param_err_close, \
         plotdata.coords, plotdata.cov = retsingle
 

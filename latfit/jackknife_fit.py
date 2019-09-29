@@ -19,7 +19,7 @@ from latfit.mathfun.block_ensemble import delblock, block_ensemble
 from latfit.mathfun.block_ensemble import bootstrap_ensemble
 
 from latfit.config import START_PARAMS, RANDOMIZE_ENERGIES
-from latfit.config import JACKKNIFE_FIT
+from latfit.config import JACKKNIFE_FIT, NBOOT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import JACKKNIFE_BLOCK_SIZE
@@ -208,10 +208,14 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min.pvalue.arr[config_num] = result_min.funpvalue(
                 result_min_jack.fun)
 
+            sys_str = str(result_min.systematics.arr[config_num][-1])\
+                if not np.isnan(result_min.systematics.arr[
+                        config_num][-1]) else ''
+
             # print results for this config
             print("config", config_num, ":",
                   result_min.energy.arr[config_num],
-                  result_min.systematics.arr[config_num][-1],
+                  sys_str,
                   torchi(), result_min_jack.fun/result_min.misc.dof,
                   "p-value=", result_min.pvalue.arr[config_num],
                   'dof=', result_min.misc.dof)
@@ -268,7 +272,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min.chisq.arr)
 
         print(torchi(), result_min.chisq.val/result_min.misc.dof,
-              "std error of", torchi(), result_min.chisq.err)
+              "std dev:", np.std(result_min.chisq.arr, ddof=1))
 
         return result_min, result_min.energy.err
 else:
