@@ -715,8 +715,9 @@ def getatwdict(atw, reverseatw, baseglob):
             print("rank", MPIRANK, "getting", fname,
                   num1, "/", len(splitglob))
             atwdict[fname] = getpi(fname, reverseatw)
+        print("starting gather, rank=", MPIRANK)
         atwdict = gatherdicts(atwdict)
-        print("gather complete")
+        print("gather complete, rank=", MPIRANK)
     return atwdict
 
 def get_topologies(atwdict, fgnames, atw_bools, topret):
