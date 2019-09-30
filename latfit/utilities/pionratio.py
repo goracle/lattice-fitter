@@ -523,10 +523,11 @@ def top_pi(fname, atw, reverseatw, atwdict, numt):
     if atw:
         if fname not in atwdict:
             toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
-            atwdict[fname] = (toppi1, toppi2)
             toppi = (toppi1, toppi2)
+            atwdict[fname] = toppi
         else:
             toppi1, toppi2 = atwdict[fname]
+            toppi = (toppi1, toppi2)
     return toppi, numt
 
 def shift_pi(gname, atw, reverseatw, atwdict, numt):
