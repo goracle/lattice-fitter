@@ -259,8 +259,8 @@ BOOTSTRAP = True
 
 # block size of bootstrap (how many configs to select at once)
 BOOTSTRAP_BLOCK_SIZE = 129
-BOOTSTRAP_BLOCK_SIZE = 43
 BOOTSTRAP_BLOCK_SIZE = 86
+BOOTSTRAP_BLOCK_SIZE = 43
 BOOTSTRAP_BLOCK_SIZE = 1
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
