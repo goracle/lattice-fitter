@@ -27,6 +27,7 @@ from latfit.utilities.postprod.h5jack import h5sum_blks
 from latfit.utilities.postprod.h5jack import avg_irreps, TSTEP
 from latfit.utilities.postprod.h5jack import tdismax
 import latfit.utilities.postprod.h5jack as h5jack
+import latfit.utilities.postprod.checkblks as checkblks
 from latfit.utilities import exactmean as em
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
@@ -240,7 +241,7 @@ def eff_energy(ratio, tmin, tmax, gflag):
 
     if effenergy < 0 and func(-effenergy) < 1e-12:
         effenergy *= -1
-    elif eff_energy < 0 and abs(effenergy) > 1e-8:
+    elif effenergy < 0 and abs(effenergy) > 1e-8:
         print("negative energy found")
         print(effenergy)
         print(func(effenergy))
@@ -442,7 +443,7 @@ def innerouter(top1pair, top2pair, mompair):
     mom1src, mom2src = mompair
 
     mom1snk1 = np.asarray(rf.mom(mom1snk1))
-    mom1snk2 = np.asarray(rf.mom(mom1snk1))
+    mom1snk2 = np.asarray(rf.mom(mom1snk2))
     mom1src = np.asarray(rf.mom(mom1src))
     mom2src = np.asarray(rf.mom(mom2src))
 
@@ -740,6 +741,8 @@ def get_topologies(atwdict, fgnames, atw_bools, topret):
 @PROFILE
 def piondirect(atw=False, reverseatw=False):
     """Do pion ratio unsummed."""
+    print("starting piondirect with atw:", atw, "reverseatw:",
+          reverseatw, "rank=", MPIRANK)
     if reverseatw:
         assert atw
     baseglob = glob.glob('pioncorrChk_*_unsummed.jkdat')
@@ -760,7 +763,8 @@ def piondirect(atw=False, reverseatw=False):
                                                     (atw, reverseatw),
                                                     (toppi, numt))
             keys = top_keys(fname, gname)
-            allblks, count = zero_out_and_count(allblks, count, keys, toppi)
+            allblks, count = zero_out_and_count(allblks, count,
+                                                keys, toppi)
             allblks = add_topologies(allblks, top1, top2, top3, keys)
     pionratiowrite(allblks, count, atw, reverseatw, numt)
 
@@ -915,13 +919,14 @@ PIONCORRS = ['pioncorrChk_mom000.jkdat',
              'pioncorrChk_p111.jkdat']
 
 for INDEX, _ in enumerate(PIONCORRS):
-    if not h5jack.FREEFIELD and '__name__' == '__main__':
+    if not checkblks.FREEFIELD and __name__ == '__main__':
         assert os.path.isfile(PIONCORRS[INDEX])
         DATAN = re.sub('.jkdat', '', PIONCORRS[INDEX])
         assert h5py.File(PIONCORRS[INDEX], 'r')
         tostore = np.array(h5py.File(PIONCORRS[INDEX], 'r')[DATAN])
         assert isinstance(PIONCORRS, list)
         PIONCORRS[INDEX] = tostore
+        print("file check done")
 
 @PROFILE
 def jkdatrm(fstr):
@@ -985,7 +990,7 @@ if __name__ == '__main__':
     h5jack.AVGTSRC = True # hack to get file names right.
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect()
-    print("after pion ratio")
+    print("after pion ratio, rank", MPIRANK)
     piondirect(atw=True)
     print("after atw, rank", MPIRANK)
     piondirect(atw=True, reverseatw=True)
