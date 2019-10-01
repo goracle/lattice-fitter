@@ -186,7 +186,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     gflag = 0 # 0 if no errors detected
     # take the ratio of the correlator at different time slices
     try:
-        rconfig = log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
+        rconfig = np.log(np.real(corr[:, tmin])/np.real(corr[:, tmax]))
     except FloatingPointError:
         #print('floating point error in correlator log.')
         #print("args:")
@@ -256,12 +256,8 @@ def append_energy_amps(loop, ttup, corr, gflag):
     num, ratio = loop
     tmin, tmax = ttup
     energies = []
-    amps1 = []
-    amps2 = []
 
     assert ratio
-    assert len(amps1) == num
-    assert len(amps2) == num
 
     effenergy, flag = eff_energy(ratio, tmin, tmax, gflag)
 
@@ -276,24 +272,31 @@ def append_energy_amps(loop, ttup, corr, gflag):
     assert isinstance(amp2, np.complex)
     assert np.all(np.isnan([amp1, amp2])) or effenergy > 0 or abs(
         effenergy) < 1e-8
-    amps1.append(amp1)
-    amps2.append(amp2)
-    energies.append(effenergy)
     #print('effenergy', effenergy, 'amp1', amp1, 'amp2', amp2)
-    return amps1, amps2, energies
+    return amp1, amp2, effenergy
 
 
 def amps_energies(rconfig, tmin, tmax, corr, gflag):
     """Find effective amplitudes and energies"""
     # lists containing all the configs and time separations
+    amps1 = []
+    amps2 = []
+    energies = []
     for num, ratio in enumerate(rconfig):
-        amps1, amps2, energies = append_energy_amps(
+        amp1, amp2, effenergy = append_energy_amps(
             (num, ratio), (tmin, tmax), corr, gflag)
+        assert len(amps1) == num, str(num)+" "+str(len(amps1))
+        assert len(amps2) == num, str(num)+" "+str(len(amps2))
+        amps1.append(amp1)
+        amps2.append(amp2)
+        energies.append(effenergy)
     amps1 = np.array(amps1)
     amps2 = np.array(amps2)
     energies = np.asarray(energies)
-    assert amps1 and amps2, "length amps1: "+str(len(amps1))+\
-        " length amps2: "+str(len(amps2))
+    assert len(amps1) == len(energies),\
+        str(len(energies))+" "+str(len(amps1))
+    assert np.asarray(amps1).shape and np.asarray(amps2).shape,\
+        "length amps1: "+str(len(amps1))+" length amps2: "+str(len(amps2))
     try:
         agreement, errstr = agree(amps1, amps2)
         assert agreement
@@ -405,8 +408,15 @@ def morecorr(amp, expo, tdis, dt2, corr):
         if tdis < LT/2:
             assert newpi2[0] < newpi1[0], str(newpi2)+" "+str(newpi1)
     else:
-        newpi1 = amp*exp(-expo*tdis)
-        newpi2 = amp*exp(-expo*(LT-tdis))
+        try:
+            newpi1 = amp*np.exp(-expo*tdis)
+            newpi2 = amp*np.exp(-expo*(LT-tdis))
+        except TypeError:
+            print(amp.shape)
+            print(expo.shape)
+            print(LT)
+            print(tdis)
+            raise
     return newpi1, newpi2
 
 def getpi(fname, reverseatw):
@@ -440,6 +450,8 @@ def innerouter(top1pair, top2pair, mompair):
     """
     top1, mom1snk1 = top1pair
     top2, mom1snk2 = top2pair
+    mom1snk1 = str(mom1snk1)
+    mom1snk2 = str(mom1snk2)
     mom1src, mom2src = mompair
 
     mom1snk1 = np.asarray(rf.mom(mom1snk1))
@@ -523,11 +535,10 @@ def top_pi(fname, atw, reverseatw, atwdict, numt):
     if atw:
         if fname not in atwdict:
             toppi1, toppi2 = atw_transform(toppi, reverseatw=reverseatw)
-            toppi = (toppi1, toppi2)
-            atwdict[fname] = toppi
+            atwdict[fname] = (toppi1, toppi2)
         else:
             toppi1, toppi2 = atwdict[fname]
-            toppi = (toppi1, toppi2)
+        toppi = (toppi1, toppi2)
     return toppi, numt
 
 def shift_pi(gname, atw, reverseatw, atwdict, numt):
@@ -546,6 +557,7 @@ def shift_pi(gname, atw, reverseatw, atwdict, numt):
             atwdict[gname] = (bottompi1, bottompi2)
         else:
             bottompi1, bottompi2 = atwdict[gname]
+        bottompi = (bottompi1, bottompi2)
 
     # roll the tsrc of one of the pions back by TSEP
     if atw:
@@ -672,25 +684,26 @@ def top_keys(fname, gname):
 def zero_out_and_count(allblks, count, keys, toppi):
     """Zero out the output container and count the topologies added together
     """
+    nconf = len(toppi[0]) if len(toppi) == 2 else len(toppi)
     key1, key3halves, key2, key3 = keys
     if key1 not in allblks:
-        allblks[key1] = np.zeros((len(toppi), LT), dtype=np.complex)
+        allblks[key1] = np.zeros((nconf, LT), dtype=np.complex)
         count[key1] = 1
     else:
         count[key1] += 1
     if key3halves not in allblks:
-        allblks[key3halves] = np.zeros((len(toppi), LT),
+        allblks[key3halves] = np.zeros((nconf, LT),
                                        dtype=np.complex)
         count[key3halves] = 1
     else:
         count[key3halves] += 1
     if key2 not in allblks:
-        allblks[key2] = np.zeros((len(toppi), LT), dtype=np.complex)
+        allblks[key2] = np.zeros((nconf, LT), dtype=np.complex)
         count[key2] = 1
     else:
         count[key2] += 1
     if key3 not in allblks:
-        allblks[key3] = np.zeros((len(toppi), LT), dtype=np.complex)
+        allblks[key3] = np.zeros((nconf, LT), dtype=np.complex)
         count[key3] = 1
     else:
         count[key3] += 1
@@ -736,7 +749,7 @@ def get_topologies(atwdict, fgnames, atw_bools, topret):
     # for use in I=1
     # top3 = -1*top2
 
-    assert np.asarray(toppi).shape == bottompi.shape,\
+    assert np.asarray(toppi).shape == np.asarray(bottompi).shape,\
         "shape mismatch"
     return top1, top2, -1*top2, numt
 
