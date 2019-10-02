@@ -251,7 +251,7 @@ if GEVP:
     assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
 
 # Bootstrap params
-NBOOT = 1000 # until it saturates (should be infinity)
+NBOOT = 2000 # until it saturates (should be infinity)
 # whether to get accurate p-values.  usually best to leave this false
 # it is automatically turned on for final fit
 BOOTSTRAP = False

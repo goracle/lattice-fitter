@@ -59,14 +59,14 @@ def err_arr(fname, freqarr, avg):
     """Get the error array"""
     # get file name for error
     if 'I' not in fname:
-        errfn = fname.replace('_', "_err_", 1)
+        errfn = fname.replace('.p', "_err.p", 1)
     else:
         errfn = re.sub('_mom', '_err_mom', fname)
     #print("file with stat errors:", errfn)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
         errdat = np.real(np.array(errdat))
-    assert errdat, "error array not found"
+    assert np.array(errdat).shape, "error array not found"
 
     print('shape:', freqarr.shape, avg)
     print('shape2:', errdat.shape)
@@ -224,15 +224,26 @@ def make_hist(fname):
 
             # prints the sorted results
             output_loop(median_store, freqarr, avg[dim],
-                        [fit_range_dim(
-                            np.asarray(exclarr[list(freq).index(i.val)]),
-                            dim) for i, _ in enumerate(median_store[0])])
+                        build_sliced_fitrange_list(median_store, freq,
+                                                   exclarr, dim))
 
             print("saving plot as filename:", save_str)
 
             pdf.savefig()
 
             plt.show()
+
+def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
+    """Get all the fit ranges for a particular dimension"""
+    ret = []
+    for _, i in enumerate(median_store[0]):
+        effmass = i[0].val
+        index = list(freq).index(effmass)
+        fitrange = exclarr[index]
+        fitrange = np.array(fitrange)
+        dimfit = fit_range_dim(fitrange, dim)
+        ret.append(dimfit)
+    return ret
 
 def fit_range_dim(lexcl, dim):
     """Get the fit range for a particular dimension"""
@@ -246,7 +257,7 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
     """
     median_err, median = median_store
     maxdiff = 0
-    for _, (i, pval) in enumerate(median_err):
+    for i, (effmass, pval) in enumerate(median_err):
         fit_range = fit_range_arr[i]
         # skip the single time slice points for GEVP
         if pval == 1.0 and hasattr(
@@ -254,14 +265,14 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                     freqarr.shape[-1]) > 1:
             continue
         pval = trunc(pval)
-        median_diff = i-median
+        median_diff = effmass-median
         median_diff = gvar.gvar(abs(median_diff.val),
-                                max(i.sdev, median.sdev))
-        avg_diff = i-avg_dim
+                                max(effmass.sdev, median.sdev))
+        avg_diff = effmass-avg_dim
         avg_diff = gvar.gvar(abs(avg_diff.val),
-                             max(i.sdev, avg_dim.sdev))
+                             max(effmass.sdev, avg_dim.sdev))
 
-        ind_diff = diff_ind(i, np.array(median_err)[:, 0])
+        ind_diff = diff_ind(effmass, np.array(median_err)[:, 0])
 
         if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                 median_diff.val) > abs(median_diff.sdev):
@@ -270,7 +281,7 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
             #print("diffs", ind_diff, median_diff, avg_diff)
             #print("")
         elif ind_diff.val or ind_diff.sdev:
-            print(i, pval, fit_range)
+            print(effmass, pval, fit_range)
             maxdiff = max(
                 maxdiff, np.abs(ind_diff.val-ind_diff.sdev)/ind_diff.sdev)
             if maxdiff == np.abs(
@@ -279,7 +290,7 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                 print(ind_diff)
                 print("")
         else:
-            print(i, pval, fit_range)
+            print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
     print("p-value weighted mean =", avg_dim)
 
@@ -300,7 +311,7 @@ def addoffset(hist):
                 dup[j] += 1
                 uniqs[j] = dup[i]
     print(uniqs)
-    for i in enumerate(dup):
+    for i, _ in enumerate(dup):
         if dup[i]:
             offset = 0.1*uniqs[i]/dup[i]
             hist[i] += offset

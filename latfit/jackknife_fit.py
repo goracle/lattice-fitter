@@ -87,8 +87,8 @@ def apply_shift(coords_jack_reuse):
     shift_arr = convert_coord_dict(shift)
     sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
-    if np.all(sh2[1:] == sh1) or not sh1:
-        shift = shift_arr
+    if not GEVP or (np.all(sh2[1:] == sh1) or not sh1):
+        shift = collapse_shift(shift_arr)
         try:
             coords_jack_reuse = coords_jack_reuse + shift
             assert np.allclose(check + shift, coords_jack_reuse,
@@ -104,6 +104,23 @@ def apply_shift(coords_jack_reuse):
             assert np.allclose(check[i][1] + shift[int(
                 coord[0])], coords_jack_reuse[i][1], rtol=1e-14)
     return coords_jack_reuse
+
+if not GEVP:
+    def collapse_shift(shift):
+        """Collapse the shift structure for non GEVP fits"""
+        if hasattr(shift, '__iter__'):
+            ret = []
+            for i in shift:
+                ret.append(i[0])
+            ret = np.array(ret)
+        else:
+            ret = shift
+        return ret
+else:
+    def collapse_shift(shift):
+        """Collapse the shift structure for non GEVP fits"""
+        return shift
+        
 
 if JACKKNIFE_FIT == 'FROZEN':
     pass
