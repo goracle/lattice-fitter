@@ -81,13 +81,13 @@ def convert_coord_dict(shift):
 
 def apply_shift(coords_jack_reuse):
     """apply the bootstrap constant shift to the averages"""
-    check = copy.deepcopy(np.array(coords_jack_reuse))
     coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
     shift = 0 if not CONST_SHIFT else CONST_SHIFT
     shift_arr = convert_coord_dict(shift)
     sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
-    if not GEVP or (np.all(sh2[1:] == sh1) or not sh1):
+    check = copy.deepcopy(np.array(coords_jack_reuse))
+    if not GEVP or np.all(sh2[1:] == sh1):
         shift = collapse_shift(shift_arr)
         try:
             coords_jack_reuse = coords_jack_reuse + shift
@@ -99,10 +99,13 @@ def apply_shift(coords_jack_reuse):
             print(sh1, sh2)
             raise
     else:
-        for i, coord in enumerate(coords_jack_reuse):
-            coords_jack_reuse[i][1] += shift[int(coord[0])]
-            assert np.allclose(check[i][1] + shift[int(
-                coord[0])], coords_jack_reuse[i][1], rtol=1e-14)
+        for i, _ in enumerate(coords_jack_reuse):
+            time = int(coords_jack_reuse[i][0])
+            shiftc = shift if not shift else shift[time]
+            coords_jack_reuse[i][1] += shiftc
+            assert np.allclose(
+                check[i][1] + shiftc,
+                coords_jack_reuse[i][1], rtol=1e-14)
     return coords_jack_reuse
 
 if not GEVP:
@@ -928,8 +931,8 @@ def get_doublejk_data(params, coords_jack, reuse,
 
     reuse_new = np.array(copy.deepcopy(np.array(reuse)))
     reuse_blocked_new = np.array(copy.deepcopy(np.array(reuse_blocked)))
-    reuse_new = apply_shift(reuse_new)
-    reuse_blocked_new = apply_shift(reuse_blocked_new)
+    # reuse_new = apply_shift(reuse_new)
+    # reuse_blocked_new = apply_shift(reuse_blocked_new)
 
     # original data, obtained by reversing single jackknife procedure
     # we set the noise level to mimic the jackknifed data
@@ -942,7 +945,7 @@ def get_doublejk_data(params, coords_jack, reuse,
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
         reuse_inv, coords_jack, reuse_blocked)
-    # coords_jack_new = apply_shift(coords_jack_new)
+    coords_jack_new = apply_shift(coords_jack_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)

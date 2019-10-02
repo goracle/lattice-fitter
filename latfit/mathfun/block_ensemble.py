@@ -54,7 +54,7 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """
     if latfit.config.BOOTSTRAP:
         reuse_inv = np.array(copy.deepcopy(np.array(reuse_inv)))
-        test_avgs(reuse_inv)
+        # test_avgs(reuse_inv)
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         block = BOOTSTRAP_BLOCK_SIZE
         assert block, str(block)

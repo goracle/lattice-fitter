@@ -66,9 +66,11 @@ def aroundtheworld_pionratio(diag_name, timeij):
             ret *= math.exp(exp2*timeij)
             time2 = timeij-DELTA_T2_MATRIX_SUBTRACTION
             sub2 = proc_folder(name, time2)
-            time3 = timeij-DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
+            time3 = timeij-\
+                DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
             sub3 = proc_folder(name, time3)
-            ret -= sub2*math.exp((exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
+            ret -= sub2*math.exp((
+                exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)
     return ret
 
 def evals_pionratio(timeij, delta_t, switch=False):
