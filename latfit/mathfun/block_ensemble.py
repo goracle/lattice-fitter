@@ -129,9 +129,8 @@ else:
                 newblk = delblock(i, reuse_inv, bsize)
                 retblked.append(em.acmean(newblk, axis=0))
             assert len(retblked) == num_configs, "bug"
-            ret = np.array(retblked)
-            ret = dojackknife(ret)
-            ret = np.array(ret, dtype=np.array(reuse).dtype)
+            ret = np.array(retblked, dtype=np.array(reuse).dtype)
+            # ret = dojackknife(ret)
             assert ret.shape[1:] == reuse.shape[1:],\
                 str(ret.shape)+" "+str(reuse.shape)
         else:

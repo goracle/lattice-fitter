@@ -1,4 +1,5 @@
 """Get a single entry in the covariance matrix."""
+import copy
 import numpy as np
 from accupy import kdot
 
@@ -39,7 +40,12 @@ else:
                 (avgi-reuse_blocked['i'][k]),
                 (em.acmean(reuse_blocked['j'], axis=0)-reuse_blocked['j'][
                     k])) for k in range(num_configs)], axis=0)
+
+        if not get_coventry_gevp.printed:
+            # print(coventry)
+            get_coventry_gevp.printed = True
         return coventry
+    get_coventry_gevp.printed = False
 
 if UNCORR:
     def get_coventry_simple(reuse_blocked, sameblk, avgi):
@@ -78,6 +84,9 @@ def get_blocked(reuse):
     assert nconfigs == int(nconfigs), str(nconfigs)
     nconfigs = int(nconfigs)
     reuse_blocked = {}
-    reuse_blocked['i'] = block_ensemble(nconfigs, reuse['i'])
-    reuse_blocked['j'] = block_ensemble(nconfigs, reuse['j'])
+    reuse_blocked['i'] = np.array(copy.deepcopy(
+        block_ensemble(nconfigs, reuse['i'])))
+    reuse_blocked['j'] = np.array(copy.deepcopy(
+        block_ensemble(nconfigs, reuse['j'])))
+    assert len(reuse['i']) == len(reuse['j'])
     return reuse_blocked
