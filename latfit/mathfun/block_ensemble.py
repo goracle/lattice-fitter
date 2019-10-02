@@ -85,7 +85,8 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
             ret = dojackknife(ret)
         assert np.allclose(mean, em.acmean(ret, axis=0), rtol=1e-12)
         avg = copy.deepcopy(np.asarray(avg))
-        assert avg.shape[0] == mean.shape[0], "time extent does not match"
+        assert avg.shape[0] == mean.shape[0],\
+            "time extent does not match"
 
         # store the bootstrap average coordinates
         # use 'avg' variable only for x (time) coordinates

@@ -201,6 +201,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
         latfit.config.BOOTSTRAP = True
         set_bootstrap_shift(result_min)
         # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
+        nconfig = int(params.num_configs)
         params.num_configs = NBOOT
         print("starting computation of null distribution from bootstrap")
         print("NBOOT =", NBOOT)
@@ -214,6 +215,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
         assert result_min.misc.dof == result_minq.misc.dof
         bootstrap_pvalue.result_minq[result_min.misc.dof] = result_minq
         resmin.NULL_CHISQ_ARRS[result_min.misc.dof] = result_minq.chisq.arr
+        params.num_configs = nconfig
     else:
         result_minq = bootstrap_pvalue.result_minq[result_min.misc.dof]
 
