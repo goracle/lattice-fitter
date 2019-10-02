@@ -36,7 +36,7 @@ def massfunc():
     pionstr = '_pioncorrChk_'
     if massfunc.MASS is None:
         try:
-            fn1 = open('x_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
+            fn1 = open('energy_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
             massfunc.MASS = pickle.load(fn1)
             print("load of jackknifed mass successful")
             massfunc.MASS = massfunc.MASS.flatten()
@@ -44,7 +44,7 @@ def massfunc():
         except FileNotFoundError:
             print("jackknifed mass not found")
             massfunc.MASS = MASS
-            #raise
+            raise
     return massfunc.MASS
 massfunc.MASS = None
 
