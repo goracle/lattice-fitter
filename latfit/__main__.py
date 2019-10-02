@@ -812,21 +812,6 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
         os.utime(fn1.fileno() if os.utime in os.supports_fd else fname,
                  dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
-@PROFILE
-def sum_files_total(basename, local_total):
-    """Find a total by using temp files"""
-    fn1 = open(basename+str(MPIRANK)+".temp", 'w')
-    fn1.write(str(local_total))
-    total = 0
-    for i in range(MPISIZE):
-        readname = basename+str(i)+".temp"
-        touch(readname)
-        gn1 = open(readname, "r")
-        lines = gn1.readlines()
-        if lines:
-            total += int(lines[0])
-    return total
-
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
 
