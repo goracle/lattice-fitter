@@ -20,7 +20,9 @@ def gevp_statements(gevp_dirs, gevp, dim, mult, tvecs):
 
 def mod_superjack(superjack_cutoff, jackknife_block_size, check_ids_minus_2):
     superjack_cutoff /= jackknife_block_size
-    assert int(superjack_cutoff) == superjack_cutoff
+    # assert int(superjack_cutoff) == superjack_cutoff
+    print("int(superjack_cutoff), superjack_cutoff:",
+          int(superjack_cutoff), superjack_cutoff)
     superjack_cutoff = int(superjack_cutoff)
     superjack_cutoff = 0 if not check_ids_minus_2 else superjack_cutoff
     return superjack_cutoff

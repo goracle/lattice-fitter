@@ -109,27 +109,33 @@ else:
         (for block jackknife)
         eliminate bsize configs
         """
-        # original data, obtained by reversing single jackknife procedure
-        assert not isinstance(reuse, dict), "dict passed to ensemble blocker"
-        reuse_inv = inverse_jk(reuse, num_configs)
-        assert len(reuse_inv) == bsize*num_configs, "array mismatch:"+str(
-            bsize)+" "+str(num_configs)+" "+str(len(reuse_inv))
-        assert isinstance(bsize, int),\
-            "jackknife block size should be integer"
-        assert bsize > 1,\
-            "jackknife block size should be greater than one for this setting"
+        if bsize > 1:
+            # original data, obtained by reversing single jackknife procedure
+            assert not isinstance(reuse, dict),\
+                "dict passed to ensemble blocker"
+            reuse_inv = inverse_jk(reuse, num_configs)
+            assert len(reuse_inv) == bsize*num_configs, "array mismatch:"+str(
+                bsize)+" "+str(num_configs)+" "+str(len(reuse_inv))
+            assert isinstance(bsize, int),\
+                "jackknife block size should be integer"
+            assert bsize > 1,\
+                "jackknife block size should be greater than one"+\
+                " for this setting"
 
-        # blocked
-        retblked = []
-        for i in range(num_configs):
-            newblk = delblock(i, reuse_inv, bsize)
-            retblked.append(em.acmean(newblk, axis=0))
-        assert len(retblked) == num_configs, "bug"
-        ret = np.array(retblked, dtype=reuse.dtype)
-        ret = dojackknife(ret)
-        assert ret.shape[1:] == reuse.shape[1:],\
-            str(ret.shape)+" "+str(reuse.shape)
-        return retblked
+            # blocked
+            retblked = []
+            for i in range(num_configs):
+                newblk = delblock(i, reuse_inv, bsize)
+                retblked.append(em.acmean(newblk, axis=0))
+            assert len(retblked) == num_configs, "bug"
+            ret = np.array(retblked)
+            ret = dojackknife(ret)
+            ret = np.array(ret, dtype=np.array(reuse).dtype)
+            assert ret.shape[1:] == reuse.shape[1:],\
+                str(ret.shape)+" "+str(reuse.shape)
+        else:
+            ret = reuse
+        return ret
 
 def delblock(config_num, reuse_inv, bsize=JACKKNIFE_BLOCK_SIZE):
     """Delete JACKKNIFE_BLOCK_SIZE configs

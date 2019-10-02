@@ -22,7 +22,7 @@ from latfit.config import START_PARAMS, RANDOMIZE_ENERGIES
 from latfit.config import JACKKNIFE_FIT, NBOOT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
-from latfit.config import JACKKNIFE_BLOCK_SIZE
+from latfit.config import JACKKNIFE_BLOCK_SIZE, NOLOOP
 from latfit.config import UNCORR, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
@@ -216,6 +216,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # to fix the leading order around the world term
             # so shift it back
             if not latfit.config.BOOTSTRAP:
+                
                 result_min.energy.arr[config_num] += correction_en(
                     result_min, config_num)
 
@@ -308,7 +309,7 @@ def toomanybadfitsp(result_min):
     """
     avg = em.acmean(result_min.chisq.arr)
     pvalue = result_min.funpvalue(avg)
-    if pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP:
+    if pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP and not NOLOOP:
         raise TooManyBadFitsError(chisq=avg, pvalue=pvalue, uncorr=UNCORR)
 
 
@@ -359,7 +360,7 @@ def skip_range(params, result_min, skip_votes,
             0+SUPERJACK_CUTOFF]) < 5*np.sqrt(
                 2*result_min.misc.dof/(
                     params.num_configs-1))
-    if skiprange and not latfit.config.BOOTSTRAP:
+    if skiprange and not latfit.config.BOOTSTRAP and not NOLOOP:
         raise BadChisq(
             chisq=result_min_jack.fun/result_min.misc.dof,
             dof=result_min.misc.dof, uncorr=UNCORR)
@@ -378,7 +379,7 @@ def skip_range(params, result_min, skip_votes,
                 str(result_min.pvalue.arr[0])+" "+\
                 str(result_min.pvalue.arr[1])+" ")
         #sys.exit(1)
-        if not latfit.config.BOOTSTRAP:
+        if not latfit.config.BOOTSTRAP and not NOLOOP:
             raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE

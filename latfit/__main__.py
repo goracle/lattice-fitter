@@ -218,6 +218,7 @@ def post_loop(meta, loop_store, plotdata,
     else:
         print("reusing first successful fit result for representative fit")
         retsingle = retsingle_save
+        param_err = retsingle_save[1]
     result_min_close, param_err_close, \
         plotdata.coords, plotdata.cov = retsingle
 
