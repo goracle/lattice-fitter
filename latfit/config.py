@@ -149,7 +149,13 @@ ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
 
 # block size of blocked jackknifed technique
 # usual jackknife sets this to 1
-JACKKNIFE_BLOCK_SIZE = 1
+JACKKNIFE_BLOCK_SIZE = 2
+
+# block size of bootstrap (how many configs to select at once)
+BOOTSTRAP_BLOCK_SIZE = 129
+BOOTSTRAP_BLOCK_SIZE = 86
+BOOTSTRAP_BLOCK_SIZE = 43
+BOOTSTRAP_BLOCK_SIZE = 2
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
@@ -257,12 +263,6 @@ NBOOT = 2000 # until it saturates (should be infinity)
 BOOTSTRAP = False
 BOOTSTRAP = True
 
-# block size of bootstrap (how many configs to select at once)
-BOOTSTRAP_BLOCK_SIZE = 129
-BOOTSTRAP_BLOCK_SIZE = 86
-BOOTSTRAP_BLOCK_SIZE = 43
-BOOTSTRAP_BLOCK_SIZE = 1
-
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False
@@ -356,17 +356,6 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
-FIT_EXCL = [[], [2, 5, 6, 7, 8]]
-FIT_EXCL = [[], [], []]
-FIT_EXCL = [[5], [5, 6], [5, 6], []]
-FIT_EXCL = [[], [5, 10, 11, 12, 13, 14, 15, 16, 17],
-            [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
-FIT_EXCL = [[8.0], [8.0, 9.0, 13.0, 14.0],
-            [8.0, 9.0], [8.0, 12.0, 13.0, 14.0]]
-FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [[], [6.0, 7, 13.0, 14.0, 15.0, 16.0],
-            [6, 7, 12.0, 13.0, 14.0, 15.0, 16.0],
-            [6, 7, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]]
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 assert len(FIT_EXCL) == DIM or not GEVP
 
@@ -452,7 +441,7 @@ MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
-MAX_RESULTS = 3
+MAX_RESULTS = 16
 
 # modify the configs used and bin
 
