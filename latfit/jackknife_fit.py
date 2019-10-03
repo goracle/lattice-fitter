@@ -884,7 +884,9 @@ if JACKKNIFE_FIT == 'SINGLE':
         total_configs = params.num_configs*bsize
         num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
-        return covinv_jack * ((nsize)*(nsize-1))
+        norm = ((nsize)*(nsize-1))
+        norm = norm if latfit.config.BOOTSTRAP else 1/norm
+        return covinv_jack * norm
 
     def normalize_cov(covjack, params, bsize=JACKKNIFE_BLOCK_SIZE):
         """do the proper normalization of the
@@ -892,7 +894,9 @@ if JACKKNIFE_FIT == 'SINGLE':
         total_configs = params.num_configs*bsize
         num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
-        return covjack / ((nsize)*(nsize-1))
+        norm = 1/ ((nsize)*(nsize-1))
+        norm = norm if latfit.config.BOOTSTRAP else 1/norm
+        return covjack * norm
 
 elif JACKKNIFE_FIT == 'DOUBLE':
     @PROFILE
@@ -901,7 +905,9 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         total_configs = params.num_configs*bsize
         num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
-        return covinv_jack * ((nsize)/(nsize-1))
+        norm = ((nsize)/(nsize-1))
+        norm = norm if latfit.config.BOOTSTRAP else 1/norm
+        return covinv_jack * norm
 
     @PROFILE
     def normalize_cov(covjack, params, bsize=JACKKNIFE_BLOCK_SIZE):
@@ -910,7 +916,9 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         total_configs = params.num_configs*bsize
         num_configs_minus_block = nconfigs_minus_block(total_configs, bsize)
         nsize = num_configs_minus_block
-        return covjack / ((nsize)/(nsize-1))
+        norm = 1/((nsize)/(nsize-1))
+        norm = norm if latfit.config.BOOTSTRAP else 1/norm
+        return covjack * norm
 
 
 def nconfigs_minus_block(total_configs, bsize):
