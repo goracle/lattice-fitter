@@ -28,6 +28,7 @@ def binconf(jkblk):
                                        len(jkblk)/BINNUM))])
         ret = np.array([em.acmean(np.delete(inv2, j, axis=0), axis=0)
                         for j in range(len(inv2))])
+    print("updating title number of configs (after binning) to:", len(ret))
     latfit.finalout.mkplot.NUM_CONFIGS = len(ret)
     return ret
 

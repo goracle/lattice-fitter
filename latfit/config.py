@@ -150,13 +150,15 @@ ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
 # block size of blocked jackknifed technique
 # usual jackknife sets this to 1
 JACKKNIFE_BLOCK_SIZE = 1
+print("Using jackknife block size =", JACKKNIFE_BLOCK_SIZE)
 
 # block size of bootstrap (how many configs to select at once)
 BOOTSTRAP_BLOCK_SIZE = 129
 BOOTSTRAP_BLOCK_SIZE = 86
 BOOTSTRAP_BLOCK_SIZE = 43
-BOOTSTRAP_BLOCK_SIZE = JACKKNIFE_BLOCK_SIZE
-assert BOOTSTRAP_BLOCK_SIZE == JACKKNIFE_BLOCK_SIZE
+BOOTSTRAP_BLOCK_SIZE = 3
+#BOOTSTRAP_BLOCK_SIZE = JACKKNIFE_BLOCK_SIZE
+#assert BOOTSTRAP_BLOCK_SIZE == JACKKNIFE_BLOCK_SIZE
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
@@ -196,6 +198,8 @@ binout.SLOPPYONLY = SLOPPYONLY
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
 binout.BINNUM = BINNUM
+SUPERJACK_CUTOFF /= BINNUM
+SUPERJACK_CUTOFF = int(SUPERJACK_CUTOFF)
 
 # halve the data to check for consistencies (debug options)
 HALF = 'first half'

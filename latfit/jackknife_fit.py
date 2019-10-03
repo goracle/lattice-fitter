@@ -262,9 +262,6 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # pickle/unpickle the jackknifed arrays
         result_min = pickl(result_min)
 
-        # for title printing
-        latfit.finalout.mkplot.NUM_CONFIGS = len(result_min.energy.arr)
-
         # compute p-value jackknife uncertainty
         result_min.pvalue.val, result_min.pvalue.err = jack_mean_err(
             result_min.pvalue.arr)
@@ -1113,8 +1110,11 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         else:
             num_configs_reduced = (params.num_configs-1)*bsize
             assert len(reuse_inv_red) == num_configs_reduced
+            assert np.allclose(em.acmean(reuse_inv_red, axis=0),
+                               reuse_blocked[config_num], rtol=1e-14)
             ret = np.array([
                 em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
                 for i in range(num_configs_reduced)]) - reuse_blocked[
                         config_num]
+            assert len(ret) == num_configs_reduced
         return ret

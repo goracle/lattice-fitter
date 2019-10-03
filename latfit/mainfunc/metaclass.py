@@ -79,15 +79,13 @@ def update_num_configs(num_configs=None, input_f=None):
         for i in fn1:
             if GEVP:
                 for j in fn1[i]:
-                    latfit.finalout.mkplot.NUM_CONFIGS = np.array(
-                        fn1[i+'/'+j]).shape[0]
+                    num_configs = np.array(fn1[i+'/'+j]).shape[0]
                     break
             else:
-                latfit.finalout.mkplot.NUM_CONFIGS = np.array(
-                    fn1[i]).shape[0]
+                num_configs = np.array(fn1[i]).shape[0]
             break
-    elif num_configs != -1:
-        latfit.finalout.mkplot.NUM_CONFIGS = num_configs
+    print("updating title number of configs to:", num_configs)
+    latfit.finalout.mkplot.NUM_CONFIGS = num_configs
 
 
 class FitRangeMetaData:

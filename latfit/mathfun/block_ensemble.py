@@ -24,6 +24,14 @@ def build_choices_set(block, nconfigs):
             continue
         ret.add(i)
     remainder = nconfigs-(nconfigs % block)
+    try:
+        assert not (nconfigs % block),\
+            "blocking with a remainder is complicated and not supported yet"
+    except AssertionError:
+        print(nconfigs)
+        print(block)
+        print(remainder)
+        raise
     if remainder < nconfigs:
         ret.add(remainder)
     return ret
