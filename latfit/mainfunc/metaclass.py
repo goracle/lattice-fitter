@@ -169,7 +169,8 @@ class FitRangeMetaData:
         #latfit.config.BOOTSTRAP = True if self.lenprod == 0 else\
         #    latfit.config.BOOTSTRAP
         self.random_fit = True
-        if self.lenprod < MAX_ITER: # fit range is small, use brute force
+        # fit range is small, use brute force
+        if self.lenprod < MAX_ITER and not NOLOOP:
             self.random_fit = False
             prod = list(prod)
             prod = [str(i) for i in prod]
