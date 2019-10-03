@@ -269,6 +269,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(
             result_min.energy.arr)
+        print('param err:', result_min.energy.err)
 
         # compute the systematics and errors
         if SYS_ENERGY_GUESS is not None:
