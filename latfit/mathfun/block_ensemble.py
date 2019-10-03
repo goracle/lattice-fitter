@@ -147,5 +147,7 @@ def delblock(config_num, reuse_inv, bsize=JACKKNIFE_BLOCK_SIZE):
     ret = np.delete(reuse_inv,
                     np.arange(config_num*bsize, (config_num+1)*bsize, 1),
                     axis=0)
-    assert origl-bsize == len(ret)
+    if not latfit.config.BOOTSTRAP:
+        assert origl-bsize == len(ret),\
+            str(origl)+" "+str(bsize)+" "+str(len(ret))
     return ret
