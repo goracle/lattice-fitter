@@ -459,7 +459,14 @@ def correction_en(result_min, config_num):
         corre3 = 0
     ret = 0
     if GEVP:
-        ret = corre1+corre2+corre3
+        ret = add_corrections(corre1, corre2, corre3)
+    return ret
+
+def add_corrections(corre1, corre2, corre3):
+    """Add corrections, zeroing the None's"""
+    ret = corre1 if corre1 is not None else 0
+    ret = ret+corre2 if corre2 is not None else ret+0
+    ret = ret+corre3 if corre3 is not None else ret+0
     return ret
 
 

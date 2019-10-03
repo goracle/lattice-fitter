@@ -404,7 +404,6 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                 cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(gdisp.NORMS[i][i])
                 assert cmat[:, i, i].shape == tosub.shape
             elif len(cmat.shape) == 2 and len(cmat) != len(cmat[0]):
-                assert None, "why is this section still here?"
                 for item in tosub:
                     assert (item or zeroit) and not np.isnan(item)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(gdisp.NORMS[i][i])

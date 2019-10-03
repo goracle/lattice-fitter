@@ -347,6 +347,8 @@ if FIT_SPACING_CORRECTION:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
         DELTA_E2_AROUND_THE_WORLD)
+if np.any(np.isnan(DELTA_E_AROUND_THE_WORLD)):
+    DELTA_E_AROUND_THE_WORLD = None
 
 ## final delta e processing
 if DELTA_E_AROUND_THE_WORLD is not None:
