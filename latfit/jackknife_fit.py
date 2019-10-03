@@ -939,8 +939,6 @@ def get_doublejk_data(params, coords_jack, reuse,
 
     reuse_new = np.array(copy.deepcopy(np.array(reuse)))
     reuse_blocked_new = np.array(copy.deepcopy(np.array(reuse_blocked)))
-    # reuse_new = apply_shift(reuse_new)
-    # reuse_blocked_new = apply_shift(reuse_blocked_new)
 
     # original data, obtained by reversing single jackknife procedure
     # we set the noise level to mimic the jackknifed data
@@ -1114,6 +1112,7 @@ elif JACKKNIFE_FIT == 'DOUBLE':
                 reuse_blocked, axis=0))/np.sqrt(lcon)
         else:
             num_configs_reduced = (params.num_configs-1)*bsize
+            assert len(reuse_inv_red) == num_configs_reduced
             ret = np.array([
                 em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
                 for i in range(num_configs_reduced)]) - reuse_blocked[

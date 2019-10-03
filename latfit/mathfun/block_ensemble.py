@@ -143,7 +143,9 @@ def delblock(config_num, reuse_inv, bsize=JACKKNIFE_BLOCK_SIZE):
     """
     assert isinstance(config_num, int) or int(config_num) == config_num
     config_num = int(config_num)
+    origl = len(reuse_inv)
     ret = np.delete(reuse_inv,
                     np.arange(config_num*bsize, (config_num+1)*bsize, 1),
                     axis=0)
+    assert origl-bsize == len(ret)
     return ret
