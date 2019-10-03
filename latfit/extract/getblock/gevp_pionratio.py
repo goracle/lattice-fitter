@@ -9,6 +9,7 @@ around the world terms (technique due to D. Hoying).
 import sys
 import re
 import math
+import copy
 
 import numpy as np
 from scipy.stats import pearsonr
@@ -368,10 +369,11 @@ def running_avg(arr, blocksize):
 
 ### around the world subtraction
 
-def atwsub(cmat, timeij, delta_t, reverseatw=False):
+def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     """Subtract the atw vacuum saturation single pion correlators
     (non-interacting around the world term, single pion correlator squared)
     """
+    cmat = np.array(copy.deepcopy(np.array(cmat_arg)))
     origshape = cmat.shape
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
@@ -402,11 +404,13 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
                 cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(gdisp.NORMS[i][i])
                 assert cmat[:, i, i].shape == tosub.shape
             elif len(cmat.shape) == 2 and len(cmat) != len(cmat[0]):
+                assert None, "why is this section still here?"
                 for item in tosub:
                     assert (item or zeroit) and not np.isnan(item)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(gdisp.NORMS[i][i])
             else:
-                cmat[i, i] -= em.acmean(tosub, axis=0)*np.abs(gdisp.NORMS[i][i])
+                cmat[i, i] -= em.acmean(tosub,
+                                        axis=0)*np.abs(gdisp.NORMS[i][i])
                 #if not reverseatw:
                     #print(i, em.acmean(tosub, axis=0)/ cmat[i, i])
                 assert not em.acmean(tosub, axis=0).shape
@@ -414,7 +418,7 @@ def atwsub(cmat, timeij, delta_t, reverseatw=False):
     assert cmat.shape == origshape
     return cmat
 
-def atwsub_cmats(timeinfo, cmats_lhs, mean_cmats_lhs, cmat_rhs):
+def atwsub_cmats(timeinfo, cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs):
     """Wrapper for around the world subtraction"""
     # subtract the non-interacting around the world piece
     delta_t, timeij = timeinfo
@@ -422,7 +426,8 @@ def atwsub_cmats(timeinfo, cmats_lhs, mean_cmats_lhs, cmat_rhs):
         assert mean_cmats_lhs[i].shape == mean.shape
         mean_cmats_lhs[i] = atwsub(mean, timeij+i, delta_t)
         cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i, delta_t)
-    # mean_cmats_rhs = atwsub(
-    # mean_crhs, timeij-delta_t, delta_t, reverseatw=True)
-    cmat_rhs = atwsub(cmat_rhs, timeij-delta_t, delta_t, reverseatw=True)
-    return cmats_lhs, mean_cmats_lhs, cmat_rhs
+    mean_crhs = atwsub(mean_crhs, timeij-delta_t,
+                       delta_t, reverseatw=True)
+    cmat_rhs = atwsub(np.array(copy.deepcopy(np.array(cmat_rhs))),
+                      timeij-delta_t, delta_t, reverseatw=True)
+    return cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs

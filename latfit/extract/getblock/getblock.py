@@ -88,13 +88,13 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         cmat[num] = enforce_hermiticity(cmat[num])
         #print(num, cmat[num][1, 0], cmat[num][0, 1])
         #sys.exit(0)
-        if ISOSPIN != 0 and not MATRIX_SUBTRACTION:
-            pass
+        #if ISOSPIN != 0 and not MATRIX_SUBTRACTION:
+        #    pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
     mean = em.acmean(cmat, axis=0)
     checkherm(mean)
-    if decrease_var != 0:
+    if decrease_var != 1:
         cmat = variance_reduction(cmat, mean)
     return np.asarray(cmat), np.asarray(mean)
 
@@ -279,10 +279,10 @@ if EFF_MASS:
             file_tup, num_configs)
 
         # do the around the world subtraction
-        cmats_lhs, mean_cmats_lhs, cmat_rhs = atwsub_cmats(
+        cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = atwsub_cmats(
             (delta_t, timeij),
             cmats_lhs, mean_cmats_lhs,
-            cmat_rhs)
+            cmat_rhs, mean_crhs)
 
         num = 0
         # reset the list of allowed operator eliminations at the
