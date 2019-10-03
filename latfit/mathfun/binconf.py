@@ -8,7 +8,7 @@ import latfit.finalout.mkplot
 from latfit.utilities import exactmean as em
 
 
-def binconf(jkblk):
+def binconf(jkblk, binnum=BINNUM):
     """Dynamic binning of configs.  BINNUM configs per bin.
     """
     if not JACKKNIFE:
@@ -16,16 +16,16 @@ def binconf(jkblk):
         print("Attempting to bin configurations from jackknife blocks,")
         print("but jackknife correction to covariance matrix is not enabled.")
         sys.exit(1)
-    if BINNUM == 1:
+    if binnum == 1:
         ret = jkblk
 
     else:
-        assert len(jkblk)%BINNUM == 0,\
-            "non divisible BINNUM not supported:"+str(len(jkblk))
+        assert len(jkblk)%binnum == 0,\
+            "non divisible binnum not supported:"+str(len(jkblk))
         inv = em.acsum(jkblk, axis=0)-(len(jkblk)-1)*jkblk
-        inv2 = np.array([em.acmean(inv[j*BINNUM:(j+1)*BINNUM],
+        inv2 = np.array([em.acmean(inv[j*binnum:(j+1)*binnum],
                                    axis=0) for j in range(int(
-                                       len(jkblk)/BINNUM))])
+                                       len(jkblk)/binnum))])
         ret = np.array([em.acmean(np.delete(inv2, j, axis=0), axis=0)
                         for j in range(len(inv2))])
     print("updating title number of configs (after binning) to:", len(ret))

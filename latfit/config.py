@@ -197,6 +197,7 @@ binout.SLOPPYONLY = SLOPPYONLY
 
 # dynamic binning of configs.  BINNUM is number of configs per bin.
 BINNUM = 1
+assert BINNUM == 1 or JACKKNIFE_BLOCK_SIZE == 1
 binout.BINNUM = BINNUM
 SUPERJACK_CUTOFF /= BINNUM
 SUPERJACK_CUTOFF = int(SUPERJACK_CUTOFF)

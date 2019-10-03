@@ -14,6 +14,7 @@ from latfit.mathfun.covinv_avg import covinv_avg
 from latfit.jackknife_fit import jackknife_fit
 from latfit.analysis.get_fit_params import get_fit_params
 from latfit.mathfun.block_ensemble import block_ensemble
+from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import NoConvergence
 from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
@@ -99,6 +100,8 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # block the ensemble
     if singlefit.reuse_blocked is None or RANDOMIZE_ENERGIES:
         singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
+        chec = binconf(reuse, binnum=JACKKNIFE_BLOCK_SIZE)
+        assert np.allclose(chec, singlefit.reuse_blocked, rtol=1e-14)
 
 
     # correct covariance matrix for jackknife factor

@@ -174,7 +174,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 assert np.all(reuse[config_num] == reuse_blocked[
                     config_num])
             if not latfit.config.BOOTSTRAP:
-                coords_jack = copy_block(params, reuse[config_num],
+                coords_jack = copy_block(params, reuse_blocked[config_num],
                                          coords_jack)
             else:
                 # we still need the time data in coords (xmin, xmax, xstep)
@@ -269,7 +269,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(
             result_min.energy.arr)
-        print('param err:', result_min.energy.err)
+        print('param err:', result_min.energy.err,
+              'np.std:', np.std(result_min.energy.arr, axis=0))
 
         # compute the systematics and errors
         if SYS_ENERGY_GUESS is not None:
