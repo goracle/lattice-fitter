@@ -276,7 +276,7 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
 
         if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                 median_diff.val) > abs(median_diff.sdev):
-            print(i, pval, fit_range)
+            print(effmass, pval, fit_range)
             #print("")
             #print("diffs", ind_diff, median_diff, avg_diff)
             #print("")
