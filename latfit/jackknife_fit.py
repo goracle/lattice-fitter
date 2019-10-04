@@ -65,29 +65,36 @@ def torchi():
         ret = 't^2/dof='
     return ret
 
-def convert_coord_dict(shift):
+def convert_coord_dict(shift, coords):
     """Convert coord dict to array"""
     ret = shift
+    allowedtimes = set()
+    for i in coords:
+        allowedtimes.add(i[0])
     if shift:
         ret = []
         keys = []
         for i in shift:
-            keys.append(i)
+            if i in allowedtimes:
+                keys.append(i)
         keys = sorted(keys)
+        nextkey = keys[0]
         for i in keys:
+            assert i == nextkey
+            nextkey += 1
             ret.append(shift[i])
         ret = np.array(ret)
     return ret
 
-def apply_shift(coords_jack_reuse):
+def apply_shift(coords_jack_reuse, coords_jack):
     """apply the bootstrap constant shift to the averages"""
     coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
     shift = 0 if not CONST_SHIFT else CONST_SHIFT
-    shift_arr = convert_coord_dict(shift)
+    shift_arr = convert_coord_dict(shift, coords_jack)
     sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
     check = copy.deepcopy(np.array(coords_jack_reuse))
-    if not GEVP or np.all(sh2[1:] == sh1):
+    if not GEVP or np.all(sh2[1:] == sh1) or not np.array(shift).shape:
         shift = collapse_shift(shift_arr)
         try:
             coords_jack_reuse = coords_jack_reuse + shift
@@ -946,6 +953,8 @@ def get_doublejk_data(params, coords_jack, reuse,
 
     reuse_new = np.array(copy.deepcopy(np.array(reuse)))
     reuse_blocked_new = np.array(copy.deepcopy(np.array(reuse_blocked)))
+    reuse_new = apply_shift(reuse_new, coords_jack)
+    reuse_blocked_new = apply_shift(reuse_blocked_new, coords_jack)
 
     # original data, obtained by reversing single jackknife procedure
     # we set the noise level to mimic the jackknifed data
@@ -958,7 +967,7 @@ def get_doublejk_data(params, coords_jack, reuse,
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
         reuse_inv, coords_jack, reuse_blocked)
-    coords_jack_new = apply_shift(coords_jack_new)
+    # coords_jack_new = apply_shift(coords_jack_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)

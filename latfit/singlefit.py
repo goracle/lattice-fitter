@@ -28,6 +28,7 @@ from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.jackknife_fit as jack_module
+import latfit.mathfun.block_ensemble as blke
 
 import latfit.mathfun.chi_sq as chisq
 
@@ -245,6 +246,7 @@ def set_bootstrap_shift(result_min):
     shift = {}
     for i, ctime in enumerate(coords[:, 0]):
         part1 = fit_func(ctime, result_min.energy.val)
+        blke.test_avgs.avg[i] = part1
         part1 = np.array(part1, dtype=np.float128)
         part2 = coords[i][1]
         part2 = np.array(part2, dtype=np.float128)
@@ -283,6 +285,8 @@ def index_select(xmin, xmax, xstep, fitrange, coords_full):
     for the fitted subset of the data"""
     start_index = int((fitrange[0]-xmin)/xstep)
     stop_index = int(len(coords_full)-1-(xmax-fitrange[1])/xstep)
+    blke.test_avgs.start_index = start_index
+    blke.test_avgs.stop_index = stop_index
     return start_index, stop_index
 
 

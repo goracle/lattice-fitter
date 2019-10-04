@@ -11,6 +11,7 @@ from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
 from latfit.config import BOOTSTRAP_BLOCK_SIZE
 from latfit.config import RANDOMIZE_ENERGIES, GEVP, EFF_MASS
+from latfit.config import SYS_ENERGY_GUESS
 import latfit.config
 
 print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
@@ -18,23 +19,23 @@ print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
 def build_choices_set(block, nconfigs):
     """Find allowed indices for non-overlapping block
     bootstrap"""
-    ret = set()
-    for i in range(nconfigs):
-        if i % block:
-            continue
-        ret.add(i)
-    remainder = nconfigs-(nconfigs % block)
+    ret = np.arange(0, nconfigs, block)
+    ret = list(ret)
     try:
         assert not (nconfigs % block),\
             "blocking with a remainder is complicated and not supported yet"
     except AssertionError:
+        remainder = nconfigs-(nconfigs % block)
         print(nconfigs)
         print(block)
         print(remainder)
         raise
-    if remainder < nconfigs:
-        ret.add(remainder)
     return ret
+
+def allzero(arr):
+    """Test if all zero"""
+    assert np.allclose(arr, 0.0, rtol=1e-14),\
+        " zero:\n"+str(arr)
 
 if GEVP and EFF_MASS:
     
@@ -44,9 +45,20 @@ if GEVP and EFF_MASS:
         to be constant with respect to time
         """
         avg = em.acmean(reuse_inv)
-        zero = avg-avg[0]
-        assert np.allclose(zero, 0.0, rtol=1e-14),\
-            "avg:\n"+str(avg)+" zero:\n"+str(zero)
+        zero = []
+        for i, tavg in enumerate(avg):
+            if i < test_avgs.start_index:
+                continue
+            if i > test_avgs.stop_index:
+                continue
+            zero.append(test_avgs.avg[i]-tavg)
+        zero = np.array(zero)
+        allzero(zero)
+        if EFF_MASS and GEVP and not SYS_ENERGY_GUESS:
+            allzero(avg-avg[0])
+    test_avgs.avg = {}
+    test_avgs.start_index = None
+    test_avgs.stop_index = None
 
 else:
     def test_avgs(_):
@@ -62,7 +74,7 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
     """
     if latfit.config.BOOTSTRAP:
         reuse_inv = np.array(copy.deepcopy(np.array(reuse_inv)))
-        # test_avgs(reuse_inv)
+        test_avgs(reuse_inv)
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         block = BOOTSTRAP_BLOCK_SIZE
         assert block, str(block)

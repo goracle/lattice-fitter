@@ -1,6 +1,8 @@
 """Contains result min class used in jackknife fit loop; stores results
  of fit"""
+import sys
 from collections import namedtuple
+from random import randint
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
@@ -20,6 +22,24 @@ WINDOW = []
 
 NULL_CHISQ_ARRS = {}
 
+def bootstrap_copy(arr, nboot):
+    """Bootstrap array"""
+    ret = []
+    for _ in range(nboot):
+        ret.append(arr[randint(0, len(arr)-1)])
+    ret = np.array(ret)
+    return ret
+
+def bootstrap_adjust_pvalue(pvalue_arr_boot, nboot=20000):
+    """Get adjusted p-value which is corrected using another bootstrap"""
+    ensem = bootstrap_copy(pvalue_arr_boot, nboot)
+    ret = {}
+    for pval in pvalue_arr_boot:
+        count = len([i for i in ensem if i <= pval])
+        ret[pval] = count/nboot
+    return ret
+
+
 def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     """Get the array of p-values"""
     chisq_arr_boot = sorted(list(chisq_arr_boot))
@@ -34,11 +54,16 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     for i, _ in enumerate(chisq_arr_boot):
         pvalue_arr_boot.append((NBOOT-i-1)/NBOOT)
     pvalue_arr_boot = np.array(pvalue_arr_boot)
+
+    # now we need to do another bootstrap since we need a uniform dist for p
+    # dict of adjusted p-values
+    pvalue_arr_boot_adj = bootstrap_adjust_pvalue(pvalue_arr_boot)
+
     pvalue_arr = []
     for chisq1 in chisq_arr:
         subarr = np.abs(chisq1-chisq_arr_boot)
         minidx = list(subarr).index(min(subarr))
-        pvalue_arr.append(pvalue_arr_boot[minidx])
+        pvalue_arr.append(pvalue_arr_boot_adj[pvalue_arr_boot[minidx]])
     pvalue_arr = np.array(pvalue_arr)
     return pvalue_arr
 
