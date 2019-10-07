@@ -155,10 +155,13 @@ print("Using jackknife block size =", JACKKNIFE_BLOCK_SIZE)
 # block size of bootstrap (how many configs to select at once)
 BOOTSTRAP_BLOCK_SIZE = 129
 BOOTSTRAP_BLOCK_SIZE = 86
+BOOTSTRAP_BLOCK_SIZE = 1
+BOOTSTRAP_BLOCK_SIZE = 2
 BOOTSTRAP_BLOCK_SIZE = 43
-BOOTSTRAP_BLOCK_SIZE = 3
+BOOTSTRAP_BLOCK_SIZE = 6
+BOOTSTRAP_BLOCK_SIZE = 1
 #BOOTSTRAP_BLOCK_SIZE = JACKKNIFE_BLOCK_SIZE
-#assert BOOTSTRAP_BLOCK_SIZE == JACKKNIFE_BLOCK_SIZE
+assert BOOTSTRAP_BLOCK_SIZE == JACKKNIFE_BLOCK_SIZE
 
 # super jackknife cutoff:  first n configs have variance in exact, n to N=total length:
 # variance in sloppy.  if n= 0 then don't do superjackknife (sloppy only)
@@ -365,6 +368,7 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 assert len(FIT_EXCL) == DIM or not GEVP
 
 # if true, do not loop over fit ranges.
