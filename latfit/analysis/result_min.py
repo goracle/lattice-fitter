@@ -57,13 +57,13 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
 
     # now we need to do another bootstrap since we need a uniform dist for p
     # dict of adjusted p-values
-    pvalue_arr_boot_adj = bootstrap_adjust_pvalue(pvalue_arr_boot)
+    #pvalue_arr_boot_adj = bootstrap_adjust_pvalue(pvalue_arr_boot)
 
     pvalue_arr = []
     for chisq1 in chisq_arr:
         subarr = np.abs(chisq1-chisq_arr_boot)
         minidx = list(subarr).index(min(subarr))
-        pvalue_arr.append(pvalue_arr_boot_adj[pvalue_arr_boot[minidx]])
+        pvalue_arr.append(pvalue_arr_boot[minidx])
     pvalue_arr = np.array(pvalue_arr)
     return pvalue_arr
 
