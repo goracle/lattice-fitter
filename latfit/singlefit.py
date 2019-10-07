@@ -215,6 +215,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
         except NoConvergence:
             print("minimizer failed to converge during bootstrap")
             assert None
+        assert next(blke.build_choices_set.choices, None) is None:
         print("done computing null dist.")
         assert result_min.misc.dof == result_minq.misc.dof
         bootstrap_pvalue.result_minq[result_min.misc.dof] = result_minq
