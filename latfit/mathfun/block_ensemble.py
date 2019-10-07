@@ -93,7 +93,14 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
         while idx < len(reuse_inv):
 
             # pick random choice
-            choice = next(build_choices_set.choices)
+            try:
+                choice = next(build_choices_set.choices)
+            except StopIteration:
+                print("rebuilding choices for new bootstrap")
+                build_choices_set.choices = None
+                choices = build_choices_set(block, len(reuse_inv),
+                                            nboot=NBOOT)
+                choice = next(build_choices_set.choices)
             assert choice in choices, str(choice)+" "+str(choices)
 
             # append the configs to our boostrap container
