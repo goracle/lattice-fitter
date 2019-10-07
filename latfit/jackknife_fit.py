@@ -941,6 +941,14 @@ def nconfigs_minus_block(total_configs, bsize):
         ret = total_configs-bsize
     return ret
 
+def update_coords(coords, reuse):
+    """Update coords (for debugging only)"""
+    mean = em.acmean(reuse)
+    assert len(coords) == len(mean)
+    for i, _ in enumerate(coords):
+        coords[i][1] = mean[i]
+    return coords
+
 @PROFILE
 def get_doublejk_data(params, coords_jack, reuse,
                       reuse_blocked, config_num):
@@ -956,6 +964,8 @@ def get_doublejk_data(params, coords_jack, reuse,
     reuse_new = apply_shift(reuse_new, coords_jack)
     reuse_blocked_new = apply_shift(reuse_blocked_new, coords_jack)
 
+    # coords_jack_new = update_coords(coords_jack, reuse_new)
+
     # original data, obtained by reversing single jackknife procedure
     # we set the noise level to mimic the jackknifed data
     # so the random data is in some sense already "jackknifed"
@@ -966,8 +976,7 @@ def get_doublejk_data(params, coords_jack, reuse,
 
     # bootstrap ensemble
     reuse_blocked_new, coords_jack_new = bootstrap_ensemble(
-        reuse_inv, coords_jack, reuse_blocked)
-    # coords_jack_new = apply_shift(coords_jack_new)
+        reuse_inv, coords_jack, reuse_blocked_new)
 
     # delete a block of configs
     reuse_inv_red = delblock(config_num, reuse_inv)
@@ -1129,8 +1138,13 @@ elif JACKKNIFE_FIT == 'DOUBLE':
         else:
             num_configs_reduced = (params.num_configs-1)*bsize
             assert len(reuse_inv_red) == num_configs_reduced
-            assert np.allclose(em.acmean(reuse_inv_red, axis=0),
-                               reuse_blocked[config_num], rtol=1e-14)
+            try:
+                assert np.allclose(em.acmean(reuse_inv_red, axis=0),
+                                   reuse_blocked[config_num], rtol=1e-14)
+            except AssertionError:
+                print(em.acmean(reuse_inv_red, axis=0))
+                print(reuse_blocked[config_num])
+                raise
             ret = np.array([
                 em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
                 for i in range(num_configs_reduced)]) - reuse_blocked[
