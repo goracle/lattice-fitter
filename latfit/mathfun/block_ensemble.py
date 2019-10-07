@@ -9,14 +9,14 @@ from latfit.extract.inverse_jk import inverse_jk
 from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
-from latfit.config import BOOTSTRAP_BLOCK_SIZE
+from latfit.config import BOOTSTRAP_BLOCK_SIZE, NBOOT
 from latfit.config import RANDOMIZE_ENERGIES, GEVP, EFF_MASS
 from latfit.config import SYS_ENERGY_GUESS
 import latfit.config
 
 print("Using bootstrap block size:", BOOTSTRAP_BLOCK_SIZE)
 
-def build_choices_set(block, nconfigs):
+def build_choices_set(block, nconfigs, nboot=0):
     """Find allowed indices for non-overlapping block
     bootstrap"""
     ret = np.arange(0, nconfigs, block)
@@ -30,7 +30,17 @@ def build_choices_set(block, nconfigs):
         print(block)
         print(remainder)
         raise
+    # balanced bootstrap
+    if nboot and build_choices_set.choices is None:
+        ret2 = []
+        for i in range(nboot):
+            for j in ret:
+                ret2.append(j)
+        np.random.shuffle(ret2)
+        # make a generator so we don't need to track the index
+        build_choices_set.choices = (n for n in ret2)
     return ret
+build_choices_set.choices = None
 
 def allzero(arr):
     """Test if all zero"""
@@ -78,12 +88,13 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
         retblk = np.zeros(reuse_inv.shape, dtype=reuse_inv.dtype)
         block = BOOTSTRAP_BLOCK_SIZE
         assert block, str(block)
-        choices = build_choices_set(block, len(reuse_inv))
+        choices = build_choices_set(block, len(reuse_inv), nboot=NBOOT)
         idx = 0
         while idx < len(reuse_inv):
 
             # pick random choice
-            choice = random.sample(choices, 1)[0]
+            choice = next(build_choices_set.choices)
+            assert choice in choices, str(choice)+" "+str(choices)
 
             # append the configs to our boostrap container
             for j in range(block):
@@ -91,6 +102,7 @@ def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
 
             # increment
             idx += block
+
 
         # check to see we've filled the whole ensemble
         for i, item in enumerate(retblk):
@@ -135,8 +147,9 @@ else:
             assert not isinstance(reuse, dict),\
                 "dict passed to ensemble blocker"
             reuse_inv = inverse_jk(reuse, num_configs)
-            assert len(reuse_inv) == bsize*num_configs, "array mismatch:"+str(
-                bsize)+" "+str(num_configs)+" "+str(len(reuse_inv))
+            assert len(reuse_inv) == bsize*num_configs,\
+                "array mismatch:"+str(bsize)+" "+str(num_configs)+" "+str(
+                    len(reuse_inv))
             assert isinstance(bsize, int),\
                 "jackknife block size should be integer"
             assert bsize > 1,\
