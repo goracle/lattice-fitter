@@ -215,7 +215,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
         except NoConvergence:
             print("minimizer failed to converge during bootstrap")
             assert None
-        assert next(blke.build_choices_set.choices, None) is None:
+        assert next(blke.build_choices_set.choices, None) is None
         print("done computing null dist.")
         assert result_min.misc.dof == result_minq.misc.dof
         bootstrap_pvalue.result_minq[result_min.misc.dof] = result_minq
@@ -226,6 +226,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
 
     # overwrite initial fit with the accurate p-value info
     result_min.pvalue.arr = resmin.chisq_arr_to_pvalue_arr(
+        result_minq.misc.dof, params.num_configs,
         result_minq.chisq.arr, result_min.chisq.arr)
     result_min.pvalue.val = em.acmean(result_min.pvalue.arr)
     result_min.pvalue.err = em.acmean((

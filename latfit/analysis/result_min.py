@@ -9,6 +9,7 @@ from latfit.config import START_PARAMS, UNCORR
 from latfit.config import GEVP, NBOOT
 from latfit.analysis.errorcodes import DOFNonPos
 import latfit.config
+import latfit.analysis.hotelling as hotelling
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -40,14 +41,16 @@ def bootstrap_adjust_pvalue(pvalue_arr_boot, nboot=20000):
     return ret
 
 
-def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
+def chisq_arr_to_pvalue_arr(dof, nconf, chisq_arr_boot, chisq_arr):
     """Get the array of p-values"""
     chisq_arr_boot = sorted(list(chisq_arr_boot))
     chisq_arr_boot = np.asarray(chisq_arr_boot)
     if len(chisq_arr) > 1:
-        assert len(np.asarray(chisq_arr).shape) == 1, str(np.asarray(chisq_arr))
+        assert len(np.asarray(chisq_arr).shape) == 1, str(
+            np.asarray(chisq_arr))
         print("variance of null dist:", np.std(chisq_arr_boot)**2)
         print("mean of null dist:", np.mean(chisq_arr_boot))
+        print(hotelling.hstr(dof, len(chisq_arr_boot)))
     assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
     chisq_arr = np.asarray(chisq_arr)
     pvalue_arr_boot = []
@@ -56,8 +59,8 @@ def chisq_arr_to_pvalue_arr(chisq_arr_boot, chisq_arr):
     pvalue_arr_boot = np.array(pvalue_arr_boot)
 
     # now we need to do another bootstrap since we need a uniform dist for p
-    # dict of adjusted p-values
-    #pvalue_arr_boot_adj = bootstrap_adjust_pvalue(pvalue_arr_boot)
+    # dict of adjusted p-values (DOES NOT WORK, PROBABLY, DO NOT TURN ON)
+    # pvalue_arr_boot_adj = bootstrap_adjust_pvalue(pvalue_arr_boot)
 
     pvalue_arr = []
     for chisq1 in chisq_arr:
