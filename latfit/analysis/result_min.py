@@ -50,7 +50,7 @@ def chisq_arr_to_pvalue_arr(dof, nconf, chisq_arr_boot, chisq_arr):
             np.asarray(chisq_arr))
         print("variance of null dist:", np.std(chisq_arr_boot)**2)
         print("mean of null dist:", np.mean(chisq_arr_boot))
-        print(hotelling.hstr(dof, len(chisq_arr_boot)))
+        print(hotelling.hstr(dof, nconf))
     assert len(chisq_arr_boot) == NBOOT, str(len(chisq_arr_boot))
     chisq_arr = np.asarray(chisq_arr)
     pvalue_arr_boot = []

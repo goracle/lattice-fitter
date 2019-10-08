@@ -15,17 +15,22 @@ def var(dof, nconf):
     """Compute the variance of the hotelling t^2 dist."""
     em1 = getm(nconf)
     dee2 = em1-dof+1
-    cor = dof*em1/dee2
+    cor = getcor(dof, em1, dee2)
     ret = 2*dee2**2*(dof+dee2-2)/dof/((dee2-2)**2)/(dee2-4)
     ret *= cor**2
     return ret
+
+def getcor(dof, em1, dee2):
+    """Get correction to F distribution"""
+    cor = dof*em1/dee2
+    return cor
     
 
 def avg(dof, nconf):
     """Compute the average of the hotelling t^2 dist."""
     em1 = getm(nconf)
     dee2 = em1-dof+1
-    cor = dof*em1/dee2
+    cor = getcor(dof, em1, dee2)
     ret = dee2/(dee2-2)
     ret *= cor
     return ret
