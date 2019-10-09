@@ -242,7 +242,7 @@ def degenerate_subspace_check(evecs_mean_t):
     """
     for evec in evecs_mean_t:
         evec = drop0imag(evec)
-        dotprod = kdot(np.conj(evec), evec)
+        dotprod = np.dot(np.conj(evec), evec)
         assert np.allclose(dotprod, 1.0, rtol=1e-8),\
             str(dotprod)
     if GEVP_DEBUG:
