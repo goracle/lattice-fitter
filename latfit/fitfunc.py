@@ -43,7 +43,7 @@ def const_plus_exp(start_params):
     def prefit_func(ctime, trial_params):
         """eff mass method 1, fit func, single const fit
         """
-        return [trial_params[2*i]+trial_params[2*i+1]*exp(-(
+        return [trial_params[2*i]+trial_params[2*i+1]*np.exp(-(
             trial_params[-1]-trial_params[2*i])*ctime)\
                 for i in range(int((len(start_params)-1)/2))]
     return prefit_func
