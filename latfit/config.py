@@ -69,10 +69,10 @@ LATTICE_ENSEMBLE = '24c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
-SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None
+SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
-SYS_ENERGY_GUESS = None if ISOSPIN != 1 else SYS_ENERGY_GUESS
+SYS_ENERGY_GUESS = None if ISOSPIN == 2 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 
 # T0 behavior for GEVP (t/2 or t-1)
@@ -701,11 +701,11 @@ REINFLATE_BEFORE_LOG = False
 OPERATOR_NORMS = [(1+0j) for i in range(DIM)]
 if ISOSPIN == 1 and GEVP and DIM > 1:
     OPERATOR_NORMS[1] = complex(0+1j)
-if ISOSPIN == 0 and GEVP and 'avg' in IRREP and DIM > 1:
-    OPERATOR_NORMS[0] = 1e-5
-    OPERATOR_NORMS[1] = 1e-2
-    if DIM == 3:
-        OPERATOR_NORMS[2] = 1e-5
+#if ISOSPIN == 0 and GEVP and 'avg' in IRREP and DIM > 1:
+#    OPERATOR_NORMS[0] = 1e-5
+#    OPERATOR_NORMS[1] = 1e-2
+#    if DIM == 3:
+#        OPERATOR_NORMS[2] = 1e-5
 print("New Operator Norms:", OPERATOR_NORMS)
 # GENERALIZED PENCIL OF FUNCTION (see arXiv:1010.0202, for use with GEVP)
 # if non-zero, set to 1 (only do one pencil,
@@ -807,6 +807,7 @@ FITS.select_and_update(ADD_CONST)
 ORIGL = len(START_PARAMS)
 
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
+GEVP_DIRS_PLUS_ONE = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM+1, SIGMA)
 MULT = len(GEVP_DIRS) if GEVP else 1
 
 
@@ -816,6 +817,10 @@ fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
                                DELTA_E2_AROUND_THE_WORLD)
 # get initial blank fit function
 PREFIT_FUNC = fitfunc.prelimselect()
+
+START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
+                                          NUM_PENCILS, MULT,
+                                          SYS_ENERGY_GUESS)
 
 if EFF_MASS:
     if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
@@ -864,9 +869,6 @@ def fit_func(ctime, trial_params): # lower case hack
 
 # make statements (asserts)
 sands.gevp_statements(GEVP_DIRS, GEVP, DIM, MULT, (LT_VEC, ADD_CONST_VEC))
-START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
-                                          NUM_PENCILS, MULT,
-                                          SYS_ENERGY_GUESS)
 sands.rescale_and_atw_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
                                  DELTA_E_AROUND_THE_WORLD,
                                  DELTA_E2_AROUND_THE_WORLD)
@@ -885,3 +887,4 @@ sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
 sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
+assert len(fit_func(3, START_PARAMS)) == MULT

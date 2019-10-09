@@ -34,6 +34,7 @@ def start_params_pencils(start_params, origl, num_pencils,
     if len(start_params) % 2 == 1 and origl > 1:
         start_params = list(start_params[:-1])*mult
         start_params.append(sys_energy_guess)
+        assert num_penciles == 1, "more pencils is not supported right now"
         start_params = start_params*2**num_pencils
     else:
         start_params = (list(start_params)*mult)*2**num_pencils
