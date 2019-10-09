@@ -7,7 +7,7 @@ import numpy as np
 from latfit.config import fit_func
 from latfit.config import GEVP, START_PARAMS, SYSTEMATIC_EST
 
-if SYSTEMATIC_EST:
+if SYSTEMATIC_EST and False:
 
     def fit_func_systematic(ctime, trial_params):
         """ansatz to estimate systematic errors"""
