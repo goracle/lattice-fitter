@@ -20,12 +20,13 @@ from latfit.extract.getblock.gevp_linalg import variance_reduction
 
 from latfit.extract.proc_folder import proc_folder
 from latfit.utilities import exactmean as em
-from latfit.config import PIONRATIO, GEVP_DIRS
+from latfit.config import PIONRATIO, GEVP_DIRS, SIGMA
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION, ISOSPIN
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+from latfit.config import GEVP_DIRS_PLUS_ONE
 import latfit.config
 import latfit.extract.getblock.disp_hacks as gdisp
 if PIONRATIO:
@@ -77,13 +78,19 @@ def aroundtheworld_pionratio(diag_name, timeij):
 def evals_pionratio(timeij, delta_t, switch=False):
     """Get the non-interacting eigenvalues"""
     ret = []
-    for i, diag in enumerate(GEVP_DIRS):
+    skip_next = False
+    for i, diag in enumerate(GEVP_DIRS_PLUS_ONE):
         zeroit = False
+        if skip_next:
+            skip_next = False
+            continue
         if 'rho' in diag[i] or 'sigma' in diag[i]:
-            diag = GEVP_DIRS[i-1]
-            zeroit = True
-            name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i-1])
+            diag = GEVP_DIRS_PLUS_ONE[i+1]
+            # zeroit = True
+            name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i+1])
+            skip_next = True
         else:
+            skip_next = False
             name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
         assert 'rho' not in name
         assert 'sigma' not in name
@@ -164,7 +171,6 @@ def finsum_dev(i, j, addzero, eint):
     dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
     return dev
 
-
 def sort_addzero(addzero, enint, sortbydist=True):
     """Introducing rho/sigma operator introduces ambiguity
     in energy sort:  where to sort the extra 0 entry
@@ -219,13 +225,12 @@ def sort_addzero(addzero, enint, sortbydist=True):
         if not np.isnan(mindx):
             mapi.append((mindx, i))
     check_map(mapi)
-    for mapel in mapi:
+    for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
-        assert mapel[0] == mapel[1], str(mapi)
         #assert toi != 1, \
         #    "index bug, rho/sigma should not get a correlated 0"
         # print("add zero mean (", j, "):", em.acmean(addzero[:, fromj]))
-        ret[:, mapel[1]] = np.copy(addzero[:, mapel[0]])
+        ret[:, mapel[1]] = copy.deepcopy(addzero[:, mapel[0]])
     if not mapi:
         assert None, "bug"
         ret = addzero
@@ -243,13 +248,14 @@ def sort_addzero(addzero, enint, sortbydist=True):
     return ret
 
 def check_map(mapi):
-    """check to make sure the map doesn't change from the trivial identity map
-    otherwise, our dispersive energy mapping to interacting energy is unstable
-    and can't be used when doing a continuum extrap.
-    """
+    """check to make sure the map doesn't change
+    from the trivial identity map
+    otherwise, our dispersive energy mapping
+    to interacting energy is unstable
+    and can't be used when doing a continuum extrap."""
     for item in mapi:
         i, j = item
-        assert i == j, str(mapi)
+        assert i == j, str(mapi)+" "+str(i)+" "+str(j)
 
 
 if PIONRATIO:
@@ -280,8 +286,8 @@ if PIONRATIO:
         addzero = -1*energies_noninteracting+np.asarray(gdisp.disp())
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
-                assert 'rho' in GEVP_DIRS[
-                    i][i] or 'sigma' in GEVP_DIRS[i][i]
+                assert 'rho' in GEVP_DIRS_PLUS_ONE[
+                    i][i] or 'sigma' in GEVP_DIRS_PLUS_ONE[i][i]
         addzero = np.nan_to_num(addzero)
         addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
@@ -378,13 +384,18 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
-        for i, diag in enumerate(GEVP_DIRS):
+        for i, diag in enumerate(GEVP_DIRS_PLUS_ONE):
+            if skip_next:
+                skip_next = False
+                continue
             zeroit = False
             if 'rho' in diag[i] or 'sigma' in diag[i]:
-                diag = GEVP_DIRS[i-1]
-                zeroit = True
-                name = re.sub(r'.jkdat', suffix, diag[i-1])
+                diag = GEVP_DIRS_PLUS_ONE[i+1]
+                # zeroit = True
+                name = re.sub(r'.jkdat', suffix, diag[i+1])
+                skip_next = True
             else:
+                skip_next = False
                 name = re.sub(r'.jkdat', suffix, diag[i])
             #print(diag, name)
             assert 'rho' not in name
