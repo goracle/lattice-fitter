@@ -500,7 +500,7 @@ def getsystematic(params, arr):
     """Get the fit parameters which are not the energies"""
     arr = np.asarray(arr)
     params.energyind = None
-    if len(arr) != params.dimops and arr and EFF_MASS:
+    if len(arr) != params.dimops and arr.shape and EFF_MASS:
         temp = list(arr)
         if not (len(START_PARAMS)-1) % 2 and (
                 MATRIX_SUBTRACTION or not NOATWSUB or ISOSPIN == 1):
@@ -1146,7 +1146,7 @@ elif JACKKNIFE_FIT == 'DOUBLE':
                 print(reuse_blocked[config_num])
                 raise
             ret = np.array([
-                em.acmean(np.delete(reuse_inv_red, i, axis=0), axis=0)
+                np.mean(np.delete(reuse_inv_red, i, axis=0), axis=0)
                 for i in range(num_configs_reduced)]) - reuse_blocked[
                         config_num]
             assert len(ret) == num_configs_reduced
