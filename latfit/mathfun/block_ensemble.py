@@ -63,6 +63,7 @@ if GEVP and EFF_MASS:
                 continue
             zero.append(test_avgs.avg[i]-tavg)
         zero = np.array(zero)
+        assert zero.shape
         allzero(zero)
         if EFF_MASS and GEVP and not SYS_ENERGY_GUESS:
             allzero(avg-avg[0])
