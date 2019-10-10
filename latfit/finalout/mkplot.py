@@ -568,6 +568,8 @@ def interleave_energies_systematic(result_min):
     """Combine the energies and systematic parameters for final result"""
     if hasattr(result_min, 'systematics'):
         syst = [i.val for i in interleave_energies_systematic.sys]
+        syst_chk = result_min.systematics.val
+        assert syst == syst_chk
     else:
         syst = []
     ret = []

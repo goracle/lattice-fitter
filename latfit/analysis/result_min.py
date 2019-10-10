@@ -101,11 +101,13 @@ class ResultMin:
         self.phase_shift = Param()
         self.scattering_length = Param()
         self.misc = namedtuple(
-            'misc', ['error_bars', 'dof', 'status', 'num_configs'])
+            'misc', ['error_bars', 'dof', 'min_params',
+                     'status', 'num_configs'])
         self.misc.error_bars = None
         self.misc.dof = None
         self.misc.num_configs = None
-        self.misc.status = None
+        self.misc.status = 0
+        self.misc.min_params = None
         self.compute_dof(params, coords)
 
     @PROFILE

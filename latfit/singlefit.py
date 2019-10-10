@@ -247,7 +247,7 @@ def set_bootstrap_shift(result_min):
     assert coords is not None
     shift = {}
     for i, ctime in enumerate(coords[:, 0]):
-        part1 = fit_func(ctime, result_min.energy.val)
+        part1 = fit_func(ctime, result_min.misc.min_params)
         blke.test_avgs.avg[i] = part1
         part1 = np.array(part1, dtype=np.float128)
         part2 = coords[i][1]

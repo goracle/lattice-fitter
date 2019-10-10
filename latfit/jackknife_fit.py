@@ -201,6 +201,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
+            result_min.misc.min_params = result_min_jack.x
 
             # store results for this fit
             result_min.chisq.arr[config_num] = result_min_jack.fun
@@ -208,11 +209,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store the result
             result_min.systematics.arr[config_num], _ = \
-                getsystematic(params, result_min_jack.x)
+                getsystematic(params, result_min.misc.min_params)
             result_min.systematics.arr[config_num],\
-                params.energyind = getsystematic(params, result_min_jack.x)
+                params.energyind = getsystematic(params,
+                                                 result_min.misc.min_params)
             result_min.energy.arr[config_num] = getenergies(
-                params, result_min_jack.x)
+                params, result_min.misc.min_params)
 
             if result_min_jack.fun/result_min.misc.dof < 10 and\
                list(result_min.systematics.arr[config_num][:-1]):
