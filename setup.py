@@ -35,6 +35,7 @@ setup(
         'scipy',
         'numdifftools',
         'h5py',
+        'cloudpickle',
         'gvar',
         'iminuit',
         'accupy',

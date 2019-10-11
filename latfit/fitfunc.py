@@ -40,12 +40,17 @@ def prelimselect():
 
 def const_plus_exp(start_params):
     """const (eff energy) + exp (systematic) fit"""
+    lens = len(start_params)
+    rlen = range(int((lens-1)/2))
+    assert not (lens-1) % 2
     def prefit_func(ctime, trial_params):
-        """eff mass method 1, fit func, single const fit
-        """
-        return [trial_params[2*i]+trial_params[2*i+1]*np.exp(-(
-            trial_params[-1]-trial_params[2*i])*ctime)\
-                for i in range(int((len(start_params)-1)/2))]
+        """eff mass method 1, fit func, single const fit"""
+        #energies = [np.sum([trial_params[2*j] for j in range(i+1)])\
+        #            for i in rlen]
+        energies = [trial_params[2*i] for i in rlen]
+        return [energies[i] + \
+                trial_params[2*i+1]*np.exp(-1*ctime*\
+                    (trial_params[-1]-energies[i])) for i in rlen]
     return prefit_func
 
 def mod_start_params(start_params, sys_energy_guess):

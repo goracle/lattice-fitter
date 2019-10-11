@@ -10,7 +10,7 @@ import numpy as np
 from latfit.config import METHOD
 from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS
-from latfit.config import BINDS
+from latfit.config import BINDS, SYS_ENERGY_GUESS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
@@ -66,6 +66,9 @@ def mkmin(covinv, coords, method=METHOD):
             print('coords')
             print(coords)
             sys.exit(1)
+        res_min = dict(res_min)
+        # res_min['x'] = delta_add_energies(res_min['x'])
+        res_min = convert_to_namedtuple(res_min)
 
     # print "minimized params = ", res_min.x
     elif 'minuit' in method:
@@ -81,6 +84,7 @@ def mkmin(covinv, coords, method=METHOD):
             status = 1
             res_min = {}
             res_min['status'] = 1
+        # res_min['x'] = delta_add_energies(res_min['x'])
         res_min = convert_to_namedtuple(res_min)
         # insert string here
     if not JACKKNIFE_FIT:
@@ -109,6 +113,30 @@ def mkmin(covinv, coords, method=METHOD):
     # print "degrees of freedom = ", dimcov-len(start_params)
     # print "chi^2 reduced = ", res_min.fun/(dimcov-len(start_params))
     return prune_res_min(res_min)
+
+def delta_add_energies(result_min):
+    """If we restrict the energies to be the previous energy plus some
+    positive delta, we end up with correctly sorted energies.  This
+    function takes the initial energy and deltas
+    and returns the proper energies"""
+    tot = 0
+    ret = []
+    for i, delta in enumerate(result_min):
+        if i % 2 or i == len(result_min)-1:
+            continue
+        tot += delta
+        assert delta > 0, str(delta)+" "+str(result_min)+" "+str(tot)
+        ret.append(tot)
+        ret.append(result_min[i+1])
+        if i:
+            assert i > 1, str(i)
+            assert ret[i] > ret[i-2], str(
+                result_min)+" "+str(i)+" "+str(ret)
+    ret.append(result_min[-1])
+    assert len(ret) == len(result_min)
+    ret = np.array(ret)
+    return ret
+
 
 @PROFILE
 def convert_to_namedtuple(dictionary):

@@ -1,7 +1,9 @@
 """Standard fit branch"""
 import sys
+import os
 from collections import namedtuple
 from numpy import sqrt
+import cloudpickle
 import numpy as np
 
 # package modules
@@ -13,6 +15,7 @@ from latfit.finalout.geterr import geterr
 from latfit.mathfun.covinv_avg import covinv_avg
 from latfit.jackknife_fit import jackknife_fit
 from latfit.analysis.get_fit_params import get_fit_params
+from latfit.analysis.result_min import Param, ResultMin
 from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
@@ -22,8 +25,8 @@ from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
-from latfit.config import JACKKNIFE
-from latfit.config import PRINT_CORR
+from latfit.config import JACKKNIFE, NOLOOP
+from latfit.config import PRINT_CORR, SYS_ENERGY_GUESS
 from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
@@ -149,9 +152,15 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             # initial fit
             reset_bootstrap_const_shift()
             latfit.config.BOOTSTRAP = False
-            result_min, param_err = jackknife_fit(
-                params, reuse, singlefit.reuse_blocked, coords)
-            result_min = bootstrap_pvalue(params, reuse, coords, result_min)
+            if os.path.isfile("result_min.p") and NOLOOP:
+                result_min = cloudpickle.load(open("result_min.p", "rb"))
+            else:
+                result_min, param_err = jackknife_fit(
+                    params, reuse, singlefit.reuse_blocked, coords)
+                cloudpickle.dump(result_min, open("result_min.p", "wb"))
+            if SYS_ENERGY_GUESS is None:
+                result_min = bootstrap_pvalue(params, reuse,
+                                              coords, result_min)
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
