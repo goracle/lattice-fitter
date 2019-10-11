@@ -153,11 +153,13 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             reset_bootstrap_const_shift()
             latfit.config.BOOTSTRAP = False
             if os.path.isfile("result_min.p") and NOLOOP:
-                result_min = cloudpickle.load(open("result_min.p", "rb"))
+                result_min, param_err = cloudpickle.load(
+                    open("result_min.p", "rb"))
             else:
                 result_min, param_err = jackknife_fit(
                     params, reuse, singlefit.reuse_blocked, coords)
-                cloudpickle.dump(result_min, open("result_min.p", "wb"))
+                cloudpickle.dump((result_min, param_err),
+                                 open("result_min.p", "wb"))
             if SYS_ENERGY_GUESS is None:
                 result_min = bootstrap_pvalue(params, reuse,
                                               coords, result_min)
