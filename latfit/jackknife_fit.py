@@ -150,6 +150,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         result_min.pvalue.zero(params.num_configs)
         result_min.phase_shift.arr = alloc_phase_shift(params)
         result_min.alloc_sys_arr(params)
+        result_min.min_params.arr = np.zeros((params.num_configs, len(START_PARAMS)))
         result_min.energy.arr = np.zeros((params.num_configs,
                                           len(START_PARAMS)
                                           if not GEVP else params.dimops))
@@ -201,7 +202,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
-            result_min.misc.min_params = result_min_jack.x
+            result_min.min_params.arr[config_num] = result_min_jack.x
 
             # store results for this fit
             result_min.chisq.arr[config_num] = result_min_jack.fun
@@ -209,12 +210,12 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # store the result
             result_min.systematics.arr[config_num], _ = \
-                getsystematic(params, result_min.misc.min_params)
+                getsystematic(params, result_min.min_params.arr[config_num])
             result_min.systematics.arr[config_num],\
                 params.energyind = getsystematic(params,
-                                                 result_min.misc.min_params)
+                                                 result_min.min_params.arr[config_num])
             result_min.energy.arr[config_num] = getenergies(
-                params, result_min.misc.min_params)
+                params, result_min.min_params.arr[config_num])
 
             if result_min_jack.fun/result_min.misc.dof < 10 and\
                list(result_min.systematics.arr[config_num][:-1]):
@@ -274,6 +275,10 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         # compute p-value jackknife uncertainty
         result_min.pvalue.val, result_min.pvalue.err = jack_mean_err(
             result_min.pvalue.arr)
+
+        # get the optimal params
+        result_min.min_params.val, result_min.min_params.err = jack_mean_err(
+            result_min.min_params.arr)
 
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(

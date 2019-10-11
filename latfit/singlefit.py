@@ -247,10 +247,13 @@ def set_bootstrap_shift(result_min):
     assert coords is not None
     shift = {}
     for i, ctime in enumerate(coords[:, 0]):
-        part1 = fit_func(ctime, result_min.misc.min_params)
+        part1 = fit_func(ctime, result_min.min_params.val)
         blke.test_avgs.avg[i] = part1
         part1 = np.array(part1, dtype=np.float128)
         part2 = coords[i][1]
+        if not set_bootstrap_shift.printed:
+            print("avg coords:", coords)
+            set_bootstrap_shift.printed = True
         part2 = np.array(part2, dtype=np.float128)
         try:
             shift[int(ctime)] = part1 - part2
@@ -261,6 +264,7 @@ def set_bootstrap_shift(result_min):
             raise
     print("setting bootstrap shift to fit function with value:", shift)
     jack_module.CONST_SHIFT = shift
+set_bootstrap_shift.printed = False
 
 def reset_bootstrap_const_shift():
     """Set const. shift to 0
