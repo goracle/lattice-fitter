@@ -27,7 +27,7 @@ import latfit.singlefit
 from latfit.config import JACKKNIFE
 from latfit.config import FIT, METHOD
 from latfit.config import ISOSPIN, MOMSTR, UNCORR
-from latfit.config import PVALUE_MIN
+from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE

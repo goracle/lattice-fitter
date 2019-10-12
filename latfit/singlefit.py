@@ -150,7 +150,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
             # initial fit
-            reset_bootstrap_const_shift()
+            reset_bootstrap()
             latfit.config.BOOTSTRAP = False
             if os.path.isfile("result_min.p") and NOLOOP:
                 result_min, param_err = cloudpickle.load(
@@ -277,11 +277,13 @@ def set_bootstrap_shift(result_min):
     jack_module.CONST_SHIFT = shift
 set_bootstrap_shift.printed = False
 
-def reset_bootstrap_const_shift():
+def reset_bootstrap():
     """Set const. shift to 0
     (for initial fit)
+    and reset the index list for the bootstrap ensembles
     """
     jack_module.CONST_SHIFT = 0
+    blke.build_choices_set.choices = None
 
 def debug_print(coords_full, cov_full):
     """Debug print
