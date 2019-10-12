@@ -510,6 +510,8 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
+    if SYS_ENERGY_GUESS:
+        fname += "_sys"
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 if EFF_MASS:
@@ -665,6 +667,9 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
         filename_err = name+'_err'+"_"+MOMSTR+'_I'+str(ISOSPIN)
     print("writing file", filename)
     assert len(pickl_res) == 4, "bad result length"
+    if SYS_ENERGY_GUESS:
+        filename += "_sys"
+        filename_err += '_sys'
     pickle.dump(pickl_res, open(filename+'.p', "wb"))
     print("writing file", filename_err)
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
