@@ -606,9 +606,11 @@ def pickle_res_err(name, min_arr):
     if GEVP and 'systematics' not in name:
         if len(np.asarray(ret).shape) > 1:
             # dimops check
-            assert (np.array(ret).shape)[1] ==\
-                (np.asarray(singlefit.error2).shape)[1], str(
-                    np.array(ret).shape)+" "+str(
+            dimops1 = (np.array(ret).shape)[1]
+            if 'min_params' == name and SYS_ENERGY_GUESS:
+                dimops1 = int((dimops-1)/2)
+            dimops2 = (np.asarray(singlefit.error2).shape)[1]
+            assert dimops1 == dimops2, str(np.array(ret).shape)+" "+str(
                         np.asarray(singlefit.error2))+" "+str(name)
     if 'energy' in name:
         _, erreff = min_eff_mass_errors(mindim=None, getavg=True)

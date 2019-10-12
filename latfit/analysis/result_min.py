@@ -138,7 +138,9 @@ class ResultMin:
             ret = stats.f.sf(chisq*cor, self.misc.dof,
                              self.misc.num_configs-self.misc.dof)
         elif self.misc.dof in nar:
-            ret = chisq_arr_to_pvalue_arr(nar[self.misc.dof],
+            ret = chisq_arr_to_pvalue_arr(self.misc.dof,
+                                          self.misc.num_configs,
+                                          nar[self.misc.dof],
                                           np.asarray([chisq]))[0]
         return ret
 
