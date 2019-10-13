@@ -610,7 +610,7 @@ def pickle_res_err(name, min_arr):
             # dimops check
             dimops1 = (np.array(ret).shape)[1]
             if 'min_params' == name and SYS_ENERGY_GUESS:
-                dimops1 = int((dimops-1)/2)
+                dimops1 = int((dimops1-1)/2)
             dimops2 = (np.asarray(singlefit.error2).shape)[1]
             assert dimops1 == dimops2, str(np.array(ret).shape)+" "+str(
                         np.asarray(singlefit.error2))+" "+str(name)
