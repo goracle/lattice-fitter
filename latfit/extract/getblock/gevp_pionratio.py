@@ -26,7 +26,7 @@ from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION, ISOSPIN
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
-from latfit.config import GEVP_DIRS_PLUS_ONE
+from latfit.config import GEVP_DIRS_PLUS_ONE, FULLDIM
 import latfit.config
 import latfit.extract.getblock.disp_hacks as gdisp
 if PIONRATIO:
@@ -85,10 +85,11 @@ def evals_pionratio(timeij, delta_t, switch=False):
             skip_next = False
             continue
         if 'rho' in diag[i] or 'sigma' in diag[i]:
-            diag = GEVP_DIRS_PLUS_ONE[i+1]
-            # zeroit = True
-            name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i+1])
-            skip_next = True
+            diag = GEVP_DIRS_PLUS_ONE[i+1] if not FULLDIM else GEVP_DIRS[i-1]
+            zeroit = True if FULLDIM else False
+            name = re.sub(r'.jkdat', r'_pisq.jkdat',
+                          diag[i+(1 if not FULLDIM else -1)])
+            skip_next = True if not FULLDIM else False
         else:
             skip_next = False
             name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
@@ -206,6 +207,13 @@ def sort_addzero(addzero, enint, sortbydist=True):
 
             # calculate metrics
             dist = np.abs(mean-edisp)
+            # rho/sigma index is 1
+            if i == 1 and not np.any(edisp):
+                assert FULLDIM,\
+                    "rho/sig disp energy is 0 (skipped),"+\
+                    " but we have leftover disp energy"+\
+                    " which is not being used"
+                dist = 0
             # dev = finsum_dev(i, j, addzero, eint)
 
             # which additive zero
@@ -223,6 +231,7 @@ def sort_addzero(addzero, enint, sortbydist=True):
                 #mindx = j
         # check
         if not np.isnan(mindx):
+            # print(mindist, mindx, i)
             mapi.append((mindx, i))
     check_map(mapi)
     for i, mapel in enumerate(mapi):
@@ -289,6 +298,9 @@ if PIONRATIO:
                 assert 'rho' in GEVP_DIRS_PLUS_ONE[
                     i][i] or 'sigma' in GEVP_DIRS_PLUS_ONE[i][i]
         addzero = np.nan_to_num(addzero)
+        # sanity check; all additive zeros should be small (magic number = 0.1)
+        # chosen since usually 0.1 is O(100) MeV
+        assert np.all(np.asarray(addzero) < 0.1), str(addzero)
         addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
         for i, _ in enumerate(addzero):
@@ -390,10 +402,13 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                 continue
             zeroit = False
             if 'rho' in diag[i] or 'sigma' in diag[i]:
-                diag = GEVP_DIRS_PLUS_ONE[i+1]
-                # zeroit = True
-                name = re.sub(r'.jkdat', suffix, diag[i+1])
-                skip_next = True
+                # copy of code from pion ratio section
+                diag = GEVP_DIRS_PLUS_ONE[i+1] if not FULLDIM\
+                    else GEVP_DIRS[i-1]
+                zeroit = True if FULLDIM else False
+                name = re.sub(r'.jkdat', r'_pisq.jkdat',
+                              diag[i+(1 if not FULLDIM else -1)])
+                skip_next = True if not FULLDIM else False
             else:
                 skip_next = False
                 name = re.sub(r'.jkdat', suffix, diag[i])

@@ -249,9 +249,17 @@ SIGMA = True if ISOSPIN == 0 else False
 
 # get dispersive energies
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
-DIM -= 2 if 'mom000' in IRREP and ISOSPIN == 0 else 0
+# whether we use all available lattice data
+# if we don't, we have leftover data for pion ratio/atw sub
+# which we use to not skip (when doing atw sub/PR) the rho/sigma state
+FULLDIM = True
+if 'mom000' in IRREP and ISOSPIN == 0:
+    FULDIM = False
+    DIM -= 2
 DIM = 1 if not GEVP else DIM
-DIM = 3 if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP else DIM
+if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
+    FULDIM = False
+    DIM = 3
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
@@ -661,8 +669,8 @@ ERROR_BAR_METHOD = 'avgcov'
 # other internals will need to be edited if you change this
 # it's probably not a good idea
 
-METHOD = 'L-BFGS-B'
 METHOD = 'Nelder-Mead'
+METHOD = 'L-BFGS-B'
 METHOD = 'minuit'
 
 # print correlation function, and sqrt(diag(cov)) and exit
@@ -808,6 +816,8 @@ ORIGL = len(START_PARAMS)
 
 GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
 GEVP_DIRS_PLUS_ONE = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM+1, SIGMA)
+if FULLDIM:
+    GEVP_DIRS_PLUS_ONE = GEVP_DIRS
 MULT = len(GEVP_DIRS) if GEVP else 1
 
 
