@@ -469,7 +469,7 @@ MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
-MAX_RESULTS = 16 if SYS_ENERGY_GUESS is not None else 5
+MAX_RESULTS = 5 if SYS_ENERGY_GUESS is not None else 16
 
 # modify the configs used and bin
 
