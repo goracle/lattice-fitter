@@ -402,20 +402,14 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
-        skip_next = False
-        for i, diag in enumerate(GEVP_DIRS_PLUS_ONE):
-            if skip_next:
-                skip_next = False
-                continue
+        for i, diag in enumerate(GEVP_DIRS):
             zeroit = False
             if 'rho' in diag[i] or 'sigma' in diag[i]:
                 # copy of code from pion ratio section
-                diag = GEVP_DIRS_PLUS_ONE[i+1] if not FULLDIM\
-                    else GEVP_DIRS[i-1]
-                zeroit = True if FULLDIM else False
+                diag = GEVP_DIRS[i-1]
+                zeroit = True
                 name = re.sub(r'.jkdat', r'_pisq.jkdat',
-                              diag[i+(1 if not FULLDIM else -1)])
-                skip_next = True if not FULLDIM else False
+                              diag[i-1])
             else:
                 skip_next = False
                 name = re.sub(r'.jkdat', suffix, diag[i])

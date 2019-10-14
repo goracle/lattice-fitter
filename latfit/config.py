@@ -120,6 +120,8 @@ PR_GROUND_ONLY = True
 PR_GROUND_ONLY = False
 PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
+PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' == IRREP\
+    else PR_GROUND_ONLY
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -260,11 +262,11 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
 FULLDIM = True
 if 'mom000' in IRREP and ISOSPIN == 0:
-    FULDIM = False
+    FULLDIM = False
     DIM -= 2
 DIM = 1 if not GEVP else DIM
 if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
-    FULDIM = False
+    FULLDIM = False
     DIM = 3
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 
@@ -606,7 +608,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
 DECREASE_VAR = 1
-DECREASE_VAR = 1e-4
+DECREASE_VAR = 1e-6
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues
