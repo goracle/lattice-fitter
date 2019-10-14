@@ -115,6 +115,12 @@ PIONRATIO = False
 PIONRATIO = True
 PIONRATIO = False if not GEVP else PIONRATIO
 
+# only apply pion ratio to ground state
+PR_GROUND_ONLY = True
+PR_GROUND_ONLY = False
+PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
+    else PR_GROUND_ONLY
+
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
 # if not, we can use it to correct statistical error
@@ -461,7 +467,7 @@ MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # set this to np.inf to turn off
 MAX_RESULTS = np.inf
 MAX_RESULTS = 1 if SYS_ENERGY_GUESS is not None and GEVP else MAX_RESULTS
-MAX_RESULTS = 16
+MAX_RESULTS = 16 if SYS_ENERGY_GUESS is not None else 5
 
 # modify the configs used and bin
 
