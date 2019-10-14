@@ -27,6 +27,7 @@ from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION, ISOSPIN
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import GEVP_DIRS_PLUS_ONE, FULLDIM
+from latfit.config import PR_GROUND_ONLY
 import latfit.config
 import latfit.extract.getblock.disp_hacks as gdisp
 if PIONRATIO:
@@ -301,7 +302,12 @@ if PIONRATIO:
         # sanity check; all additive zeros should be small (magic number = 0.1)
         # chosen since usually 0.1 is O(100) MeV
         assert np.all(np.asarray(addzero) < 0.1), str(addzero)
-        addzero = sort_addzero(addzero, enint)
+        if PR_GROUND_ONLY:
+            for i in range(addzero.shape[1]):
+                if i:
+                    addzero[:, i] = 0.0
+        else:
+            addzero = sort_addzero(addzero, enint)
         ret = energies_interacting + addzero
         for i, _ in enumerate(addzero):
             try:
@@ -396,6 +402,7 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
+        skip_next = False
         for i, diag in enumerate(GEVP_DIRS_PLUS_ONE):
             if skip_next:
                 skip_next = False
