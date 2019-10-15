@@ -177,6 +177,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
         config_range = range(
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
 
+        start_loop = True
+
         for config_num in config_range:
 
             # copy the jackknife block into coords_jack
@@ -204,10 +206,11 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
-            if config_num:
-                mkmin.SPARAMS = result_min_jack.x
-            else:
+            if start_loop:
                 mkmin.SPARAMS = START_PARAMS
+                start_loop = False
+            else:
+                mkmin.SPARAMS = result_min_jack.x
             result_min.min_params.arr[config_num] = result_min_jack.x
 
             # store results for this fit
