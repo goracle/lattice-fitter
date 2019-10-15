@@ -37,12 +37,12 @@ if GEVP:
         # print("break 2")
         # print(coords[0][1]-fit_func(coords[0][0], trial_params))
         retval = np.sum(
-            np.fromiter((dot(dot(
+            np.fromiter((np.linalg.multi_dot([
             (coords[outer][1] - fit_func_systematic(
                 coords[outer][0], trial_params)),
-            covinv[outer][inner]), (
+            covinv[outer][inner], (
                 coords[inner][1]-fit_func_systematic(
-                    coords[inner][0], trial_params)))
+                    coords[inner][0], trial_params))])
                          for outer in RCORD 
                          for inner in RCORD), dtype=np.float, count=COUNT))
         if retval.imag != 0 and not np.isnan(retval.imag):
@@ -80,10 +80,10 @@ else:
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
         return np.sum(np.fromiter(
-            (dot(dot((
+            (np.linalg.multi_dot([(
             coords[outer][1] - fit_func_systematic(
-                coords[outer][0], trial_params)), covinv[outer][inner]),
+                coords[outer][0], trial_params)), covinv[outer][inner],
                  (coords[inner][1]-fit_func_systematic(
-                     coords[inner][0], trial_params)))
+                     coords[inner][0], trial_params))])
              for outer in RCORD for inner in RCORD),
             dtype=np.float, count=COUNT))
