@@ -23,6 +23,7 @@ else:
     fit_func_systematic = fit_func
 
 RCORD = None
+SYMRANGE = None
 COUNT = None
 
 if GEVP:
@@ -43,8 +44,8 @@ if GEVP:
             covinv[outer][inner], (
                 coords[inner][1]-fit_func_systematic(
                     coords[inner][0], trial_params))])
-                         for outer in RCORD 
-                         for inner in RCORD), dtype=np.float, count=COUNT))
+                         for outer, inner in SYMRANGE), dtype=np.float, count=COUNT))
+        retval *= 2
         if retval.imag != 0 and not np.isnan(retval.imag):
             llll = [dot(dot((
                 coords[outer][1] - fit_func_systematic(
@@ -79,11 +80,12 @@ else:
         """Compute chi^2 (t^2) given a set of trial parameters,
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
-        return np.sum(np.fromiter(
+        retval = np.sum(np.fromiter(
             (np.linalg.multi_dot([(
             coords[outer][1] - fit_func_systematic(
                 coords[outer][0], trial_params)), covinv[outer][inner],
                  (coords[inner][1]-fit_func_systematic(
                      coords[inner][0], trial_params))])
-             for outer in RCORD for inner in RCORD),
+             for outer, inner in SYMRANGE),
             dtype=np.float, count=COUNT))
+        return retval*2

@@ -198,19 +198,21 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 config_num] = get_doublejk_data(params, coords_jack,
                                                 reuse, reuse_blocked,
                                                 config_num)
+            if start_loop:
+                mkmin.SPARAMS = START_PARAMS
+                mkmin.prealloc_chi(covinv_jack, coords_jack)
 
             # minimize chi^2 (t^2) given the inv. covariance matrix and data
             result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
+            if start_loop:
+                mkmin.SPARAMS = result_min_jack.x
+                start_loop = False
+
             if result_min_jack.status != 0:
                 assert not np.isnan(result_min_jack.status),\
                     str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
-            if start_loop:
-                mkmin.SPARAMS = START_PARAMS
-                start_loop = False
-            else:
-                mkmin.SPARAMS = result_min_jack.x
             result_min.min_params.arr[config_num] = result_min_jack.x
 
             # store results for this fit
@@ -276,6 +278,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     skip_range(params, result_min, skip_votes,
                                result_min_jack, chisq_fiduc_cut)
 
+        # reset the precomputed quantities
+        mkmin.dealloc_chi()
         # average results, compute jackknife uncertainties
 
         # pickle/unpickle the jackknifed arrays
@@ -1038,6 +1042,7 @@ def prune_covjack(params, covjack, coords_jack, flag):
     covjack = swap(covjack, len(covjack.shape)-1, 0)
     # invert the pruned covariance matrix
     marray, flag = invertmasked(params, len_time, excl, covjack)
+    symp(marray)
     covinv_jack = np.zeros(covjack.shape, dtype=float)
     if params.dimops == 1 and not GEVP:
         covinv_jack = np.copy(marray.data)
@@ -1045,13 +1050,37 @@ def prune_covjack(params, covjack, coords_jack, flag):
         # fill in the pruned dimensions with 0's
         for opa in range(params.dimops):
             for opb in range(params.dimops):
-                covinv_jack[opa, opb, :, :] = marray.data[
-                    opa*len_time:(opa+1)*len_time, opb*len_time:(
-                        opb+1)*len_time]
+                data = marray.data[
+                    opa*len_time:(opa+1)*len_time,
+                    opb*len_time:(opb+1)*len_time]
+                assert np.asarray(data).shape == np.asarray(
+                    covinv_jack[opa, opb]).shape
+                covinv_jack[opa, opb, :, :] = data
         # to put things back in time, time, dimops, dimops basis
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-1, 0)
         covinv_jack = swap(covinv_jack, len(covinv_jack.shape)-2, 1)
     return covinv_jack, flag
+
+def symp(matrix):
+    """Assert matrix is symmetric"""
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            eva = matrix[i][j]
+            evb = matrix[j][i]
+            err = str(eva)+" "+str(evb)
+            try:
+                assert eva == evb, err
+            except (AssertionError, ValueError):
+                try:
+                    assert np.allclose(eva, evb, rtol=1e-14)
+                except AssertionError:
+                    print(err)
+                    raise
+
+
+def invp(matrix, inv):
+    """Check if matrix is inverted"""
+    assert np.allclose(np.dot(matrix, inv), np.eye(len(inv)), rtol=1e-14)
 
 @PROFILE
 def invertmasked(params, len_time, excl, covjack):
@@ -1079,7 +1108,10 @@ def invertmasked(params, len_time, excl, covjack):
         params2.dimops = 1
         params2.num_configs = params.num_configs
     try:
-        matrix = invert_cov(matrix, params2)
+        matrix_inv = invert_cov(matrix, params2)
+        invp(matrix_inv, matrix)
+        matrix = matrix_inv
+        symp(matrix)
         marray[np.logical_not(marray.mask)] = normalize_covinv(
             matrix, params2).reshape(-1)
         flag = 0

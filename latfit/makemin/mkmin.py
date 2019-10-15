@@ -25,17 +25,55 @@ except NameError:
         return arg2
     PROFILE = profile
 
-def prealloc_chi(coords, covinv):
+def dealloc_chi():
+    """Reset the precomputed ranges"""
+    chi.RCORD = None
+    chi.COUNT = None
+    chi.SYMRANGE = None
+
+def prealloc_chi(covinv, coords):
     """Preallocate some variables for speedup of chi^2 eval
     perform checks
     """
     lcord = len(coords)
     chi.RCORD = np.arange(lcord)
-    chi.COUNT = lcord**2
+    chi.COUNT = int((lcord+1)*lcord/2)
+    chi.SYMRANGE = sym_range(lcord)
     covinv = np.asarray(covinv)
     assert covinv.shape[0] == covinv.shape[1], str(
         covinv.shape)+" "+str(coords)
     assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
+
+def sym_range(lcord):
+    ret = []
+    for i in range(lcord):
+        for j in np.arange(i, lcord):
+            ret.append((i,j))
+    return ret
+
+def sym_norm(covinv):
+    """Divide diagonal by 2 to prevent overcounting"""
+    for i in chi.RCORD:
+        covinv[i,i] /= 2
+    return covinv
+
+def check_covinv(covinv):
+    """Check inverse covariance matrix"""
+    for i in chi.RCORD:
+        for j in chi.RCORD:
+            comp1 = covinv[i][j]
+            if i != j:
+                comp2 = np.transpose(covinv[j][i])
+            else:
+                comp2 = covinv[j][i]
+            err = str(covinv[i][j])+" "+str(covinv[j][i])
+            try:
+                assert np.allclose(comp1, comp2, rtol=1e-14)
+            except AssertionError:
+                print(i, j)
+                print(err)
+                raise
+                
 
 SPARAMS = list(START_PARAMS)
 
@@ -44,7 +82,8 @@ def mkmin(covinv, coords, method=METHOD):
     """Minimization of chi^2 (t^2) section of fitter.
     Return minimized result.
     """
-    prealloc_chi(coords, covinv)
+    covinv = sym_norm(covinv)
+    check_covinv(covinv)
     start_params = [*SPARAMS, *SPARAMS,
                     *SPARAMS] if SYSTEMATIC_EST else SPARAMS
     if method not in set(['L-BFGS-B', 'minuit']):

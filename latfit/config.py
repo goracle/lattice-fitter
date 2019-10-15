@@ -384,6 +384,8 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+#FIT_EXCL = [[4.0, 5.0, 6.0], [8.0, 9.0], [4.0, 5.0, 8.0, 9.0]]
+#FIT_EXCL = [[2.0, 4.0, 6.0], [], [3.0, 5.0, 7.0]]
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 assert len(FIT_EXCL) == DIM or not GEVP
 
@@ -464,8 +466,6 @@ START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else\
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
 MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
-if ISOSPIN == 0:
-    MAX_ITER = 1000 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
