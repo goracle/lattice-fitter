@@ -33,7 +33,8 @@ def prealloc_chi(coords, covinv):
     chi.RCORD = np.arange(lcord)
     chi.COUNT = lcord**2
     covinv = np.asarray(covinv)
-    assert covinv.shape[0] == covinv.shape[1], str(covinv.shape)+" "+str(coords)
+    assert covinv.shape[0] == covinv.shape[1], str(
+        covinv.shape)+" "+str(coords)
     assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
 
 SPARAMS = list(START_PARAMS)
