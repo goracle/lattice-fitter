@@ -120,7 +120,7 @@ PR_GROUND_ONLY = True
 PR_GROUND_ONLY = False
 PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
-PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' == IRREP\
+PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 
 # use the pion ratio to correct systematic
@@ -464,6 +464,8 @@ START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else\
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
 MAX_ITER = 1900 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
+if ISOSPIN == 0:
+    MAX_ITER = 1000 if SYS_ENERGY_GUESS is not None and GEVP else MAX_ITER
 # MAX_RESULTS is the max number of usable fit ranges to average over
 # (useful for random fitting; the fitter will otherwise take a long time)
 # set this to np.inf to turn off
