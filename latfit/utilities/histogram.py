@@ -144,6 +144,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians):
     """
     median_diff, median_diff2, pdat_median = medians
     median_err = []
+    half = 0
     for i, j, k, _ in loop: # drop the fit range from the loop
         # skip the single time slice points for GEVP
         if j == 1.0 and hasattr(freqarr.shape, '__iter__') and\
