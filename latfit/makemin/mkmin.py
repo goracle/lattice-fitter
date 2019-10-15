@@ -8,13 +8,14 @@ from iminuit import minimize as minit
 import numpy as np
 
 from latfit.config import METHOD
-from latfit.mathfun.chi_sq import chi_sq
+# from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS
 from latfit.config import BINDS, SYS_ENERGY_GUESS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
 import latfit.config
+import latfit.mathfun.chi_sq as chi
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -24,24 +25,38 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def prealloc_chi(coords, covinv):
+    """Preallocate some variables for speedup of chi^2 eval
+    perform checks
+    """
+    lcord = len(coords)
+    chi.RCORD = np.arange(lcord)
+    chi.COUNT = lcord**2
+    covinv = np.asarray(covinv)
+    assert covinv.shape[0] == covinv.shape[1], str(covinv.shape)+" "+str(coords)
+    assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
+
+SPARAMS = list(START_PARAMS)
+
 @PROFILE
 def mkmin(covinv, coords, method=METHOD):
     """Minimization of chi^2 (t^2) section of fitter.
     Return minimized result.
     """
-    start_params = [*START_PARAMS, *START_PARAMS,
-                    *START_PARAMS] if SYSTEMATIC_EST else START_PARAMS
+    prealloc_chi(coords, covinv)
+    start_params = [*SPARAMS, *SPARAMS,
+                    *SPARAMS] if SYSTEMATIC_EST else SPARAMS
     if method not in set(['L-BFGS-B', 'minuit']):
         if latfit.config.MINTOL:
             options = {'maxiter': 10000, 'maxfev': 10000,
                        'xatol': 0.00000001, 'fatol': 0.00000001}
         else:
             options = {}
-        res_min = minimize(chi_sq, start_params, (covinv, coords),
+        res_min = minimize(chi.chi_sq, start_params, (covinv, coords),
                            method=method,
                            options=options)
         #else:
-        #    res_min = minimize(chi_sq, start_params, (covinv, coords),
+        #    res_min = minimize(chi.chi_sq, start_params, (covinv, coords),
         #                       method=METHOD)
         # options={'disp': True})
         #'maxiter': 10000,
@@ -56,7 +71,7 @@ def mkmin(covinv, coords, method=METHOD):
         else:
             options = {}
         try:
-            res_min = minimize(chi_sq, start_params, (covinv, coords),
+            res_min = minimize(chi.chi_sq, start_params, (covinv, coords),
                                method=method, bounds=BINDS,
                                options=options)
         except FloatingPointError:
@@ -74,7 +89,7 @@ def mkmin(covinv, coords, method=METHOD):
     elif 'minuit' in method:
         options = {}
         try:
-            res_min = minit(chi_sq, start_params, (covinv, coords),
+            res_min = minit(chi.chi_sq, start_params, (covinv, coords),
                             method=method, bounds=BINDS,
                             options=options)
             status = res_min.minuit.get_fmin().is_valid
@@ -100,13 +115,13 @@ def mkmin(covinv, coords, method=METHOD):
         print("covinv =", covinv)
         print("coords =", coords)
         print("start_params =", start_params)
-        print("chisq =", chi_sq(start_params, covinv, coords))
+        print("chisq =", chi.chi_sq(start_params, covinv, coords))
     if not res_min.status:
         if res_min.fun < 0:
             print("negative chi^2 found:", res_min.fun)
             print("result =", res_min.x)
             print("chi^2 (t^2; check) =",
-                  chi_sq(res_min.x, covinv, coords))
+                  chi.chi_sq(res_min.x, covinv, coords))
             print("covinv:", covinv)
             sys.exit(1)
             raise NegChisq
