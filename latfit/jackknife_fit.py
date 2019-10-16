@@ -204,15 +204,16 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
 
             # minimize chi^2 (t^2) given the inv. covariance matrix and data
             result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
-            if start_loop:
-                mkmin.SPARAMS = result_min_jack.x
-                start_loop = False
-
             if result_min_jack.status != 0:
                 assert not np.isnan(result_min_jack.status),\
                     str(result_min_jack.status)
                 result_min.misc.status = result_min_jack.status
                 raise NoConvergence
+
+            if start_loop:
+                mkmin.SPARAMS = result_min_jack.x
+                start_loop = False
+
             result_min.min_params.arr[config_num] = result_min_jack.x
 
             # store results for this fit
