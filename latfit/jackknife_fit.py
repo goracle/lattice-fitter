@@ -1072,7 +1072,7 @@ def symp(matrix):
                 assert eva == evb, err
             except (AssertionError, ValueError):
                 try:
-                    assert np.allclose(eva, evb, rtol=1e-14)
+                    assert np.allclose(eva, evb, rtol=1e-12)
                 except AssertionError:
                     print(err)
                     raise
