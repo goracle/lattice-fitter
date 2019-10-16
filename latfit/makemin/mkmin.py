@@ -68,7 +68,7 @@ def check_covinv(covinv):
                 comp2 = covinv[j][i]
             err = str(covinv[i][j])+" "+str(covinv[j][i])
             try:
-                assert np.allclose(comp1, comp2, rtol=1e-14)
+                assert np.allclose(comp1, comp2, rtol=1e-12)
             except AssertionError:
                 print(i, j)
                 print(err)
