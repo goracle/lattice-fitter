@@ -302,7 +302,7 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 NOATWSUB = True
 NOATWSUB = False
 NOATWSUB = False if ISOSPIN == 2 else NOATWSUB
-NOATWSUB = True if ISOSPIN == 1 else NOATWSUB
+NOATWSUB = True if ISOSPIN == 1 and 'mom000' in MOMSTR else NOATWSUB
 
 # additive constant, due to around-the-world effect
 # do the subtraction at the level of the GEVP matrix
