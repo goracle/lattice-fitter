@@ -14,7 +14,7 @@ MPION = 0.0
 def zetalm(l_arg, m_arg, qtwo, gamma):
     """Compute generalized Luscher zeta function"""
     zeta = czeta()
-    dx1, dy1, dz1 = COMP
+    dx1, dy1, dz1 = np.asarray(rf.mom(COMP))
     zeta.set_dgam(dx1, dy1, dz1, gamma)
     zeta.set_lm(l_arg, m_arg)
     ret = zeta.evaluate(qtwo)
@@ -63,7 +63,7 @@ class Wfun:
         if key in self.cache:
             ret = self.cache[key]
         else:
-            zlm = zetalm(l_arg, m_arg, self.qarg^2, self.gamma)
+            zlm = zetalm(l_arg, m_arg, self.qarg**2, self.gamma)
             denom = np.pi**(3/2)*np.sqrt(2*l_arg+1)
             denom *= self.gamma*self.qarg**(l_arg+1)
             denom = np.complex(denom)
@@ -85,12 +85,17 @@ class Wfun:
 
 def computek(epipi):
     """Get the k (relative pipi momentum for zeta)"""
-    return np.sqrt(epipi*epipi/4 - MPION**2)
+    arg = epipi*epipi/4 - MPION**2
+    if arg < 0:
+        arg = -1*arg
+    return np.sqrt(arg)
 
 def computegamma(epipi, comp):
     """Compute relativistic gamma given energy"""
     dotprod = np.dot(comp, comp)
     arg = epipi**2-(2*np.pi/L_BOX)**2*dotprod
+    if arg < 0:
+        arg = -1*arg
     ret = epipi/np.sqrt(arg)
     return ret
 
@@ -99,8 +104,10 @@ def phase(epipi):
     assert COMP, "center of mass momentum not set"
     assert L_BOX, "box length not set"
     assert MPION, "mass of pion not set"
-    # sort this, per quantization conditions given in https://arxiv.org/pdf/1704.05439.pdf
-    comp = np.asarray(sorted(list(COMP)))
+    # sort this,
+    # per quantization conditions given in
+    # https://arxiv.org/pdf/1704.05439.pdf
+    comp = np.asarray(rf.mom(COMP))
     comp = np.abs(comp)
 
     # set up wlm
@@ -118,18 +125,18 @@ def getcot(wlm):
     assert IRREP is not None, "irrep not set"
 
     # initial starting value to cotangent
-    cot = wlm(0, 0)
-    units = em.acsum(np.abs(COMP))
+    cot = wlm.wfunfun(0, 0)
+    units = em.acsum(np.abs(np.asarray(rf.mom(COMP))))
 
-    foundirr = True
+    foundirr = False
     if units == 1:
-        foundirr = False
+        foundirr = True
         if IRREP == 'A_1PLUS_mom1':
             cot += 2*wlm(2, 0)
         elif IRREP == 'B_mom1':
             cot += -wlm(2, 0)
     elif units == 2:
-        foundirr = False
+        foundirr = True
         if IRREP == 'A_1PLUS_mom11':
             cot += wlm(2, 0)/2
             cot += 1j*np.sqrt(6)*wlm(2, 1)-np.sqrt(3/2)*wlm(2, 2)
@@ -139,13 +146,13 @@ def getcot(wlm):
         elif IRREP == 'A_2MINUS_mom11':
             cot += wlm(2, 0)+np.sqrt(6)*wlm(2, 2)
     elif units == 3:
-        foundirr = False
+        foundirr = True
         if IRREP == 'A_1PLUS_avg_mom111':
             cot += -1j*wlm(2, 2)*np.sqrt(8/3)
             cot += np.real(wlm(2, 1))*np.sqrt(8/3)
             cot += np.imag(wlm(2, 1))*np.sqrt(8/3)
         elif IRREP == 'B_mom111':
-            cot += 1j*np.sqrt(6)*wlm(2, 2)
+            cot += 1j*np.sqrt(6)*wlm.wfunfun(2, 2)
     assert foundirr, "bad irrep specified:"+str(IRREP)
     return cot
 

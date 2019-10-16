@@ -132,7 +132,7 @@ def matsub_statements(matrix_subtraction, irrep, isospin, gevp, noatwsub):
         assert matrix_subtraction or irrep != 'A_1PLUS_mom000'
     if not noatwsub:
         print("matrix subtraction:", matrix_subtraction)
-    assert isospin != 1 or noatwsub, "I=1 has no ATW terms."
+    # assert isospin != 1 or noatwsub, "I=1 has no ATW terms."
 
 def superjackknife_statements(check_ids_minus_2, superjack_cutoff):
     """superjackknife statements"""
