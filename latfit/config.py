@@ -837,6 +837,9 @@ fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
                                DELTA_E2_AROUND_THE_WORLD)
 # get initial blank fit function
 PREFIT_FUNC = fitfunc.prelimselect()
+GRAD = None
+if hasattr(PREFIT_FUNC, '__iter__'):
+    PREFIT_FUNC, GRAD = PREFIT_FUNC
 
 START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
                                           NUM_PENCILS, MULT,

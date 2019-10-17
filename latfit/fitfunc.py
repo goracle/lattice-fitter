@@ -51,7 +51,39 @@ def const_plus_exp(start_params):
         return [energies[i] + \
                 trial_params[2*i+1]*np.exp(-1*ctime*\
                     (trial_params[-1]-energies[i])) for i in rlen]
-    return prefit_func
+
+    def dfdparam(ctime, trial_params):
+        """Gradient of the fit function (const+exp)"""
+        ret = []
+        energies = [trial_params[2*i] for i in rlen]
+        for i in rlen:
+            exp = -1*ctime*(trial_params[-1]-energies[i])
+            ret.append(1+trial_params[2*i+1]*ctime*np.exp(exp))
+            ret.append(np.exp(exp))
+        toapp = 0
+        for i in rlen:
+            exp = -1*ctime*(trial_params[-1]-energies[i])
+            toapp += -1*trial_params[2*i+1]*ctime*np.exp(exp)
+        ret.append(toapp)
+        ret = np.array(ret)
+        return ret
+
+    def grad(trial_params, covinv, coords):
+        """Gradient of chi^2"""
+        retval = np.zeros(len(trial_params), dtype=np.float)
+        for outer, inner in SYMRANGE:
+            rightdot = np.dot(covinv[outer][inner],
+                                   (coords[inner][1]-prefit_func(
+                                       coords[inner][0], trial_params)))
+            arr = dfdparam(coords[outer][0], trial_params)
+            for opa, item in enumerate(rightdot):
+                retval[2*opa] += arr[outer][2*opa]*item
+                retval[2*opa+1] += arr[outer][2*opa+1]*item
+                retval[-1] += arr[outer][-1]*item
+        retval *= -4
+        return retval
+    grad.SYMRANGE = None
+    return prefit_func, grad
 
 def mod_start_params(start_params, sys_energy_guess):
     """Modify start parameters for effective mass systematic energy fit"""

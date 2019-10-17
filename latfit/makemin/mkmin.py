@@ -14,6 +14,7 @@ from latfit.config import BINDS, SYS_ENERGY_GUESS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
+from latfit.config import GRAD
 import latfit.config
 import latfit.mathfun.chi_sq as chi
 
@@ -39,6 +40,7 @@ def prealloc_chi(covinv, coords):
     chi.RCORD = np.arange(lcord)
     chi.COUNT = int((lcord+1)*lcord/2)
     chi.SYMRANGE = sym_range(lcord)
+    GRAD.SYMRANGE = chi.SYMRANGE
     covinv = np.asarray(covinv)
     assert covinv.shape[0] == covinv.shape[1], str(
         covinv.shape)+" "+str(coords)
@@ -93,6 +95,7 @@ def mkmin(covinv, coords, method=METHOD):
         else:
             options = {}
         res_min = minimize(chi.chi_sq, start_params, (covinv, coords),
+                           jac=GRAD,
                            method=method,
                            options=options)
         #else:
@@ -112,6 +115,7 @@ def mkmin(covinv, coords, method=METHOD):
             options = {}
         try:
             res_min = minimize(chi.chi_sq, start_params, (covinv, coords),
+                               jac=GRAD,
                                method=method, bounds=BINDS,
                                options=options)
         except FloatingPointError:
@@ -131,6 +135,7 @@ def mkmin(covinv, coords, method=METHOD):
         try:
             res_min = minit(chi.chi_sq, start_params, (covinv, coords),
                             method=method, bounds=BINDS,
+                            jac=GRAD,
                             options=options)
             status = res_min.minuit.get_fmin().is_valid
             status = 0 if res_min.success else 1

@@ -110,6 +110,7 @@ def defsign(cmat):
         ret = 0
     else:
         print("eigenvalues are not all the same sign:", str(evals))
+        print(cmat)
         sys.exit(1)
         ret = False
     return ret
