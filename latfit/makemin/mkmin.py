@@ -138,7 +138,7 @@ def mkmin(covinv, coords, method=METHOD):
         try:
             res_min = minit(chi.chi_sq, start_params, (covinv, coords),
                             method=method, bounds=BINDS,
-                            jac=GRAD,
+                            jac=None,
                             options=options)
             status = res_min.minuit.get_fmin().is_valid
             status = 0 if res_min.success else 1
