@@ -82,8 +82,11 @@ def main():
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
         print("Trying initial test fit.")
+        start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
             meta, plotdata)
+        print("Total elapsed time =",
+              time.perf_counter()-start, "seconds")
 
         # update the known exclusion information with plot points
         # which are nan (not a number) or
@@ -93,8 +96,11 @@ def main():
 
             ## allocate results storage, do second initial test fit
             ## (if necessary)
+            start = time.perf_counter()
             min_arr, overfit_arr, retsingle_save, fit_range_init = \
                 dofit_second_initial(meta, retsingle_save, test_success)
+            print("Total elapsed time =",
+                  time.perf_counter()-start, "seconds")
 
             ### Setup for fit range loop
 
