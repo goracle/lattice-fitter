@@ -1,6 +1,7 @@
 """Minimizes chi^2 (t^2)"""
 import sys
 from collections import namedtuple
+from itertools import product
 from scipy.optimize import minimize
 # from scipy.optimize import curve_fit
 # from iminuit import Minuit
@@ -40,7 +41,9 @@ def prealloc_chi(covinv, coords):
     chi.RCORD = np.arange(lcord)
     chi.COUNT = int((lcord+1)*lcord/2)
     chi.SYMRANGE = sym_range(lcord)
-    GRAD.SYMRANGE = chi.SYMRANGE
+    chi.PRODRANGE = list(product(range(lcord), range(lcord)))
+    if GRAD is not None:
+        GRAD.PRODRANGE = chi.PRODRANGE
     covinv = np.asarray(covinv)
     assert covinv.shape[0] == covinv.shape[1], str(
         covinv.shape)+" "+str(coords)
@@ -155,12 +158,24 @@ def mkmin(covinv, coords, method=METHOD):
     # print "chi^2 minimized = ", res_min.fun
     # print "chi^2 minimized check = ", chi_sq(res_min.x, covinv, coords)
     # print covinv
-    if res_min.status and latfit.config.BOOTSTRAP:
+    if (res_min.status and latfit.config.BOOTSTRAP) or False:
+        from numdifftools import Jacobian, Hessian
+        def fun_der(x, covinv, coords):
+            return Jacobian(lambda x: chi.chi_sq(x, covinv, coords))(x).ravel()
         print("boostrap debug")
-        print("covinv =", covinv)
+        #print("covinv =", covinv)
+        print("covinv.shape", covinv.shape)
         print("coords =", coords)
         print("start_params =", start_params)
+        # covinv = np.ones_like(np.zeros(covinv.shape), dtype=np.float)
+        #for i in range(len(coords)):
+        #    coords[i][1] = np.ones_like(np.zeros(coords[i][1].shape), dtype=np.float) 
+        # start_params = np.ones_like(np.zeros(len(start_params)), dtype=np.float)
         print("chisq =", chi.chi_sq(start_params, covinv, coords))
+        if GRAD is not None:
+            print("grad =", GRAD(start_params, covinv, coords))
+            print("num grad =", fun_der(start_params, covinv, coords))
+        sys.exit()
     if not res_min.status:
         if res_min.fun < 0:
             print("negative chi^2 found:", res_min.fun)

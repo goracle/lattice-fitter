@@ -2,7 +2,7 @@
 fit function/processing function selection
 """
 import sys
-from copy import copy
+import copy
 from math import exp
 import numpy as np
 import latfit.analysis.misc as misc
@@ -54,35 +54,47 @@ def const_plus_exp(start_params):
 
     def dfdparam(ctime, trial_params):
         """Gradient of the fit function (const+exp)"""
-        ret = []
-        energies = [trial_params[2*i] for i in rlen]
-        for i in rlen:
-            exp = -1*ctime*(trial_params[-1]-energies[i])
-            ret.append(1+trial_params[2*i+1]*ctime*np.exp(exp))
-            ret.append(np.exp(exp))
-        toapp = 0
-        for i in rlen:
-            exp = -1*ctime*(trial_params[-1]-energies[i])
-            toapp += -1*trial_params[2*i+1]*ctime*np.exp(exp)
-        ret.append(toapp)
-        ret = np.array(ret)
+        key = (ctime, str(trial_params))
+        key = str(key)
+        if key in dfdparam.mem:
+            ret = dfdparam.mem[key]
+        else:
+            ret = []
+            energies = [trial_params[2*i] for i in rlen]
+            for i in rlen:
+                exp = -1*ctime*(trial_params[-1]-energies[i])
+                ret.append(1+trial_params[2*i+1]*ctime*np.exp(exp))
+                ret.append(np.exp(exp))
+            toapp = []
+            for i in rlen:
+                exp = -1*ctime*(trial_params[-1]-energies[i])
+                toapp.append(-1*trial_params[2*i+1]*ctime*np.exp(exp))
+            ret.append(toapp)
+            ret = np.array(ret)
+            dfdparam.mem[key] = ret
         return ret
+    dfdparam.mem = {}
 
     def grad(trial_params, covinv, coords):
         """Gradient of chi^2"""
         retval = np.zeros(len(trial_params), dtype=np.float)
-        for outer, inner in SYMRANGE:
+        covinv = copy.deepcopy(covinv)
+        dfdparam.mem = {}
+        for outer, inner in grad.PRODRANGE:
+            if outer == inner:
+                covinv[outer][inner] *= 2
             rightdot = np.dot(covinv[outer][inner],
                                    (coords[inner][1]-prefit_func(
                                        coords[inner][0], trial_params)))
             arr = dfdparam(coords[outer][0], trial_params)
+            # assert len(rightdot) == len(rlen), str(rightdot)
             for opa, item in enumerate(rightdot):
-                retval[2*opa] += arr[outer][2*opa]*item
-                retval[2*opa+1] += arr[outer][2*opa+1]*item
-                retval[-1] += arr[outer][-1]*item
-        retval *= -4
+                retval[2*opa] += arr[2*opa]*item
+                retval[2*opa+1] += arr[2*opa+1]*item
+                retval[-1] += arr[-1][opa]*item
+        retval *= -2
         return retval
-    grad.SYMRANGE = None
+    grad.PRODRANGE = None
     return prefit_func, grad
 
 def mod_start_params(start_params, sys_energy_guess):
@@ -258,7 +270,7 @@ def expfit(fit, origl, add_const, rescale, fits):
 def pencil_mod(prefit_func, fit, num_pencils, rescale, start_params):
     """Modify the fit function for GPOF method"""
     if fit:
-        fit_func_copy = copy(prefit_func)
+        fit_func_copy = copy.copy(prefit_func)
 
     if num_pencils > 0:
         def fit_func(ctime, trial_params):

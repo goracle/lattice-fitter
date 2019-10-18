@@ -25,6 +25,7 @@ else:
 RCORD = None
 SYMRANGE = None
 COUNT = None
+PRODRANGE = None
 
 if GEVP:
     def chi_sq(trial_params, covinv, coords):
@@ -44,7 +45,8 @@ if GEVP:
             covinv[outer][inner], (
                 coords[inner][1]-fit_func_systematic(
                     coords[inner][0], trial_params))])
-                         for outer, inner in SYMRANGE), dtype=np.float, count=COUNT))
+                         for outer, inner in SYMRANGE),
+                        dtype=np.float, count=COUNT))
         retval *= 2
         if retval.imag != 0 and not np.isnan(retval.imag):
             llll = [dot(dot((

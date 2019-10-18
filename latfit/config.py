@@ -837,9 +837,6 @@ fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
                                DELTA_E2_AROUND_THE_WORLD)
 # get initial blank fit function
 PREFIT_FUNC = fitfunc.prelimselect()
-GRAD = None
-if hasattr(PREFIT_FUNC, '__iter__'):
-    PREFIT_FUNC, GRAD = PREFIT_FUNC
 
 START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
                                           NUM_PENCILS, MULT,
@@ -879,6 +876,10 @@ else:
                                           (ADD_CONST_VEC, LT_VEC))
     else:
         PREFIT_FUNC = fitfunc.expfit(FIT, ORIGL, ADD_CONST, RESCALE, FITS)
+
+GRAD = None
+if isinstance(PREFIT_FUNC, tuple):
+    PREFIT_FUNC, GRAD = PREFIT_FUNC
 
 # we've now got the form of the fit function, but it needs some
 # code related modifications
