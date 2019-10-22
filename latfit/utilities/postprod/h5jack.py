@@ -28,7 +28,7 @@ import latfit.utilities.postprod.auxblks as auxb
 import latfit.utilities.postprod.bubblks as bubb
 import latfit.utilities.postprod.mostblks as mostb
 import latfit.utilities.postprod.checkblks as checkb
-import latfit.utilities.avg_hdf5
+import latfit.utilities.avg_hdf5 as avg_hdf5
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd
@@ -790,7 +790,6 @@ def get_data(getexactconfigs=False, getsloppysubtraction=False):
 @PROFILE
 def main(fixn=False):
     """Run this when making jackknife diagrams from raw hdf5 files"""
-    #avg_irreps()
     print('start of main.')
     check_diag = "FigureCv3_sep"+str(
         TSEP)+"_momsrc_100_momsnk000" # sanity check
