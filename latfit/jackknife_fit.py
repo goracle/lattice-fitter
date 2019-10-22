@@ -23,7 +23,7 @@ from latfit.config import JACKKNIFE_FIT, NBOOT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import JACKKNIFE_BLOCK_SIZE, NOLOOP
-from latfit.config import UNCORR, SYS_ENERGY_GUESS
+from latfit.config import UNCORR, UNCORR_OP, SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
@@ -1094,9 +1094,13 @@ def invertmasked(params, len_time, excl, covjack):
     else:
         for opa in range(params.dimops):
             for opb in range(params.dimops):
-                matrix[opa*len_time:(opa+1)*len_time,
-                       opb*len_time:(opb+1)*len_time] = covjack[opa, opb,
-                                                                :, :]
+                if opa != opb and UNCORR_OP:
+                    matrix[opa*len_time:(opa+1)*len_time,
+                           opb*len_time:(opb+1)*len_time] = 0
+                else:
+                    matrix[opa*len_time:(opa+1)*len_time,
+                           opb*len_time:(opb+1)*len_time] = covjack[
+                               opa, opb, :, :]
     mask = np.zeros(matrix.shape)
     mask[excl, :] = 1
     mask[:, excl] = 1

@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from accupy import kdot
 
-from latfit.config import UNCORR, GEVP
+from latfit.config import UNCORR, UNCORR_OP, GEVP
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.utilities import exactmean as em
 from latfit.mathfun.block_ensemble import block_ensemble
@@ -27,8 +27,8 @@ if UNCORR:
 else:
     def get_coventry_gevp(reuse_blocked, sameblk, avgi):
         """Get entry in cov. mat., GEVP"""
+        # coventry = np.zeros((dimops, dimops))
         dimops = len(avgi)
-        coventry = np.zeros((dimops, dimops))
         num_configs = len(reuse_blocked['i'])
         if sameblk:
             coventry = em.acsum([np.outer(
@@ -40,6 +40,14 @@ else:
                 (avgi-reuse_blocked['i'][k]),
                 (em.acmean(reuse_blocked['j'], axis=0)-reuse_blocked['j'][
                     k])) for k in range(num_configs)], axis=0)
+        assert np.all(np.asarray(coventry.shape) == dimops),\
+            str(dimops)+" "+str(coventry.shape)
+
+        if UNCORR_OP:
+            for opa in range(dimops):
+                for opb in range(dimops):
+                    if opa != opb:
+                        coventry[opa][opb] = 0
 
         if not get_coventry_gevp.printed:
             # print(coventry)

@@ -336,14 +336,18 @@ DELTA_E2_AROUND_THE_WORLD = None
 if IRREP == 'A1_mom1':
     # the exception to the usual pattern for p1
     E21 = misc.massfunc()
-    E22 = misc.dispersive(rf.procmom(MOMSTR), continuum=FIT_SPACING_CORRECTION)
+    E22 = misc.dispersive(rf.procmom(MOMSTR),
+                          continuum=FIT_SPACING_CORRECTION)
 else:
     # the general E2
-    E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0], continuum=FIT_SPACING_CORRECTION)
-    E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1], continuum=FIT_SPACING_CORRECTION)
+    E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0],
+                          continuum=FIT_SPACING_CORRECTION)
+    E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1],
+                          continuum=FIT_SPACING_CORRECTION)
 assert E21 is None or (np.all(E21 > 0) and np.all(E22 > 0))
 assert E21 is None or (np.all(E22-E21) >= 0)
-DELTA_E2_AROUND_THE_WORLD = E22-E21 if E21 is not None and E22 is not None else None
+DELTA_E2_AROUND_THE_WORLD = E22-E21 if E21 is not None and E22 is not None\
+    else None
 #MINE2 = min(E21, E22)
 MINE2 = None # second order around the world fit no longer supported
 print("2nd order momenta for around the world:",
@@ -479,6 +483,12 @@ MAX_RESULTS = 5 if SYS_ENERGY_GUESS is not None else 16
 
 UNCORR = True
 UNCORR = False
+
+# Uncorrelated in operator dimension
+
+UNCORR_OP = False
+UNCORR_OP = True
+UNCORR_OP = False if UNCORR else UNCORR_OP
 
 # pvalue minimum; we reject model if a pvalue less than this is found
 PVALUE_MIN = 0.1

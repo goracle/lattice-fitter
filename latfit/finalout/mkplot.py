@@ -21,7 +21,7 @@ from latfit.config import FINE
 from latfit.config import TITLE
 from latfit.config import XLABEL
 from latfit.config import YLABEL, PLOT_LEGEND
-from latfit.config import UNCORR
+from latfit.config import UNCORR, UNCORR_OP
 from latfit.config import FIT, PIONRATIO
 from latfit.config import GEVP_DERIV, T0
 from latfit.config import METHOD, DECREASE_VAR
@@ -299,6 +299,9 @@ def get_file_string(title):
     if UNCORR:
         print("Doing uncorrelated fit.")
         uncorr_str = '_uncorr_fit'
+    elif UNCORR_OP:
+        print("Doing uncorrelated fit in operator dimension.")
+        uncorr_str = '_uncorr_op_fit'
     else:
         uncorr_str = ''
     file_str = title_safe + eff_str + uncorr_str + jk_str
