@@ -243,7 +243,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                     result_min, config_num)
 
             # compute phase shift, if necessary
-            if CALC_PHASE_SHIFT:
+            if CALC_PHASE_SHIFT and not latfit.config.BOOTSTRAP:
                 result_min.phase_shift.arr[config_num] = phase_shift_jk(
                     params, result_min.energy.arr[config_num])
 
@@ -556,7 +556,8 @@ def getenergies(params, arr):
     for i, j in zip(sorted(list(ret)), ret):
         if i != j:
             print("mis-sorted energies:", ret)
-            raise EnergySortError
+            if not latfit.config.BOOTSTRAP:
+                raise EnergySortError
     return ret
 
 @PROFILE
