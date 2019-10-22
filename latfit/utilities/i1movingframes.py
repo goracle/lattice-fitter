@@ -7,6 +7,7 @@ from math import sqrt
 import numpy as np
 from latfit.utilities import read_file as rf
 from latfit.utilities import exactmean as em
+import latfit.utilities.rho_pol_coeffs as rho
 
 CURRENT_MODULE = sys.modules[__name__]
 CMOD = CURRENT_MODULE
@@ -969,12 +970,6 @@ B_0_mom_111 = [
 ]
 
 
-def row(irrf):
-    """Find row number of irrep from string"""
-    ret = irrf.split('_')[1]
-    return int(ret)
-
-
 def pol_coeff(comp):
     """Get polarization coefficients
     from center of mass momentum"""
@@ -987,12 +982,6 @@ def pol_coeff(comp):
     else:
         assert None, "comp should be p111 or p11"
     return list(ret)
-
-def lstr(arr):
-    """Make sure the string will convert back to a list"""
-    ret = list(arr)
-    ret = str(ret)
-    return ret
 
 def sumabs(momf):
     """Sum the absolute value of the momentum
@@ -1044,37 +1033,11 @@ for IRR in dir(CMOD):
         KEY = str(IRR)+'?pol='
         TARR = [bool(IDX) for IDX in MOM]
 
-        #pols for p1
-        if 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 1:
-            KEY += str(TARR.index(True)+1)
-        elif 'B' in IRR and sum(np.abs(MOM)) == 1:
-            if row(IRR):
-                TARR[TARR.index(False)] = True
-            POL = int(TARR.index(False)) + 1
-            KEY += str(POL)
+        KEY += rho.rho_pol(irr, mom)
 
-        #pols for p11
-        elif 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 2:
-            KEY += lstr(MOM)
-        elif 'A_2PLUS' in IRR and sum(np.abs(MOM)) == 2:
-            KEY += str(TARR.index(False)+1)
-        elif 'A_2MINUS' in IRR and sum(np.abs(MOM)) == 2:
-            KEY += lstr(np.cross(MOM, [(1 if not i else 0) for i in TARR]))
-
-        #pols for p111
-        elif 'A_1PLUS' in IRR and sum(np.abs(MOM)) == 3:
-            KEY += lstr(MOM)
-        elif 'B' in IRR and sum(np.abs(MOM)) == 3:
-            POLLIST = pol_coeff(MOM)
-            if row(IRR):
-                KEY += lstr(np.cross(POLLIST, MOM))
-            else:
-                KEY += lstr(POLLIST)
-
-        # default
-        else:
-            assert None, "bad irrep specified:"+str(IRR)
         OPLIST[KEY] = IRRVAR
+
+
 
 AVG_ROWS = {
     'A_1PLUS_mom1': ('A_1PLUS_mom00_1',

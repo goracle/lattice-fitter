@@ -552,7 +552,8 @@ def get_polreq(op1):
             except ValueError:
                 reqpol = None
                 try:
-                    pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]))
+                    pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]),
+                                            dtype=np.complex)
                 except SyntaxError:
                     print('unable to parse:', polstrspl[1], 'as code.')
                     print("op1 =", op1)
