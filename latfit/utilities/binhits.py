@@ -9,7 +9,7 @@ import glob
 import pickle
 import numpy as np
 import h5py
-import read_file as rf
+import latfit.utilities.read_file as rf
 
 SKIP_VEC = True
 SKIP_VEC = False

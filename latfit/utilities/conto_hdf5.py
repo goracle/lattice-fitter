@@ -6,8 +6,8 @@ import re
 import glob
 import numpy as np
 import h5py
-import read_file as rf
-from traj_list import traj_list
+import latfit.utilities.read_file as rf
+from latfit.utilities.traj_list import traj_list
 #from latfit.analysis.profile import PROFILE
 
 LT = 64

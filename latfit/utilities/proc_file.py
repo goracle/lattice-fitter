@@ -6,7 +6,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 
 
 def call_sum(filen, dur, binsize=1, bin_num=1, already_summed=False):

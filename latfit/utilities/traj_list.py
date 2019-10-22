@@ -2,7 +2,7 @@
 """get traj list"""
 from os import listdir
 from os.path import isfile, join
-import read_file as rf
+import latfit.utilities.read_file as rf
 
 
 def traj_list(onlyfiles=None, base=None):

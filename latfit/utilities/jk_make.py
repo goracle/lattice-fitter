@@ -5,9 +5,9 @@ import os.path
 from os.path import isfile, join
 import sys
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 # from traj_list import traj_list
-import traj_list as tl
+import latfit.utilities.traj_list as tl
 from latfit.utilities import exactmean as em
 
 # this may be broken.

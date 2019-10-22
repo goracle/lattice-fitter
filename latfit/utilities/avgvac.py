@@ -6,8 +6,8 @@ from os import listdir
 from os.path import isfile, join
 import re
 import numpy as np
-import read_file as rf
-from traj_list import traj_list
+import latfit.utilities.read_file as rf
+from latfit.utilities.traj_list import traj_list
 
 
 def avg_vdis():

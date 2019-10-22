@@ -4,7 +4,7 @@
 import os
 import os.path
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 from latfit.utilities import exactmean as em
 
 
