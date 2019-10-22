@@ -8,7 +8,7 @@ from math import sqrt
 import sys
 from collections import namedtuple
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 
 
 def get_outblock(coeffs_arr, flag, outfile, time, sent):

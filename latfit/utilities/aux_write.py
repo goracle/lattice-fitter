@@ -5,7 +5,7 @@ from os import listdir
 from os.path import isfile, join
 import os.path
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 #from latfit.analysis.profile import PROFILE
 
 def transtime(tsrc, tdis, tsep, nmomaux, len_t):

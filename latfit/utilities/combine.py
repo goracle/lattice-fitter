@@ -3,7 +3,7 @@
 
 import sys
 import numpy as np
-import read_file as rf
+import latfit.utilities.read_file as rf
 
 
 def comb_dis(finsrc, finsnk, sep=0, starsnk=True, starsrc=False,):

@@ -1033,11 +1033,9 @@ for IRR in dir(CMOD):
         KEY = str(IRR)+'?pol='
         TARR = [bool(IDX) for IDX in MOM]
 
-        KEY += rho.rho_pol(irr, mom)
+        KEY += rho.rho_pol(IRR, MOM)
 
         OPLIST[KEY] = IRRVAR
-
-
 
 AVG_ROWS = {
     'A_1PLUS_mom1': ('A_1PLUS_mom00_1',

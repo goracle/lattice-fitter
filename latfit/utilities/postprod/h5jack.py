@@ -28,7 +28,7 @@ import latfit.utilities.postprod.auxblks as auxb
 import latfit.utilities.postprod.bubblks as bubb
 import latfit.utilities.postprod.mostblks as mostb
 import latfit.utilities.postprod.checkblks as checkb
-import avg_hdf5
+import latfit.utilities.avg_hdf5
 
 
 # when writing pion correlators, average over tsrc or leave un-averagd

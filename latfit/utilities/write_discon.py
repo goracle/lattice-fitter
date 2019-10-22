@@ -9,8 +9,8 @@ import re
 import numpy as np
 from latfit.utilities import exactmean as em
 
-import read_file as rf
-import combine as cb
+import latfit.utilities.read_file as rf
+import latfit.utilities.combine as cb
 
 # gets the array from the file, but keeps the values as strings
 

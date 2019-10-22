@@ -2,8 +2,8 @@
 import sys
 import numpy as np
 from mpi4py import MPI
-import aux_write as aux
-import read_file as rf
+import latfit.utilities.aux_write as aux
+import latfit.utilities.read_file as rf
 from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.checkblks import TESTKEY, TESTKEY2
 import latfit.utilities.postprod.mostblks as mostb

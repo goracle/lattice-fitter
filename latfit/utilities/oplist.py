@@ -6,7 +6,7 @@
 import sys
 from math import sqrt
 import numpy as np
-from i1movingframes import OPLIST, AVG_ROWS
+from latfit.utilities.i1movingframes import OPLIST, AVG_ROWS
 
 
 ENSEMBLE = 'FULL'

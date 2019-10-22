@@ -201,7 +201,7 @@ def mdie(mom):
     print("bad mom spec", mom)
     assert None
 
- def a2p_pos_check(ret, mom):
+def a2p_pos_check(ret, mom):
      """Check to make sure the two vectors
      are 0 in the same place"""
      for i, j in zip(ret, mom):

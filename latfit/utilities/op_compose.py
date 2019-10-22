@@ -5,10 +5,10 @@ import os
 import sys
 import re
 import numpy as np
-from sum_blks import sum_blks
-import write_discon as wd
-import read_file as rf
-from oplist import OPLIST, AVG_ROWS
+from latfit.utilities.sum_blks import sum_blks
+import latfit.utilities.write_discon as wd
+import latfit.utilities.read_file as rf
+from latfit.utilities.oplist import OPLIST, AVG_ROWS
 from latfit.utilities import exactmean as em
 
 
