@@ -160,7 +160,6 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                     params, reuse, singlefit.reuse_blocked, coords)
                 cloudpickle.dump((result_min, param_err),
                                  open("result_min.p", "wb"))
-            if SYS_ENERGY_GUESS is None:
                 result_min = bootstrap_pvalue(params, reuse,
                                               coords, result_min)
         else:
