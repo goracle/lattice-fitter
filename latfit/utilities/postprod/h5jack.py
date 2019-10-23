@@ -554,6 +554,7 @@ def get_polreq(op1):
                 try:
                     pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]),
                                             dtype=np.complex)
+                    pol_coeffs = pol_sq_conj(op1, pol_coeffs)
                 except SyntaxError:
                     print('unable to parse:', polstrspl[1], 'as code.')
                     print("op1 =", op1)
@@ -565,6 +566,17 @@ def get_polreq(op1):
         else:
             reqpol = None
     return reqpol, pol_coeffs
+
+
+def pol_sq_conj(op1, pol_coeffs):
+    """square/conjugate pol. coefficients as needed"""
+    if 'rhorho' in op1:
+        ret = pol_coeffs*np.conj(pol_coeffs)
+    elif 'pipirho' in op1:
+        ret = np.conj(pol_coeffs)
+    else:
+        ret = pol_coeffs
+    return ret
 
 
 #### averaging, jackknifing
