@@ -10,7 +10,7 @@ import numpy as np
 
 from latfit.config import METHOD
 # from latfit.mathfun.chi_sq import chi_sq
-from latfit.config import START_PARAMS
+from latfit.config import START_PARAMS, KICK_DELTA
 from latfit.config import BINDS, SYS_ENERGY_GUESS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
@@ -73,7 +73,7 @@ def check_covinv(covinv):
                 comp2 = covinv[j][i]
             err = str(covinv[i][j])+" "+str(covinv[j][i])
             try:
-                assert np.allclose(comp1, comp2, rtol=1e-12)
+                assert np.allclose(comp1, comp2, rtol=1e-10)
             except AssertionError:
                 print(i, j)
                 print(err)
@@ -87,7 +87,39 @@ def mkmin(covinv, coords, method=METHOD):
     """Minimization of chi^2 (t^2) section of fitter.
     Return minimized result.
     """
-    covinv = sym_norm(covinv)
+    status = 1
+    count = 10 # try 10 times to get convergence (abitrary)
+    kick = False
+    while status and count:
+        assert count >= 0, str(count)
+        res_min = mkmin_loop(covinv, coords, method, kick=kick)
+        status = res_min.status
+        count -= 1
+        if status:
+            kick = True
+            kick_params()
+    return res_min
+
+def kick_params(kick_delta=KICK_DELTA):
+    """Try to give the start params some small kick
+    in case we don't get convergence
+    but we are only stuck in a local minimum
+    kick delta determines the kick strength
+    """
+    skew = np.asarray(START_PARAMS) - np.asarray(SPARAMS) 
+    print("kicking start params; currently:", SPARAMS)
+    if not np.any(skew):
+        skew = np.ones_like(START_PARAMS)
+    for i, param in enumerate(SPARAMS):
+        noise = np.random.normal()
+        SPARAMS[i] += skew[i]*kick_delta*noise
+    print("after kick:", SPARAMS)
+
+def mkmin_loop(covinv, coords, method, kick=False):
+    """Inner loop part
+    """
+    if not kick:
+        covinv = sym_norm(covinv) # only do this once per mkmin call
     check_covinv(covinv)
     start_params = [*SPARAMS, *SPARAMS,
                     *SPARAMS] if SYSTEMATIC_EST else SPARAMS
@@ -175,7 +207,7 @@ def mkmin(covinv, coords, method=METHOD):
         if GRAD is not None:
             print("grad =", GRAD(start_params, covinv, coords))
             print("num grad =", fun_der(start_params, covinv, coords))
-        sys.exit()
+        # sys.exit()
     if not res_min.status:
         if res_min.fun < 0:
             print("negative chi^2 found:", res_min.fun)
