@@ -486,8 +486,8 @@ UNCORR = False
 
 # Uncorrelated in operator dimension
 
-UNCORR_OP = False
 UNCORR_OP = True
+UNCORR_OP = False
 UNCORR_OP = False if UNCORR else UNCORR_OP
 
 # pvalue minimum; we reject model if a pvalue less than this is found
@@ -692,6 +692,12 @@ ERROR_BAR_METHOD = 'avgcov'
 METHOD = 'Nelder-Mead'
 METHOD = 'L-BFGS-B'
 METHOD = 'minuit'
+
+# If we get caught in a local min., the minimizer may not converge
+# we then modify the guess by a kick of normal guassian noise
+# muliplied by the difference guess-START_PARAMS
+# multiplied by KICK_DELTA
+KICK_DELTA = 0.1
 
 # print correlation function, and sqrt(diag(cov)) and exit
 

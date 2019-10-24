@@ -64,6 +64,20 @@ TSTEP = TSTEP if not TEST24C else 8
 TDIS_MAX = 64
 TDIS_MAX = 22
 TDIS_MAX = 16
+
+# 24c
+TSEP = 3
+TDIS_MAX = 16
+TSTEP = 8
+
+# 32c
+TSEP = 4
+TDIS_MAX = 22
+TSTEP = 64/6
+
+
+#### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
+
 def tdismax():
     """Return tdis max"""
     if WRITE_INDIVIDUAL:
@@ -72,18 +86,6 @@ def tdismax():
         ret = TDIS_MAX
     return ret
 mostb.tdismax = tdismax
-
-# 32c
-TSEP = 4
-TDIS_MAX = 22
-TSTEP = 64/6
-
-# 24c
-TSEP = 3
-TDIS_MAX = 16
-TSTEP = 8
-
-#### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
 
 # FOLD = True # average about the mirror point in time (True)
 FOLD = True
