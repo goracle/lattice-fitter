@@ -178,6 +178,11 @@ class FitRangeMetaData:
                 " vs. expected length."
         return prod
 
+    def window_str(self):
+        """Get a file string for the fit window"""
+        ret = "_"+str(self.fitwindow[0])+"_"+str(self.fitwindow[1])
+        return ret
+
     @PROFILE
     def actual_range(self):
         """Return the actual range spanned by the fit window"""

@@ -79,8 +79,8 @@ def asserts_three(momstr, delta_e_around_the_world,
                   delta_e2_around_the_world, gevp, gevp_deriv):
     """some asserts"""
     if rf.norm2(rf.procmom(momstr)) == 0:
-        assert np.all(np.asarray(delta_e_around_the_world) == 0.0 or\
-                      delta_e_around_the_world is None), \
+        datw = np.asarray(delta_e_around_the_world)
+        assert not np.any(datw) or not datw.shape, \
             "only 1 constant in COMP frame:"+str(delta_e_around_the_world)
         assert delta_e2_around_the_world is None, \
             "only 1 constant in COMP frame"

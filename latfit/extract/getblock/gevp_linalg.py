@@ -131,7 +131,7 @@ def log_matrix(cmat, check=False):
     assert np.allclose(cmat, scipy.linalg.expm(ret), rtol=1e-8)
     return ret
 
-def cmatdot(cmat, vec, transp=False):
+def cmatdot(cmat, vec, transp=False, sloppy=False):
     """Dot gevp matrix into vec on rhs if not transp"""
     cmat = np.asarray(cmat)
     cmat = cmat.T if transp else cmat
@@ -141,7 +141,10 @@ def cmatdot(cmat, vec, transp=False):
         tosum = []
         for j, item in enumerate(row):
             tosum.append(item*vec[j])
-        ret[i] = em.acsum(tosum)
+        if sloppy:
+            ret[i] = np.sum(tosum, axis=0)
+        else:
+            ret[i] = em.acsum(tosum)
     return ret
 
 def bracket(evec, cmat):

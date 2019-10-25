@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env pypy3
 """Fit function to data.
 Compute chi^2 (t^2) and errors.
 Plot fit with error bars.
@@ -29,7 +28,7 @@ from latfit.config import FIT, METHOD
 from latfit.config import ISOSPIN, MOMSTR, UNCORR
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
-from latfit.config import MAX_RESULTS
+from latfit.config import MAX_RESULTS, T0
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT
 from latfit.jackknife_fit import jack_mean_err
@@ -179,7 +178,8 @@ def old_fit_style(meta, trials, plotdata):
         ninput = os.path.join(meta.input_f, ifile)
         result_min, _, plotdata.coords, plotdata.cov =\
             singlefit(ninput, meta.fitwindow,
-                      meta.options.xmin, meta.options.xmax, meta.options.xstep)
+                      meta.options.xmin, meta.options.xmax,
+                      meta.options.xstep)
         list_fit_params.append(result_min.energy.val)
     printerr(*get_fitparams_loc(list_fit_params, trials))
 
@@ -492,7 +492,7 @@ def compare_eff_mass_to_range(arr, errmin, mindim=None):
     return arr, errmin
 
 @PROFILE
-def dump_min_err_jackknife_blocks(min_arr, mindim=None):
+def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     """Dump the jackknife blocks for the energy with minimum errors"""
     fname = "energy_min_"+str(LATTICE_ENSEMBLE)
     if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
@@ -514,10 +514,11 @@ def dump_min_err_jackknife_blocks(min_arr, mindim=None):
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'energy').arr[:, mindim])
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
-    print("dumping jackknife energies with error:", errmin,
-          "into file:", fname+'.p')
     if SYS_ENERGY_GUESS:
         fname += "_sys"
+    fname = fname + meta.window_str()+"_"+T0
+    print("dumping jackknife energies with error:", errmin,
+          "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 if EFF_MASS:
@@ -652,9 +653,9 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     if 'energy' in name: # no clobber (only do this once)
         if MULT > 1:
             for i in range(len(res_mean)):
-                dump_min_err_jackknife_blocks(min_arr, mindim=i)
+                dump_min_err_jackknife_blocks(meta, min_arr, mindim=i)
         else:
-            dump_min_err_jackknife_blocks(min_arr)
+            dump_min_err_jackknife_blocks(meta, min_arr)
     pickl_res = pickle_res(name, min_arr)
     pickl_res_err = pickle_res_err(name, min_arr)
     pickl_excl = pickle_excl(meta, min_arr)
@@ -671,11 +672,13 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     else:
         filename = name+"_"+MOMSTR+'_I'+str(ISOSPIN)
         filename_err = name+'_err'+"_"+MOMSTR+'_I'+str(ISOSPIN)
-    print("writing file", filename)
     assert len(pickl_res) == 4, "bad result length"
     if SYS_ENERGY_GUESS:
         filename += "_sys"
         filename_err += '_sys'
+    filename = filename + meta.window_str()+"_"+T0
+    print("writing file", filename)
+    filename_err = filename_err + meta.window_str()+"_"+T0
     pickle.dump(pickl_res, open(filename+'.p', "wb"))
     print("writing file", filename_err)
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
