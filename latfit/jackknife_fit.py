@@ -479,7 +479,7 @@ def correction_en(result_min, config_num):
     else:
         corre2 = delta_e2_around_the_world if\
             delta_e2_around_the_world is not None else 0
-    if FIT_SPACING_CORRECTION and not PIONRATIO:
+    if FIT_SPACING_CORRECTION and not PIONRATIO and GEVP:
         corre3 = misc.correct_epipi(result_min.energy.arr[config_num],
                                     config_num=config_num)
     else:
