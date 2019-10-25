@@ -25,7 +25,7 @@ from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
-from latfit.config import JACKKNIFE, NOLOOP
+from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
 from latfit.config import PRINT_CORR, SYS_ENERGY_GUESS
 from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
@@ -160,8 +160,9 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                     params, reuse, singlefit.reuse_blocked, coords)
                 cloudpickle.dump((result_min, param_err),
                                  open("result_min.p", "wb"))
-                result_min = bootstrap_pvalue(params, reuse,
-                                              coords, result_min)
+                if BOOTSTRAP_PVALUES:
+                    result_min = bootstrap_pvalue(params, reuse,
+                                                  coords, result_min)
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
@@ -211,7 +212,7 @@ def error_bar_scheme(result_min, fitrange, xmin, xmax):
 def bootstrap_pvalue(params, reuse, coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
-    if result_min.misc.dof not in bootstrap_pvalue.result_minq: 
+    if result_min.misc.dof not in bootstrap_pvalue.result_minq:
         latfit.config.BOOTSTRAP = True
         set_bootstrap_shift(result_min)
         # total_configs = JACKKNIFE_BLOCK_SIZE*params.num_configs
