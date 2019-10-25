@@ -61,7 +61,7 @@ def err_arr(fname, freqarr, avg):
     if 'I' not in fname:
         errfn = fname.replace('.p', "_err.p", 1)
     else:
-        errfn = re.sub('_mom', '_err_mom', fname)
+        errfn = re.sub(r'_mom(\d+)_', '_mom\\1_err_', fname)
     #print("file with stat errors:", errfn)
     with open(errfn, 'rb') as fn1:
         errdat = pickle.load(fn1)
