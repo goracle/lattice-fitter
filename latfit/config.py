@@ -283,10 +283,14 @@ if GEVP:
 
 # Bootstrap params
 NBOOT = 2000 # until it saturates (should be infinity)
+BOOTSTRAP = False # don't modify; internal global
+
 # whether to get accurate p-values.  usually best to leave this false
-# it is automatically turned on for final fit
-BOOTSTRAP = False
-BOOTSTRAP = True
+# the rigorous p-values are fairly easily obtained (to a good approx)
+# from Hotelling's t^2 distribution
+# Turn on for final fits, if you need fully rigorous p-values...
+BOOTSTRAP_PVALUES = True
+BOOTSTRAP_PVALUES = False
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
@@ -333,12 +337,14 @@ DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
 ## second delta E
 DELTA_E2_AROUND_THE_WORLD = None
 
-if IRREP == 'A1_mom1':
+E21 = None
+E22 = None
+if IRREP == 'A1_mom1' and GEVP:
     # the exception to the usual pattern for p1
     E21 = misc.massfunc()
     E22 = misc.dispersive(rf.procmom(MOMSTR),
                           continuum=FIT_SPACING_CORRECTION)
-else:
+elif GEVP:
     # the general E2
     E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0],
                           continuum=FIT_SPACING_CORRECTION)
@@ -371,7 +377,7 @@ if not MATRIX_SUBTRACTION:
     DELTA_E2_AROUND_THE_WORLD = None
 
 ### delta e around the world section conclusion
-if FIT_SPACING_CORRECTION:
+if FIT_SPACING_CORRECTION and GEVP:
     DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
         DELTA_E2_AROUND_THE_WORLD)
@@ -824,7 +830,8 @@ latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP or GEVP_DEBUG else\
     DELTA_T2_MATRIX_SUBTRACTION
 latfit.fit_funcs.TSTEP2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else\
     latfit.fit_funcs.TSTEP2
-latfit.fit_funcs.PION_MASS = misc.massfunc()
+if GEVP:
+    latfit.fit_funcs.PION_MASS = misc.massfunc()
 latfit.fit_funcs.PIONRATIO = False
 latfit.fit_funcs.LT = LT
 latfit.fit_funcs.GEVP = GEVP
@@ -908,6 +915,7 @@ def fit_func(ctime, trial_params): # lower case hack
     return PREFIT_FUNC(ctime, trial_params)
 
 # make statements (asserts)
+assert not BOOTSTRAP
 sands.gevp_statements(GEVP_DIRS, GEVP, DIM, MULT, (LT_VEC, ADD_CONST_VEC))
 sands.rescale_and_atw_statements(EFF_MASS, EFF_MASS_METHOD, RESCALE,
                                  DELTA_E_AROUND_THE_WORLD,
