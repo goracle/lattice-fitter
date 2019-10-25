@@ -83,11 +83,18 @@ else:
         the inverse covariance matrix, and the x-y coordinates to fit.
         """
         retval = np.sum(np.fromiter(
-            (np.linalg.multi_dot([(
-            coords[outer][1] - fit_func_systematic(
-                coords[outer][0], trial_params)), covinv[outer][inner],
+            (np.dot(np.dot((coords[outer][1] - fit_func_systematic(
+                coords[outer][0], trial_params)[0]), covinv[outer][inner]),
                  (coords[inner][1]-fit_func_systematic(
-                     coords[inner][0], trial_params))])
+                     coords[inner][0], trial_params)[0]))
              for outer, inner in SYMRANGE),
             dtype=np.float, count=COUNT))
+        #retval2 = np.sum(np.fromiter(
+        #    (np.dot(np.dot((coords[outer][1] - fit_func_systematic(
+        #        coords[outer][0], trial_params)), covinv[outer][inner]),
+        #         (coords[inner][1]-fit_func_systematic(
+        #             coords[inner][0], trial_params)))
+        #     for outer, inner in SYMRANGE),
+        #    dtype=np.float, count=COUNT))
+        #assert retval == retval2, str(retval)+" "+str(retval2)
         return retval*2
