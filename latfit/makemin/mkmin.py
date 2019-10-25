@@ -53,7 +53,7 @@ def sym_range(lcord):
     ret = []
     for i in range(lcord):
         for j in np.arange(i, lcord):
-            ret.append((i,j))
+            ret.append((i, j))
     return ret
 
 def sym_norm(covinv):
@@ -73,7 +73,7 @@ def check_covinv(covinv):
                 comp2 = covinv[j][i]
             err = str(covinv[i][j])+" "+str(covinv[j][i])
             try:
-                assert np.allclose(comp1, comp2, rtol=1e-10)
+                assert np.allclose(comp1, comp2, rtol=1e-8)
             except AssertionError:
                 print(i, j)
                 print(err)
