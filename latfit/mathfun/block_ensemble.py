@@ -47,36 +47,27 @@ def allzero(arr):
     assert np.allclose(arr, 0.0, rtol=1e-14),\
         " zero:\n"+str(arr)
 
-if GEVP and EFF_MASS:
-    
-    def test_avgs(reuse_inv):
-        """if EFF_MASS and GEVP,
-        then test to make sure all the averages have been shifted
-        to be constant with respect to time
-        """
-        avg = em.acmean(reuse_inv)
-        zero = []
-        for i, tavg in enumerate(avg):
-            if i < test_avgs.start_index:
-                continue
-            if i > test_avgs.stop_index:
-                continue
-            zero.append(test_avgs.avg[i]-tavg)
-        zero = np.array(zero)
-        assert zero.shape
-        allzero(zero)
-        if EFF_MASS and GEVP and not SYS_ENERGY_GUESS:
-            allzero(avg-avg[0])
-    test_avgs.avg = {}
-    test_avgs.start_index = None
-    test_avgs.stop_index = None
-
-else:
-    def test_avgs(_):
-        """if EFF_MASS and GEVP,
-        then test to make sure all the averages have been shifted
-        to be constant with respect to time
-        """
+def test_avgs(reuse_inv):
+    """if EFF_MASS and GEVP,
+    then test to make sure all the averages have been shifted
+    to be constant with respect to time
+    """
+    avg = em.acmean(reuse_inv)
+    zero = []
+    for i, tavg in enumerate(avg):
+        if i < test_avgs.start_index:
+            continue
+        if i > test_avgs.stop_index:
+            continue
+        zero.append(test_avgs.avg[i]-tavg)
+    zero = np.array(zero)
+    assert zero.shape
+    allzero(zero)
+    if EFF_MASS and GEVP and not SYS_ENERGY_GUESS:
+        allzero(avg-avg[0])
+test_avgs.avg = {}
+test_avgs.start_index = None
+test_avgs.stop_index = None
 
 
 def bootstrap_ensemble(reuse_inv, avg, reuse_blocked):
