@@ -47,6 +47,7 @@ from latfit.analysis.result_min import Param
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT
 from latfit.config import MULT
+from latfit.checks.consistency import fit_range_consistency_check
 import latfit.config
 import latfit.jackknife_fit
 from latfit.utilities import exactmean as em
@@ -151,6 +152,10 @@ def main():
                 # process and store fit result
                 min_arr, overfit_arr, retsingle_save = process_fit_result(
                     retsingle, excl, min_arr, overfit_arr)
+
+                fit_range_consistency_check(min_arr, 'energy')
+                if CALC_PHASE_SHIFT:
+                    fit_range_consistency_check(min_arr, 'phase_shift')
 
             if not meta.skip_loop:
 
