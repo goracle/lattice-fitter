@@ -128,10 +128,6 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
 # if not, we can use it to correct statistical error
 MINIMIZE_STAT_ERROR_PR = True
 MINIMIZE_STAT_ERROR_PR = False
-if LATTICE_ENSEMBLE == '24c':
-    MINIMIZE_STAT_ERROR_PR = False
-elif LATTICE_ENSEMBLE == '32c':
-    MINIMIZE_STAT_ERROR_PR = True
 
 # take derivative of GEVP eigenvalues
 GEVP_DERIV = True
@@ -295,8 +291,6 @@ BOOTSTRAP_PVALUES = False
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
 FIT_SPACING_CORRECTION = False
-FIT_SPACING_CORRECTION = True if LATTICE_ENSEMBLE == '32c'\
-    else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = True if PIONRATIO else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
