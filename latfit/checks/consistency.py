@@ -1,11 +1,12 @@
 import numpy as np
 from gvar import gvar
+from latfit.config import GEVP
 
 def fit_range_consistency_check(min_arr, name):
     """Check consistency of energies and phase shifts so far"""
     lparam = []
     for i in min_arr:
-        lparam.append(getattr(i, name))
+        lparam.append(getattr(i[0], name))
     consis = consistent_list_params(lparam)
     err_handle(consis, lparam, name)
 
@@ -40,8 +41,12 @@ def consistent_params(item1, item2):
     """Check the consistency of two Param objects
     if discrepant by > 1.5 sigma, return False (inconsistent)
     """
-    err = max(item.err, item2.err)
     diff = item1.val-item2.val
+    diff = list(diff)
+    if GEVP:
+        idx = diff.index(max(diff))
+        diff = diff[idx]
+        err = max(item1.err[idx], item2.err[idx])
     err = np.asarray(err)
     diff = np.asarray(diff)
     ret = False if np.any(diff/err > 1.5) else True
