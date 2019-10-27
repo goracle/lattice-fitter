@@ -62,10 +62,16 @@ def err_arr(fname, freqarr, avg):
         errfn = fname.replace('.p', "_err.p", 1)
     else:
         errfn = re.sub(r'_mom(\d+)_', '_mom\\1_err_', fname)
+        errfn2 = re.sub(r'_mom(\d+)_', '_err_mom\\1_', fname)
     #print("file with stat errors:", errfn)
-    with open(errfn, 'rb') as fn1:
-        errdat = pickle.load(fn1)
-        errdat = np.real(np.array(errdat))
+    try:
+        with open(errfn, 'rb') as fn1:
+            errdat = pickle.load(fn1)
+            errdat = np.real(np.array(errdat))
+    except FileNotFoundError:
+        with open(errfn2, 'rb') as fn1:
+            errdat = pickle.load(fn1)
+            errdat = np.real(np.array(errdat))
     assert np.array(errdat).shape, "error array not found"
 
     print('shape:', freqarr.shape, avg)
