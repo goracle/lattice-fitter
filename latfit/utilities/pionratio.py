@@ -49,7 +49,8 @@ STYPE = 'hdf5'
 # DELTAT is T-T0 where T, T0 are RHS, LHS time separations
 # used in the GEVP
 DELTAT = 2 if TSTEP == 10 else 3
-print("Using DELTAT=", DELTAT)
+DELTAT = 1
+print("Using DELTAT=", DELTAT, "TSEP=", TSEP)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -475,14 +476,20 @@ def innerouter(top1pair, top2pair, mompair):
     return ret
 
 
-def avgtsrc(top):
+def avgtsrc(top, pstr):
     """Average over tsrc """
+    pr1 = np.any(np.isnan(top))
     if DELETE_TSRC:
         assert np.asarray(top).shape[1] == LT
         top1 = np.delete(top, skiplist(), axis=1)
     else:
         top1 = top
     ret = em.acmean(top1, axis=1)
+    if pr1 and not MPIRANK:
+        #print(pstr)
+        for i in ret[0]:
+            pass
+            #print(i)
     return ret
 
 def zerosimple(blk):
@@ -592,7 +599,7 @@ def top_one(atw, pi_tuple, fname, gname):
     top1 = np.roll(top1, -1*TSEP, axis=2)
 
     # average over tsrc
-    top1 = avgtsrc(top1)
+    top1 = avgtsrc(top1, "top1")
 
     if not atw:
         try:
@@ -639,7 +646,7 @@ def top_two(atw, pi_tuple, fname, gname):
         top2 = np.roll(shiftpi, -2*TSEP, axis=2)*toppi
 
     # average over tsrc
-    top2 = avgtsrc(top2)
+    top2 = avgtsrc(top2, "top2")
 
     if not atw:
         try:
@@ -710,12 +717,26 @@ def zero_out_and_count(allblks, count, keys, toppi):
         count[key3] += 1
     return allblks, count
 
+def mom_comp_filter(momf, momg):
+    """Return False if momentum units of any component > 1"""
+    momf = np.asarray(momf)
+    momg = np.asarray(momg)
+    ret = not np.any(np.abs(momf+momg) > 1)
+    return ret
+
 def add_topologies(allblks, top1, top2, top3, keys):
     """Add topologies together and save"""
     key1, key3halves, key2, key3 = keys
     normfactor = 2
     allblks[key1] += top1/normfactor
     allblks[key3halves] += top1/normfactor
+    momf = rf.mom(keys[0])[0]
+    momg = rf.mom(keys[0])[1]
+    if np.isnan(top2[0][17]) and mom_comp_filter(momf, momg):
+        pass
+        #print(top2[0])
+        #print(keys)
+        #sys.exit(0)
     allblks[key2] += top2/normfactor
     allblks[key3] += top3/normfactor
     return allblks
@@ -1005,12 +1026,12 @@ if __name__ == '__main__':
     check_ids()
     h5jack.AVGTSRC = True # hack to get file names right (and fold time!)
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
-    piondirect()
-    print("after pion ratio, rank", MPIRANK)
     piondirect(atw=True)
     print("after atw, rank", MPIRANK)
     piondirect(atw=True, reverseatw=True)
     print("after reverse atw", MPIRANK)
+    piondirect()
+    print("after pion ratio, rank", MPIRANK)
     print("end")
     for dirn in ['I0', 'I1', 'I2']:
         os.chdir(dirn)
