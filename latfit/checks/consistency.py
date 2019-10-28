@@ -16,7 +16,7 @@ def err_handle(consis, lparam, name):
         assert consis
     except AssertionError:
         print("fit ranges are inconsistent with respect to:", name)
-        for i in sort_by_val(laram):
+        for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
         raise
     
@@ -35,6 +35,8 @@ def consistent_list_params(lparam):
     for i in lparam:
         for j in lparam:
             ret = consistent_params(i, j)
+            if not ret:
+                break
     return ret
 
 def consistent_params(item1, item2):
@@ -42,12 +44,15 @@ def consistent_params(item1, item2):
     if discrepant by > 1.5 sigma, return False (inconsistent)
     """
     diff = item1.val-item2.val
-    diff = list(diff)
     if GEVP:
+        diff = list(diff)
         idx = diff.index(max(diff))
         diff = diff[idx]
         err = max(item1.err[idx], item2.err[idx])
+    else:
+        err = max(item1.err, item2.err)
     err = np.asarray(err)
     diff = np.asarray(diff)
-    ret = False if np.any(diff/err > 1.5) else True
+    test = np.abs(diff/err)
+    ret = not test > 1.5
     return ret
