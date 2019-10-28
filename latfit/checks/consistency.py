@@ -10,7 +10,7 @@ def fit_range_consistency_check(meta, min_arr, name):
     consis = consistent_list_params(lparam)
     err_handle(meta, consis, lparam, name)
 
-def err_handle(consis, lparam, name):
+def err_handle(meta, consis, lparam, name):
     """Handle the case where the fit ranges give inconsistent results"""
     try:
         assert consis
