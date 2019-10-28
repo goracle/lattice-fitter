@@ -2,13 +2,13 @@ import numpy as np
 from gvar import gvar
 from latfit.config import GEVP
 
-def fit_range_consistency_check(min_arr, name):
+def fit_range_consistency_check(meta, min_arr, name):
     """Check consistency of energies and phase shifts so far"""
     lparam = []
     for i in min_arr:
         lparam.append(getattr(i[0], name))
     consis = consistent_list_params(lparam)
-    err_handle(consis, lparam, name)
+    err_handle(meta, consis, lparam, name)
 
 def err_handle(consis, lparam, name):
     """Handle the case where the fit ranges give inconsistent results"""
@@ -16,6 +16,7 @@ def err_handle(consis, lparam, name):
         assert consis
     except AssertionError:
         print("fit ranges are inconsistent with respect to:", name)
+        print("fit window:" meta.fitwindow)
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
         raise

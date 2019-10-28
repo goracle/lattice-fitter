@@ -154,9 +154,9 @@ def main():
                 min_arr, overfit_arr, retsingle_save = process_fit_result(
                     retsingle, excl, min_arr, overfit_arr)
 
-                fit_range_consistency_check(min_arr, 'energy')
+                fit_range_consistency_check(meta, min_arr, 'energy')
                 if CALC_PHASE_SHIFT:
-                    fit_range_consistency_check(min_arr, 'phase_shift')
+                    fit_range_consistency_check(meta, min_arr, 'phase_shift')
 
             if not meta.skip_loop:
 
@@ -840,7 +840,7 @@ def xmax_err(meta, err):
     print("Test fit failed; bad xmax. problemx:", err.problemx)
     meta.options.xmax = err.problemx-meta.options.xstep
     print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
-    if meta.fitwindow[1] > meta.options.xmax and FIT:
+    if meta.fitwindow[1] < meta.options.xmax and FIT:
         print("***ERROR***")
         print("fit window beyond xmax:", meta.fitwindow)
         sys.exit(1)
