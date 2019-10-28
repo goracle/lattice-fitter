@@ -16,7 +16,7 @@ def err_handle(consis, lparam, name):
         assert consis
     except AssertionError:
         print("fit ranges are inconsistent with respect to:", name)
-        print("fit window:" meta.fitwindow)
+        print("fit window:", meta.fitwindow)
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
         raise
