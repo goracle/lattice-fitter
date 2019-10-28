@@ -20,7 +20,8 @@ from latfit.extract.getblock.gevp_linalg import variance_reduction
 
 from latfit.extract.proc_folder import proc_folder
 from latfit.utilities import exactmean as em
-from latfit.config import PIONRATIO, GEVP_DIRS, SIGMA
+from latfit.analysis.errorcodes import XminError, XmaxError
+from latfit.config import PIONRATIO, GEVP_DIRS, SIGMA, GEVP_DERIV
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
@@ -111,7 +112,13 @@ def energies_pionratio(timeij, delta_t):
     """Find non-interacting energies"""
     assert (timeij, delta_t) not in energies_pionratio.store
     lhs = evals_pionratio(timeij, delta_t)
-    lhs_p1 = evals_pionratio(timeij+1, delta_t)
+    lhs_p1 = np.zeros(lhs.shape)*np.nan
+    try:
+        lhs_p1 = evals_pionratio(timeij+1, delta_t)
+    except XmaxError:
+        print("raising from pion ratio")
+        if GEVP_DERIV:
+            raise
     rhs = evals_pionratio(timeij-delta_t, delta_t, switch=True)
     avglhs = np.asarray(em.acmean(lhs, axis=0))
     avglhs_p1 = np.asarray(em.acmean(lhs_p1, axis=0))
@@ -173,7 +180,7 @@ def finsum_dev(i, j, addzero, eint):
     dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
     return dev
 
-def sort_addzero(addzero, enint, sortbydist=True):
+def sort_addzero(addzero, enint, timeij, sortbydist=True):
     """Introducing rho/sigma operator introduces ambiguity
     in energy sort:  where to sort the extra 0 entry
     in the non-interacting energies introduced by these operators?
@@ -234,7 +241,7 @@ def sort_addzero(addzero, enint, sortbydist=True):
         if not np.isnan(mindx):
             # print(mindist, mindx, i)
             mapi.append((mindx, i))
-    check_map(mapi)
+    check_map(mapi, timeij)
     for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
         #assert toi != 1, \
@@ -257,7 +264,7 @@ def sort_addzero(addzero, enint, sortbydist=True):
             ret[:, i] = make_avg_zero(ret[:, i])
     return ret
 
-def check_map(mapi):
+def check_map(mapi, timeij):
     """check to make sure the map doesn't change
     from the trivial identity map
     otherwise, our dispersive energy mapping
@@ -265,7 +272,9 @@ def check_map(mapi):
     and can't be used when doing a continuum extrap."""
     for item in mapi:
         i, j = item
-        assert i == j, str(mapi)+" "+str(i)+" "+str(j)
+        if i != j:
+            print(str(mapi)+" "+str(i)+" "+str(j))
+            raise XminError(problemx=timeij)
 
 
 if PIONRATIO:
@@ -301,13 +310,16 @@ if PIONRATIO:
         addzero = np.nan_to_num(addzero)
         # sanity check; all additive zeros should be small (magic number = 0.1)
         # chosen since usually 0.1 is O(100) MeV
-        assert np.all(np.asarray(addzero) < 0.1), str(addzero)
+        try:
+            assert np.all(np.asarray(addzero) < 0.1), str(addzero)
+        except AssertionError:
+            raise XminError(problemx=timeij)
         if PR_GROUND_ONLY:
             for i in range(addzero.shape[1]):
                 if i:
                     addzero[:, i] = 0.0
         else:
-            addzero = sort_addzero(addzero, enint)
+            addzero = sort_addzero(addzero, enint, timeij)
         ret = energies_interacting + addzero
         for i, _ in enumerate(addzero):
             try:
@@ -427,12 +439,22 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                 assert len(cmat) == len(tosub), \
                     "number of configs mismatch:"+str(len(cmat))
                 for item in tosub:
-                    assert (item or zeroit) and not np.isnan(item)
+                    try:
+                        assert (item or zeroit) and not np.isnan(item)
+                    except AssertionError:
+                        print(item)
+                        print("nan error in (name, time slice):", name, timeij)
+                        raise XmaxError(problemx=timeij)
                 cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(gdisp.NORMS[i][i])
                 assert cmat[:, i, i].shape == tosub.shape
             elif len(cmat.shape) == 2 and len(cmat) != len(cmat[0]):
                 for item in tosub:
-                    assert (item or zeroit) and not np.isnan(item)
+                    try:
+                        assert (item or zeroit) and not np.isnan(item)
+                    except AssertionError:
+                        print(item)
+                        print("nan error in (name, time slice):", name, timeij)
+                        raise XmaxError(problemx=timeij)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(gdisp.NORMS[i][i])
             else:
                 cmat[i, i] -= em.acmean(tosub,
@@ -450,8 +472,12 @@ def atwsub_cmats(timeinfo, cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs):
     delta_t, timeij = timeinfo
     for i, mean in enumerate(mean_cmats_lhs):
         assert mean_cmats_lhs[i].shape == mean.shape
-        mean_cmats_lhs[i] = atwsub(mean, timeij+i, delta_t)
-        cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i, delta_t)
+        try:
+            mean_cmats_lhs[i] = atwsub(mean, timeij+i, delta_t)
+            cmats_lhs[i] = atwsub(cmats_lhs[i], timeij+i, delta_t)
+        except XmaxError:
+            if (GEVP_DERIV and i) or not i:
+                raise
     mean_crhs = atwsub(mean_crhs, timeij-delta_t,
                        delta_t, reverseatw=True)
     cmat_rhs = atwsub(np.array(copy.deepcopy(np.array(cmat_rhs))),

@@ -106,6 +106,16 @@ class ImaginaryEigenvalue(Exception):
         self.expression = expression
         self.message = message
 
+class XminError(Exception):
+    """Exception for early time inconsistencies"""
+    def __init__(self, problemx=None, message=''):
+        print("***ERROR***")
+        print('xmin likely too small, increasing')
+        super(XminError, self).__init__(message)
+        self.problemx = problemx
+        self.message = message
+
+
 class XmaxError(Exception):
     """Exception for imaginary GEVP eigenvalue"""
     def __init__(self, problemx=None, message=''):

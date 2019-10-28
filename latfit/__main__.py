@@ -40,6 +40,7 @@ from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
+from latfit.analysis.errorcodes import XminError
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
@@ -834,6 +835,34 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
         os.utime(fn1.fileno() if os.utime in os.supports_fd else fname,
                  dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
+def xmax_err(meta, err):
+    """Handle xmax error"""
+    print("Test fit failed; bad xmax. problemx:", err.problemx)
+    meta.options.xmax = err.problemx-meta.options.xstep
+    print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
+    if meta.fitwindow[1] > meta.options.xmax and FIT:
+        print("***ERROR***")
+        print("fit window beyond xmax:", meta.fitwindow)
+        sys.exit(1)
+    meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
+                                    meta.options.xmax)
+    print("new fit window = ", meta.fitwindow)
+    return meta
+
+def xmin_err(meta, err):
+    """Handle xmax error"""
+    print("Test fit failed; bad xmin.")
+    meta.options.xmin = err.problemx+meta.options.xstep
+    print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
+    if meta.fitwindow[0] > meta.options.xmin and FIT:
+        print("***ERROR***")
+        print("fit window beyond xmin:", meta.fitwindow)
+        sys.exit(1)
+    meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
+                                    meta.options.xmax)
+    print("new fit window = ", meta.fitwindow)
+    return meta
+
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
 
@@ -841,32 +870,32 @@ def dofit_initial(meta, plotdata):
     retsingle_save = None
     print("Trying initial fit with excluded times:",
           latfit.config.FIT_EXCL)
-    try:
-        retsingle_save = singlefit(meta.input_f, meta.fitwindow,
-                                   meta.options.xmin,
-                                   meta.options.xmax, meta.options.xstep)
-        test_success = True
-        if FIT:
-            print("Test fit succeeded.")
-    except XmaxError as err:
-        print("Test fit failed; bad xmax.")
-        test_success = False
-        meta.options.xmax = err.problemx-meta.options.xstep
-        print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
-        if meta.fitwindow[1] > meta.options.xmax and FIT:
-            print("***ERROR***")
-            print("fit window beyond xmax:", meta.fitwindow)
-            sys.exit(1)
-        meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
-                                      meta.options.xmax)
-        print("new fit window = ", meta.fitwindow)
-        plotdata.fitcoord = meta.fit_coord()
-    except (NegChisq, RelGammaError, NoConvergence,
-            OverflowError, EnergySortError, TooManyBadFitsError,
-            np.linalg.linalg.LinAlgError, BadJackknifeDist,
-            DOFNonPos, BadChisq, ZetaError) as err:
-        print("fit failed (acceptably) with error:",
-              err.__class__.__name__)
+    flag = True
+    while flag:
+        try:
+            retsingle_save = singlefit(meta.input_f, meta.fitwindow,
+                                       meta.options.xmin,
+                                       meta.options.xmax, meta.options.xstep)
+            print("hi")
+            test_success = True
+            flag = False
+            if FIT:
+                print("Test fit succeeded.")
+        except XmaxError as err:
+            test_success = False
+            meta = xmax_err(meta, err)
+            plotdata.fitcoord = meta.fit_coord()
+        except XminError as err:
+            test_success = False
+            meta = xmin_err(meta, err)
+            plotdata.fitcoord = meta.fit_coord()
+        except (NegChisq, RelGammaError, NoConvergence,
+                OverflowError, EnergySortError, TooManyBadFitsError,
+                np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                DOFNonPos, BadChisq, ZetaError) as err:
+            flag = False
+            print("fit failed (acceptably) with error:",
+                err.__class__.__name__)
 
     # results need for return
     # plotdata, meta, test_success, fit_range_init
