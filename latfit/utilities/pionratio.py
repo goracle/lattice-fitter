@@ -134,9 +134,6 @@ def foldpioncorr(corr):
         ret[:, i] = 0.5*(corr[:, i]+corr[:, LT-i-1])
     return ret
 
-def tmintmax():
-    """Find tmin and tmax"""
-
 def proc_t(dt1, dt2):
     """Process dt1, dt2"""
     # find the tmin and tmax
@@ -190,12 +187,13 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     except FloatingPointError:
         #print('floating point error in correlator log.')
         #print("args:")
-        for _, rat in enumerate(np.real(corr[:, tmin])/np.real(
+        for i, rat in enumerate(np.real(corr[:, tmin])/np.real(
                 corr[:, tmax])):
             # if imaginary energy
             # (either numerator or denominator has decayed completely)
             # set amps to NaN
             if rat < 0:
+                # print(i, rat, tmin, tmax, tsrc)
                 if tmin == int(13*DELTAT/4) or tmax == int(13*DELTAT/4):
                     print("ratio is less than 0")
                     print(tmin, tmax)
@@ -242,9 +240,9 @@ def eff_energy(ratio, tmin, tmax, gflag):
     if effenergy < 0 and func(-effenergy) < 1e-12:
         effenergy *= -1
     elif effenergy < 0 and abs(effenergy) > 1e-8:
-        print("negative energy found")
-        print(effenergy)
-        print(func(effenergy))
+        #print("negative energy found (tmin, tmax):", tmin, tmax)
+        #print("effenergy", effenergy)
+        #print("func(effenergy)", func(effenergy))
         # print(dt1, dt2)
         flag = 1
 
@@ -316,7 +314,7 @@ def amps_energies(rconfig, tmin, tmax, corr, gflag):
         amps2 = np.nan*np.zeros(len(amps2), dtype=np.complex)
         energies = np.nan*energies
     amplitudes = np.asarray(amps1)
-    return amplitudes, energies
+    return amplitudes, energies, errstr
 
 @PROFILE
 def atw_transform(pi1, reverseatw=False):
@@ -344,12 +342,14 @@ def atw_transform(pi1, reverseatw=False):
             if zeroit:
                 amp1, en1 = (np.nan, np.nan)
             else:
-                amp1, en1 = effparams(np.array(
+                amp1, en1, errstr = effparams(np.array(
                     pi1[:, tsrc]), tdis, dt2, tsrc)
                 if np.any(np.isnan(amp1)):
                     zeroit = True
                     if tdis < LT/2-2*TSEP or tdis > LT/2+2*TSEP:
                         print("nan'ing tdis=", tdis, 'rank=', MPIRANK)
+                        print(errstr, tdis, dt2, tsrc)
+                        # sanity check
                         assert tdis != int(
                             17*DELTAT/4) or reverseatw, "rank:"+str(MPIRANK)
             #amp2, en2 = effparams(np.array(pi2[:, tsrc]), tdis, dt2, tsrc)
@@ -402,6 +402,7 @@ def morecorr(amp, expo, tdis, dt2, corr):
     corr = np.real(corr)
     corr_ancillary = np.copy(np.roll(corr, pow1, axis=1))
     if tdis < LT/4 and tdis > pow1 and False:
+        assert None, "not supported"
         newpi1 = np.copy(corr)[:, tdis]
         newpi2 = np.copy(corr*simpledivide(corr/corr_ancillary, pow1))
         newpi2 = newpi2[:, tdis]
@@ -505,13 +506,13 @@ def zerotdis(blk, atw=False):
     for tdis in range(LT):
         if not atw:
             break
-        if tdis + TSEP >= LT or (
-                tdis-TSEP <= tdismax() and tdis > tdismax()):
+        if tdis + TSEP >= LT or (tdis-TSEP <= tdismax() and tdis > tdismax()):
+            # everything beyond tdis should be 0
             # tdis time slices get rolled back in top1
             # so we must explicitly zero these terms
             # we can't skip these because we need them for top2
-            blk[:, tdis] = 0*(1+1j)
-        elif tdis > tdismax():
+            blk[:, tdis] = 0j
+        if tdis > tdismax():
             assert not np.any(blk[:, tdis]) or np.all(np.isnan(blk))\
                 or np.all(np.isnan(blk[:, tdis])), \
                 "tdis="+str(tdis)+" "+str(blk[:, tdis])+" "+str(blk)
@@ -1002,7 +1003,7 @@ def divide_multiply(_=10):
 if __name__ == '__main__':
     print("start")
     check_ids()
-    h5jack.AVGTSRC = True # hack to get file names right.
+    h5jack.AVGTSRC = True # hack to get file names right (and fold time!)
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect()
     print("after pion ratio, rank", MPIRANK)
