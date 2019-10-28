@@ -23,9 +23,10 @@ def err_handle(consis, lparam, name):
 def sort_by_val(lparam):
     """Sort a list of Param objects by val"""
     assert isinstance(lparam, list), str(lparam)
-    if hasattr(lparam[0], '__iter__'):
+    if hasattr(lparam[0].val, '__iter__'):
         ret = sorted(lparam, key=lambda param: param.val[0])
     else:
+        assert not GEVP, str(lparam)
         ret = sorted(lparam, key=lambda param: param.val)
     return ret
 
