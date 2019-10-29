@@ -52,8 +52,14 @@ def elim_jkconfigs(jkblk, elim_list=None):
         inner = np.delete(jkblk, elim_list, axis=0)+skip_sum
 
         # check for precision loss, plausibly
-        assert np.allclose(inner - skip_sum,
-                           np.delete(jkblk, elim_list, axis=0), rtol=1e-12)
+        try:
+            assert np.allclose(inner - skip_sum,
+                               np.delete(jkblk, elim_list, axis=0),
+                               rtol=1e-12) or np.all(np.isnan(jkblk))
+        except AssertionError:
+            print(inner-skip_sum)
+            print(np.delete(jkblk, elim_list, axis=0))
+            raise
 
         # unormalize; only sums over configs now
         inner *= (num_configs-1)
@@ -64,7 +70,8 @@ def elim_jkconfigs(jkblk, elim_list=None):
         final_diff = inner-k_elim*sum_blk
 
         # check for precision loss
-        assert np.allclose(final_diff + k_elim*sum_blk, inner, rtol=1e-12)
+        assert np.allclose(final_diff + k_elim*sum_blk,
+                           inner, rtol=1e-12) or np.all(np.isnan(jkblk))
 
         # normalize
         new_jkblk = final_diff/(num_configs-1-k_elim)

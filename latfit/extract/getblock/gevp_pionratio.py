@@ -310,6 +310,7 @@ if PIONRATIO:
         addzero = np.nan_to_num(addzero)
         # sanity check; all additive zeros should be small (magic number = 0.1)
         # chosen since usually 0.1 is O(100) MeV
+        # sanity check
         try:
             assert np.all(np.asarray(addzero) < 0.1), str(addzero)
         except AssertionError:

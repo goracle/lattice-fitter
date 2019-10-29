@@ -30,7 +30,7 @@ from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_RESULTS, T0
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
-from latfit.config import SKIP_OVERFIT
+from latfit.config import SKIP_OVERFIT, NOLOOP
 from latfit.jackknife_fit import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 
@@ -195,7 +195,9 @@ def nofit_plot(meta, plotdata, retsingle_save):
     if MPIRANK == 0:
         if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
             retsingle = singlefit(meta.input_f, meta.fitwindow,
-                                  meta.options.xmin, meta.options.xmax, meta.options.xstep)
+                                  meta.options.xmin,
+                                  meta.options.xmax,
+                                  meta.options.xstep)
             plotdata.coords, plotdata.cov = retsingle
         else:
             plotdata.coords, plotdata.cov = retsingle_save
@@ -323,7 +325,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
         ret = True
 
     # is this justifiable?
-    if not ret and CALC_PHASE_SHIFT and MULT > 1:
+    if not ret and CALC_PHASE_SHIFT and MULT > 1 and not NOLOOP:
         if any(result_min.phase_shift.err > PHASE_SHIFT_ERR_CUT):
             if all(result_min.phase_shift.err[
                     :-1] < PHASE_SHIFT_ERR_CUT):
@@ -853,6 +855,10 @@ def xmax_err(meta, err):
 def xmin_err(meta, err):
     """Handle xmax error"""
     print("Test fit failed; bad xmin.")
+    # if we're past the halfway point, then this error is likely a late time
+    # error, not an early time error (usually from pion ratio)
+    if err.problemx > (meta.options.xmin + meta.options.xmax)/2:
+        raise XmaxError(problemx=err.problemx)
     meta.options.xmin = err.problemx+meta.options.xstep
     print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[0] > meta.options.xmin and FIT:
@@ -884,11 +890,17 @@ def dofit_initial(meta, plotdata):
                 print("Test fit succeeded.")
         except XmaxError as err:
             test_success = False
-            meta = xmax_err(meta, err)
+            try:
+                meta = xmax_err(meta, err)
+            except XminError as err2:
+                meta = xmax_err(meta, err2)
             plotdata.fitcoord = meta.fit_coord()
         except XminError as err:
             test_success = False
-            meta = xmin_err(meta, err)
+            try:
+                meta = xmin_err(meta, err)
+            except XmaxError as err2:
+                meta = xmax_err(meta, err2)
             plotdata.fitcoord = meta.fit_coord()
         except (NegChisq, RelGammaError, NoConvergence,
                 OverflowError, EnergySortError, TooManyBadFitsError,
@@ -945,6 +957,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
                 min_arr.append(result)
             else:
                 overfit_arr.append(result)
+        else:
+            print("cutting result of test fits")
     return min_arr, overfit_arr, retsingle_save, fit_range_init
 
 def store_init(plotdata):

@@ -388,7 +388,6 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-#FIT_EXCL = [[4.0], [4.0], []]
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 assert len(FIT_EXCL) == DIM or not GEVP
 
