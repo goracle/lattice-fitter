@@ -1,6 +1,7 @@
 import numpy as np
 from gvar import gvar
 from latfit.config import GEVP, T0
+from latfit.analysis.errorcodes import FitRangeInconsistency
 
 def fit_range_consistency_check(meta, min_arr, name):
     """Check consistency of energies and phase shifts so far"""
@@ -19,7 +20,7 @@ def err_handle(meta, consis, lparam, name):
         print("fit window:", meta.fitwindow)
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
-        raise
+        raise FitRangeInconsistency
     
 def sort_by_val(lparam):
     """Sort a list of Param objects by val"""

@@ -40,7 +40,7 @@ from latfit.finalout.printerr import printerr
 from latfit.finalout.mkplot import mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
-from latfit.analysis.errorcodes import XminError
+from latfit.analysis.errorcodes import XminError, FitRangeInconsistency
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
@@ -70,7 +70,7 @@ except NameError:
     PROFILE = profile
 
 @PROFILE
-def main():
+def main(tadd=0):
     """Main for latfit"""
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
@@ -82,6 +82,7 @@ def main():
 
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
+        meta.options.xmin += meta.options.xstep*tadd
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -1040,4 +1041,11 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
     return min_arr, overfit_arr, retsingle_save
 
 if __name__ == "__main__":
-    main()
+    flag = 1
+    tadd = 0
+    while flag:
+        try:
+            main(tadd=tadd)
+            flag = 0
+        except FitRangeInconsistency:
+            tadd += 1

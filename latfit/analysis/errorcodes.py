@@ -21,6 +21,16 @@ class AvgCovSingular(Exception):
         super(AvgCovSingular, self).__init__(message)
         self.message = message
 
+class FitRangeInconsistency(Exception):
+    """Error if too many jackknifed fits have a large chi^2 (t^2)"""
+    @PROFILE
+    def __init__(self, message=''):
+        print("***ERROR***")
+        print("fit ranges give inconsistent results")
+        super(FitRangeInconsistency, self).__init__(message)
+        self.message = message
+
+
 
 class TooManyBadFitsError(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
