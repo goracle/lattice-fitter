@@ -154,9 +154,10 @@ def main():
                 min_arr, overfit_arr, retsingle_save = process_fit_result(
                     retsingle, excl, min_arr, overfit_arr)
 
-                fit_range_consistency_check(meta, min_arr, 'energy')
                 if CALC_PHASE_SHIFT:
-                    fit_range_consistency_check(meta, min_arr, 'phase_shift')
+                    fit_range_consistency_check(meta, min_arr,
+                                                'phase_shift')
+                fit_range_consistency_check(meta, min_arr, 'energy')
 
             if not meta.skip_loop:
 
