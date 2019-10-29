@@ -47,14 +47,15 @@ def consistent_params(item1, item2):
     """
     diff = item1.val-item2.val
     if GEVP:
-        diff = list(diff)
-        idx = diff.index(max(diff))
-        diff = diff[idx]
-        err = max(item1.err[idx], item2.err[idx])
+        diff = np.asarray(diff)
+        err = []
+        for i, _ in enumerate(item1.err):
+            err.append(max(item1.err[i], item2.err[i]))
+        err = np.array(err)
     else:
         err = max(item1.err, item2.err)
     err = np.asarray(err)
     diff = np.asarray(diff)
-    test = np.abs(diff/err)
+    test = np.max(np.abs(diff/err))
     ret = not test > 1.5
     return ret
