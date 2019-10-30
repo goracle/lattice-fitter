@@ -70,7 +70,7 @@ except NameError:
     PROFILE = profile
 
 @PROFILE
-def main(tadd=0):
+def fit(tadd=0):
     """Main for latfit"""
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
@@ -884,7 +884,6 @@ def dofit_initial(meta, plotdata):
             retsingle_save = singlefit(meta.input_f, meta.fitwindow,
                                        meta.options.xmin,
                                        meta.options.xmax, meta.options.xstep)
-            print("hi")
             test_success = True
             flag = False
             if FIT:
@@ -1040,12 +1039,19 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
             overfit_arr.append(result)
     return min_arr, overfit_arr, retsingle_save
 
-if __name__ == "__main__":
+def main():
+    """main"""
     flag = 1
     tadd = 0
     while flag:
+        flag = 0
         try:
-            main(tadd=tadd)
-            flag = 0
+            fit(tadd=tadd)
         except FitRangeInconsistency:
+            print("starting a new main() (inconsistent)")
+            flag = 1
             tadd += 1
+
+if __name__ == "__main__":
+    print("__main__.py should not be called directly")
+    sys.exit(1)
