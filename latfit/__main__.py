@@ -1049,9 +1049,12 @@ def main():
             fit(tadd=tadd)
         except FitRangeInconsistency:
             print("starting a new main() (inconsistent)")
+            latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
             flag = 1
             tadd += 1
 
 if __name__ == "__main__":
     print("__main__.py should not be called directly")
+    print("install first with python3 setup.py install")
+    print("then run: latfit <args>")
     sys.exit(1)

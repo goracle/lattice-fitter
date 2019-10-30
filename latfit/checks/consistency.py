@@ -65,7 +65,7 @@ def consistent_params(item1, item2):
     if T0 != 'TMINUS1':
         ret = not test > 1.5
     else:
-        ret = not test > 1.6
+        ret = not test > 1.5
     if not ret:
         print("problematic diff:", gvar(item1.val[idx], item1.err[idx]), 
               gvar(item2.val[idx], item2.err[idx]))

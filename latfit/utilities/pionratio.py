@@ -157,6 +157,8 @@ def proc_t(dt1, dt2):
             dt2 = 0
         elif dt2 == (-DELTAT/2) % LT:
             dt2 = 0
+        else:
+            assert None, str(dt1)+" "+str(dt2)
         dt2 = int(dt2)
         tmod2 = foldt(dt2)
         tmin = dt1
