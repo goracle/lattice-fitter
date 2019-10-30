@@ -39,8 +39,8 @@ def prealloc_chi(covinv, coords):
     """
     lcord = len(coords)
     chi.RCORD = np.arange(lcord)
-    chi.COUNT = int((lcord+1)*lcord/2)
-    chi.SYMRANGE = sym_range(lcord)
+    chi.SYMRANGE = sym_range(covinv, lcord)
+    chi.COUNT = len(chi.SYMRANGE)
     chi.PRODRANGE = list(product(range(lcord), range(lcord)))
     if GRAD is not None:
         GRAD.PRODRANGE = chi.PRODRANGE
@@ -49,10 +49,12 @@ def prealloc_chi(covinv, coords):
         covinv.shape)+" "+str(coords)
     assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
 
-def sym_range(lcord):
+def sym_range(covinv, lcord):
     ret = []
     for i in range(lcord):
         for j in np.arange(i, lcord):
+            if not np.any(covinv[i, j]):
+                continue
             ret.append((i, j))
     return ret
 
