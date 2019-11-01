@@ -319,6 +319,8 @@ if PIONRATIO:
             for i in range(addzero.shape[1]):
                 if i:
                     addzero[:, i] = 0.0
+        elif not FULLDIM:
+            pass
         else:
             addzero = sort_addzero(addzero, enint, timeij)
         ret = energies_interacting + addzero

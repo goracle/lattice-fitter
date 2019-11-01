@@ -224,8 +224,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             result_min.systematics.arr[config_num], _ = \
                 getsystematic(params, result_min.min_params.arr[config_num])
             result_min.systematics.arr[config_num],\
-                params.energyind = getsystematic(params,
-                                                 result_min.min_params.arr[config_num])
+                params.energyind = getsystematic(
+                    params, result_min.min_params.arr[config_num])
             result_min.energy.arr[config_num] = getenergies(
                 params, result_min.min_params.arr[config_num])
 

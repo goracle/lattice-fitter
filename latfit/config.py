@@ -618,7 +618,7 @@ PLOT_DISPERSIVE = False if not GEVP else True
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
 DECREASE_VAR = 1
-DECREASE_VAR = 1e-6
+DECREASE_VAR = 1e-4
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues

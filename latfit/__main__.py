@@ -28,9 +28,9 @@ from latfit.config import FIT, METHOD
 from latfit.config import ISOSPIN, MOMSTR, UNCORR
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
-from latfit.config import MAX_RESULTS, T0
+from latfit.config import MAX_RESULTS, T0, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
-from latfit.config import SKIP_OVERFIT, NOLOOP
+from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.jackknife_fit import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 
@@ -526,6 +526,8 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
     if SYS_ENERGY_GUESS:
         fname += "_sys"
+    if MATRIX_SUBTRACTION:
+        fname += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
     fname = fname + meta.window_str()+"_"+T0
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
@@ -686,6 +688,9 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     if SYS_ENERGY_GUESS:
         filename += "_sys"
         filename_err += '_sys'
+    if MATRIX_SUBTRACTION:
+        filename += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
+        filename_err += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
     filename = filename + meta.window_str()+"_"+T0
     print("writing file", filename)
     filename_err = filename_err + meta.window_str()+"_"+T0
