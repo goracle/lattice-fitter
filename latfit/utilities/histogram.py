@@ -243,20 +243,24 @@ def make_hist(fname):
 def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
     """Get all the fit ranges for a particular dimension"""
     ret = []
+    print(exclarr)
     for _, i in enumerate(median_store[0]):
         effmass = i[0].val
         index = list(freq).index(effmass)
         fitrange = exclarr[index]
-        fitrange = np.array(fitrange)
-        dimfit = fit_range_dim(fitrange, dim)
+        # fitrange = np.array(fitrange)
+        # dimfit = fit_range_dim(fitrange, dim)
+        dimfit = fitrange
         ret.append(dimfit)
     return ret
 
 def fit_range_dim(lexcl, dim):
     """Get the fit range for a particular dimension"""
     ret = np.asarray(lexcl)
-    if len(ret.shape) > 1:
+    if len(ret.shape) > 1 or isinstance(ret[0], list):
         ret = ret[dim]
+    else:
+        print(ret)
     return ret
 
 def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
