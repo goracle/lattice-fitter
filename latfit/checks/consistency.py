@@ -1,6 +1,7 @@
 import numpy as np
 from gvar import gvar
-from latfit.config import GEVP, T0
+from latfit.config import GEVP, T0, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import MATRIX_SUBTRACTION
 from latfit.analysis.errorcodes import FitRangeInconsistency
 
 def fit_range_consistency_check(meta, min_arr, name):
@@ -18,6 +19,9 @@ def err_handle(meta, consis, lparam, name):
     except AssertionError:
         print("fit ranges are inconsistent with respect to:", name)
         print("fit window:", meta.fitwindow)
+        print("t-t0:", T0)
+        if MATRIX_SUBTRACTION:
+            print("dt matsub:", DELTA_T_MATRIX_SUBTRACTION)
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
         raise FitRangeInconsistency
