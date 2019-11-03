@@ -200,6 +200,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                                 config_num)
             if start_loop:
                 mkmin.SPARAMS = START_PARAMS
+                mkmin.PARAMS = params
                 mkmin.prealloc_chi(covinv_jack, coords_jack)
 
             # minimize chi^2 (t^2) given the inv. covariance matrix and data
