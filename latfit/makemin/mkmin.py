@@ -15,7 +15,8 @@ from latfit.config import BINDS, SYS_ENERGY_GUESS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
-from latfit.config import GRAD
+from latfit.config import GRAD, EFF_MASS
+from latfit.analysis.errorcodes import EnergySortError
 import latfit.config
 import latfit.mathfun.chi_sq as chi
 
@@ -83,6 +84,7 @@ def check_covinv(covinv):
                 
 
 SPARAMS = list(START_PARAMS)
+PARAMS = None
 
 @PROFILE
 def mkmin(covinv, coords, method=METHOD):
@@ -90,9 +92,10 @@ def mkmin(covinv, coords, method=METHOD):
     Return minimized result.
     """
     status = 1
-    count = 10 # try 10 times to get convergence (abitrary)
+    status2 = 1
+    count = 15 # try 10 times to get convergence (abitrary)
     kick = False
-    while status and count:
+    while (status or status2) and count:
         assert count >= 0, str(count)
         res_min = mkmin_loop(covinv, coords, method, kick=kick)
         status = res_min.status
@@ -100,6 +103,14 @@ def mkmin(covinv, coords, method=METHOD):
         if status:
             kick = True
             kick_params()
+        else:
+            try:
+                getenergies(res_min)
+                status2 = 0
+            except EnergySortError:
+                status2 = 1
+                kick = True
+                kick_params()
     return res_min
 
 def kick_params(kick_delta=KICK_DELTA):
@@ -116,6 +127,22 @@ def kick_params(kick_delta=KICK_DELTA):
         noise = np.random.normal()
         SPARAMS[i] += skew[i]*kick_delta*noise
     print("after kick:", SPARAMS)
+
+def getenergies(result_min):
+    """Get energies.  Check if they are missorted"""
+    PARAMS.energyind = 2 if PARAMS.energyind is None else PARAMS.energyind
+    arr = np.asarray(result_min.x)
+    if len(arr) != PARAMS.dimops and EFF_MASS:
+        ret = arr[0::PARAMS.energyind][:-1]
+    else:
+        ret = arr
+    for i, j in zip(sorted(list(ret)), ret):
+        if i != j:
+            print("mis-sorted energies:", ret)
+            if not latfit.config.BOOTSTRAP:
+                raise EnergySortError
+    return ret
+
 
 def mkmin_loop(covinv, coords, method, kick=False):
     """Inner loop part
