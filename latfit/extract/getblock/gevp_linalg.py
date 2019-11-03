@@ -299,13 +299,12 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     check = (ret-avg)/decrease_var+avg
     try:
         assert np.allclose(check, orig, rtol=1e-8, equal_nan=True), \
-            "precision loss detected:"+str(orig)+" "+\
-            str(check)+" "+str(decrease_var)
+            "precision loss detected:"+str(decrease_var)
     except AssertionError:
-        print('avg =', avg)
-        print('ret =', ret)
-        print('check =', check)
-        print('orig =', orig)
+        #print('avg =', avg)
+        #print('ret =', ret)
+        #print('check =', check)
+        #print('orig =', orig)
         print("precision loss detected, orig != check")
         raise PrecisionLossError
     return ret
