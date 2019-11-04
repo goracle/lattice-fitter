@@ -201,7 +201,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                                                 reuse, reuse_blocked,
                                                 config_num)
             if start_loop:
-                mkmin.SPARAMS = START_PARAMS
+                mkmin.SPARAMS = list(np.copy(START_PARAMS))
                 mkmin.PARAMS = params
                 mkmin.prealloc_chi(covinv_jack, coords_jack)
 
