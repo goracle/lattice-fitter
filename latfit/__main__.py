@@ -21,8 +21,6 @@ import pickle
 import numpy as np
 from mpi4py import MPI
 
-from latfit.singlefit import singlefit
-import latfit.singlefit
 from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
 from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
 from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
@@ -37,7 +35,6 @@ from latfit.makemin.mkmin import convert_to_namedtuple
 from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
-import latfit.finalout.mkplot as mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
 from latfit.analysis.errorcodes import XminError, FitRangeInconsistency
@@ -49,13 +46,15 @@ from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT
 from latfit.config import MULT
 from latfit.checks.consistency import fit_range_consistency_check
-import latfit.config
-import latfit.jackknife_fit
 from latfit.utilities import exactmean as em
 from latfit.mainfunc.metaclass import FitRangeMetaData
+# dynamic
 import latfit.mainfunc.fit_range_sort as sfit
+import latfit.finalout.mkplot as mkplot
 import latfit.mainfunc.print_res as print_res
 import latfit.checks.checks_and_statements as sands
+import latfit.singlefit
+import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -187,9 +186,9 @@ def old_fit_style(meta, trials, plotdata):
         ifile = proc_folder(meta.input_f, ctime, "blk")
         ninput = os.path.join(meta.input_f, ifile)
         result_min, _, plotdata.coords, plotdata.cov =\
-            singlefit(ninput, meta.fitwindow,
-                      meta.options.xmin, meta.options.xmax,
-                      meta.options.xstep)
+            latfit.singlefit.singlefit(ninput, meta.fitwindow,
+                                       meta.options.xmin, meta.options.xmax,
+                                       meta.options.xstep)
         list_fit_params.append(result_min.energy.val)
     printerr(*get_fitparams_loc(list_fit_params, trials))
 
@@ -197,10 +196,9 @@ def nofit_plot(meta, plotdata, retsingle_save):
     """No fit scatter plot """
     if MPIRANK == 0:
         if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
-            retsingle = singlefit(meta.input_f, meta.fitwindow,
-                                  meta.options.xmin,
-                                  meta.options.xmax,
-                                  meta.options.xstep)
+            retsingle = latfit.singlefit.singlefit(
+                meta.input_f, meta.fitwindow, meta.options.xmin,
+                meta.options.xmax, meta.options.xstep)
             plotdata.coords, plotdata.cov = retsingle
         else:
             plotdata.coords, plotdata.cov = retsingle_save
@@ -230,7 +228,7 @@ def post_loop(meta, loop_store, plotdata,
         and (len(min_arr) + len(overfit_arr) > 1):
         latfit.config.MINTOL = True
         print("fitting for representative fit")
-        retsingle = singlefit(meta.input_f, meta.fitwindow,
+        retsingle = latfit.singlefit.singlefit(meta.input_f, meta.fitwindow,
                               meta.options.xmin, meta.options.xmax,
                               meta.options.xstep)
     else:
@@ -891,10 +889,9 @@ def dofit_initial(meta, plotdata):
     flag = True
     while flag:
         try:
-            retsingle_save = singlefit(meta.input_f, meta.fitwindow,
-                                       meta.options.xmin,
-                                       meta.options.xmax,
-                                       meta.options.xstep)
+            retsingle_save = latfit.singlefit.singlefit(
+                meta.input_f, meta.fitwindow, meta.options.xmin,
+                meta.options.xmax, meta.options.xstep)
             test_success = True
             flag = False
             if FIT:
@@ -942,9 +939,11 @@ def dofit_second_initial(meta, retsingle_save, test_success):
         if not samerange and FIT:
             print("Trying second test fit.")
             print("fit excl:", fit_range_init)
-            retsingle_save = singlefit(meta.input_f, meta.fitwindow,
-                                       meta.options.xmin, meta.options.xmax,
-                                       meta.options.xstep)
+            retsingle_save = latfit.singlefit.singlefit(meta.input_f,
+                                                        meta.fitwindow,
+                                                        meta.options.xmin,
+                                                        meta.options.xmax,
+                                                        meta.options.xstep)
             print("Test fit succeeded.")
             test_success = True
     except (NegChisq, RelGammaError, OverflowError, NoConvergence,
@@ -1002,9 +1001,11 @@ def dofit(meta, fit_range_data, results_store, plotdata):
         skip = True
     else:
         try:
-            retsingle = singlefit(meta.input_f, meta.fitwindow,
-                                  meta.options.xmin, meta.options.xmax,
-                                  meta.options.xstep)
+            retsingle = latfit.singlefit.singlefit(meta.input_f,
+                                                   meta.fitwindow,
+                                                   meta.options.xmin,
+                                                   meta.options.xmax,
+                                                   meta.options.xstep)
             if retsingle_save is None:
                 retsingle_save = retsingle
             print("fit succeeded for this selection"+\
@@ -1072,6 +1073,7 @@ def incr_dt():
 
 def main():
     """main"""
+    mintol = latfit.config.MINTOL
     if TLOOP:
         mkplot.NOSHOW = True
     for i in range(TSEP_VEC[0]+2): # not set up for xstep
@@ -1095,12 +1097,17 @@ def main():
                     fit(tadd=tadd)
                 except FitRangeInconsistency:
                     print("starting a new main() (inconsistent)")
-                    latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
-                    singlefit.singlefit_reset()
                     flag = 1
                     tadd += 1
+                    reset_main(mintol)
                 except FitFail:
                     pass
+
+def reset_main(mintol):
+    """Reset all dynamic variables"""
+    latfit.config.MINTOL = mintol
+    latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
+    singlefit.singlefit_reset()
 
 if __name__ == "__main__":
     print("__main__.py should not be called directly")
