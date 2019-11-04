@@ -33,7 +33,7 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
+ISOSPIN = 0
 
 # group irrep
 IRREP = 'T_1_2MINUS'
@@ -523,48 +523,53 @@ PICKLE = None
 # p_cm = 001, no need to modify
 PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+", "
 
-if GEVP:
-    if SIGMA and ISOSPIN == 0:
-        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, $\pi\pi, \sigma$, ' + PSTR_TITLE + ' '
-    elif ISOSPIN == 2:
-        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
-    elif ISOSPIN == 1:
-        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, I1, $\pi\pi, \rho$, ' + \
-            irr2tex(IRREP) + PSTR_TITLE + ' '
-    else:
-        TITLE_PREFIX = str(DIM)+r'x'+str(DIM)+\
-            r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
+def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION):
+    """Get plot title prefix"""
+    if GEVP:
+        if SIGMA and ISOSPIN == 0:
+            ret = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, $\pi\pi, \sigma$, ' + PSTR_TITLE + ' '
+        elif ISOSPIN == 2:
+            ret = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, I2, $\pi\pi$, ' + PSTR_TITLE + ' '
+        elif ISOSPIN == 1:
+            ret = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, I1, $\pi\pi, \rho$, ' + \
+                irr2tex(IRREP) + PSTR_TITLE + ' '
+        else:
+            ret = str(DIM)+r'x'+str(DIM)+\
+                r' GEVP, $\pi\pi$, ' + PSTR_TITLE + ' '
 
-else:
-    if LATTICE_ENSEMBLE == '24c':
-        TITLE_PREFIX = '24c '
-    elif LATTICE_ENSEMBLE == '32c':
-        TITLE_PREFIX = '32c '
-if GEVP:
-    TITLE_PREFIX = TITLE_PREFIX + 't-t0=' + T0[6:] + " "
-if GEVP_DERIV:
-    TITLE_PREFIX = TITLE_PREFIX + r'$\partial t$, ' + " "
-if SUPERJACK_CUTOFF and not SLOPPYONLY:
-    TITLE_PREFIX = TITLE_PREFIX + 'exact '
-else:
-    if LATTICE_ENSEMBLE == '24c':
-        TITLE_PREFIX = TITLE_PREFIX + '(zmobius) '
-    elif LATTICE_ENSEMBLE == '32c':
-        TITLE_PREFIX = TITLE_PREFIX + '(sloppy) '
-if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
-    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
-        str(DELTA_T_MATRIX_SUBTRACTION)+', '+\
-        str(DELTA_T2_MATRIX_SUBTRACTION)+' '
-elif MATRIX_SUBTRACTION and GEVP:
-    TITLE_PREFIX = TITLE_PREFIX + 'matdt'+\
-        str(DELTA_T_MATRIX_SUBTRACTION)+' '
-elif True in ADD_CONST_VEC:
-    TITLE_PREFIX = TITLE_PREFIX + 'eigdt1 '
-if HALF != 'full':
-    TITLE_PREFIX = TITLE_PREFIX + HALF + ' '
+    else:
+        if LATTICE_ENSEMBLE == '24c':
+            ret = '24c '
+        elif LATTICE_ENSEMBLE == '32c':
+            ret = '32c '
+    if GEVP:
+        ret = ret + 't-t0=' + tzero[6:] + " "
+    if GEVP_DERIV:
+        ret = ret + r'$\partial t$, ' + " "
+    if SUPERJACK_CUTOFF and not SLOPPYONLY:
+        ret = ret + 'exact '
+    else:
+        if LATTICE_ENSEMBLE == '24c':
+            ret = ret + '(zmobius) '
+        elif LATTICE_ENSEMBLE == '32c':
+            ret = ret + '(sloppy) '
+    if MATRIX_SUBTRACTION and DELTA_E2_AROUND_THE_WORLD is not None and GEVP:
+        ret = ret + 'matdt'+\
+            str(dtm)+', '+\
+            str(DELTA_T2_MATRIX_SUBTRACTION)+' '
+    elif MATRIX_SUBTRACTION and GEVP:
+        ret = ret + 'matdt'+\
+            str(dtm)+' '
+    elif True in ADD_CONST_VEC:
+        ret = ret + 'eigdt1 '
+    if HALF != 'full':
+        ret = ret + HALF + ' '
+    return ret
+
+TITLE_PREFIX = title_prefix()
 
 # title
 

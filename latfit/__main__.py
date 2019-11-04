@@ -26,7 +26,7 @@ from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
 from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
-from latfit.config import MAX_RESULTS
+from latfit.config import MAX_RESULTS, GEVP_DERIV
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.jackknife_fit import jack_mean_err
@@ -226,7 +226,8 @@ def post_loop(meta, loop_store, plotdata,
     if (not (meta.skiploop and latfit.config.MINTOL)\
         and METHOD == 'NaN') or not test_success\
         and (len(min_arr) + len(overfit_arr) > 1):
-        latfit.config.MINTOL = True
+        if not TLOOP:
+            latfit.config.MINTOL = True
         print("fitting for representative fit")
         retsingle = sfit.singlefit(meta.input_f, meta.fitwindow,
                                         meta.options.xmin,
@@ -1057,7 +1058,7 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
     return min_arr, overfit_arr, retsingle_save
 
 def incr_t0():
-    dinit = int(tnaught[6:])
+    dinit = int(latfit.config.T0[6:])
     dfin = dinit + 1
     dfin = dfin % (TSEP_VEC[0]+2)
     latfit.config.T0 = 'TMINUS'+str(dfin)
@@ -1093,9 +1094,14 @@ def main():
                     incr_t0()
                 else:
                     break
+            if i or j:
+                latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
+                    tzero=latfit.config.T0,
+                    dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             flag = 1
             tadd = 0
             while flag:
+                reset_main(mintol)
                 flag = 0
                 try:
                     fit(tadd=tadd)
@@ -1103,8 +1109,7 @@ def main():
                     print("starting a new main() (inconsistent)")
                     flag = 1
                     tadd += 1
-                    reset_main(mintol)
-                except FitFail:
+                except (DOFNonPos, FitFail):
                     pass
 
 def reset_main(mintol):
