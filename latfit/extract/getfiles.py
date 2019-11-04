@@ -10,10 +10,10 @@ from latfit.extract.proc_folder import proc_folder
 
 from latfit.config import EFF_MASS
 from latfit.config import NUM_PENCILS
-from latfit.config import GEVP, T0, IRREP
-from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import GEVP, IRREP
+from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD
-from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+import latfit.config
 
 if DELTA_E2_AROUND_THE_WORLD is not None:
     assert 'mom000' not in IRREP,\
@@ -86,8 +86,8 @@ def getfiles_gevp_singlerhs(time, time2, xstep=1):
     # extract files
     files = {}
     sub = {}
-    dt1 = DELTA_T_MATRIX_SUBTRACTION*xstep
-    dt2 = DELTA_T2_MATRIX_SUBTRACTION*xstep
+    dt1 = latfit.config.DELTA_T_MATRIX_SUBTRACTION*xstep
+    dt2 = latfit.config.DELTA_T2_MATRIX_SUBTRACTION*xstep
     extra_lhs_times, extra_rhs_time = get_extra_times(time, time2,
                                                       dt1, xstep)
     extra_lhs_times2, extra_rhs_time2 = get_extra_times(time, time2,
@@ -188,13 +188,13 @@ def roundup(time, xstep, xmin):
 if GEVP:
     def getfiles(time, xstep, xmin, _):
         """Get files, gevp (meta)"""
-        if T0 == 'ROUND':
+        if latfit.config.T0 == 'ROUND':
             time2 = roundup(time, xstep, xmin)
-        elif 'TMINUS' in T0:
-            time2 = time-xstep*int(T0[6:])
-        elif isinstance(T0, int):
-            time2 = T0
-        elif T0 == 'LOOP':
+        elif 'TMINUS' in latfit.config.T0:
+            time2 = time-xstep*int(latfit.config.T0[6:])
+        elif isinstance(latfit.config.T0, int):
+            time2 = latfit.config.T0
+        elif latfit.config.T0 == 'LOOP':
             time2 = sorted(list(np.arange(roundup(
                 time, xstep, xmin), time, xstep)), reverse=True)
             if not len(time2) > 1:

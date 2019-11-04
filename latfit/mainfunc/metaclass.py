@@ -11,13 +11,11 @@ from latfit.extract.errcheck.xlim_err import xlim_err
 from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.config import GEVP, STYPE, MAX_ITER
-from latfit.config import NOLOOP, MULT, FIT, T0
+from latfit.config import NOLOOP, MULT, FIT
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import RANGE_LENGTH_MIN
 from latfit.config import ONLY_SMALL_FIT_RANGES
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
-from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
-from latfit.config import DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 import latfit.config
 from latfit.procargs import procargs
@@ -106,6 +104,32 @@ class FitRangeMetaData:
         self.options = recordtype('ops',
                                   'xmin xmax xstep trials fitmin fitmax')
 
+    def incr_xmin(self, problemx=None):
+        """Increment xmin by one*xstep"""
+        if problemx is None:
+            #self.options.xmin += self.options.xstep
+            self.fitwindow = (self.fitwindow[0]+self.options.xstep,
+                              self.fitwindow[1])
+        else:
+            #self.options.xmin = problemx + self.options.xstep
+            self.fitwindow = (problemx+self.options.xstep, self.fitwindow[1])
+        assert self.fitwindow[0] < self.fitwindow[1]
+        assert self.options.xmin < self.options.xmax
+        assert self.options.xmin <= self.fitwindow[0]
+
+    def decr_xmax(self, problemx=None):
+        """Increment xmin by one*xstep"""
+        if problemx is None:
+            #self.options.xmax -= self.options.xstep
+            self.fitwindow = (self.fitwindow[0],
+                              self.fitwindow[1]-self.options.xstep)
+        else:
+            #self.options.xmax = problemx - self.options.xstep
+            self.fitwindow = (self.fitwindow[0], problemx-self.options.xstep)
+        assert self.fitwindow[0] < self.fitwindow[1]
+        assert self.options.xmin < self.options.xmax
+        assert self.options.xmax >= self.fitwindow[1]
+
     @PROFILE
     def skip_loop(self):
         """Set the loop condition"""
@@ -135,13 +159,14 @@ class FitRangeMetaData:
         """Shift xmin to be later in time in the case of
         around the world subtraction of previous time slices"""
         ret = self.options.xmin
-        delta = DELTA_T_MATRIX_SUBTRACTION
+        delta = latfit.config.DELTA_T_MATRIX_SUBTRACTION
         if DELTA_E2_AROUND_THE_WORLD is not None:
-            delta += DELTA_T2_MATRIX_SUBTRACTION
+            delta += latfit.config.DELTA_T2_MATRIX_SUBTRACTION
         delta = 0 if not MATRIX_SUBTRACTION else delta
         if GEVP:
-            if self.options.xmin < delta + int(T0[6:]):
-                ret = (delta + int(T0[6:]) + 1)* self.options.xstep
+            if self.options.xmin < delta + int(latfit.config.T0[6:]):
+                ret = (delta + int(
+                    latfit.config.T0[6:]) + 1)* self.options.xstep
         self.options.xmin = ret
 
     @PROFILE

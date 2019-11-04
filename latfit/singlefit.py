@@ -124,6 +124,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # error handling for Degrees of Freedom <= 0 (it should be > 0).
     # number of points plotted = len(cov).
     # DOF = len(cov) - START_PARAMS
+    dof_errchk(len(cov_full), params.dimops)
     dof_errchk(len(cov), params.dimops)
 
     # we have data 6ab

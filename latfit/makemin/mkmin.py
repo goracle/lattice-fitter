@@ -120,13 +120,13 @@ def kick_params(kick_delta=KICK_DELTA):
     kick delta determines the kick strength
     """
     skew = np.asarray(START_PARAMS) - np.asarray(SPARAMS) 
-    print("kicking start params; currently:", SPARAMS)
+    #print("kicking start params; currently:", SPARAMS)
     if not np.any(skew):
         skew = np.ones_like(START_PARAMS)
     for i, param in enumerate(SPARAMS):
         noise = np.random.normal()
         SPARAMS[i] += skew[i]*kick_delta*noise
-    print("after kick:", SPARAMS)
+    #print("after kick:", SPARAMS)
 
 def getenergies(result_min):
     """Get energies.  Check if they are missorted"""

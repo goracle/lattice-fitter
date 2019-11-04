@@ -23,7 +23,7 @@ from latfit.config import XLABEL
 from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR, UNCORR_OP
 from latfit.config import FIT, PIONRATIO
-from latfit.config import GEVP_DERIV, T0
+from latfit.config import GEVP_DERIV
 from latfit.config import METHOD, DECREASE_VAR
 from latfit.config import BINDS
 from latfit.config import START_PARAMS
@@ -54,6 +54,8 @@ import latfit.config
 rcParams.update({'figure.autolayout': True})
 
 NUM_CONFIGS = -1
+
+NOSHOW = False
 
 if HALF == 'first half':
     SUPERJACK_CUTOFF = int(np.ceil(SUPERJACK_CUTOFF/2))
@@ -384,7 +386,7 @@ def print_messages(result_min, param_err, param_chisq):
     print("Model includes additive constant:", ADD_CONST)
     # print("Assisted Fit:", ASSISTED_FIT)
     print("GEVP derivative taken:", GEVP_DERIV)
-    print("GEVP delta t:", int(T0[6:]))
+    print("GEVP delta t:", int(latfit.config.T0[6:]))
     if UNCORR:
         print("Minimizer (of chi^2) method:", METHOD)
     else:
@@ -872,7 +874,8 @@ def do_plot(title, pdf):
     # read out into a pdf
     pdf.savefig()
     # show the plot
-    plt.show()
+    if not NOSHOW:
+        plt.show()
 
 
 def annotate(dimops, result_min, param_err, param_chisq, coords):

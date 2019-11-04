@@ -21,6 +21,15 @@ class AvgCovSingular(Exception):
         super(AvgCovSingular, self).__init__(message)
         self.message = message
 
+class FitFail(Exception):
+    """Exception for bad jackknife distribution"""
+    def __init__(self, message=''):
+        print("***ERROR***")
+        print("No fits to given fit window succeeded")
+        super(FitFail, self).__init__(message)
+        self.message = message
+
+
 class FitRangeInconsistency(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
     @PROFILE

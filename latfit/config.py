@@ -75,7 +75,10 @@ SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if ISOSPIN == 2 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 
-# T0 behavior for GEVP (t/2 or t-1)
+# print raw gevp info (for debugging source construction)
+
+GEVP_DEBUG = True
+GEVP_DEBUG = False
 
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
@@ -86,28 +89,24 @@ if LATTICE_ENSEMBLE == '24c':
 elif LATTICE_ENSEMBLE == '32c':
     T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
 #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
-T0 = 'TMINUS3' # t-1
-
-# print raw gevp info (for debugging source construction)
-
-GEVP_DEBUG = True
-GEVP_DEBUG = False
-
-# generate random gaussian data after reading in real data
-# noise is added to the average to simulate a constant + noise data set
-RANDOMIZE_ENERGIES = True
-RANDOMIZE_ENERGIES = False
+T0 = 'TMINUS1' # t-1 # 10 t-2
 
 if LATTICE_ENSEMBLE == '24c':
     DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
 if LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A_1PLUS_mom000':
-        DELTA_T_MATRIX_SUBTRACTION = 4 if not GEVP_DEBUG else 0
+        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
     else:
         DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
+
+# generate random gaussian data after reading in real data
+# noise is added to the average to simulate a constant + noise data set
+RANDOMIZE_ENERGIES = True
+RANDOMIZE_ENERGIES = False
+# T0 behavior for GEVP (t/2 or t-1)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
@@ -122,6 +121,8 @@ PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
+#PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom000' in MOMSTR and\
+#    '32c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -394,6 +395,10 @@ assert len(FIT_EXCL) == DIM or not GEVP
 # if true, do not loop over fit ranges.
 NOLOOP = True
 NOLOOP = False
+
+# loop over t-t0 and delta_t_around_the_world
+TLOOP = True
+TLOOP = False
 
 # hints to eliminate
 HINTS_ELIM = {}

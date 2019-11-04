@@ -184,7 +184,9 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # copy the jackknife block into coords_jack
             if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
                 assert np.all(reuse[config_num] == reuse_blocked[
-                    config_num])
+                    config_num]),\
+                    str(reuse[config_num].shape)+" "+str(reuse_blocked[
+                        config_num].shape)
             if not latfit.config.BOOTSTRAP:
                 coords_jack = copy_block(params, reuse_blocked[config_num],
                                          coords_jack)

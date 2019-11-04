@@ -23,12 +23,12 @@ from mpi4py import MPI
 
 from latfit.singlefit import singlefit
 import latfit.singlefit
-from latfit.config import JACKKNIFE
-from latfit.config import FIT, METHOD
-from latfit.config import ISOSPIN, MOMSTR, UNCORR
+from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
+from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
+from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
-from latfit.config import MAX_RESULTS, T0, DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import MAX_RESULTS
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.jackknife_fit import jack_mean_err
@@ -37,11 +37,11 @@ from latfit.makemin.mkmin import convert_to_namedtuple
 from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.proc_folder import proc_folder
 from latfit.finalout.printerr import printerr
-from latfit.finalout.mkplot import mkplot
+import latfit.finalout.mkplot as mkplot
 from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
 from latfit.analysis.errorcodes import XminError, FitRangeInconsistency
-from latfit.analysis.errorcodes import DOFNonPos, BadChisq
+from latfit.analysis.errorcodes import DOFNonPos, BadChisq, FitFail
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
 from latfit.analysis.result_min import Param
@@ -55,6 +55,7 @@ from latfit.utilities import exactmean as em
 from latfit.mainfunc.metaclass import FitRangeMetaData
 import latfit.mainfunc.fit_range_sort as sfit
 import latfit.mainfunc.print_res as print_res
+import latfit.checks.checks_and_statements as sands
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -82,7 +83,8 @@ def fit(tadd=0):
 
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
-        meta.options.xmin += meta.options.xstep*tadd
+        if tadd:
+            meta.incr_xmin()
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -202,7 +204,7 @@ def nofit_plot(meta, plotdata, retsingle_save):
             plotdata.coords, plotdata.cov = retsingle
         else:
             plotdata.coords, plotdata.cov = retsingle_save
-        mkplot(plotdata, meta.input_f)
+        mkplot.mkplot(plotdata, meta.input_f)
 
 
 def post_loop(meta, loop_store, plotdata,
@@ -245,8 +247,8 @@ def post_loop(meta, loop_store, plotdata,
 
     print("fit window = ", meta.fitwindow)
     # plot the result
-    mkplot(plotdata, meta.input_f, result_min,
-           param_err, meta.fitwindow)
+    mkplot.mkplot(plotdata, meta.input_f, result_min,
+                  param_err, meta.fitwindow)
 
 @PROFILE
 def combine_results(result_min, result_min_close,
@@ -284,8 +286,11 @@ def loop_result(min_arr, overfit_arr):
             "  Change fit range manually:"+str(min_arr)
     except AssertionError:
         min_arr = overfit_arr
-        assert overfit_arr, "No fits succeeded."+\
-            "  Change fit range manually:"+str(min_arr)
+        try:
+            assert overfit_arr, "No fits succeeded."+\
+                "  Change fit range manually:"+str(min_arr)
+        except AssertionError:
+            raise FitFail
     return min_arr
 
 
@@ -527,8 +532,8 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     if SYS_ENERGY_GUESS:
         fname += "_sys"
     if MATRIX_SUBTRACTION:
-        fname += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
-    fname = fname + meta.window_str()+"_"+T0
+        fname += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+    fname = fname + meta.window_str()+"_"+latfit.config.T0
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
@@ -689,11 +694,11 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
         filename += "_sys"
         filename_err += '_sys'
     if MATRIX_SUBTRACTION:
-        filename += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
-        filename_err += '_dt'+str(DELTA_T_MATRIX_SUBTRACTION)
-    filename = filename + meta.window_str()+"_"+T0
+        filename += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+        filename_err += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+    filename = filename + meta.window_str()+"_"+latfit.config.T0
     print("writing file", filename)
-    filename_err = filename_err + meta.window_str()+"_"+T0
+    filename_err = filename_err + meta.window_str()+"_"+latfit.config.T0
     pickle.dump(pickl_res, open(filename+'.p', "wb"))
     print("writing file", filename_err)
     pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
@@ -847,7 +852,7 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
 def xmax_err(meta, err):
     """Handle xmax error"""
     print("Test fit failed; bad xmax. problemx:", err.problemx)
-    meta.options.xmax = err.problemx-meta.options.xstep
+    meta.decr_xmax(err.problemx)
     print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[1] < meta.options.xmax and FIT:
         print("***ERROR***")
@@ -865,7 +870,7 @@ def xmin_err(meta, err):
     # error, not an early time error (usually from pion ratio)
     if err.problemx > (meta.options.xmin + meta.options.xmax)/2:
         raise XmaxError(problemx=err.problemx)
-    meta.options.xmin = err.problemx+meta.options.xstep
+    meta.incr_xmin(err.problemx)
     print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[0] > meta.options.xmin and FIT:
         print("***ERROR***")
@@ -888,7 +893,8 @@ def dofit_initial(meta, plotdata):
         try:
             retsingle_save = singlefit(meta.input_f, meta.fitwindow,
                                        meta.options.xmin,
-                                       meta.options.xmax, meta.options.xstep)
+                                       meta.options.xmax,
+                                       meta.options.xstep)
             test_success = True
             flag = False
             if FIT:
@@ -958,7 +964,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             result = [result_min, list(param_err),
                       list(latfit.config.FIT_EXCL)]
             # don't overfit
-            if result_min.chisq.val/result_min.misc.dof >= 1 and SKIP_OVERFIT:
+            if result_min.chisq.val/result_min.misc.dof >= 1 and\
+               SKIP_OVERFIT:
                 min_arr.append(result)
             else:
                 overfit_arr.append(result)
@@ -1044,19 +1051,56 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
             overfit_arr.append(result)
     return min_arr, overfit_arr, retsingle_save
 
+def incr_t0():
+    dinit = int(tnaught[6:])
+    dfin = dinit + 1
+    dfin = dfin % (TSEP_VEC[0]+2)
+    latfit.config.T0 = 'TMINUS'+str(dfin)
+    latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else dfin
+    sands.bin_time_statements(BINNUM, USE_LATE_TIMES, latfit.config.T0,
+                              BIASED_SPEEDUP)
+    latfit.config.FITS.select_and_update(ADD_CONST)
+    print("new GEVP t-t0 =", latfit.config.T0)
+
+def incr_dt():
+    latfit.config.DELTA_T_MATRIX_SUBTRACTION += 1
+    dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION
+    latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee % (TSEP_VEC[0]+2)
+    latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
+    latfit.config.FITS.select_and_update(ADD_CONST)
+    print("new delta t matsub =", dtee)
+
 def main():
     """main"""
-    flag = 1
-    tadd = 0
-    while flag:
-        flag = 0
-        try:
-            fit(tadd=tadd)
-        except FitRangeInconsistency:
-            print("starting a new main() (inconsistent)")
-            latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
+    if TLOOP:
+        mkplot.NOSHOW = True
+    for i in range(TSEP_VEC[0]+2): # not set up for xstep
+        assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
+        if i:
+            if MATRIX_SUBTRACTION and TLOOP:
+                incr_dt()
+            else:
+                break
+        for j in range(TSEP_VEC[0]+2):
+            if j:
+                if TLOOP:
+                    incr_t0()
+                else:
+                    break
             flag = 1
-            tadd += 1
+            tadd = 0
+            while flag:
+                flag = 0
+                try:
+                    fit(tadd=tadd)
+                except FitRangeInconsistency:
+                    print("starting a new main() (inconsistent)")
+                    latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
+                    singlefit.reuse_blocked = None
+                    flag = 1
+                    tadd += 1
+                except FitFail:
+                    pass
 
 if __name__ == "__main__":
     print("__main__.py should not be called directly")
