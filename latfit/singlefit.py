@@ -298,6 +298,15 @@ def debug_print(coords_full, cov_full):
             print([sqrt(cov_full[i][i]) for i in range(len(cov_full))])
         sys.exit(0)
 
+def singlefit_reset():
+    """reset all the internal singlefit function variables"""
+    singlefit.reuse = None
+    singlefit.coords_full = None
+    singlefit.cov_full = None
+    singlefit.sent = None
+    singlefit.error2 = None
+    singlefit.reuse_blocked = None
+
 
 @PROFILE
 def index_select(xmin, xmax, xstep, fitrange, coords_full):
