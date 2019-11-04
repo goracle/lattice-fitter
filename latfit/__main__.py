@@ -49,11 +49,11 @@ from latfit.checks.consistency import fit_range_consistency_check
 from latfit.utilities import exactmean as em
 from latfit.mainfunc.metaclass import FitRangeMetaData
 # dynamic
-import latfit.mainfunc.fit_range_sort as sfit
+import latfit.mainfunc.fit_range_sort as frsort
 import latfit.finalout.mkplot as mkplot
 import latfit.mainfunc.print_res as print_res
 import latfit.checks.checks_and_statements as sands
-import latfit.singlefit
+import latfit.singlefit as sfit
 import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -108,7 +108,7 @@ def fit(tadd=0):
             ### Setup for fit range loop
 
             plotdata = store_init(plotdata)
-            prod, sorted_fit_ranges = sfit.fit_range_combos(meta, plotdata)
+            prod, sorted_fit_ranges = frsort.fit_range_combos(meta, plotdata)
 
             # store checked fit ranges
             checked = set()
@@ -125,15 +125,15 @@ def fit(tadd=0):
                     continue
 
                 # exit the fit loop?
-                if sfit.exitp(meta, min_arr, overfit_arr, idx):
+                if frsort.exitp(meta, min_arr, overfit_arr, idx):
                     break
 
                 # get one fit range, check it
-                excl, checked = sfit.get_one_fit_range(
+                excl, checked = frsort.get_one_fit_range(
                     meta, prod, idx, sorted_fit_ranges, checked)
                 if excl is None:
                     continue
-                if sfit.toosmallp(meta, excl):
+                if frsort.toosmallp(meta, excl):
                     print('excl:', excl, 'is too small')
                     continue
 
@@ -186,9 +186,9 @@ def old_fit_style(meta, trials, plotdata):
         ifile = proc_folder(meta.input_f, ctime, "blk")
         ninput = os.path.join(meta.input_f, ifile)
         result_min, _, plotdata.coords, plotdata.cov =\
-            latfit.singlefit.singlefit(ninput, meta.fitwindow,
-                                       meta.options.xmin, meta.options.xmax,
-                                       meta.options.xstep)
+            sfit.singlefit(ninput, meta.fitwindow,
+                                meta.options.xmin, meta.options.xmax,
+                                meta.options.xstep)
         list_fit_params.append(result_min.energy.val)
     printerr(*get_fitparams_loc(list_fit_params, trials))
 
@@ -196,7 +196,7 @@ def nofit_plot(meta, plotdata, retsingle_save):
     """No fit scatter plot """
     if MPIRANK == 0:
         if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
-            retsingle = latfit.singlefit.singlefit(
+            retsingle = sfit.singlefit(
                 meta.input_f, meta.fitwindow, meta.options.xmin,
                 meta.options.xmax, meta.options.xstep)
             plotdata.coords, plotdata.cov = retsingle
@@ -228,9 +228,10 @@ def post_loop(meta, loop_store, plotdata,
         and (len(min_arr) + len(overfit_arr) > 1):
         latfit.config.MINTOL = True
         print("fitting for representative fit")
-        retsingle = latfit.singlefit.singlefit(meta.input_f, meta.fitwindow,
-                              meta.options.xmin, meta.options.xmax,
-                              meta.options.xstep)
+        retsingle = sfit.singlefit(meta.input_f, meta.fitwindow,
+                                        meta.options.xmin,
+                                        meta.options.xmax,
+                                        meta.options.xstep)
     else:
         print("reusing first successful fit result for representative fit")
         retsingle = retsingle_save
@@ -323,7 +324,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
         ret = True
 
     # is this justifiable?
-    if not ret and sfit.skip_large_errors(result_min.energy.val, param_err):
+    if not ret and frsort.skip_large_errors(result_min.energy.val, param_err):
         print("Skipping fit range because param errors"+\
                 " are greater than 100%")
         ret = True
@@ -543,12 +544,12 @@ if EFF_MASS:
         to errarr"""
         errlist = []
         arrlist = []
-        xcoord = list(singlefit.coords_full[:, 0])
+        xcoord = list(sfit.singlefit.coords_full[:, 0])
         assert mindim is None or isinstance(mindim, int),\
             "type check failed"
         times = []
         dimops = None
-        for key in singlefit.reuse:
+        for key in sfit.singlefit.reuse:
             if not isinstance(key, float) and not isinstance(key, int):
                 continue
             if int(key) == key:
@@ -558,24 +559,26 @@ if EFF_MASS:
             if not isinstance(time1, int) and not isinstance(time1, float):
                 continue
             if mindim is None:
-                arr = singlefit.reuse[time1]
-                err = singlefit.error2[xcoord.index(time1)]
+                arr = sfit.singlefit.reuse[time1]
+                err = sfit.singlefit.error2[xcoord.index(time1)]
             else:
-                dimops = len(singlefit.reuse[time1][0])\
+                dimops = len(sfit.singlefit.reuse[time1][0])\
                     if dimops is None else dimops
-                assert dimops == len(singlefit.reuse[time1][0])
+                assert dimops == len(sfit.singlefit.reuse[time1][0])
                 if not getavg:
-                    arr = singlefit.reuse[time1][:, mindim]
-                    err = singlefit.error2[xcoord.index(time1)][mindim]
+                    arr = sfit.singlefit.reuse[time1][:, mindim]
+                    err = sfit.singlefit.error2[
+                        xcoord.index(time1)][mindim]
                     assert isinstance(err, float), str(err)
                 else:
-                    arr = singlefit.reuse[time1]
-                    err = singlefit.error2[xcoord.index(time1)]
+                    arr = sfit.singlefit.reuse[time1]
+                    err = sfit.singlefit.error2[xcoord.index(time1)]
             arrlist.append(arr)
             errlist.append(err)
         if not getavg:
             assert isinstance(errlist[0], float),\
-                str(errlist)+" "+str(singlefit.error2[xcoord.index(10)])
+                str(errlist)+" "+str(sfit.singlefit.error2[
+                    xcoord.index(10)])
             err = min(errlist)
             arr = arrlist[errlist.index(err)]
         else:
@@ -625,7 +628,7 @@ def pickle_res_err(name, min_arr):
     ret = [getattr(i[0], name).err for i in min_arr]
     print("debug:[getattr(i[0], name) for i in min_arr].shape",
           np.asarray(ret).shape)
-    print("debug2:", np.asarray(singlefit.error2).shape)
+    print("debug2:", np.asarray(sfit.singlefit.error2).shape)
     origl = len(ret)
     if GEVP and 'systematics' not in name:
         if len(np.asarray(ret).shape) > 1:
@@ -633,9 +636,10 @@ def pickle_res_err(name, min_arr):
             dimops1 = (np.array(ret).shape)[1]
             if 'min_params' == name and SYS_ENERGY_GUESS:
                 dimops1 = int((dimops1-1)/2)
-            dimops2 = (np.asarray(singlefit.error2).shape)[1]
+            dimops2 = (np.asarray(sfit.singlefit.error2).shape)[1]
             assert dimops1 == dimops2, str(np.array(ret).shape)+" "+str(
-                        np.asarray(singlefit.error2))+" "+str(name)
+                        np.asarray(sfit.singlefit.error2))+" "+str(
+                            name)
     if 'energy' in name:
         _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
         ret = np.array([*ret, *erreff])
@@ -654,7 +658,7 @@ def pickle_excl(meta, min_arr):
     print("original number of fit ranges before effective mass append:",
           len(ret))
     if EFF_MASS:
-        xcoord = list(singlefit.coords_full[:, 0])
+        xcoord = list(sfit.singlefit.coords_full[:, 0])
         xcoordapp = [[i] for i in xcoord]
         ret = [*ret, *xcoordapp]
     ret = np.array(ret, dtype=object)
@@ -800,7 +804,7 @@ def augment_excl(excl):
         excl[num] = sorted(list(set(j).union(set(i))))
     return excl
 augment_excl.excl_orig = EXCL_ORIG
-sfit.augment_excl = augment_excl
+frsort.augment_excl = augment_excl
 
 @PROFILE
 def dof_check(lenfit, dimops, excl):
@@ -889,7 +893,7 @@ def dofit_initial(meta, plotdata):
     flag = True
     while flag:
         try:
-            retsingle_save = latfit.singlefit.singlefit(
+            retsingle_save = sfit.singlefit(
                 meta.input_f, meta.fitwindow, meta.options.xmin,
                 meta.options.xmax, meta.options.xstep)
             test_success = True
@@ -930,7 +934,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     overfit_arr = [] # allow overfits if no usual fits succeed
 
     # cut late time points from the fit range
-    samerange = sfit.cut_on_errsize(meta) # did we make any cuts?
+    samerange = frsort.cut_on_errsize(meta) # did we make any cuts?
 
     fit_range_init = str(latfit.config.FIT_EXCL)
     print("Trying second initial fit with excluded times:",
@@ -939,11 +943,11 @@ def dofit_second_initial(meta, retsingle_save, test_success):
         if not samerange and FIT:
             print("Trying second test fit.")
             print("fit excl:", fit_range_init)
-            retsingle_save = latfit.singlefit.singlefit(meta.input_f,
-                                                        meta.fitwindow,
-                                                        meta.options.xmin,
-                                                        meta.options.xmax,
-                                                        meta.options.xstep)
+            retsingle_save = sfit.singlefit(meta.input_f,
+                                                 meta.fitwindow,
+                                                 meta.options.xmin,
+                                                 meta.options.xmax,
+                                                 meta.options.xstep)
             print("Test fit succeeded.")
             test_success = True
     except (NegChisq, RelGammaError, OverflowError, NoConvergence,
@@ -975,8 +979,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
 def store_init(plotdata):
     """Storage modification;
     act on info from initial fit ranges"""
-    plotdata.coords, plotdata.cov = singlefit.coords_full, \
-        singlefit.cov_full
+    plotdata.coords, plotdata.cov = sfit.singlefit.coords_full, \
+        sfit.singlefit.cov_full
     augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
     return plotdata
 
@@ -997,15 +1001,15 @@ def dofit(meta, fit_range_data, results_store, plotdata):
           "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
     # retsingle_save needs a cut on error size
-    if sfit.keyexcl(excl) == fit_range_init:
+    if frsort.keyexcl(excl) == fit_range_init:
         skip = True
     else:
         try:
-            retsingle = latfit.singlefit.singlefit(meta.input_f,
-                                                   meta.fitwindow,
-                                                   meta.options.xmin,
-                                                   meta.options.xmax,
-                                                   meta.options.xstep)
+            retsingle = sfit.singlefit(meta.input_f,
+                                            meta.fitwindow,
+                                            meta.options.xmin,
+                                            meta.options.xmax,
+                                            meta.options.xstep)
             if retsingle_save is None:
                 retsingle_save = retsingle
             print("fit succeeded for this selection"+\
@@ -1107,7 +1111,7 @@ def reset_main(mintol):
     """Reset all dynamic variables"""
     latfit.config.MINTOL = mintol
     latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
-    singlefit.singlefit_reset()
+    sfit.singlefit_reset()
 
 if __name__ == "__main__":
     print("__main__.py should not be called directly")
