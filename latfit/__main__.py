@@ -1096,7 +1096,7 @@ def main():
                 except FitRangeInconsistency:
                     print("starting a new main() (inconsistent)")
                     latfit.config.FIT_EXCL = list(EXCL_ORIG_IMPORT)
-                    singlefit.reuse_blocked = None
+                    singlefit.singlefit_reset()
                     flag = 1
                     tadd += 1
                 except FitFail:
