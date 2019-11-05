@@ -105,21 +105,21 @@ class FitRangeMetaData:
         self.options = recordtype('ops',
                                   'xmin xmax xstep trials fitmin fitmax')
 
-    def incr_xmin(self, problemx=None):
+    def incr_xmin(self, problemx=None, inx=False):
         """Increment xmin by one*xstep"""
         print("increasing xmin by one*xstep")
         if problemx is None:
             #self.options.xmin += self.options.xstep
             self.fitwindow = (self.fitwindow[0]+self.options.xstep,
                               self.fitwindow[1])
-            if TLOOP:
+            if TLOOP or inx:
                 self.options.xmin += self.options.xstep
         else:
             #self.options.xmin = problemx + self.options.xstep
             self.fitwindow = (problemx + self.options.xstep,
                               self.fitwindow[1])
-            if TLOOP:
-                self.options.xmax = problemx + self.options.xstep
+            if TLOOP or inx:
+                self.options.xmin = problemx + self.options.xstep
         try:
             assert self.fitwindow[0] < self.fitwindow[1]
             assert self.options.xmin < self.options.xmax
@@ -128,19 +128,19 @@ class FitRangeMetaData:
             raise DOFNonPos
         self.pr_fit_window()
 
-    def decr_xmax(self, problemx=None):
+    def decr_xmax(self, problemx=None, dex=False):
         """Decrement xmax by one*xstep"""
         print("decreasing xmax by one*xstep")
         if problemx is None:
             #self.options.xmax -= self.options.xstep
             self.fitwindow = (self.fitwindow[0],
                               self.fitwindow[1]-self.options.xstep)
-            if TLOOP:
+            if TLOOP or dex:
                 self.options.xmax -= self.options.xstep
         else:
             #self.options.xmax = problemx - self.options.xstep
             self.fitwindow = (self.fitwindow[0], problemx-self.options.xstep)
-            if TLOOP:
+            if TLOOP or dex:
                 self.options.xmax = problemx - self.options.xstep
         try:
             assert self.fitwindow[0] < self.fitwindow[1]
@@ -184,9 +184,9 @@ class FitRangeMetaData:
             delta += latfit.config.DELTA_T2_MATRIX_SUBTRACTION
         delta = 0 if not MATRIX_SUBTRACTION else delta
         if GEVP:
-            if self.options.xmin < delta + int(latfit.config.T0[6:]):
-                ret = (delta + int(
-                    latfit.config.T0[6:]) + 1)* self.options.xstep
+            xmin_req = delta + int(latfit.config.T0[6:])
+            if self.options.xmin < xmin_req:
+                self.incr_xmin(problemx=xmin_req, inx=True)
         self.options.xmin = ret
 
     @PROFILE
