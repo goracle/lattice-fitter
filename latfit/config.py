@@ -41,31 +41,30 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
+IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
 
 if ISOSPIN == 1:
-    # too noisy to even plot
-    IRREP = 'A_2MINUS_mom11' # very noisy, no go
-    IRREP = 'A_1PLUS_mom11' # very noisy, no go
-    IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
-    # working
-    IRREP = 'A_1PLUS_mom1' # t-t0=3 has decent t=8-10 plateau
-    IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
-    IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
-    IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
     # control
     IRREP = 'T_1_3MINUS_mom000'
     IRREP = 'T_1_MINUS'
+    # working
+    IRREP = 'A_2MINUS_mom11' 
+    IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
+    IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
+    IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
+    IRREP = 'A_1PLUS_mom1' # t-t0=3 has decent t=8-10 plateau
+    IRREP = 'A_1PLUS_mom11' # very noisy, no go
+    IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
 
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
@@ -397,8 +396,8 @@ NOLOOP = True
 NOLOOP = False
 
 # loop over t-t0 and delta_t_around_the_world
-TLOOP = True
 TLOOP = False
+TLOOP = True
 
 # hints to eliminate
 HINTS_ELIM = {}
