@@ -99,6 +99,17 @@ class DOFNonPos(Exception):
         self.dof = dof
         self.message = message
 
+class DOFNonPosFit(Exception):
+    """Exception for dof < 0 (within fit; after getting coords)"""
+    @PROFILE
+    def __init__(self, dof=None, message='', excl=None):
+        print("***ERROR***")
+        print("dof < 1: dof=", dof)
+        print("FIT_EXCL=", excl)
+        super(DOFNonPosFit, self).__init__(message)
+        self.dof = dof
+        self.message = message
+
 class BadChisq(Exception):
     """Exception for bad chi^2 (t^2)"""
     @PROFILE

@@ -7,7 +7,7 @@ import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
 from latfit.config import GEVP, NBOOT
-from latfit.analysis.errorcodes import DOFNonPos
+from latfit.analysis.errorcodes import DOFNonPosFit
 import latfit.config
 import latfit.analysis.hotelling as hotelling
 
@@ -157,4 +157,5 @@ class ResultMin:
             print("dof < 1. dof =", self.misc.dof)
             print("fit window:", WINDOW)
             print("excl:", latfit.config.FIT_EXCL)
-            raise DOFNonPos(dof=self.misc.dof, excl=latfit.config.FIT_EXCL)
+            raise DOFNonPosFit(dof=self.misc.dof,
+                               excl=latfit.config.FIT_EXCL)
