@@ -2,8 +2,8 @@
 import sys
 
 from latfit.procargs import procargs
-from latfit.config import FIT
-
+from latfit.config import FIT, TLOOP
+from latfit.analysis.errorcodes import DOFNonPos
 
 if not FIT:
 
@@ -86,7 +86,7 @@ def xlim_err(xmin, xmax):
 
 def swap_minmax(xmin, xmax):
     """Try to swap xmin with xmax if xmax < xmin"""
-    while True:
+    while not TLOOP:
         print("xmax < xmin.  Contradiction.", "Swap xmax for xmin? (y/n)")
         response = str(input())
         if (response == "n" or response == "no" or
@@ -119,4 +119,6 @@ def swap_minmax(xmin, xmax):
         else:
             print("Sorry, I didn't understand that.")
             continue
+    else:
+        raise DOFNonPos
     return xmin, xmax
