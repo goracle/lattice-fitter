@@ -12,7 +12,8 @@ from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.jackknife_fit import jack_mean_err
-from latfit.analysis.errorcodes import XmaxError
+from latfit.analysis.errorcodes import XmaxError, NegativeEigenvalue
+from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 
 from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
@@ -488,7 +489,10 @@ if GEVP:
         """get the block"""
         if reuse:
             pass
-        retblk = getblock_gevp(file_tup, delta_t, timeij)
+        try:
+            retblk = getblock_gevp(file_tup, delta_t, timeij)
+        except (ImaginaryEigenvalue, NegativeEigenvalue, PrecisionLossError):
+            raise XmaxError(problemx=timeij)
         test_imagblk(retblk)
         return retblk
 else:
