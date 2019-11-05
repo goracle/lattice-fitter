@@ -62,6 +62,25 @@ MPISIZE = MPI.COMM_WORLD.Get_size()
 
 EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
 
+# acceptable errors for initial fit
+ACCEPT_ERRORS_INIT = (NegChisq, RelGammaError, NoConvergence,
+                OverflowError, EnergySortError, TooManyBadFitsError,
+                np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                DOFNonPosFit, BadChisq, ZetaError)
+
+
+# for subsequent fits
+ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence,OverflowError, 
+                 BadJackknifeDist, DOFNonPosFit, EnergySortError,
+                 TooManyBadFitsError,
+                 BadChisq, ZetaError)
+
+# for final representative fit.  dof should be deterministic, so should work
+# (at least)
+ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
+                     OverflowError, BadJackknifeDist, EnergySortError,
+                     TooManyBadFitsError, BadChisq, ZetaError)
+
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
@@ -83,8 +102,10 @@ def fit(tadd=0):
 
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
-        for _ in range(tadd):
-            meta.incr_xmin()
+        if tadd:
+           print("tadd =", tadd) 
+           for _ in range(tadd):
+               meta.incr_xmin()
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -235,7 +256,7 @@ def post_loop(meta, loop_store, plotdata,
                                        meta.options.xmin,
                                        meta.options.xmax,
                                        meta.options.xstep)
-        except NoConvergence:
+        except ACCEPT_ERRORS_FIN:
             print("reusing first successful fit"+\
                   " since representative fit failed (NoConvergence)")
             retsingle = retsingle_save
@@ -922,10 +943,7 @@ def dofit_initial(meta, plotdata):
             except XmaxError as err2:
                 meta = xmax_err(meta, err2)
             plotdata.fitcoord = meta.fit_coord()
-        except (NegChisq, RelGammaError, NoConvergence,
-                OverflowError, EnergySortError, TooManyBadFitsError,
-                np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                DOFNonPosFit, BadChisq, ZetaError) as err:
+        except ACCEPT_ERRORS_INIT as err:
             flag = False
             print("fit failed (acceptably) with error:",
                 err.__class__.__name__)
@@ -958,10 +976,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
                                                  meta.options.xstep)
             print("Test fit succeeded.")
             test_success = True
-    except (NegChisq, RelGammaError, OverflowError, NoConvergence,
-            BadJackknifeDist, DOFNonPosFit, EnergySortError,
-            TooManyBadFitsError,
-            BadChisq, ZetaError) as err:
+    except ACCEPT_ERRORS as err:
         print("fit failed (acceptably) with error:",
               err.__class__.__name__)
         fit_range_init = None
@@ -1024,11 +1039,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                     " excluded points=", excl)
             if meta.lenprod == 1 or MAX_RESULTS == 1:
                 retsingle_save = retsingle
-        except (NegChisq, RelGammaError, OverflowError,
-                NoConvergence, EnergySortError,
-                TooManyBadFitsError,
-                BadJackknifeDist,
-                DOFNonPosFit, BadChisq, ZetaError) as err:
+        except ACCEPT_ERRORS as err:
             # skip on any error
             print("fit failed for this selection"+\
                   " excluded points=", excl, "with error:",
@@ -1064,24 +1075,34 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
             overfit_arr.append(result)
     return min_arr, overfit_arr, retsingle_save
 
+def tsep_based_incr(dtee):
+    """Increment dt modulo TSEP+2 (+2 is arbitrary, but seems to work)"""
+    ret = dtee + 1
+    ret = ret  % (TSEP_VEC[0]+2)
+    if not ret:
+        ret += 1
+    return ret
+
 def incr_t0():
-    dinit = int(latfit.config.T0[6:])
-    dfin = dinit + 1
-    dfin = dfin % (TSEP_VEC[0]+2)
-    latfit.config.T0 = 'TMINUS'+str(dfin)
-    latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else dfin
+    dtee = int(latfit.config.T0[6:])
+    dtee = tsep_based_incr(dtee)
+    latfit.config.T0 = 'TMINUS'+str(dtee)
+    latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else dtee
     sands.bin_time_statements(BINNUM, USE_LATE_TIMES, latfit.config.T0,
                               BIASED_SPEEDUP)
     latfit.config.FITS.select_and_update(ADD_CONST)
+    print("current delta t matsub =",
+          latfit.config.DELTA_T_MATRIX_SUBTRACTION)
     print("new GEVP t-t0 =", latfit.config.T0)
 
 def incr_dt():
-    latfit.config.DELTA_T_MATRIX_SUBTRACTION += 1
     dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION
-    latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee % (TSEP_VEC[0]+2)
+    dtee = tsep_based_incr(dtee)
+    latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
     latfit.config.FITS.select_and_update(ADD_CONST)
-    print("new delta t matsub =", dtee)
+    print("new delta t matsub =", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+    print("current GEVP t-t0 =", latfit.config.T0)
 
 def main():
     """main"""
@@ -1090,14 +1111,14 @@ def main():
         mkplot.NOSHOW = True
     # outer loop is over matrix subtraction delta_t
     # (assumes we never do a second subtraction)
-    for i in range(TSEP_VEC[0]+2): # not set up for xstep
+    for i in range(TSEP_VEC[0]+1): # not set up for xstep
         assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
         if i:
             if MATRIX_SUBTRACTION and TLOOP:
                 incr_dt()
             else:
                 break
-        for j in range(TSEP_VEC[0]+2): # loop over t-t0
+        for j in range(TSEP_VEC[0]+1): # loop over t-t0
             if j:
                 if TLOOP:
                     incr_t0()
@@ -1112,6 +1133,7 @@ def main():
             while flag: # this is basically the loop over tmin
                 reset_main(mintol) # reset the fitter for next fit
                 flag = 0 # flag stays 0 if fit succeeds
+                print("t indices:", i, j)
                 try:
                     fit(tadd=tadd)
                 except (FitRangeInconsistency, FitFail):
@@ -1124,7 +1146,8 @@ def main():
 def reset_main(mintol):
     """Reset all dynamic variables"""
     latfit.config.MINTOL = mintol
-    latfit.config.FIT_EXCL = list(np.copy(EXCL_ORIG))
+    latfit.config.FIT_EXCL = np.copy(EXCL_ORIG)
+    latfit.config.FIT_EXCL = [list(i) for i in latfit.config.FIT_EXCL]
     sfit.singlefit_reset()
 
 if __name__ == "__main__":
