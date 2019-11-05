@@ -11,13 +11,20 @@ from sympy.matrices import Matrix
 from latfit.utilities import exactmean as em
 from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
+from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
 
 def checkgteq0(eigfin):
     """Check to be sure all eigenvalues are greater than 0"""
     for i in eigfin:
         if not np.isnan(i):
-            assert i >= 0, "negative eigenvalue found:"+str(eigfin)
+            try:
+                assert i >= 0
+            except AssertionError:
+                print("negative eigenvalue found:"+str(eigfin))
+                raise NegativeEigenvalue
+                
+                
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^dagger)/2"""

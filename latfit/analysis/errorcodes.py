@@ -93,8 +93,12 @@ class DOFNonPos(Exception):
     @PROFILE
     def __init__(self, dof=None, message='', excl=None):
         print("***ERROR***")
-        print("dof < 1: dof=", dof)
-        print("FIT_EXCL=", excl)
+        if dof is not None:
+            print("dof < 1: dof=", dof)
+        else:
+            print("dof < 1")
+        if excl is not None:
+            print("FIT_EXCL=", excl)
         super(DOFNonPos, self).__init__(message)
         self.dof = dof
         self.message = message
@@ -135,6 +139,16 @@ class ImaginaryEigenvalue(Exception):
         super(ImaginaryEigenvalue, self).__init__(message)
         self.expression = expression
         self.message = message
+
+class NegativeEigenvalue(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    def __init__(self, expression='', message=''):
+        print("***ERROR***")
+        print('negative eigenvalue found')
+        super(NegativeEigenvalue, self).__init__(message)
+        self.expression = expression
+        self.message = message
+
 
 class XminError(Exception):
     """Exception for early time inconsistencies"""
