@@ -13,7 +13,7 @@ from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.config import GEVP, STYPE, MAX_ITER
 from latfit.config import NOLOOP, MULT, FIT
 from latfit.config import MATRIX_SUBTRACTION
-from latfit.config import RANGE_LENGTH_MIN
+from latfit.config import RANGE_LENGTH_MIN, TLOOP
 from latfit.config import ONLY_SMALL_FIT_RANGES
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
@@ -106,29 +106,42 @@ class FitRangeMetaData:
 
     def incr_xmin(self, problemx=None):
         """Increment xmin by one*xstep"""
+        print("increasing xmin by one*xstep")
         if problemx is None:
             #self.options.xmin += self.options.xstep
             self.fitwindow = (self.fitwindow[0]+self.options.xstep,
                               self.fitwindow[1])
+            if TLOOP:
+                self.options.xmin += self.options.xstep
         else:
             #self.options.xmin = problemx + self.options.xstep
-            self.fitwindow = (problemx+self.options.xstep, self.fitwindow[1])
+            self.fitwindow = (problemx + self.options.xstep,
+                              self.fitwindow[1])
+            if TLOOP:
+                self.options.xmax = problemx + self.options.xstep
         assert self.fitwindow[0] < self.fitwindow[1]
         assert self.options.xmin < self.options.xmax
         assert self.options.xmin <= self.fitwindow[0]
+        self.pr_fit_window()
 
     def decr_xmax(self, problemx=None):
-        """Increment xmin by one*xstep"""
+        """Decrement xmax by one*xstep"""
+        print("decreasing xmax by one*xstep")
         if problemx is None:
             #self.options.xmax -= self.options.xstep
             self.fitwindow = (self.fitwindow[0],
                               self.fitwindow[1]-self.options.xstep)
+            if TLOOP:
+                self.options.xmax -= self.options.xstep
         else:
             #self.options.xmax = problemx - self.options.xstep
             self.fitwindow = (self.fitwindow[0], problemx-self.options.xstep)
+            if TLOOP:
+                self.options.xmax = problemx - self.options.xstep
         assert self.fitwindow[0] < self.fitwindow[1]
         assert self.options.xmin < self.options.xmax
         assert self.options.xmax >= self.fitwindow[1]
+        self.pr_fit_window()
 
     @PROFILE
     def skip_loop(self):
@@ -217,6 +230,10 @@ class FitRangeMetaData:
         ret = list(ret)
         latfit.analysis.result_min.WINDOW = ret
         return ret
+
+    def pr_fit_window(self):
+        """Print the current fit window"""
+        print("current fit window = ", self.fitwindow)
 
     @PROFILE
     def setup(self, plotdata):
