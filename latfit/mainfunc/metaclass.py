@@ -17,6 +17,7 @@ from latfit.config import RANGE_LENGTH_MIN, TLOOP
 from latfit.config import ONLY_SMALL_FIT_RANGES
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
+from latfit.analysis.errorcodes import DOFNonPos
 import latfit.config
 from latfit.procargs import procargs
 
@@ -119,9 +120,12 @@ class FitRangeMetaData:
                               self.fitwindow[1])
             if TLOOP:
                 self.options.xmax = problemx + self.options.xstep
-        assert self.fitwindow[0] < self.fitwindow[1]
-        assert self.options.xmin < self.options.xmax
-        assert self.options.xmin <= self.fitwindow[0]
+        try:
+            assert self.fitwindow[0] < self.fitwindow[1]
+            assert self.options.xmin < self.options.xmax
+            assert self.options.xmin <= self.fitwindow[0]
+        except AssertionError:
+            raise DOFNonPos
         self.pr_fit_window()
 
     def decr_xmax(self, problemx=None):
@@ -138,9 +142,12 @@ class FitRangeMetaData:
             self.fitwindow = (self.fitwindow[0], problemx-self.options.xstep)
             if TLOOP:
                 self.options.xmax = problemx - self.options.xstep
-        assert self.fitwindow[0] < self.fitwindow[1]
-        assert self.options.xmin < self.options.xmax
-        assert self.options.xmax >= self.fitwindow[1]
+        try:
+            assert self.fitwindow[0] < self.fitwindow[1]
+            assert self.options.xmin < self.options.xmax
+            assert self.options.xmax >= self.fitwindow[1]
+        except AssertionError:
+            raise DOFNonPos
         self.pr_fit_window()
 
     @PROFILE
