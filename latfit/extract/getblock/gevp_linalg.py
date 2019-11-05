@@ -13,6 +13,7 @@ from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
+from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 
 def checkgteq0(eigfin):
     """Check to be sure all eigenvalues are greater than 0"""
@@ -23,8 +24,7 @@ def checkgteq0(eigfin):
             except AssertionError:
                 print("negative eigenvalue found:"+str(eigfin))
                 raise NegativeEigenvalue
-                
-                
+
 
 def enforce_hermiticity(gevp_mat):
     """C->(C+C^dagger)/2"""
@@ -118,7 +118,7 @@ def defsign(cmat):
     else:
         print("eigenvalues are not all the same sign:", str(evals))
         print(cmat)
-        sys.exit(1)
+        raise EigenvalueSignInconsistency
         ret = False
     return ret
 
