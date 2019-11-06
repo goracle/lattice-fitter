@@ -120,8 +120,8 @@ PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
-#PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom000' in MOMSTR and\
-#    '32c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
+PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
+    '32c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -398,8 +398,9 @@ NOLOOP = False
 # loop over t-t0 and delta_t_around_the_world
 TLOOP = False
 TLOOP = True
+TLOOP = False if not FIT else TLOOP
 # start indices (in case the fit exits early)
-TLOOP_START = (0, 2)
+TLOOP_START = (0, 0)
 
 # hints to eliminate
 HINTS_ELIM = {}
