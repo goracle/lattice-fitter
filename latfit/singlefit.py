@@ -19,8 +19,9 @@ from latfit.analysis.result_min import Param, ResultMin
 from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
-from latfit.analysis.errorcodes import NoConvergence
+from latfit.analysis.errorcodes import NoConvergence, PrecisionLossError
 from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
+from latfit.analysis.errorcodes import XmaxError
 
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func
@@ -105,7 +106,15 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     if singlefit.reuse_blocked is None or RANDOMIZE_ENERGIES:
         singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
         chec = binconf(reuse, binnum=JACKKNIFE_BLOCK_SIZE)
-        assert np.allclose(chec, singlefit.reuse_blocked, rtol=1e-14)
+        try:
+            assert np.allclose(chec, singlefit.reuse_blocked, rtol=1e-14)
+        except AssertionError:
+            try:
+                raise PrecisionLossError
+            except PrecisionLossError:
+                singlefit_reset()
+                raise XmaxError(problemx=xmax)
+        
 
 
     # correct covariance matrix for jackknife factor
@@ -157,8 +166,12 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                 result_min, param_err = cloudpickle.load(
                     open("result_min.p", "rb"))
             else:
-                result_min, param_err = jackknife_fit(
-                    params, reuse, singlefit.reuse_blocked, coords)
+                try:
+                    result_min, param_err = jackknife_fit(
+                        params, reuse, singlefit.reuse_blocked, coords)
+                except PrecisionLossError:
+                    singlefit_reset()
+                    raise XmaxError(problemx=xmax)
                 cloudpickle.dump((result_min, param_err),
                                  open("result_min.p", "wb"))
                 if BOOTSTRAP_PVALUES:
