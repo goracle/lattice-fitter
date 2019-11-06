@@ -105,8 +105,9 @@ class FitRangeMetaData:
         self.options = recordtype('ops',
                                   'xmin xmax xstep trials fitmin fitmax')
 
-    def incr_xmin(self, problemx=None, inx=False):
+    def incr_xmin(self, problemx=None, inx=True):
         """Increment xmin by one*xstep"""
+        assert self.fitwindow
         print("increasing xmin by one*xstep")
         if problemx is None:
             #self.options.xmin += self.options.xstep
@@ -128,7 +129,7 @@ class FitRangeMetaData:
             raise DOFNonPos
         self.pr_fit_window()
 
-    def decr_xmax(self, problemx=None, dex=False):
+    def decr_xmax(self, problemx=None, dex=True):
         """Decrement xmax by one*xstep"""
         print("decreasing xmax by one*xstep")
         if problemx is None:
@@ -179,6 +180,7 @@ class FitRangeMetaData:
     def xmin_mat_sub(self):
         """Shift xmin to be later in time in the case of
         around the world subtraction of previous time slices"""
+        assert self.fitwindow
         delta = latfit.config.DELTA_T_MATRIX_SUBTRACTION
         if DELTA_E2_AROUND_THE_WORLD is not None:
             delta += latfit.config.DELTA_T2_MATRIX_SUBTRACTION
