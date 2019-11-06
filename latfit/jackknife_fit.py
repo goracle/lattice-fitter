@@ -40,6 +40,7 @@ import latfit.makemin.mkmin as mkmin
 from latfit.analysis.errorcodes import NoConvergence, TooManyBadFitsError
 from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 from latfit.analysis.errorcodes import EnergySortError, ZetaError
+from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.result_min import ResultMin
 from latfit.utilities import exactmean as em
 from latfit.utilities.actensordot import actensordot
@@ -1080,7 +1081,7 @@ def symp(matrix):
                     assert np.allclose(eva, evb, rtol=1e-8)
                 except AssertionError:
                     print(err)
-                    raise
+                    raise PrecisionLossError
 
 
 def invp(matrix, inv):
