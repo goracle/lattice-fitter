@@ -343,7 +343,7 @@ class FitFunc:
             print("bad ratio.  should be 1/ratio")
             print(sol)
             sol = np.nan
-            # raise
+            raise NegativeEnergy
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):

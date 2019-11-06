@@ -13,7 +13,7 @@ from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.jackknife_fit import jack_mean_err
 from latfit.analysis.errorcodes import XmaxError, NegativeEigenvalue
-from latfit.analysis.errorcodes import PrecisionLossError
+from latfit.analysis.errorcodes import PrecisionLossError, NegativeEnergy
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 
@@ -496,7 +496,7 @@ if GEVP:
             pass
         try:
             retblk = getblock_gevp(file_tup, delta_t, timeij)
-        except (ImaginaryEigenvalue, NegativeEigenvalue,
+        except (ImaginaryEigenvalue, NegativeEigenvalue, NegativeEnergy,
                 PrecisionLossError, EigenvalueSignInconsistency):
             raise XmaxError(problemx=timeij)
         test_imagblk(retblk)
