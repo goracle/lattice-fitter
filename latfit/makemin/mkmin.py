@@ -16,7 +16,7 @@ from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
 from latfit.config import GRAD, EFF_MASS
-from latfit.analysis.errorcodes import EnergySortError
+from latfit.analysis.errorcodes import EnergySortError, PrecisionLossError
 import latfit.config
 import latfit.mathfun.chi_sq as chi
 
@@ -80,7 +80,7 @@ def check_covinv(covinv):
             except AssertionError:
                 print(i, j)
                 print(err)
-                raise
+                raise PrecisionLossError
                 
 
 SPARAMS = list(START_PARAMS)
