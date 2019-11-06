@@ -412,6 +412,7 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     """Subtract the atw vacuum saturation single pion correlators
     (non-interacting around the world term, single pion correlator squared)
     """
+    assert timeij >= 0, str(timeij)
     cmat = np.array(copy.deepcopy(np.array(cmat_arg)))
     origshape = cmat.shape
     if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
@@ -446,7 +447,8 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                         assert (item or zeroit) and not np.isnan(item)
                     except AssertionError:
                         print(item)
-                        print("nan error in (name, time slice):", name, timeij)
+                        print("nan error in (name, time slice):",
+                              name, timeij)
                         raise XmaxError(problemx=timeij)
                 cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(gdisp.NORMS[i][i])
                 assert cmat[:, i, i].shape == tosub.shape
@@ -456,7 +458,8 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                         assert (item or zeroit) and not np.isnan(item)
                     except AssertionError:
                         print(item)
-                        print("nan error in (name, time slice):", name, timeij)
+                        print("nan error in (name, time slice):",
+                              name, timeij)
                         raise XmaxError(problemx=timeij)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(gdisp.NORMS[i][i])
             else:
@@ -473,6 +476,7 @@ def atwsub_cmats(timeinfo, cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs):
     """Wrapper for around the world subtraction"""
     # subtract the non-interacting around the world piece
     delta_t, timeij = timeinfo
+    assert timeij-delta_t >= 0, str(timeinfo)
     for i, mean in enumerate(mean_cmats_lhs):
         assert mean_cmats_lhs[i].shape == mean.shape
         try:

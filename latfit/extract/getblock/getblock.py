@@ -144,6 +144,7 @@ if EFF_MASS:
         countdict = {}
         errdict = {}
         check_length = 0
+        assert timeij-delta_t >= 0, str((timeij, delta_t))
         gsolve.HINT = HINTS_ELIM[timeij] if timeij in HINTS_ELIM\
             else None
         assert len(file_tup) == 5, "bad file_tup length:"+str(len(file_tup))
@@ -281,6 +282,7 @@ if EFF_MASS:
             file_tup, num_configs)
 
         # do the around the world subtraction
+        assert timeij-delta_t >= 0, str((timeij, delta_t))
         cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = atwsub_cmats(
             (delta_t, timeij),
             cmats_lhs, mean_cmats_lhs,
@@ -488,6 +490,8 @@ if GEVP:
 
     def getblock_plus(file_tup, reuse, timeij=None, delta_t=None):
         """get the block"""
+        if timeij is not None and delta_t is not None:
+            assert timeij-delta_t >= 0, str((timeij, delta_t))
         if reuse:
             pass
         try:
@@ -517,6 +521,8 @@ else:
 
 def getblock(file_tup, reuse, timeij=None, delta_t=None):
     """get the block and subtract any bad configs"""
+    if timeij is not None and delta_t is not None:
+        assert timeij-delta_t >= 0, str((timeij, delta_t))
     retblk = np.array(getblock_plus(file_tup, reuse, timeij,
                                     delta_t=delta_t))
     if ELIM_JKCONF_LIST and None:
