@@ -1146,6 +1146,7 @@ def main():
                     tadd += 1 # add this to tmin
                 except DOFNonPos: # exit the loop; we're totally out of dof
                     break
+    print("End of t loop.  latfit exiting.")
 
 def reset_main(mintol):
     """Reset all dynamic variables"""
