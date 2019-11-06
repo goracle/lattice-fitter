@@ -398,6 +398,8 @@ NOLOOP = False
 # loop over t-t0 and delta_t_around_the_world
 TLOOP = False
 TLOOP = True
+# start indices (in case the fit exits early)
+TLOOP_START = (0, 2)
 
 # hints to eliminate
 HINTS_ELIM = {}

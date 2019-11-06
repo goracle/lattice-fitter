@@ -26,7 +26,7 @@ from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
 from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
-from latfit.config import MAX_RESULTS, GEVP_DERIV
+from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.jackknife_fit import jack_mean_err
@@ -890,7 +890,7 @@ def xmax_err(meta, err):
         print("fit window beyond xmax:", meta.fitwindow)
         sys.exit(1)
     meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
-                                    meta.options.xmax)
+                                  meta.options.xmax)
     print("new fit window = ", meta.fitwindow)
     return meta
 
@@ -908,7 +908,7 @@ def xmin_err(meta, err):
         print("fit window beyond xmin:", meta.fitwindow)
         sys.exit(1)
     meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
-                                    meta.options.xmax)
+                                  meta.options.xmax)
     print("new fit window = ", meta.fitwindow)
     return meta
 
@@ -1113,12 +1113,16 @@ def main():
     # (assumes we never do a second subtraction)
     for i in range(TSEP_VEC[0]+1): # not set up for xstep
         assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
+        if i < TLOOP_START[0]:
+            continue
         if i:
             if MATRIX_SUBTRACTION and TLOOP:
                 incr_dt()
             else:
                 break
         for j in range(TSEP_VEC[0]+1): # loop over t-t0
+            if j < TLOOP_START[1]:
+                continue
             if j:
                 if TLOOP:
                     incr_t0()
