@@ -1041,7 +1041,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
             # skip on any error
-            print("fit failed for this selection"+\
+            print("fit failed for this selection."+\
                   " excluded points=", excl, "with error:",
                   err.__class__.__name__)
             skip = True
