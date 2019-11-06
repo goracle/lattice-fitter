@@ -6,7 +6,7 @@ import numpy as np
 from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
-from latfit.analysis.errorcodes import BoolThrowErr
+from latfit.analysis.errorcodes import BoolThrowErr, NegativeEnergy
 # from latfit.config import TRHS
 
 class FitFunctions:
@@ -151,7 +151,7 @@ class FitFuncAdd:
         except AssertionError:
             print("bad ratio.  should be 1/ratio")
             print(sol)
-            raise
+            raise NegativeEnergy
         return sol
 
     def acosh_ratio(self, corrs, times=None, nocheck=False):
