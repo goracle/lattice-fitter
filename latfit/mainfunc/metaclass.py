@@ -19,6 +19,7 @@ from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.analysis.errorcodes import DOFNonPos
 import latfit.config
+import latfit.makemin.mkmin as mkmin
 from latfit.procargs import procargs
 
 EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
@@ -217,6 +218,7 @@ class FitRangeMetaData:
         # fit range is small, use brute force
         if self.lenprod < MAX_ITER and not NOLOOP:
             self.random_fit = False
+            mkmin.KICK = True
             prod = list(prod)
             prod = [str(i) for i in prod]
             prod = sorted(prod)

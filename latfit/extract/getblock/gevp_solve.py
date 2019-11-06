@@ -11,6 +11,7 @@ from matplotlib.mlab import PCA
 
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
+from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.extract.getblock.gevp_linalg import variance_reduction
 from latfit.extract.getblock.gevp_linalg import printevecs, convtosmat
 from latfit.extract.getblock.gevp_linalg import finaleval_imag_check
@@ -107,7 +108,7 @@ def calleig(c_lhs, c_rhs=None):
             print("bracket lhs, bracket rhs, ratio, eval")
             print(bracket(evec, c_lhs), bracket(evec, c_rhs),
                   bracket(evec, c_lhs)/bracket(evec, c_rhs), eval1)
-            sys.exit(1)
+            raise PrecisionLossError
     if flag:
         if not np.all(np.imag(eigenvals) < 1e-8):
             print("non-negligible imaginary eigenvalues found")

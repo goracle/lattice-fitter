@@ -28,6 +28,8 @@ except NameError:
         return arg2
     PROFILE = profile
 
+KICK = False
+
 def dealloc_chi():
     """Reset the precomputed ranges"""
     chi.RCORD = None
@@ -93,7 +95,7 @@ def mkmin(covinv, coords, method=METHOD):
     """
     status = 1
     status2 = 1
-    count = 15 # try 10 times to get convergence (abitrary)
+    count = 15 if KICK else 1 # try 10 times to get convergence (abitrary)
     kick = False
     while (status or status2) and count:
         assert count >= 0, str(count)
@@ -103,7 +105,7 @@ def mkmin(covinv, coords, method=METHOD):
         if status:
             kick = True
             kick_params()
-        else:
+        elif count:
             try:
                 getenergies(res_min)
                 status2 = 0
