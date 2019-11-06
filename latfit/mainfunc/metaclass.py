@@ -167,7 +167,8 @@ class FitRangeMetaData:
         """Generate all possible fit ranges"""
         posexcl = powerset(
             np.arange(self.fitwindow[0],
-                      self.fitwindow[1]+self.options.xstep, self.options.xstep))
+                      self.fitwindow[1]+self.options.xstep,
+                      self.options.xstep))
         sampler = filter_sparse(posexcl, self.fitwindow, self.options.xstep)
         sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
         posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
@@ -178,16 +179,15 @@ class FitRangeMetaData:
     def xmin_mat_sub(self):
         """Shift xmin to be later in time in the case of
         around the world subtraction of previous time slices"""
-        ret = self.options.xmin
         delta = latfit.config.DELTA_T_MATRIX_SUBTRACTION
         if DELTA_E2_AROUND_THE_WORLD is not None:
             delta += latfit.config.DELTA_T2_MATRIX_SUBTRACTION
         delta = 0 if not MATRIX_SUBTRACTION else delta
         if GEVP:
             xmin_req = delta + int(latfit.config.T0[6:])
+            #print("xmin_req", xmin_req)
             if self.options.xmin < xmin_req:
                 self.incr_xmin(problemx=xmin_req, inx=True)
-        self.options.xmin = ret
 
     @PROFILE
     def fit_coord(self):
@@ -240,7 +240,9 @@ class FitRangeMetaData:
 
     def pr_fit_window(self):
         """Print the current fit window"""
+        assert len(self.fitwindow) == 2, str(self.fitwindow)
         print("current fit window = ", self.fitwindow)
+        print("current xmin, xmax = ", self.options.xmin, self.options.xmax)
 
     @PROFILE
     def setup(self, plotdata):
@@ -249,11 +251,10 @@ class FitRangeMetaData:
         self.options.xmin, self.options.xmax = xlim_err(self.options.xmin,
                                                         self.options.xmax)
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
-        self.xmin_mat_sub()
         self.fitwindow = fitrange_err(self.options, self.options.xmin,
                                       self.options.xmax)
+        self.xmin_mat_sub()
         self.actual_range()
-        print("fit window = ", self.fitwindow)
         latfit.config.TSTEP = self.options.xstep
         plotdata.fitcoord = self.fit_coord()
         trials = trials_err(self.options.trials)
