@@ -43,7 +43,10 @@ def skip_large_errors(result_param, param_err):
         for i, j in zip(result_param, param_err):
             assert j >= 0, "negative error found:"+\
                 str(result_param)+" "+str(param_err)
-            ret = abs(i/j) < 1
+            if j:
+                ret = abs(i/j) < 1
+            else:
+                ret = False
     return ret if SKIP_LARGE_ERRORS else False
 
 @PROFILE
