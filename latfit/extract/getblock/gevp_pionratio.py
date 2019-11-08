@@ -133,7 +133,7 @@ def energies_pionratio(timeij, delta_t):
         print(lhs[10], rhs[10])
         sys.exit(1)
     avg_energies = gdisp.callprocmeff([
-        (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t)
+        (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t, sort=True)
     energies_pionratio.store[(timeij, delta_t)] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
     # so we don't lose operators due to rho/sigma nan's
@@ -155,7 +155,7 @@ def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
         checkgteq0(arg1[i])
         checkgteq0(arg2[i])
         energies.append(gdisp.callprocmeff([arg1[i], arg2[i]],
-                                           timeij, delta_t))
+                                           timeij, delta_t, sort=True))
     np.seterr(divide='warn', invalid='warn')
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
     assert all(energies[0] != energies[1]), "same energy found."

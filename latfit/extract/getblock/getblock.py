@@ -227,7 +227,7 @@ if EFF_MASS:
         avg_energies = gdisp.callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
                                            eigvals_mean_tp2,
                                            eigvals_mean_tp3], timeij,
-                                          delta_t)
+                                          delta_t, sort=True)
 
         return avg_energies, eigvals_mean_t
 
@@ -328,6 +328,7 @@ if EFF_MASS:
                     raise XmaxError(problemx=timeij)
 
             # process the eigenvalues into energies
+            # don't sort the eigenvalues, as they are assumed sorted
             energies = gdisp.callprocmeff([eigret[0], eigvals2,
                                            [np.nan]*len(eigret[0]),
                                            [np.nan]*len(eigret[0])],
