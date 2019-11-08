@@ -5,9 +5,9 @@ jackknifing and binning.
 import numpy as np
 from latfit.config import MULT, GEVP, GEVP_DIRS, DISP_ENERGIES, OPERATOR_NORMS
 from latfit.config import LOGFORM, GEVP_DERIV
-from latfit.extract.getblock.gevp_linalg import sortevals
 import latfit.analysis.misc as misc
 from latfit.mathfun.proc_meff import proc_meff
+import latfit.extract.getblock.gevp_linalg as glin
 
 NORMS = [[(1+0j) for _ in range(len(OPERATOR_NORMS))]
          for _ in range(len(OPERATOR_NORMS))]
@@ -66,7 +66,7 @@ def binhalf_e(ear):
         ear = np.swapaxes(new_disp, 0, 1)
     return ear
 
-def callprocmeff(eigvals, timeij, delta_t):
+def callprocmeff(eigvals, timeij, delta_t, sort=False):
     """Call processing function for effective mass"""
     dimops = len(eigvals[0])
     if len(eigvals) == 2:
@@ -74,8 +74,9 @@ def callprocmeff(eigvals, timeij, delta_t):
         eigvals.append(np.zeros(dimops)*np.nan)
         eigvals.append(np.zeros(dimops)*np.nan)
         assert len(eigvals) == 4
-    for i in range(4):
-        eigvals[i] = sortevals(eigvals[i])
+    if sort:
+        for i in range(4):
+            eigvals[i] = glin.sortevals(eigvals[i])
     toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
     if GEVP_DERIV:
         energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op],
