@@ -1,4 +1,5 @@
 """Config for lattice fitter."""
+import sys
 from copy import copy
 import numpy as np
 import latfit.analysis.misc as misc
@@ -8,15 +9,15 @@ from latfit.fit_funcs import FitFunctions
 import latfit.fit_funcs
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
-from latfit.logger import setup_logger
+from latfit.logger import setup_logger, Logger
 from latfit.utilities.postprod.h5jack import check_ids
 from latfit import fitfunc
 import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
 
-setup_logger()
 
+# PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
 
 # TYPE OF FIT
 
@@ -24,6 +25,13 @@ setup_logger()
 
 FIT = False
 FIT = True
+
+# loop over t-t0 and delta_t_around_the_world
+TLOOP = False
+TLOOP = True
+TLOOP = False if not FIT else TLOOP
+# start indices (in case the fit exits early)
+TLOOP_START = (0, 0)
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -41,9 +49,9 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
-IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom1'
 
 if ISOSPIN == 1:
     # control
@@ -58,13 +66,20 @@ if ISOSPIN == 1:
     IRREP = 'A_1PLUS_mom11' # very noisy, no go
     IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
 
+# END PRE-LOG, PRINT STATEMENTS BELOW HERE ARE LOGGED
+
+sys.stdout = Logger(IRREP)
+sys.stderr = Logger(IRREP)
+
+setup_logger()
+
 # non-zero center of mass
 MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '24c'
 LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
@@ -394,13 +409,6 @@ assert len(FIT_EXCL) == DIM or not GEVP
 # if true, do not loop over fit ranges.
 NOLOOP = True
 NOLOOP = False
-
-# loop over t-t0 and delta_t_around_the_world
-TLOOP = False
-TLOOP = True
-TLOOP = False if not FIT else TLOOP
-# start indices (in case the fit exits early)
-TLOOP_START = (0, 0)
 
 # hints to eliminate
 HINTS_ELIM = {}

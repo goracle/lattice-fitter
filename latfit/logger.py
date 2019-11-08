@@ -15,10 +15,13 @@ except NameError:
 class Logger(object):
     """log output from fit"""
     @PROFILE
-    def __init__(self):
+    def __init__(self, fname=None):
         """initialize logger"""
         self.terminal = sys.stdout
-        self.log = open("fit.log", "a")
+        if fname is None:
+            self.log = open("fit.log", "a")
+        else:
+            self.log = open("fit_"+str(fname)+".log", "a")
 
     @PROFILE
     def write(self, message):
@@ -33,11 +36,6 @@ class Logger(object):
         you might want to specify some extra behavior here.
         """
         pass
-
-
-sys.stdout = Logger()
-sys.stderr = Logger()
-
 
 
 @PROFILE
