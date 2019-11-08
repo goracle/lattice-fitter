@@ -66,7 +66,11 @@ def consistent_params(item1, item2):
     diff = np.asarray(diff)
     tlist = list(np.abs(diff/err))
     test = np.max(tlist)
-    idx = tlist.index(test)
+    try:
+        idx = tlist.index(test)
+    except ValueError:
+        print(tlist)
+        raise
     if latfit.config.T0 != 'TMINUS1':
         ret = not test > 1.5
     else:
