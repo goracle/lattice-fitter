@@ -17,12 +17,13 @@ from latfit.extract.getblock.gevp_linalg import printevecs, convtosmat
 from latfit.extract.getblock.gevp_linalg import finaleval_imag_check
 from latfit.extract.getblock.gevp_linalg import all0imag_ignorenan, makeneg
 from latfit.extract.getblock.gevp_linalg import checkherm, inflate_with_nan
-from latfit.extract.getblock.gevp_linalg import sortevals, removerowcol
+from latfit.extract.getblock.gevp_linalg import removerowcol
 from latfit.extract.getblock.gevp_linalg import bracket, cmatdot, defsign
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity
 from latfit.extract.getblock.gevp_linalg import is_pos_semidef
 from latfit.extract.getblock.gevp_linalg import log_matrix, drop0imag
 import latfit.extract.getblock.disp_hacks as gdisp
+import latfit.extract.getblock.gevp_linalg as glin
 
 from latfit.config import UNCORR, USE_LATE_TIMES
 from latfit.config import GEVP_DEBUG, DECREASE_VAR, DELETE_NEGATIVE_OPERATORS
@@ -30,6 +31,7 @@ from latfit.config import LOGFORM
 
 MEAN = None
 HINT = None
+
 
 
 def calleig_logform(c_lhs, flag, c_rhs=None):
@@ -116,7 +118,7 @@ def calleig(c_lhs, c_rhs=None):
             print(eigenvals)
             sys.exit(1)
         eigenvals = np.real(eigenvals)
-    eigenvals = sortevals(eigenvals)
+    eigenvals = glin.sortevals(eigenvals, evecs.T)
     return eigenvals, evecs
 
 def solve_gevp(c_lhs, c_rhs=None):
@@ -126,7 +128,7 @@ def solve_gevp(c_lhs, c_rhs=None):
     dimremaining, toelim = nexthint()
     eigvals, evecs = calleig(c_lhs, c_rhs)
     remaining_operator_indices = set(range(dimops))
-    eigvals = elim_and_inflate(eigvals, toelim, dimops, dimremaining)
+    eigvals = elim_and_inflate(eigvals, evecs, toelim, dimops, dimremaining)
     eliminated_operators = set()
     while any(eigvals < 0):
 
@@ -154,7 +156,7 @@ def solve_gevp(c_lhs, c_rhs=None):
         if MEAN is not None:
             eigvals = variance_reduction(eigvals, MEAN[:dimops],
                                          1/DECREASE_VAR)
-            eigvals = sortevals(eigvals)
+            eigvals = glin.sortevals(eigvals, evecs.T)
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
     if allowedeliminations() is not None:
@@ -344,11 +346,11 @@ def neg_op_trials(dimops, dimremaining, toelim, c_lhs, c_rhs=None):
         c_lhs_temp = removerowcol(c_lhs, dimdel)
         c_rhs_temp = removerowcol(
             c_rhs, dimdel) if c_rhs is not None else c_rhs
-        eigvals, _ = calleig(c_lhs_temp, c_rhs_temp)
+        eigvals, evecs = calleig(c_lhs_temp, c_rhs_temp)
         if MEAN is not None:
             eigvals = variance_reduction(
                 eigvals, MEAN[:dimops], 1/DECREASE_VAR)
-            eigvals = sortevals(eigvals)
+            eigvals = glin.sortevals(eigvals, evecs.T)
 
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
@@ -370,7 +372,7 @@ def allowedeliminations(newelim=None, reset=False):
 allowedeliminations.elims = None
 
 
-def elim_and_inflate(eigvals, toelim, dimops, dimremaining):
+def elim_and_inflate(eigvals, evecs, toelim, dimops, dimremaining):
     """make eval negative to eliminate it
     also, if we are reinflating before the log, do that too
     """
@@ -381,7 +383,7 @@ def elim_and_inflate(eigvals, toelim, dimops, dimremaining):
             "variance is being reduced, but it should be increased here."
         eigvals = variance_reduction(eigvals, MEAN,
                                      1/DECREASE_VAR)
-        eigvals = sortevals(eigvals)
+        eigvals = glin.sortevals(eigvals, evecs.T)
 
     return eigvals
     #allowedeliminations(reset=True)

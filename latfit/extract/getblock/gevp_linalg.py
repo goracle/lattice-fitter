@@ -260,9 +260,142 @@ def degenerate_subspace_check(evecs_mean_t):
         print("evecs of avg gevp",
               np.real(evecs_mean_t))
 
+def update_sort_evecs(evecs, presort_evals, postsort_evals):
+    """Update the sort of the eigenvectors"""
+    for i, eval1 in enumerate(presort_evals):
+        for j, eval2 in enumerate(postsort_evals):
+            if j <= i:
+                continue
+            if eval1 == eval2:
+                pre = list(np.copy(evecs[i]))
+                post = list(np.copy(evecs[j]))
+                evecs[j] = pre
+                evecs[i] = post
+    evecs = np.asarray(evecs)
+    return evecs
 
-def sortevals(evals):
+def sortevals(evals, evecs=None):
     """Sort eigenvalues in order of increasing energy"""
+    evals = list(evals)
+    ret = fallback_sort(evals)
+    if evecs is not None and not np.isnan(evals[0]):
+        evecs = update_sort_evecs(evecs, evals, ret)   
+    if sortevals.sorted_evecs is None or evecs is None:
+        fallback = True
+    else:
+        if sortevals.dot_map is None:
+            sortevals.dot_map = get_evec_map(evecs, sortevals.sorted_evecs)
+        fallback = check_map_dups(sortevals.dot_map)
+    if not fallback:
+        ret2 = []
+        if not isid(sortevals.dot_map):
+            pass
+            #print(sortevals.dot_map)
+        for i, _ in enumerate(evals):
+            ret2.append(evals[sortevals.dot_map[i]])
+        ret = np.array(ret2)
+    return ret
+sortevals.sorted_evecs = None
+sortevals.cleanmap = False
+sortevals.dot_map = None
+
+def reset_sortevals():
+    """Reset function variables"""
+    sortevals.sorted_evecs = None
+    sortevals.cleanmap = False
+    sortevals.dot_map = None
+
+
+def isid(dot_map):
+    """Check if map is identity"""
+    ret = True
+    for i in dot_map:
+        if dot_map[i] != i:
+            ret = False
+    return ret
+
+def get_evec_map(evs1, evs2):
+    """Get similarity mapping between sets of eigenvectors"""
+    map1 = evec_max_op_dimension(evs1)
+    map2 = evec_max_op_dimension(evs2)
+    dot_map = combine_maps(map1, map2)
+    if not isid(dot_map):
+        print(dot_map)
+        print(evs1)
+        print(evs2)
+    return dot_map
+
+def combine_maps(frommap, tommap):
+    """Compose one-to-one maps:  roughly, from(i,j)*to(j, i)"""
+    ret = {}
+    for i in frommap:
+        val = frommap[i]
+        for j in tommap:
+            if tommap[j] == val:
+                ret[i] = j
+    return ret
+
+
+def evec_max_op_dimension(evs):
+    """Get evec/eval->operator mapping based on relative overlaps"""
+    opmap = {}
+    evs = np.asarray(evs)
+    for i in range(evs.shape[0]):
+        dim = evs[:, i]
+        idx = list(np.abs(dim)).index(max(np.abs(dim)))
+        opmap[i] = idx
+    # assert map is one-to-one (injective)
+    assert not check_map_dups(opmap), str(opmap)+" "+str(evs)
+    return opmap
+
+def delete_max(evec):
+    """Delete the max element of the eigenvector"""
+    maxe = 0
+    ind = None
+    for i, elem in enumerate(evec):
+        maxe = max(np.abs(maxe), np.abs(elem))
+        if np.abs(elem) == maxe:
+            ind = i
+    ret = np.delete(evec, ind)
+    return ret
+
+
+def max_sign(evec):
+    """Get the sign of the eigenvector's largest element"""
+    maxe = 0
+    for i in evec:
+        maxe = max(np.abs(maxe), np.abs(i))
+        if np.abs(i) == maxe:
+            ret = np.sign(i)
+    return ret
+
+
+
+def update_sorted_evecs(newe):
+    """Update sortevals.sorted_evecs; perform stability check
+    (evecs should be stable from time slice to time slice
+    otherwise sorting by dot product is not reliable)"""
+    if sortevals.sorted_evecs is None:
+        sortevals.sorted_evecs = np.copy(newe)
+    else:
+        # find the most similar eigenvector of avg
+        # from the previous time slice
+        dot_map = get_evec_map(newe, sortevals.sorted_evecs)
+        # if the matching is degenerate, skip this sort
+        clean_map = not check_map_dups(dot_map)
+        if clean_map:
+            sortevals.cleanmap = True
+            assert len(sortevals.sorted_evecs) == len(newe)
+            ret = []
+            for i, _ in enumerate(newe):
+                ret.append(newe[dot_map[i]])
+            sortevals.sorted_evecs = np.copy(ret)
+        else:
+            sortevals.sorted_evecs = None
+
+
+def fallback_sort(evals):
+    """The usual sorting procedure for the eigenvalues"""
     evals = list(evals)
     ret = evals
     ind = []
@@ -273,6 +406,15 @@ def sortevals(evals):
     ret = np.array(sorted(ret, reverse=False if LOGFORM else True))
     for i, _ in enumerate(ind):
         ret[-(i+1)] = -1
+    return ret
+
+def check_map_dups(dot_map):
+    """Check for duplicates in evec dot map"""
+    ret = False
+    for i in dot_map:
+        for j in dot_map:
+            if i != j and dot_map[i] == dot_map[j]:
+                ret = True
     return ret
 
 def norms(evecs):

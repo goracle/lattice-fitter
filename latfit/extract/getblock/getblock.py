@@ -23,9 +23,10 @@ from latfit.extract.getblock.gevp_linalg import enforce_hermiticity, norms
 from latfit.extract.getblock.gevp_linalg import checkherm
 from latfit.extract.getblock.gevp_solve import allowedeliminations
 from latfit.extract.getblock.gevp_linalg import variance_reduction
-import latfit.extract.getblock.gevp_solve as gsolve
 from latfit.extract.getblock.gevp_pionratio import atwsub_cmats, modenergies
 import latfit.extract.getblock.disp_hacks as gdisp
+import latfit.extract.getblock.gevp_solve as gsolve
+import latfit.extract.getblock.gevp_linalg as glin
 
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
@@ -62,6 +63,34 @@ if 1 > 2:
         """
         return filetup[num-1]
        # return getline(filetup, num)
+
+
+if GEVP_DEBUG:
+    def final_gevp_debug_print(timeij, num_configs):
+        """Print final info for this particular timeij"""
+        check_variance = final_gevp_debug_print.check_variance
+        avg_evecs = final_gevp_debug_print.avg_evecs[timeij]
+        check_variance = np.asarray(check_variance)
+        print("average evecs:")
+        for i in list(zip(avg_evecs/num_configs,
+                            norms(avg_evecs/num_configs))):
+            print(i)
+        if not np.any(np.isnan(check_variance)):
+            error_check = jack_mean_err(check_variance)
+        else:
+            error_check = None
+        print("time, avg evals, variance of evals:",
+                timeij, error_check)
+    final_gevp_debug_print.check_variance = None
+    final_gevp_debug_print.avg_evecs = {}
+
+else:
+    def final_gevp_debug_print(*xargs):
+        """print nothing"""
+        if xargs:
+            pass
+    final_gevp_debug_print.check_variance = None
+    final_gevp_debug_print.avg_evecs = {}
 
 
 def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
@@ -227,9 +256,9 @@ if EFF_MASS:
         avg_energies = gdisp.callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
                                            eigvals_mean_tp2,
                                            eigvals_mean_tp3], timeij,
-                                          delta_t, sort=True)
+                                          delta_t, sort=False)
 
-        return avg_energies, eigvals_mean_t
+        return avg_energies, eigvals_mean_t, evecs_mean_t
 
     def getlhsrhs(file_tup, num_configs):
         """Get lhs and rhs gevp matrices from file_tup
@@ -305,14 +334,15 @@ if EFF_MASS:
                         mean_cmats_lhs, mean_crhs, delta_t, timeij)
                     gsolve.MEAN = avg_en_eig[
                         1] if REINFLATE_BEFORE_LOG else None
-                    final_gevp_debug_print.avg_evecs = np.zeros(
+                    final_gevp_debug_print.avg_evecs[timeij] = np.zeros(
                         eigret[1].shape)
                     final_gevp_debug_print.check_variance = []
                     retblk = deque()
 
                 # accumulate diagnostic information
                 final_gevp_debug_print.check_variance.append(eigret[0])
-                final_gevp_debug_print.avg_evecs += np.real(eigret[1])
+                final_gevp_debug_print.avg_evecs[timeij] += np.real(
+                    eigret[1])
 
                 if continue_neg(eigret[0]):
                     num = 0
@@ -346,6 +376,9 @@ if EFF_MASS:
         assert len(retblk) == num_configs, \
             "number of configs should be the block length"
         final_gevp_debug_print(timeij, num_configs)
+        glin.sortevals.dot_map = None
+        if not glin.sortevals.cleanmap:
+            glin.update_sorted_evecs(avg_en_eig[2])
         return retblk
 
 
@@ -368,32 +401,6 @@ if EFF_MASS:
                 pass
             eigvals2 = [np.nan]*dimops
             return eigvals2
-
-
-    if GEVP_DEBUG:
-        def final_gevp_debug_print(timeij, num_configs):
-            """Print final info for this particular timeij"""
-            check_variance = final_gevp_debug_print.check_variance
-            avg_evecs = final_gevp_debug_print.avg_evecs
-            check_variance = np.asarray(check_variance)
-            print("average evecs:")
-            for i in list(zip(avg_evecs/num_configs,
-                              norms(avg_evecs/num_configs))):
-                print(i)
-            if not np.any(np.isnan(check_variance)):
-                error_check = jack_mean_err(check_variance)
-            else:
-                error_check = None
-            print("time, avg evals, variance of evals:",
-                  timeij, error_check)
-        final_gevp_debug_print.check_variance = None
-        final_gevp_debug_print.avg_evecs = None
-    else:
-        def final_gevp_debug_print(*xargs):
-            """print nothing"""
-            if xargs:
-                pass
-
 
 else:
     def getblock_gevp(file_tup, _, timeij=None):
@@ -499,6 +506,7 @@ if GEVP:
             retblk = getblock_gevp(file_tup, delta_t, timeij)
         except (ImaginaryEigenvalue, NegativeEigenvalue, NegativeEnergy,
                 PrecisionLossError, EigenvalueSignInconsistency):
+            glin.reset_sortevals()
             raise XmaxError(problemx=timeij)
         test_imagblk(retblk)
         return retblk
