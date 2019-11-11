@@ -866,14 +866,14 @@ def dropimag(arr):
 
 def svd_check(corrjack):
     """Check the correlation matrix eigenvalues
-    cut on condition numbers > 10^5"""
+    cut on condition numbers > 10^10"""
     evals = numpy.linalg.eigvals(corrjack)
     evals = sorted(list(np.abs(evals)))
     assert len(evals) > 1, str(evals)
     cond = evals[-1]/evals[0]
     assert cond >= 1, str(evals)+" "+str(cond)
-    if cond > 1e5:
-        print("condition number of correlation matrix is > 1e5:",  cond)
+    if cond > 1e10:
+        print("condition number of correlation matrix is > 1e10:",  cond)
         raise PrecisionLossError
 
 if CORRMATRIX:
