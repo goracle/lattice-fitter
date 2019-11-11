@@ -864,6 +864,17 @@ def dropimag(arr):
         ret = arr
     return ret
 
+def svd_check(corrjack):
+    """Check the correlation matrix eigenvalues
+    cut on condition numbers > 10^5"""
+    evals = numpy.linalg.eigvals(corrjack)
+    evals = sorted(list(np.abs(evals)))
+    assert len(evals) > 1, str(evals)
+    cond = evals[-1]/evals[0]
+    assert cond >= 1, str(evals)+" "+str(cond)
+    if cond > 1e5:
+        print("condition number of correlation matrix is > 1e5:",  cond)
+        raise PrecisionLossError
 
 if CORRMATRIX:
     @PROFILE
@@ -880,6 +891,10 @@ if CORRMATRIX:
             weightings = dropimag(np.sqrt(np.diag(covjack)))
             reweight = np.diagflat(1./weightings)
             corrjack = kdot(reweight, kdot(covjack, reweight))
+            try:
+                svd_check(corrjack)
+            except PrecisionLossError:
+                raise XmaxError
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
