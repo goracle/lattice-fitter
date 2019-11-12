@@ -130,7 +130,8 @@ def fit(tadd=0):
             ### Setup for fit range loop
 
             plotdata = store_init(plotdata)
-            prod, sorted_fit_ranges = frsort.fit_range_combos(meta, plotdata)
+            prod, sorted_fit_ranges = frsort.fit_range_combos(meta,
+                                                              plotdata)
 
             # store checked fit ranges
             checked = set()
@@ -353,7 +354,8 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
         ret = True
 
     # is this justifiable?
-    if not ret and frsort.skip_large_errors(result_min.energy.val, param_err):
+    if not ret and frsort.skip_large_errors(result_min.energy.val,
+                                            param_err):
         print("Skipping fit range because param errors"+\
                 " are greater than 100%")
         ret = True
@@ -961,6 +963,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
 
     # cut late time points from the fit range
     samerange = frsort.cut_on_errsize(meta) # did we make any cuts?
+    samerange = frsort.cut_on_growing_exp(meta) and samerange
 
     fit_range_init = str(latfit.config.FIT_EXCL)
     print("Trying second initial fit with excluded times:",

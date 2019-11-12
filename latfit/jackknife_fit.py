@@ -867,7 +867,7 @@ def dropimag(arr):
 def svd_check(corrjack):
     """Check the correlation matrix eigenvalues
     cut on condition numbers > 10^10"""
-    evals = numpy.linalg.eigvals(corrjack)
+    evals = np.linalg.eigvals(corrjack)
     evals = sorted(list(np.abs(evals)))
     assert len(evals) > 1, str(evals)
     cond = evals[-1]/evals[0]

@@ -49,6 +49,51 @@ def skip_large_errors(result_param, param_err):
                 ret = False
     return ret if SKIP_LARGE_ERRORS else False
 
+def cut_on_growing_exp(meta):
+    """Growing exponential is a signal for around the world contamination"""
+    err = singlefit.error2
+    coords = singlefit.coords_full
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    #assert GEVP, "other versions not supported yet"+str(
+    # err.shape)+" "+str(coords.shape)
+    start = str(latfit.config.FIT_EXCL)
+    actual_range = meta.actual_range()
+    for i, _ in enumerate(coords):
+        for j, _ in enumerate(coords):
+            if i >= j:
+                continue
+        excl_add = coords[i][0]
+        actual_range = meta.actual_range()
+        if excl_add not in actual_range:
+            continue
+        if MULT > 1:
+            for k in range(len(coords[0][1])):
+                merr = max(err[i][k], err[j][k])
+                assert merr > 0, str(merr)
+                if np.abs(coords[i][1][k]-coords[j][1][k])/merr > 1.5 and \
+                   coords[j][1][k] > coords[i][1][k]:
+                    print("(max) err =", merr, "coords =",
+                          coords[i][1][k], coords[j][1][k])
+                    print("cutting dimension", j,
+                          "for time slice", excl_add, "(exp grow cut)")
+                    print("err/coords > diff cut =", 1.5)
+                    latfit.config.FIT_EXCL[j].append(excl_add)
+                    latfit.config.FIT_EXCL[j] = list(set(
+                        latfit.config.FIT_EXCL[j]))
+        else:
+            merr = max(err[i], err[j])
+            if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
+                print("(max) err =", merr, "coords =",
+                      coords[i][1], coords[j][1])
+                print("cutting dimension", 0, "for time slice",
+                      excl_add, "(exp grow cut)")
+                print("err/coords > diff cut =", 1.5)
+                latfit.config.FIT_EXCL[0].append(excl_add)
+                latfit.config.FIT_EXCL[0] = list(set(
+                    latfit.config.FIT_EXCL[0]))
+    ret = start == str(latfit.config.FIT_EXCL)
+    return ret
+
 @PROFILE
 def cut_on_errsize(meta):
     """Cut on the size of the error bars on individual points"""
