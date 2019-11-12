@@ -58,6 +58,7 @@ def cut_on_growing_exp(meta):
     # err.shape)+" "+str(coords.shape)
     start = str(latfit.config.FIT_EXCL)
     actual_range = meta.actual_range()
+    already_cut = set()
     for i, _ in enumerate(coords):
         for j, _ in enumerate(coords):
             if i >= j:
@@ -68,6 +69,8 @@ def cut_on_growing_exp(meta):
             continue
         if MULT > 1:
             for k in range(len(coords[0][1])):
+                if (j, k) in already_cut:
+                    continue
                 merr = max(err[i][k], err[j][k])
                 assert merr > 0, str(merr)
                 if np.abs(coords[i][1][k]-coords[j][1][k])/merr > 1.5 and \
@@ -76,11 +79,15 @@ def cut_on_growing_exp(meta):
                           coords[i][1][k], coords[j][1][k])
                     print("cutting dimension", k,
                           "for time slice", excl_add, "(exp grow cut)")
+                    print(i, j, k)
                     print("err/coords > diff cut =", 1.5)
                     latfit.config.FIT_EXCL[k].append(excl_add)
                     latfit.config.FIT_EXCL[k] = list(set(
                         latfit.config.FIT_EXCL[k]))
+                    already_cut.add((j, k))
         else:
+            if j in already_cut:
+                continue
             merr = max(err[i], err[j])
             if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
                 print("(max) err =", merr, "coords =",
@@ -91,6 +98,7 @@ def cut_on_growing_exp(meta):
                 latfit.config.FIT_EXCL[0].append(excl_add)
                 latfit.config.FIT_EXCL[0] = list(set(
                     latfit.config.FIT_EXCL[0]))
+                already_cut.add(j)
     ret = start == str(latfit.config.FIT_EXCL)
     return ret
 
