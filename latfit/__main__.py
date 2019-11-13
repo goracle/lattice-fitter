@@ -621,8 +621,10 @@ if EFF_MASS:
                 assert isinstance(err[0], float),\
                     "error array does not have same structure as eff mass array"
                 err = np.asarray([[i] for i in err])
-            assert len(arr.shape) == 2, "first dim is time, second dim is operator"
-            assert len(err.shape) == 2, "first dim is time, second dim is operator"
+            assert len(arr.shape) == 2,\
+                "first dim is time, second dim is operator"
+            assert len(err.shape) == 2,\
+                "first dim is time, second dim is operator"
             assert len(err) == len(arr)
             assert mindim is None
         assert isinstance(err, float) or mindim is None, "index bug"
