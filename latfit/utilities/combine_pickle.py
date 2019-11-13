@@ -4,6 +4,7 @@ Essentially list extend + i/o"""
 import sys
 import pickle
 import numpy as np
+import latfit.utilities.read_file as rf
 
 def main():
     """main"""
@@ -11,11 +12,33 @@ def main():
     outfn = start_str(sys.argv[1:])
     outfn = outfn + '.p'
     shape = ()
+    res_mean = None
+    err_check = None
+    res = []
+    excl_arr = []
+    rotate = False
+    early = np.inf
+    earlyfn = None
     for i in sys.argv[1:]:
+        if '_.p' in i:
+            continue
+        new_early = rf.earliest_time(i)
+        early = min(early, new_early)
+        if early == new_early:
+            earlyfn = i
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
-        print(i, "shape:", add.shape)
+        if add.shape == (4,):
+            rotate = True # top index is not fit ranges
+            print(i, "shape:", add.shape)
+            res_mean = add[0]
+            err_check = add[1]
+            res.extend(add[2])
+            excl_arr.extend(add[3][:len(add[2])])
+            assert len(res) == len(excl_arr)
+        else:
+            print(i, "shape:", add.shape)
         if not shape:
             shape = np.asarray(add[0]).shape
         else:
@@ -26,11 +49,17 @@ def main():
                 print("check shape:", shape)
                 print("shape of", i, ":", np.asarray(add[0]).shape)
                 raise
-        ret.extend(add)
+        if not rotate:
+            ret.extend(add)
+    if rotate:
+        res = np.array(res)
+        excl_arr = np.array(excl_arr)
+        ret = [res_mean, err_check, res, excl_arr]
     ret = np.array(ret)
-    print("final shape:", ret.shape)
+    #print("final shape:", ret.shape)
     print("finished combining:", sys.argv[1:])
     print("writing results into file:", outfn)
+    print("earliest time:", early, "from", earlyfn)
     pickle.dump(ret, open(outfn, "wb"))
     print("done.")
 
