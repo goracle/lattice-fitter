@@ -11,6 +11,7 @@ from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 
 
+ISOSPIN = None
 
 def main():
     """Make the histograms.
@@ -123,6 +124,8 @@ def setup_make_hist(fname):
     the array of energies, the average energy
     and the fit ranges used
     """
+    if 'I2' in fname:
+        ISOSPIN = 2
     with open(fname, 'rb') as fn1:
         dat = pickle.load(fn1)
         dat = np.array(dat)
@@ -291,8 +294,12 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
         avg_diff = gvar.gvar(abs(avg_diff.val),
                              max(effmass.sdev, avg_dim.sdev))
 
-        ind_diff = diff_ind(effmass, np.array(median_err)[:, 0])
-
+        if len(fit_range) > 1:
+            ind_diff, errstr = diff_ind(effmass, np.array(median_err)[:, 0],
+                                        fit_range_arr)
+        else:
+            ind_diff = gvar.gvar(0,0)
+            
         if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                 median_diff.val) > abs(median_diff.sdev):
             print(effmass, pval, fit_range)
@@ -307,13 +314,19 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                     ind_diff.val-ind_diff.sdev)/ind_diff.sdev:
                 print("")
                 print(ind_diff)
+                if isinstance(errstr, str):
+                    print(errstr)
+                else:
+                    print("disagreement with data point at t=", errstr)
                 print("")
                 sig = ind_diff.val/ind_diff.sdev
                 try:
                     assert sig < 1.5
                 except AssertionError:
                     print("disagreement at", sig, "sigma")
-                    raise FitRangeInconsistency
+                    ISOSPIN = 2
+                    if (len(fit_range) > 1 or ISOSPIN == 2) and errstr != 18.0: # fix this
+                        raise FitRangeInconsistency
         else:
             print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
@@ -344,21 +357,25 @@ def addoffset(hist):
     return hist
 
 
-def diff_ind(res, arr):
+def diff_ind(res, arr, fit_range_arr):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
     maxdiff = 0
     maxerr = 0
-    for gres in arr:
+    for i, gres in enumerate(arr):
         diff = abs(res.val-gres.val)
         maxdiff = max(diff, maxdiff)
         if maxdiff == diff:
             maxerr = max(res.sdev, gres.sdev)
+            if len(fit_range_arr[i]) > 1:
+                errstr = str(i)+" "+str(gres)+" "+str(fit_range_arr[i])
+            else:
+                errstr = float(fit_range_arr[i][0])
             if maxerr >= maxdiff:
                 maxdiff = 0
                 maxerr = 0
-    return gvar.gvar(maxdiff, maxerr)
+    return gvar.gvar(maxdiff, maxerr), errstr
 
 
 def getxerr(freq, center, errdat_dim):
