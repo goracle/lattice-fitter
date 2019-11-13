@@ -16,6 +16,36 @@ FORMAT = 'ASCII'
 
 # regex on filename stuff
 
+def earliest_time(fname):
+    """Find the earliest time in the fit range result"""
+    spl = fname.split("_")
+    tmin = None
+    tmax = None
+    tminus = 0
+    dtee = 0
+    for i in spl:
+        try:
+            i = float(i)
+        except ValueError:
+            if 'TMINUS' in i:
+                i = i.split('.')[0]
+                i = i.split('TMINUS')[-1]
+                tminus = int(i)
+            elif 'dt' in i:
+                i = i.split('.')[0]
+                i = i.split('dt')[-1]
+                dtee = int(i)
+            continue
+        if tmin is None:
+            tmin = i
+        elif tmax is None:
+            tmax = i
+    dtee = max(dtee, tminus)
+    assert tmin is not None, str(fname)
+    assert tmax is not None, str(fname)
+    ret = tmin-dtee
+    assert ret >= 0, str(fname)
+    return ret
 
 def pol(filename):
     """Get polarization info from filename"""
