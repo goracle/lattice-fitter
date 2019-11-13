@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import gvar
 from latfit.utilities import exactmean as em
+from latfit.analysis.errorcodes import FitRangeInconsistency
+
 
 
 def main():
@@ -125,7 +127,11 @@ def setup_make_hist(fname):
         dat = pickle.load(fn1)
         dat = np.array(dat)
         dat = np.real(dat)
-        avg, err, freqarr, exclarr = dat
+        try:
+            avg, err, freqarr, exclarr = dat
+        except ValueError:
+            print("value error for file:", fname)
+            raise
         exclarr = np.asarray(exclarr)
         avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
@@ -230,9 +236,12 @@ def make_hist(fname):
                          xycoords='axes fraction')
 
             # prints the sorted results
-            output_loop(median_store, freqarr, avg[dim],
-                        build_sliced_fitrange_list(median_store, freq,
-                                                   exclarr, dim))
+            try:
+                output_loop(median_store, freqarr, avg[dim],
+                            build_sliced_fitrange_list(median_store, freq,
+                                                       exclarr, dim))
+            except FitRangeInconsistency:
+                continue
 
             print("saving plot as filename:", save_str)
 
@@ -243,7 +252,6 @@ def make_hist(fname):
 def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
     """Get all the fit ranges for a particular dimension"""
     ret = []
-    print(exclarr)
     for _, i in enumerate(median_store[0]):
         effmass = i[0].val
         index = list(freq).index(effmass)
@@ -300,6 +308,12 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                 print("")
                 print(ind_diff)
                 print("")
+                sig = ind_diff.val/ind_diff.sdev
+                try:
+                    assert sig < 1.5
+                except AssertionError:
+                    print("disagreement at", sig, "sigma")
+                    raise FitRangeInconsistency
         else:
             print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
