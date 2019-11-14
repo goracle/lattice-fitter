@@ -28,15 +28,27 @@ def trunc(val):
         ret = float(str(gvar.gvar(val))[:-3])
     return ret
 
-def fill_pvalue_arr(pdat_freqarr, desired_length):
-    """Extend pdat_freqarr to desired length"""
-    ext = desired_length-len(pdat_freqarr)
-    if ext > 0:
-        pdat_freqarr = list(pdat_freqarr)
-        for _ in range(ext):
-            pdat_freqarr.append(1)
-        assert len(pdat_freqarr) == desired_length
-    return np.asarray(pdat_freqarr)
+#def fill_pvalue_arr(pdat_freqarr, desired_length):
+    #"""Extend pdat_freqarr to desired length"""
+    #ext = desired_length-len(pdat_freqarr)
+    #if ext > 0:
+    #    pdat_freqarr = list(pdat_freqarr)
+    #    for _ in range(ext):
+    #        pdat_freqarr.append(1)
+    #    assert len(pdat_freqarr) == desired_length
+    #return np.asarray(pdat_freqarr)
+
+def fill_pvalue_arr(pdat_freqarr, exclarr):
+    """the pvalue should be 1.0 if the fit range is length 1 (forced fit)
+    prelim_loop = zip(freq, errlooparr, exclarr)
+    """
+    ret = list(pdat_freqarr)
+    for i, _ in enumerate(exclarr):
+        if len(exclarr[i]) == 1.0:
+            ret.insert(i, 1.0)
+    assert len(ret) == len(exclarr)
+    ret = np.array(ret)
+    return ret
 
 def pvalue_arr(spl, fname):
     """Get pvalue array (over fit ranges)"""
@@ -112,6 +124,7 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     median_diff = np.inf
     median_diff2 = np.inf
     #print(freqarr[:, dim], errlooparr)
+    prelim_loop = zip(freq, errlooparr, exclarr)
     loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                   key=lambda elem: elem[2], reverse=True)
     medians = (median_diff, median_diff2, pdat_median)
@@ -146,7 +159,7 @@ def get_raw_arrays(fname):
 
     pdat_freqarr = pvalue_arr(spl, fname)
 
-    pdat_freqarr = fill_pvalue_arr(pdat_freqarr, len(freqarr))
+    pdat_freqarr = fill_pvalue_arr(pdat_freqarr, exclarr)
 
     errdat = err_arr(fname, freqarr, avg)
     return freqarr, exclarr, pdat_freqarr, errdat, avg
@@ -160,12 +173,12 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians):
     median_diff, median_diff2, pdat_median = medians
     median_err = []
     half = 0
+    usegevp = gevpp(freqarr)
     for i, j, k, _ in loop: # drop the fit range from the loop
         # skip the single time slice points for GEVP
-        if j == 1.0 and hasattr(freqarr.shape, '__iter__') and\
-           hasattr(freqarr.shape[-1], '__iter__') and\
-           len(freqarr.shape[-1]) > 1:
-            continue
+        if j == 1.0 and usegevp:
+            pass
+            #continue
         if abs(j - pdat_median) <= median_diff: # find median pvalue
             median_diff = abs(j-pdat_median)
             freq_median = i
@@ -274,18 +287,28 @@ def fit_range_dim(lexcl, dim):
         print(ret)
     return ret
 
+def gevpp(freqarr):
+    """Are we using the GEVP?"""
+    ret = False
+    if hasattr(freqarr.shape, '__iter__'):
+        ret = freqarr.shape[-1] > 1
+    return ret
+
 def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
     """The print loop
     """
     median_err, median = median_store
     maxdiff = 0
+    usegevp = gevpp(freqarr)
+    used = set()
     for i, (effmass, pval) in enumerate(median_err):
+        if str((effmass, pval)) in used:
+            continue
+        used.add(str((effmass, pval)))
         fit_range = fit_range_arr[i]
         # skip the single time slice points for GEVP
-        if pval == 1.0 and hasattr(
-                freqarr.shape[-1], '__iter__') and len(
-                    freqarr.shape[-1]) > 1:
-            continue
+        #if pval == 1.0 and usegevp:
+            #continue
         pval = trunc(pval)
         median_diff = effmass-median
         median_diff = gvar.gvar(abs(median_diff.val),
@@ -302,7 +325,8 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
             
         if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
                 median_diff.val) > abs(median_diff.sdev):
-            print(effmass, pval, fit_range)
+            if ISOSPIN == 2 or len(fit_range) != 1.0:
+                print(effmass, pval, fit_range)
             #print("")
             #print("diffs", ind_diff, median_diff, avg_diff)
             #print("")
@@ -324,11 +348,13 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                     assert sig < 1.5
                 except AssertionError:
                     print("disagreement at", sig, "sigma")
-                    ISOSPIN = 2
-                    if (len(fit_range) > 1 or ISOSPIN == 2) and errstr != 18.0: # fix this
+                    disagree_multi_multi_point = len(
+                        fit_range) > 1 and not isinstance(errstr, float)
+                    if (disagree_multi_multi_point or ISOSPIN == 2) and errstr != 18.0: # fix this
                         raise FitRangeInconsistency
         else:
-            print(effmass, pval, fit_range)
+            if ISOSPIN == 2 or len(fit_range) != 1.0:
+                print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
     print("p-value weighted mean =", avg_dim)
 
@@ -356,6 +382,7 @@ def addoffset(hist):
     print(hist)
     return hist
 
+ISOSPIN = 0
 
 def diff_ind(res, arr, fit_range_arr):
     """Find the maximum difference between fit range result i
@@ -364,6 +391,8 @@ def diff_ind(res, arr, fit_range_arr):
     maxdiff = 0
     maxerr = 0
     for i, gres in enumerate(arr):
+        if len(fit_range_arr[i]) == 1 and ISOSPIN != 2:
+            continue
         diff = abs(res.val-gres.val)
         maxdiff = max(diff, maxdiff)
         if maxdiff == diff:

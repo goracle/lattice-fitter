@@ -22,14 +22,17 @@ def main():
     for i in sys.argv[1:]:
         if '_.p' in i:
             continue
-        new_early = rf.earliest_time(i)
+        try:
+            new_early = rf.earliest_time(i)
+        except ValueError:
+            continue
         early = min(early, new_early)
         if early == new_early:
             earlyfn = i
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
-        if add.shape == (4,):
+        if add.shape == (4,) and ('pvalue' not in i or 'err' not in i):
             rotate = True # top index is not fit ranges
             print(i, "shape:", add.shape)
             res_mean = add[0]
@@ -60,7 +63,9 @@ def main():
     print("finished combining:", sys.argv[1:])
     print("writing results into file:", outfn)
     print("earliest time:", early, "from", earlyfn)
-    pickle.dump(ret, open(outfn, "wb"))
+    print("final shape:", ret.shape)
+    if '.p.p' not in outfn:
+        pickle.dump(ret, open(outfn, "wb"))
     print("done.")
 
 
