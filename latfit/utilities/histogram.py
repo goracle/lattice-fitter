@@ -43,10 +43,18 @@ def fill_pvalue_arr(pdat_freqarr, exclarr):
     prelim_loop = zip(freq, errlooparr, exclarr)
     """
     ret = list(pdat_freqarr)
-    for i, _ in enumerate(exclarr):
-        if len(exclarr[i]) == 1.0:
-            ret.insert(i, 1.0)
-    assert len(ret) == len(exclarr)
+    if len(pdat_freqarr) != len(exclarr):
+        for i, _ in enumerate(exclarr):
+            if len(exclarr[i]) == 1.0:
+                ret.insert(i, 1.0)
+        try:
+            assert len(ret) == len(exclarr), str(ret)+" "+str(exclarr)
+        except AssertionError:
+            for i in exclarr:
+                print(i)
+            print(len(exclarr))
+            print(len(ret))
+            raise
     ret = np.array(ret)
     return ret
 
@@ -141,13 +149,12 @@ def setup_make_hist(fname):
         ISOSPIN = 2
     with open(fname, 'rb') as fn1:
         dat = pickle.load(fn1)
-        dat = np.array(dat)
-        dat = np.real(dat)
         try:
             avg, err, freqarr, exclarr = dat
         except ValueError:
             print("value error for file:", fname)
             raise
+        freqarr = np.real(np.array(freqarr))
         exclarr = np.asarray(exclarr)
         avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
@@ -323,19 +330,20 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
         else:
             ind_diff = gvar.gvar(0,0)
             
-        if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
-                median_diff.val) > abs(median_diff.sdev):
-            if ISOSPIN == 2 or len(fit_range) != 1.0:
-                print(effmass, pval, fit_range)
+        #if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
+        #        median_diff.val) > abs(median_diff.sdev):
+        #    if ISOSPIN == 2 or len(fit_range) != 1.0:
+        #        print(effmass, pval, fit_range)
             #print("")
             #print("diffs", ind_diff, median_diff, avg_diff)
             #print("")
-        elif ind_diff.val or ind_diff.sdev:
+        if ind_diff.val:
             print(effmass, pval, fit_range)
-            maxdiff = max(
-                maxdiff, np.abs(ind_diff.val-ind_diff.sdev)/ind_diff.sdev)
-            if maxdiff == np.abs(
-                    ind_diff.val-ind_diff.sdev)/ind_diff.sdev:
+            if ind_diff.sdev:
+                maxdiff = max(maxdiff, ind_diff.val/ind_diff.sdev)
+            else:
+                maxdiff = np.inf
+            if maxdiff == np.abs(ind_diff.val)/ind_diff.sdev:
                 print("")
                 print(ind_diff)
                 if isinstance(errstr, str):
@@ -343,7 +351,11 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
                 else:
                     print("disagreement with data point at t=", errstr)
                 print("")
-                sig = ind_diff.val/ind_diff.sdev
+                if ind_diff.val:
+                    if ind_diff.sdev:
+                        sig = ind_diff.val/ind_diff.sdev
+                    else:
+                        sig = np.inf
                 try:
                     assert sig < 1.5
                 except AssertionError:
@@ -388,23 +400,32 @@ def diff_ind(res, arr, fit_range_arr):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
+    maxsig = 0
     maxdiff = 0
     maxerr = 0
     for i, gres in enumerate(arr):
         if len(fit_range_arr[i]) == 1 and ISOSPIN != 2:
             continue
+        err = max(res.sdev, gres.sdev)
         diff = abs(res.val-gres.val)
-        maxdiff = max(diff, maxdiff)
-        if maxdiff == diff:
-            maxerr = max(res.sdev, gres.sdev)
+        if diff:
+            sig = diff/err
+        else:
+            sig = 0
+        maxsig = max(sig, maxsig)
+        errstr = ''
+        if maxsig == sig and maxsig:
+            maxdiff = diff
+            maxerr = err
             if len(fit_range_arr[i]) > 1:
-                errstr = str(i)+" "+str(gres)+" "+str(fit_range_arr[i])
+                errstr = "disagree:"+str(i)+" "+str(gres)+" "+str(fit_range_arr[i])
             else:
                 errstr = float(fit_range_arr[i][0])
             if maxerr >= maxdiff:
                 maxdiff = 0
                 maxerr = 0
-    return gvar.gvar(maxdiff, maxerr), errstr
+    ret = gvar.gvar(maxdiff, maxerr)
+    return ret, errstr
 
 
 def getxerr(freq, center, errdat_dim):

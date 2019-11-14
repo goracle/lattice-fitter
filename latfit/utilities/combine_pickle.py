@@ -37,8 +37,19 @@ def main():
             print(i, "shape:", add.shape)
             res_mean = add[0]
             err_check = add[1]
-            res.extend(add[2])
-            excl_arr.extend(add[3][:len(add[2])])
+            assert len(res) == len(excl_arr)
+            newfrs = add[3][:len(add[2])]
+            if len(add[2]) > 1:
+                count = 0
+                for j in newfrs:
+                    if len(j) > 1:
+                        count += 1
+                if count <= 1:
+                    continue
+                res.extend(add[2])
+            else:
+                continue
+            excl_arr.extend(newfrs)
             assert len(res) == len(excl_arr)
         else:
             print(i, "shape:", add.shape)
@@ -57,13 +68,17 @@ def main():
     if rotate:
         res = np.array(res)
         excl_arr = np.array(excl_arr)
+        assert len(res) == len(excl_arr)
         ret = [res_mean, err_check, res, excl_arr]
-    ret = np.array(ret)
+    try:
+        ret = np.array(ret)
+        print("final shape:", ret.shape)
+    except ValueError:
+        pass
     #print("final shape:", ret.shape)
     print("finished combining:", sys.argv[1:])
     print("writing results into file:", outfn)
     print("earliest time:", early, "from", earlyfn)
-    print("final shape:", ret.shape)
     if '.p.p' not in outfn:
         pickle.dump(ret, open(outfn, "wb"))
     print("done.")
