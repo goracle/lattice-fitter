@@ -49,6 +49,17 @@ def skip_large_errors(result_param, param_err):
                 ret = False
     return ret if SKIP_LARGE_ERRORS else False
 
+def earlier(already_cut, jdx, kdx):
+    """If a time slice in dimension kdx is cut,
+    all the later time slices should also be cut"""
+    ret = False
+    for tup in already_cut:
+        jinit, kinit = tup
+        if kinit == kdx and jdx > jinit:
+            ret = True
+    return ret
+    
+
 def cut_on_growing_exp(meta):
     """Growing exponential is a signal for around the world contamination"""
     err = singlefit.error2
@@ -73,8 +84,10 @@ def cut_on_growing_exp(meta):
                     continue
                 merr = max(err[i][k], err[j][k])
                 assert merr > 0, str(merr)
-                if np.abs(coords[i][1][k]-coords[j][1][k])/merr > 1.5 and \
-                   coords[j][1][k] > coords[i][1][k]:
+                sig = np.abs(coords[i][1][k]-coords[j][1][k])/merr
+                earlier_cut = earlier(already_cut, j, k)
+                if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
+                   earlier_cut:
                     print("(max) err =", merr, "coords =",
                           coords[i][1][k], coords[j][1][k])
                     print("cutting dimension", k,
