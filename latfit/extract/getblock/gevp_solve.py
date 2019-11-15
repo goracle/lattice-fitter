@@ -17,10 +17,10 @@ from latfit.extract.getblock.gevp_linalg import printevecs, convtosmat
 from latfit.extract.getblock.gevp_linalg import finaleval_imag_check
 from latfit.extract.getblock.gevp_linalg import all0imag_ignorenan, makeneg
 from latfit.extract.getblock.gevp_linalg import checkherm, inflate_with_nan
-from latfit.extract.getblock.gevp_linalg import removerowcol
+from latfit.extract.getblock.gevp_linalg import removerowcol, check_solve
 from latfit.extract.getblock.gevp_linalg import bracket, cmatdot, defsign
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity
-from latfit.extract.getblock.gevp_linalg import is_pos_semidef
+from latfit.extract.getblock.gevp_linalg import is_pos_semidef, check_bracket
 from latfit.extract.getblock.gevp_linalg import log_matrix, drop0imag
 import latfit.extract.getblock.disp_hacks as gdisp
 import latfit.extract.getblock.gevp_linalg as glin
@@ -66,7 +66,6 @@ def calleig_logform(c_lhs, flag, c_rhs=None):
                                         check_finite=True)
     return eigenvals, evecs, flag
 
-
 def calleig(c_lhs, c_rhs=None):
     """Actual call to scipy.linalg.eig"""
     flag = False
@@ -85,32 +84,10 @@ def calleig(c_lhs, c_rhs=None):
                                             overwrite_b=False,
                                             check_finite=True)
     for i, (eval1, evec) in enumerate(zip(eigenvals, evecs.T)):
-        for j, k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
-            try:
-                if j and k:
-                    assert np.allclose(eval1, j/k, rtol=1e-8)
-                else:
-                    assert j == k
-                flag_nosolve = False
-            except FloatingPointError:
-                print("invalid GEVP values found")
-                print("lhs vec, rhs vec, eval")
-                print(j, k, eval1)
-                sys.exit(1)
-            except AssertionError:
-                flag_nosolve = True
+        flag_nosolve = check_solve(eval1, evec, c_lhs, c_rhs)
         eigenvals[i] = -1 if flag_nosolve else eigenvals[i]
-        eval_check = bracket(evec, c_lhs)/bracket(evec, c_rhs)
-        try:
-            if not flag_nosolve:
-                assert np.allclose(eval_check, eval1, rtol=1e-10)
-        except AssertionError:
-            print("Eigenvalue consistency check failed."+\
-                  "  ratio and eigenvalue not equal.")
-            print("bracket lhs, bracket rhs, ratio, eval")
-            print(bracket(evec, c_lhs), bracket(evec, c_rhs),
-                  bracket(evec, c_lhs)/bracket(evec, c_rhs), eval1)
-            raise PrecisionLossError
+        if not flag_nosolve:
+            check_bracket(eval1, evec, c_lhs, c_rhs)
     if flag:
         if not np.all(np.imag(eigenvals) < 1e-8):
             print("non-negligible imaginary eigenvalues found")
@@ -118,7 +95,7 @@ def calleig(c_lhs, c_rhs=None):
             print(eigenvals)
             sys.exit(1)
         eigenvals = np.real(eigenvals)
-    eigenvals = glin.sortevals(eigenvals, evecs.T)
+    eigenvals, evecs = glin.sortevals(eigenvals, evecs)
     return eigenvals, evecs
 
 def solve_gevp(c_lhs, c_rhs=None):
@@ -156,7 +133,7 @@ def solve_gevp(c_lhs, c_rhs=None):
         if MEAN is not None:
             eigvals = variance_reduction(eigvals, MEAN[:dimops],
                                          1/DECREASE_VAR)
-            eigvals = glin.sortevals(eigvals, evecs.T)
+            eigvals, evecs = glin.sortevals(eigvals, evecs)
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
     if allowedeliminations() is not None:
@@ -350,7 +327,7 @@ def neg_op_trials(dimops, dimremaining, toelim, c_lhs, c_rhs=None):
         if MEAN is not None:
             eigvals = variance_reduction(
                 eigvals, MEAN[:dimops], 1/DECREASE_VAR)
-            eigvals = glin.sortevals(eigvals, evecs.T)
+            eigvals, evecs = glin.sortevals(eigvals, evecs)
 
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
@@ -383,7 +360,7 @@ def elim_and_inflate(eigvals, evecs, toelim, dimops, dimremaining):
             "variance is being reduced, but it should be increased here."
         eigvals = variance_reduction(eigvals, MEAN,
                                      1/DECREASE_VAR)
-        eigvals = glin.sortevals(eigvals, evecs.T)
+        eigvals, evecs = glin.sortevals(eigvals, evecs)
 
     return eigvals
     #allowedeliminations(reset=True)

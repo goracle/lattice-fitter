@@ -43,14 +43,56 @@ def finaleval_imag_check(eigvals):
             raise ImaginaryEigenvalue
     return eigfin
 
+def check_solve(eigval, evec, c_lhs, c_rhs):
+    """Check the solution of the GEVP.
+    Does it actually solve the GEVP?"""
+    for j, k in zip(cmatdot(c_lhs, evec), cmatdot(c_rhs, evec)):
+        try:
+            if j and k:
+                assert np.allclose(eigval, j/k, rtol=1e-8)
+            else:
+                assert j == k
+            flag_nosolve = False
+        except FloatingPointError:
+            print("invalid GEVP values found")
+            print("lhs vec, rhs vec, eval")
+            print(j, k, eigval)
+            sys.exit(1)
+        except AssertionError:
+            flag_nosolve = True
+    return flag_nosolve
+
+def check_bracket(eigval, evec, c_lhs, c_rhs):
+    """Check that the ratio of brackets gives the eigenvalue"""
+    eval_check = bracket(evec, c_lhs)/bracket(evec, c_rhs)
+    try:
+        assert np.allclose(eval_check, eigval, rtol=1e-10)
+    except AssertionError:
+        print("Eigenvalue consistency check failed."+\
+            "  ratio and eigenvalue not equal.")
+        print("bracket lhs, bracket rhs, ratio, eval")
+        print(bracket(evec, c_lhs), bracket(evec, c_rhs),
+              bracket(evec, c_lhs)/bracket(evec, c_rhs), eigval)
+        raise PrecisionLossError
+
 def printevecs(c_lhs, c_rhs, eigvals, evecs):
     """Debug function, prints diagnostic info"""
     print("start solve")
-    print("lhs=", c_lhs)
-    print("rhs=", c_rhs)
+    print("lhs=", np.array2string(c_lhs, separator=', '))
+    print("rhs=", np.array2string(c_rhs, separator=', '))
     for i, j in enumerate(eigvals):
-        print("eigval #", i, "=", j, "evec #", i, "=", evecs[:, i])
+        try:
+            assert not check_solve(j, evecs[:, i], c_lhs, c_rhs)
+            check_bracket(j, evecs[:, i], c_lhs, c_rhs)
+        except PrecisionLossError:
+            assert None, "unexpected precision loss"
+        print("eigval #", i, "=", j, "evec #", i, "=",
+              np.array2string(evecs[:, i], separator=', '))
         assert np.all(evecs[:, i] == evecs.T[i])
+    print("a=", np.array2string(evecs[:, 0], separator=', '))
+    print("b=", np.array2string(evecs[:, 1], separator=', '))
+    print("c=", np.array2string(evecs[:, 2], separator=', '))
+    print("end solve")
     print("end solve")
 
 
@@ -262,6 +304,7 @@ def degenerate_subspace_check(evecs_mean_t):
 
 def update_sort_evecs(evecs, presort_evals, postsort_evals):
     """Update the sort of the eigenvectors"""
+    assert None, "dones't work"
     for i, eval1 in enumerate(presort_evals):
         for j, eval2 in enumerate(postsort_evals):
             if j <= i:
@@ -277,15 +320,18 @@ def update_sort_evecs(evecs, presort_evals, postsort_evals):
 def sortevals(evals, evecs=None):
     """Sort eigenvalues in order of increasing energy"""
     evals = list(evals)
-    ret = fallback_sort(evals)
+    ret = fallback_sort(evals, evecs)
     if evecs is not None and not np.isnan(evals[0]):
-        evecs = update_sort_evecs(evecs, evals, ret)   
+        pass
+        #evecs = update_sort_evecs(evecs, evals, ret)   
     if sortevals.sorted_evecs is None or evecs is None:
         fallback = True
     else:
-        if sortevals.dot_map is None:
-            sortevals.dot_map = get_evec_map(evecs, sortevals.sorted_evecs)
-        fallback = check_map_dups(sortevals.dot_map)
+        pass
+        #if sortevals.dot_map is None:
+            #sortevals.dot_map = get_evec_map(evecs, sortevals.sorted_evecs)
+        #fallback = check_map_dups(sortevals.dot_map)
+    fallback = True
     if not fallback:
         ret2 = []
         if not isid(sortevals.dot_map):
@@ -380,9 +426,11 @@ def update_sorted_evecs(newe):
     else:
         # find the most similar eigenvector of avg
         # from the previous time slice
-        dot_map = get_evec_map(newe, sortevals.sorted_evecs)
-        # if the matching is degenerate, skip this sort
-        clean_map = not check_map_dups(dot_map)
+        if False:
+            dot_map = get_evec_map(newe, sortevals.sorted_evecs)
+            # if the matching is degenerate, skip this sort
+            clean_map = not check_map_dups(dot_map)
+        clean_map = False
         if clean_map:
             sortevals.cleanmap = True
             assert len(sortevals.sorted_evecs) == len(newe)
@@ -394,18 +442,28 @@ def update_sorted_evecs(newe):
             sortevals.sorted_evecs = None
 
 
-def fallback_sort(evals):
+def fallback_sort(evals, evecs):
     """The usual sorting procedure for the eigenvalues"""
     evals = list(evals)
-    ret = evals
+
     ind = []
     for i, val in enumerate(evals):
         if val < 0 and LOGFORM:
             ret[i] += np.inf
             ind.append(i)
-    ret = np.array(sorted(ret, reverse=False if LOGFORM else True))
+
+    sortrev = False if LOGFORM else True
+
+    if evecs is not None:
+        evecs = [x for y,x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+        evecs = np.array(evecs).T
+        evals = [y for y,x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+    else:
+        evals = sorted(evals, reverse=sortrev)
     for i, _ in enumerate(ind):
-        ret[-(i+1)] = -1
+        evals[-(i+1)] = -1
+    evals = np.asarray(evals)
+    ret = evals if evecs is None else (evals, evecs)
     return ret
 
 def check_map_dups(dot_map):

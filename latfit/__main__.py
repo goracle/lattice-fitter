@@ -72,7 +72,7 @@ ACCEPT_ERRORS_INIT = (NegChisq, RelGammaError, NoConvergence,
 # for subsequent fits
 ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence,OverflowError, 
                  BadJackknifeDist, DOFNonPosFit, EnergySortError,
-                 TooManyBadFitsError,
+                 TooManyBadFitsError, XmaxError,
                  BadChisq, ZetaError)
 
 # for final representative fit.  dof should be deterministic, so should work
@@ -1034,10 +1034,10 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     else:
         try:
             retsingle = sfit.singlefit(meta.input_f,
-                                            meta.fitwindow,
-                                            meta.options.xmin,
-                                            meta.options.xmax,
-                                            meta.options.xstep)
+                                       meta.fitwindow,
+                                       meta.options.xmin,
+                                       meta.options.xmax,
+                                       meta.options.xstep)
             if retsingle_save is None:
                 retsingle_save = retsingle
             print("fit succeeded for this selection"+\
