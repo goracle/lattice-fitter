@@ -10,7 +10,7 @@ def main():
     """main"""
     ret = []
     outfn = start_str(sys.argv[1:])
-    outfn = outfn + '.p'
+    outfn = outfn + '.cp'
     shape = ()
     res_mean = None
     err_check = None
@@ -18,9 +18,9 @@ def main():
     excl_arr = []
     rotate = False
     early = np.inf
-    earlyfn = None
+    earlylist = []
     for i in sys.argv[1:]:
-        if '_.p' in i:
+        if '.cp' in i:
             continue
         try:
             new_early = rf.earliest_time(i)
@@ -28,7 +28,7 @@ def main():
             continue
         early = min(early, new_early)
         if early == new_early:
-            earlyfn = i
+            earlylist.append(i)
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
@@ -67,6 +67,7 @@ def main():
             ret.extend(add)
     if rotate:
         res = np.array(res)
+        print('res.shape:', res.shape)
         excl_arr = np.array(excl_arr)
         assert len(res) == len(excl_arr)
         ret = [res_mean, err_check, res, excl_arr]
@@ -78,10 +79,29 @@ def main():
     #print("final shape:", ret.shape)
     print("finished combining:", sys.argv[1:])
     print("writing results into file:", outfn)
-    print("earliest time:", early, "from", earlyfn)
+    earlylist = prune_earlylist(earlylist)
+    print("earliest time:", early, "from:")
+    for i in earlylist:
+        print('mv', i, 'tocut/')
     if '.p.p' not in outfn:
         pickle.dump(ret, open(outfn, "wb"))
-    print("done.")
+
+def prune_earlylist(earlylist):
+    """Find set of file names with the earliest time"""
+    early = np.inf
+    ret = []
+    for i in earlylist:
+        early = min(early, rf.earliest_time(i))
+    for i in earlylist:
+        if rf.earliest_time(i) == early:
+            spl = None
+            for j in range(3):
+                spl = i.split('I'+str(j))
+                if len(spl) > 1:
+                    break
+            add = '*'+spl[-1]
+            ret.append(add)
+    return ret
 
 
 def start_str(strlist):

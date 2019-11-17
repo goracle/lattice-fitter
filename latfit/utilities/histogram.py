@@ -260,7 +260,7 @@ def make_hist(fname):
 
             # prints the sorted results
             try:
-                output_loop(median_store, freqarr, avg[dim],
+                output_loop(median_store, freqarr, avg[dim], dim,
                             build_sliced_fitrange_list(median_store, freq,
                                                        exclarr, dim))
             except FitRangeInconsistency:
@@ -301,21 +301,40 @@ def gevpp(freqarr):
         ret = freqarr.shape[-1] > 1
     return ret
 
-def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
+def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
     """The print loop
     """
     median_err, median = median_store
     maxdiff = 0
     usegevp = gevpp(freqarr)
     used = set()
+    tmax = np.inf
     for i, (effmass, pval) in enumerate(median_err):
+
+        # don't print the same thing twice
         if str((effmass, pval)) in used:
             continue
         used.add(str((effmass, pval)))
+
         fit_range = fit_range_arr[i]
-        # skip the single time slice points for GEVP
-        #if pval == 1.0 and usegevp:
-            #continue
+
+        # length cut for safety (better systematic error control
+        # to include more data in a given fit range; trade stat for system.)
+        # only apply if the data is plentiful (I=2)
+        if usegevp:
+            lencut = not hasattr(fit_range[0], '__iter__')
+            if not lencut:
+                lencut = any([len(i) < 3 for i in fit_range])
+                lencut = False if ISOSPIN != 2 else lencut
+            if lencut:
+                continue
+
+        # running tmax cut
+        # if max([max(j) for j in fit_range]) >= tmax:
+        if max(fit_range[dim]) >= tmax:
+            continue
+
+        # mostly obsolete params
         pval = trunc(pval)
         median_diff = effmass-median
         median_diff = gvar.gvar(abs(median_diff.val),
@@ -324,51 +343,89 @@ def output_loop(median_store, freqarr, avg_dim, fit_range_arr):
         avg_diff = gvar.gvar(abs(avg_diff.val),
                              max(effmass.sdev, avg_dim.sdev))
 
-        if len(fit_range) > 1:
-            ind_diff, errstr = diff_ind(effmass, np.array(median_err)[:, 0],
-                                        fit_range_arr)
-        else:
-            ind_diff = gvar.gvar(0,0)
-            
-        #if abs(avg_diff.val) > abs(avg_diff.sdev) or abs(
-        #        median_diff.val) > abs(median_diff.sdev):
-        #    if ISOSPIN == 2 or len(fit_range) != 1.0:
-        #        print(effmass, pval, fit_range)
-            #print("")
-            #print("diffs", ind_diff, median_diff, avg_diff)
-            #print("")
+
+        # compare this result to all other results
+        ind_diff, errstr, tmax_ind = diff_ind(effmass, np.array(median_err)[:, 0],
+                                              fit_range_arr, dim, tmax)
+
+        # if the max difference is not zero
         if ind_diff.val:
-            print(effmass, pval, fit_range)
+
+            fake_err = False
+            if isinstance(errstr, float):
+                fake_err = errfake(fit_range[dim], errstr)
+            
+            # find the stat. significance
             if ind_diff.sdev:
-                maxdiff = max(maxdiff, ind_diff.val/ind_diff.sdev)
+                sig = np.abs(ind_diff.val)/ind_diff.sdev
+                if not fake_err:
+                    maxdiff = max(maxdiff, sig)
             else:
-                maxdiff = np.inf
-            if maxdiff == np.abs(ind_diff.val)/ind_diff.sdev:
+                sig = np.inf
+                if not fake_err:
+                    maxdiff = np.inf
+
+            # print the result
+            print(effmass, pval, fit_range)
+
+            # keep track of largest errors; print the running max 
+            if maxdiff == sig:
                 print("")
                 print(ind_diff)
-                if isinstance(errstr, str):
-                    print(errstr)
-                else:
-                    print("disagreement with data point at t=", errstr)
                 print("")
-                if ind_diff.val:
-                    if ind_diff.sdev:
-                        sig = ind_diff.val/ind_diff.sdev
+
+            # fit range inconsistency found; error handling below
+            try:
+                assert sig < 1.5 or fake_err
+            except AssertionError:
+
+                # disagreement is between two subsets
+                # of multiple data points
+                disagree_multi_multi_point = len(
+                    fit_range) > 1 and not isinstance(errstr, float)
+
+                # I=2 fits to a constant,
+                # so we must look at all disagreements
+                if (disagree_multi_multi_point or ISOSPIN == 2):
+                    if isinstance(errstr, float):
+                        if errstr:
+                            print("disagreement (mass) with data point at t=",
+                                    errstr, 'dim:', dim, "sig =", sig)
+                            tmax1 = max(fit_range[dim])
+                            tmax1 = max(tmax1, errstr)
+                            print("current tmax1:", tmax1)
+                            tmax = min(tmax1, tmax)
+                            print("current tmax=", tmax)
+                            print("")
                     else:
-                        sig = np.inf
-                try:
-                    assert sig < 1.5
-                except AssertionError:
-                    print("disagreement at", sig, "sigma")
-                    disagree_multi_multi_point = len(
-                        fit_range) > 1 and not isinstance(errstr, float)
-                    if (disagree_multi_multi_point or ISOSPIN == 2) and errstr != 18.0: # fix this
-                        raise FitRangeInconsistency
+                        #tmax1 = max([max(j) for j in fit_range[dim]])
+                        tmax1 = max(fit_range[dim])
+                        tmax1 = max(tmax1, tmax_ind)
+                        print("current tmax1:", tmax1)
+                        tmax = min(tmax1, tmax)
+                        print("disagreement at", sig, "sigma")
+                        print(errstr, 'dim:', dim)
+                        print("current tmax=", tmax)
+                        #raise FitRangeInconsistency
+                        print("")
         else:
+            # no differences found; print the result
+            # skip effective mass points for I=0 fits (const+exp)
             if ISOSPIN == 2 or len(fit_range) != 1.0:
                 print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
     print("p-value weighted mean =", avg_dim)
+
+def errfake(fit_range_dim, errstr):
+    """Is the disagreement with an effective mass point outside of this
+    dimension's fit window?  Then regard this error as spurious"""
+    tmin = min(fit_range_dim)
+    tmax = max(fit_range_dim)
+    ret = False if errstr >= tmin and errstr <= tmax else True
+    if not ret:
+        print(tmin, tmax, errstr, fit_range_dim)
+    return ret
+    
 
 def addoffset(hist):
     """Add an offset to each histogram so the horizontal error bars
@@ -396,16 +453,39 @@ def addoffset(hist):
 
 ISOSPIN = 0
 
-def diff_ind(res, arr, fit_range_arr):
+def diff_ind(res, arr, fit_range_arr, dim, tmax):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
     maxsig = 0
     maxdiff = 0
     maxerr = 0
+    errstr = ''
+    err2str = ''
+    tmax_ind = 0
     for i, gres in enumerate(arr):
+        # length cut, exactly like the calling function
+        lencut = not hasattr(fit_range_arr[i][0], '__iter__')
+        if not lencut:
+            lencut = any([len(i) < 3 for i in fit_range_arr[i]])
+            lencut = False if ISOSPIN != 2 else lencut
+        if lencut:
+            continue
+
+        # tmax cut
+        if hasattr(fit_range_arr[i][0], '__iter__'):
+            #tmax1 = max([max(j) for j in fit_range_arr[i]])
+            tmax1 = max(fit_range_arr[i][dim])
+        else:
+            tmax1 = fit_range_arr[i][0]
+            err2str = str((tmax1, gres))
+        if tmax1 >= tmax:
+            continue
+
         if len(fit_range_arr[i]) == 1 and ISOSPIN != 2:
             continue
+
+        # cuts are passed, calculate the discrepancy
         err = max(res.sdev, gres.sdev)
         diff = abs(res.val-gres.val)
         if diff:
@@ -413,19 +493,28 @@ def diff_ind(res, arr, fit_range_arr):
         else:
             sig = 0
         maxsig = max(sig, maxsig)
-        errstr = ''
+
         if maxsig == sig and maxsig:
-            maxdiff = diff
+            maxdiff = np.abs(diff)
             maxerr = err
+            tmax_ind = max(tmax1, tmax_ind)
             if len(fit_range_arr[i]) > 1:
-                errstr = "disagree:"+str(i)+" "+str(gres)+" "+str(fit_range_arr[i])
+                errstr = "disagree:"+str(i)+" "+str(gres)+" "+str(
+                    fit_range_arr[i])
             else:
                 errstr = float(fit_range_arr[i][0])
             if maxerr >= maxdiff:
                 maxdiff = 0
                 maxerr = 0
+                maxsig = 0
+                tmax_ind = 0
+    if maxdiff:
+        assert errstr, str(errstr)
+        assert tmax_ind < np.inf, str(tmax_ind)
+        #if maxsig > 1.5:
+            #print(err2str)
     ret = gvar.gvar(maxdiff, maxerr)
-    return ret, errstr
+    return ret, errstr, tmax_ind
 
 
 def getxerr(freq, center, errdat_dim):
