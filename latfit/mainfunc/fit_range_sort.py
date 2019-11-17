@@ -5,7 +5,7 @@ import latfit.analysis.sortfit as sortfit
 from latfit.config import ISOSPIN, GEVP, MAX_RESULTS
 from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
 from latfit.config import ONLY_SMALL_FIT_RANGES
-from latfit.config import MULT, BIASED_SPEEDUP
+from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
 from latfit.mainfunc.metaclass import filter_sparse
 from latfit.singlefit import singlefit
@@ -179,6 +179,11 @@ def exitp(meta, min_arr, overfit_arr, idx):
                 " has been checked, exiting fit range loop."+\
                 " (number of fit ranges checked:"+str(idx+1)+")")
             print("rank :", MPIRANK, "exiting fit loop")
+    if not len(min_arr) + len(overfit_arr) and idx >= MAX_ITER:
+        print("Maximum iteration count", MAX_ITER,
+              "exceeded with no results")
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
     return ret
 
 
