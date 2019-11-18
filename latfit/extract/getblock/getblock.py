@@ -376,11 +376,8 @@ if EFF_MASS:
         assert len(retblk) == num_configs, \
             "number of configs should be the block length"
         final_gevp_debug_print(timeij, num_configs)
-        glin.sortevals.dot_map = None
-        if not glin.sortevals.cleanmap:
-            glin.update_sorted_evecs(avg_en_eig[2])
+        glin.update_sorted_evecs(avg_en_eig[2], timeij)
         return retblk
-
 
 
     if GEVP_DERIV:

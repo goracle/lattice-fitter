@@ -95,7 +95,7 @@ def calleig(c_lhs, c_rhs=None):
             print(eigenvals)
             sys.exit(1)
         eigenvals = np.real(eigenvals)
-    eigenvals, evecs = glin.sortevals(eigenvals, evecs)
+    eigenvals, evecs = glin.sortevals(eigenvals, evecs, c_lhs, c_rhs)
     return eigenvals, evecs
 
 def solve_gevp(c_lhs, c_rhs=None):
@@ -133,7 +133,7 @@ def solve_gevp(c_lhs, c_rhs=None):
         if MEAN is not None:
             eigvals = variance_reduction(eigvals, MEAN[:dimops],
                                          1/DECREASE_VAR)
-            eigvals, evecs = glin.sortevals(eigvals, evecs)
+            eigvals, evecs = glin.sortevals(eigvals, evecs, c_lhs, c_rhs)
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
     if allowedeliminations() is not None:
@@ -327,7 +327,7 @@ def neg_op_trials(dimops, dimremaining, toelim, c_lhs, c_rhs=None):
         if MEAN is not None:
             eigvals = variance_reduction(
                 eigvals, MEAN[:dimops], 1/DECREASE_VAR)
-            eigvals, evecs = glin.sortevals(eigvals, evecs)
+            eigvals, evecs = glin.sortevals(eigvals, evecs, c_lhs, c_rhs)
 
         if dimremaining == dimops:
             eigvals[toelim] = makeneg(eigvals[toelim])
