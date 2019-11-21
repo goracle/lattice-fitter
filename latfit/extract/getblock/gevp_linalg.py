@@ -434,7 +434,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     ret = fallback_sort(evals, evecs)
     if evecs is not None:
         evals = ret[0]
-        print('evals init', evals)
         if evecs is None:
             raise
         evecs = ret[1]
@@ -518,8 +517,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             print("final votes", votes)
             print("final dot map:", dot_map)
     exitp = False
-    if timeij_start == 12:
-        dot_map = {2: 0, 1:2, 0:1}
     if not isid(dot_map):
         exitp = True
         sevals = np.zeros(len(evals))
@@ -536,8 +533,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             print("evals final", ret)
     if debug and False:
         sys.exit()
-    if timeij_start == 12:
-        print("evals final", ret[0])
     return ret
 sortevals.sorted_evecs = {}
 sortevals.last_time = None
