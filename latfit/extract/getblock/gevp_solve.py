@@ -358,6 +358,7 @@ def elim_and_inflate(eigvals, evecs, toelim, dimops, dimremaining):
     if MEAN is not None:
         assert 1/DECREASE_VAR > 1, \
             "variance is being reduced, but it should be increased here."
+        assert None, "not supported"
         eigvals = variance_reduction(eigvals, MEAN,
                                      1/DECREASE_VAR)
         eigvals, evecs = glin.sortevals(eigvals, evecs)

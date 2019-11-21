@@ -326,12 +326,13 @@ if EFF_MASS:
             if GEVP_DEBUG:
                 print("config #=", num)
             try:
+                glin.select_sorted_evecs(num, timeij)
+
                 eigret = gsolve.get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
                                             print_evecs=True, commnorm=True)
                 eigret = np.asarray(eigret)
 
                 glin.update_sorted_evecs(eigret[1], timeij, num)
-                glin.select_sorted_evecs(num, timeij)
 
                 if num == 0:
                     gsolve.MEAN = None
