@@ -380,7 +380,7 @@ def map_evals(evals_from, evals_to, debug=False):
     test2 = np.sum(test_arr) > 1
     test3 = np.sum(test_arr) <= 1
     ret = make_id(leval)
-    if debug and False:
+    if debug:
         print('test_arr', test_arr)
     evals_to = list(evals_to)
     fallback_level = -1
@@ -543,16 +543,10 @@ def votes_to_map(votes, stop=np.inf, debug=False):
     for what each one thinks is the right ordering"""
     ret, _ = votes[0]
     stop = len(votes) if stop >= len(votes) else stop
-    if debug:
-        print('stop', stop)
     votes = votes[:stop]
     for i, idxsi in votes:
-        if debug:
-            print("i", i, idxsi)
         i = filter_dict(i, idxsi)
         for j, idxsj in votes:
-            if debug:
-                print("j", j, idxsj)
             j = filter_dict(j, idxsj)
             disagree = partial_compare_dicts(i, j)
             if disagree:
