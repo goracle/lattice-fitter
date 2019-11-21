@@ -56,6 +56,7 @@ import latfit.mainfunc.print_res as print_res
 import latfit.checks.checks_and_statements as sands
 import latfit.singlefit as sfit
 import latfit.config
+import latfit.extract.getblock.gevp_linalg as glin
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -1158,6 +1159,7 @@ def reset_main(mintol):
     latfit.config.MINTOL = mintol
     latfit.config.FIT_EXCL = np.copy(EXCL_ORIG)
     latfit.config.FIT_EXCL = [list(i) for i in latfit.config.FIT_EXCL]
+    glin.reset_sortevals()
     sfit.singlefit_reset()
 
 if __name__ == "__main__":

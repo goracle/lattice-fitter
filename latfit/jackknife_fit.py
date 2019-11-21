@@ -891,10 +891,7 @@ if CORRMATRIX:
             weightings = dropimag(np.sqrt(np.diag(covjack)))
             reweight = np.diagflat(1./weightings)
             corrjack = kdot(reweight, kdot(covjack, reweight))
-            try:
-                svd_check(corrjack)
-            except PrecisionLossError:
-                raise XmaxError
+            svd_check(corrjack)
             covinv_jack = kdot(kdot(reweight, inv(corrjack)), reweight)
         else:
             lent = len(covjack)  # time extent
