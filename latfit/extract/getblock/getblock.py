@@ -321,6 +321,7 @@ if EFF_MASS:
         # reset the list of allowed operator eliminations at the
         # beginning of the loop
         allowedeliminations(reset=True)
+        #glin.reset_sortevals()
         while num < num_configs:
             if GEVP_DEBUG:
                 print("config #=", num)
@@ -328,6 +329,10 @@ if EFF_MASS:
                 eigret = gsolve.get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
                                             print_evecs=True, commnorm=True)
                 eigret = np.asarray(eigret)
+
+                glin.update_sorted_evecs(eigret[1], timeij, num)
+                glin.select_sorted_evecs(num, timeij)
+
                 if num == 0:
                     gsolve.MEAN = None
                     avg_en_eig = average_energies(
@@ -376,7 +381,7 @@ if EFF_MASS:
         assert len(retblk) == num_configs, \
             "number of configs should be the block length"
         final_gevp_debug_print(timeij, num_configs)
-        glin.update_sorted_evecs(avg_en_eig[2], timeij)
+        #glin.update_sorted_evecs(avg_en_eig[2], timeij)
         return retblk
 
 

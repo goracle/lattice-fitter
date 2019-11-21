@@ -435,25 +435,25 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         evals = list(evals)
     dot_map = make_id(len(evals))
     debug = False
-    if sortevals.last_time >= 0 and c_lhs is not None\
+    if sortevals.last_time is not None and c_lhs is not None\
        and c_rhs is not None and not np.any(np.isnan(evals)):
         count = 5
         timeij = sortevals.last_time
-        if timeij + 1 == 14:
+        if timeij + 1 == 7+np.inf:
             debug = True
         if debug:
             print("\nevals init", evals)
         fallback = True
         votes = []
         soft_votes = []
-        while count and timeij in sortevals.sorted_evecs:
+        while timeij in sortevals.sorted_evecs:
 
             # loop increment
             count -= 1 # 3, 2, 1
             if debug:
                 print('count', count)
 
-            evecs_past = sortevals.sorted_evecs[timeij]
+            evecs_past = sortevals.sorted_evecs[timeij][sortevals.config]
             if debug:
                 print("evecs(", timeij, ") =", evecs_past) 
             assert len(evecs_past) == len(evals), str(evecs_past)
@@ -461,8 +461,8 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             assert len(evecs_past[0]) == len(c_lhs), str(
                 evecs_past[0])+" "+str(c_lhs)
             timeij -= 1 # t-1, t-2, t-3
-            if debug:
-                assert timeij in sortevals.sorted_evecs
+            #if debug:
+                #assert timeij in sortevals.sorted_evecs
             evals_from = np.copy(evals)
             evals_to = ratio_evals(evecs_past, c_lhs, c_rhs)
             if debug:
@@ -474,34 +474,34 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 print('vote map', vote_map)
                 print('fallback', fallback_level)
 
-            # ambiguous sorting, throw out this map
-            if fallback_level == 2:
-                continue
-
             # unambiguously consistent sorting with previous time slice
             if not fallback_level and isid(vote_map) and count == 4:
                 break
 
             # unambiguous different mapping; accumulate two identical votes
             # to resort the eigenvalues
-            if fallback_level == 1:
+            # ambiguous sorting, throw out this map
+            if fallback_level == 2:
+                continue
+            elif fallback_level == 1:
                 soft_votes.append(vote_map)
             else:
                 assert not fallback_level
                 votes.append(vote_map)
+                if len(votes) == 3:
+                    break
+
             if debug:
                 print('votes', votes)
                 print('soft_votes', soft_votes)
-            if len(votes) == 2: # two unambiguous votes is arbitrary
-                if debug:
-                    print("good votes")
-                break
-        if len(votes) == 2:
-            if votes[0] == votes[1]:
-                dot_map = votes[0]
-        elif len(soft_votes) == 2:
-            if soft_votes[0] == soft_votes[1]:
-                dot_map = soft_votes[0]
+            #if len(votes) == 2: # two unambiguous votes is arbitrary
+                #if debug:
+                    #print("good votes")
+                #break
+        if len(votes) >= 2:
+            dot_map = votes_to_map(votes)
+        elif len(soft_votes) >= 2:
+            dot_map = votes_to_map(soft_votes)
 
     exitp = False
     if not isid(dot_map):
@@ -509,24 +509,41 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         sevals = np.zeros(len(evals))
         sevecs = np.zeros(np.asarray(evecs).T.shape)
         for i in dot_map:
-            sevals[i] = evals[dot_map[i]]
-            sevecs[i] = evecs.T[dot_map[i]]
+            sevals[i] = drop0imag(evals[dot_map[i]])
+            sevecs[i] = drop0imag(evecs.T[dot_map[i]])
         ret = (sevals, sevecs.T)
     if evecs is not None and not np.any(np.isnan(evals)):
         if debug:
             print("evals final", ret[0])
     elif not np.any(np.isnan(evals)):
-        print("evals final", ret)
+        if debug:
+            print("evals final", ret)
     if debug and False:
         sys.exit()
     return ret
 sortevals.sorted_evecs = {}
-sortevals.last_time = -1
+sortevals.last_time = None
+sortevals.config = None
 
-def reset_sortevals():
-    """Reset function variables"""
-    sortevals.sorted_evecs = {}
-    sortevals.last_time = -1
+def votes_to_map(votes):
+    """Get sorting map based on previous time slice votes
+    for what each one thinks is the right ordering"""
+    ret = votes[0]
+    for i in votes:
+        for j in votes:
+            if i != j:
+                ret = make_id(ret)
+    return ret
+
+def make_id(mlen):
+    """Get the identity mapping"""
+    ret = {}
+    if hasattr(mlen, '__iter__'):
+        mlen = len(mlen)
+    for i in range(mlen):
+        ret[i] = i
+    assert isid(ret), str(ret)
+    return ret
 
 def isid(dot_map):
     """Check if map is identity"""
@@ -591,15 +608,26 @@ def max_sign(evec):
             ret = np.sign(i)
     return ret
 
+def reset_sortevals():
+    """Reset function variables"""
+    sortevals.sorted_evecs = {}
+    sortevals.last_time = None
 
-
-def update_sorted_evecs(newe, timeij):
+def update_sorted_evecs(newe, timeij, config_num):
     """Update sortevals.sorted_evecs; perform stability check
     (evecs should be stable from time slice to time slice
     otherwise sorting by dot product is not reliable)"""
-    sortevals.sorted_evecs[timeij] = np.copy(newe)
-    sortevals.last_time = timeij
+    if timeij not in sortevals.sorted_evecs:
+        sortevals.sorted_evecs[timeij] = []
+        sortevals.last_time = timeij - 1
+    sortevals.sorted_evecs[timeij].append(np.copy(newe))
+    assert np.all(sortevals.sorted_evecs[timeij][config_num] == newe),\
+        (newe, config_num, sortevals.sorted_evecs[timeij][config_num])
 
+def select_sorted_evecs(config_num, timeij):
+    """Select evecs to use"""
+    assert sortevals.last_time == timeij - 1, (timeij, sortevals.last_time)
+    sortevals.config = config_num
 
 def fallback_sort(evals, evecs=None):
     """The usual sorting procedure for the eigenvalues"""
