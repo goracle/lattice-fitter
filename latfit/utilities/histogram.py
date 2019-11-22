@@ -16,8 +16,27 @@ ISOSPIN = None
 def main():
     """Make the histograms.
     """
-    for fname in sys.argv[1:]:
-        make_hist(fname)
+    if len(sys.argv[1:]) == 1 and (
+            'phase_shift' in sys.argv[1] or\
+            'energy' in sys.argv[1]):
+        fname = sys.argv[1]
+        newfn = None
+        if 'phase_shift' in fname:
+            energyfn = re.sub('phase_shift', 'energy', fname)
+            phasefn = fname
+        elif 'energy' in fname:
+            phasefn = re.sub('energy', 'phase_shift', fname)
+            energyfn = fname
+        min_en = make_hist(energyfn, nosave=True)
+        min_ph = make_hist(phasefn, nosave=True)
+        min_en = [str(i) for i in min_en]
+        min_ph = [str(i) for i in min_ph]
+        min_res = [list(i) for i in zip(min_en, min_ph)]
+    else:
+        for fname in sys.argv[1:]:
+            min_res = make_hist(fname, nosave=False)
+    print("minimized error results:", min_res)
+
 
 def trunc(val):
     """Truncate the precision of a number
@@ -229,10 +248,11 @@ def plot_hist(freq, errlooparr):
             xerr=getxerr(freq, center,
                          np.asarray(errlooparr, dtype=float)))
 
-def make_hist(fname):
+def make_hist(fname, nosave=False):
     """Make histograms
     """
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
+    ret = []
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(freqarr, errdat, dim)
         save_str = re.sub(r'.p$', '_state'+str(dim)+'.pdf', fname)
@@ -260,17 +280,21 @@ def make_hist(fname):
 
             # prints the sorted results
             try:
-                output_loop(median_store, freqarr, avg[dim], dim,
-                            build_sliced_fitrange_list(median_store, freq,
-                                                       exclarr, dim))
+                themin = output_loop(median_store, freqarr, avg[dim], dim,
+                                     build_sliced_fitrange_list(median_store, freq,
+                                                                exclarr, dim))
             except FitRangeInconsistency:
                 continue
+
+            ret.append(themin)
 
             print("saving plot as filename:", save_str)
 
             pdf.savefig()
 
-            plt.show()
+            if not nosave:
+                plt.show()
+    return ret
 
 def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
     """Get all the fit ranges for a particular dimension"""
@@ -310,6 +334,11 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
     used = set()
     tmax = np.inf
     for i, (effmass, pval) in enumerate(median_err):
+
+        if i:
+            themin = effmass
+        if i > 1:
+            minprev = themin
 
         # don't print the same thing twice
         if str((effmass, pval)) in used:
@@ -379,6 +408,8 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                 assert sig < 1.5 or fake_err
             except AssertionError:
 
+                themin = minprev
+
                 # disagreement is between two subsets
                 # of multiple data points
                 disagree_multi_multi_point = len(
@@ -415,6 +446,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                 print(effmass, pval, fit_range)
     print('p-value weighted median =', str(median))
     print("p-value weighted mean =", avg_dim)
+    return themin
 
 def errfake(fit_range_dim, errstr):
     """Is the disagreement with an effective mass point outside of this
