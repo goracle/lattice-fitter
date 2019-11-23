@@ -13,12 +13,12 @@ from latfit.analysis.errorcodes import FitRangeInconsistency
 
 ISOSPIN = None
 
-def main():
+def main(nosave=True):
     """Make the histograms.
     """
     if len(sys.argv[1:]) == 1 and (
             'phase_shift' in sys.argv[1] or\
-            'energy' in sys.argv[1]):
+            'energy' in sys.argv[1]) and nosave:
         fname = sys.argv[1]
         newfn = None
         if 'phase_shift' in fname:
@@ -27,8 +27,8 @@ def main():
         elif 'energy' in fname:
             phasefn = re.sub('energy', 'phase_shift', fname)
             energyfn = fname
-        min_en1 = make_hist(energyfn, nosave=True)
-        min_ph1 = make_hist(phasefn, nosave=True)
+        min_en1 = make_hist(energyfn, nosave=nosave)
+        min_ph1 = make_hist(phasefn, nosave=nosave)
         min_res = print_compiled_res(min_en1, min_ph1)
         tot_pos = []
         min_ph = min_ph1
@@ -37,8 +37,8 @@ def main():
         tadd = 0
         while min_en and min_ph:
             tadd += 1
-            min_en = make_hist(energyfn, nosave=True, tadd=tadd)
-            min_ph = make_hist(phasefn, nosave=True, tadd=tadd)
+            min_en = make_hist(energyfn, nosave=nosave, tadd=tadd)
+            min_ph = make_hist(phasefn, nosave=nosave, tadd=tadd)
             tot_pos.append(print_compiled_res(min_en, min_ph))
         tot_neg = []
         tadd = 0
@@ -46,14 +46,14 @@ def main():
         min_en = min_en1
         while min_en and min_ph:
             tadd -= 1
-            min_en = make_hist(energyfn, nosave=True, tadd=tadd)
-            min_ph = make_hist(phasefn, nosave=True, tadd=tadd)
+            min_en = make_hist(energyfn, nosave=nosave, tadd=tadd)
+            min_ph = make_hist(phasefn, nosave=nosave, tadd=tadd)
             tot_neg.append(print_compiled_res(min_en, min_ph))
         print_tot_pos(tot_pos)
         print_tot_neg(tot_neg)
     else:
         for fname in sys.argv[1:]:
-            min_res = make_hist(fname, nosave=False)
+            min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
 
 def print_tot_pos(tot):
