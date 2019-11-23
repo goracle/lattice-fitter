@@ -59,18 +59,71 @@ def main():
 def print_tot_pos(tot):
     """Print results vs. tmin"""
     tadd = -1
+    tot_new = []
     for i in tot:
         tadd += 1
         print("tmin = tmin_start +", tadd)
+        if i:
+            tot_new.append(i)
         print(i)
+    tot = tot_new
+    for dim, _ in enumerate(tot[0]):
+        plot_tmin_dep(tot, dim, 1, 'Phase shift', 'degrees')
+        plot_tmin_dep(tot, dim, 0, 'Energy', 'lattice units')
 
 def print_tot_neg(tot):
     """Print results vs. tmax"""
     tadd = 0
+    tot_new = []
     for i in tot:
         tadd -= 1
         print("tmax = tmax_start -", -tadd)
+        if i:
+            tot_new.append(i)
         print(i)
+    tot = tot_new
+    for dim, _ in enumerate(tot[0]):
+        plot_tmax_dep(tot, dim, 1, 'Phase shift', 'degrees')
+        plot_tmax_dep(tot, dim, 0, 'Energy', 'lattice units')
+
+def plot_tmin_dep(tot, dim, item_num, title, units):
+    """Plot the tmin dependence of an item"""
+    xarr = []
+    yarr = []
+    yerr = []
+    tadd = -1
+    for i in tot:
+        tadd += 1
+        item = gvar.gvar(i[dim][item_num])
+        xarr.append(tadd)
+        yarr.append(item.val)
+        yerr.append(item.sdev)
+    plt.errorbar(xarr, yarr, yerr=yerr)
+    plt.xlabel('tmin-tmin global (lattice units)')
+    plt.ylabel(title+' ('+units+')')
+    plt.title(title+' vs. '+'tmin; state '+str(dim))
+    plt.show()
+
+def plot_tmax_dep(tot, dim, item_num, title, units):
+    """Plot the tmin dependence of an item"""
+    xarr = []
+    yarr = []
+    yerr = []
+    tadd = 0
+    for i in tot:
+        tadd -= 1
+        item = gvar.gvar(i[dim][item_num])
+        xarr.append(tadd)
+        yarr.append(item.val)
+        yerr.append(item.sdev)
+    plt.errorbar(xarr, yarr, yerr=yerr)
+    xmin, xmax = plt.xlim()
+    plt.xlim(xmax, xmin)
+    plt.xlabel('tmax-tmax_global (lattice units)')
+    plt.ylabel(title+' ('+units+')')
+    plt.title(title+' vs. '+'tmax; state '+str(dim))
+    plt.show()
+
 
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
@@ -233,7 +286,7 @@ def get_raw_arrays(fname):
     errdat = err_arr(fname, freqarr, avg)
     return freqarr, exclarr, pdat_freqarr, errdat, avg
 
-def get_medians_and_plot_syserr(loop, freqarr, freq, medians):
+def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
     """Get medians of various quantities (over fit ranges)
     loop:
     (freq, pdat_freqarr, errlooparr, exclarr)
@@ -258,10 +311,10 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians):
         #print(median_err[-1], j)
     if median_diff != 0:
         freq_median = (freq_median+half)/2
-    median = systematic_err_est(freq, median_err, freq_median)
+    median = systematic_err_est(freq, median_err, freq_median, nosave=nosave)
     return (median_err, median), freq_median
 
-def systematic_err_est(freq, median_err, freq_median):
+def systematic_err_est(freq, median_err, freq_median, nosave=False):
     """Standard deviation of results over fit ranges
     is an estimate of the systematic error.
     Also, annotate the plot with this information.
@@ -273,9 +326,10 @@ def systematic_err_est(freq, median_err, freq_median):
         print("zero division error:")
         print(np.array(median_err))
         sys.exit(1)
-    plt.annotate("standard dev (est of systematic)="+str(sys_err),
-                 xy=(0.05, 0.7),
-                 xycoords='axes fraction')
+    if not nosave:
+        plt.annotate("standard dev (est of systematic)="+str(sys_err),
+                     xy=(0.05, 0.7),
+                     xycoords='axes fraction')
     median = gvar.gvar(freq_median, sys_err)
     return median
 
@@ -292,8 +346,7 @@ def plot_hist(freq, errlooparr):
                          np.asarray(errlooparr, dtype=float)))
 
 def make_hist(fname, nosave=False, tadd=0):
-    """Make histograms
-    """
+    """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = []
     for dim in range(freqarr.shape[-1]):
@@ -304,22 +357,26 @@ def make_hist(fname, nosave=False, tadd=0):
                                            errlooparr, exclarr)
         with PdfPages(save_str) as pdf:
 
-            plt.ylabel('count')
+            if not nosave:
+                plt.ylabel('count')
 
             # plot the title
-            plot_title(fname, dim)
+            if not nosave:
+                plot_title(fname, dim)
 
             # plot the histogram
-            plot_hist(freq, errlooparr)
+            if not nosave:
+                plot_hist(freq, errlooparr)
 
             # loop to obtain medians/printable results
             # plot the systematic error
             median_store, freq_median = get_medians_and_plot_syserr(
-                loop, freqarr, freq, medians)
+                loop, freqarr, freq, medians, nosave=nosave)
 
             # plot median fit result (median energy)
-            plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
-                         xycoords='axes fraction')
+            if not nosave:
+                plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
+                             xycoords='axes fraction')
 
             # prints the sorted results
             try:
@@ -335,7 +392,8 @@ def make_hist(fname, nosave=False, tadd=0):
 
             print("saving plot as filename:", save_str)
 
-            pdf.savefig()
+            if not nosave:
+                pdf.savefig()
 
             if not nosave:
                 plt.show()
@@ -438,6 +496,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
     tmax = tmax_allowed + 1
 
     themin = None
+    minprev = None
 
     for i, (effmass, pval) in enumerate(median_err):
 
@@ -486,10 +545,11 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
         ind_diff, errstr, tmax_ind = diff_ind(effmass, np.array(median_err)[:, 0],
                                               fit_range_arr, dim, tmax)
 
-        if i:
+        if themin is None:
             themin = effmass
-        if i > 1:
+        else:
             minprev = themin
+            themin = effmass
 
         # if the max difference is not zero
         if ind_diff.val:
