@@ -29,109 +29,111 @@ def main(nosave=True):
             energyfn = fname
         min_en1 = make_hist(energyfn, nosave=nosave)
         min_ph1 = make_hist(phasefn, nosave=nosave)
-        min_res = print_compiled_res(min_en1, min_ph1)
-        tot_pos = []
+        min_res, test = print_compiled_res(min_en1, min_ph1)
+        tot = []
         min_ph = min_ph1
         min_en = min_en1
-        tot_pos.append(min_res)
+        tot.append(min_res)
+        success_tadd_tsub = []
+        if test:
+            success_tadd_tsub.append((0, 0))
         tadd = 0
-        while min_en and min_ph:
+        tbreak = False
+        while tadd < 22:
+            tsub = 0
+            while np.abs(tsub) < 22:
+                if tsub or tadd:
+                    min_en = make_hist(
+                        energyfn, nosave=nosave, tadd=tadd, tsub=tsub)
+                    min_ph = make_hist(
+                        phasefn, nosave=nosave, tadd=tadd, tsub=tsub)
+                    tsub -= 1
+                else:
+                    tsub -= 1
+                    continue
+                if min_en and min_ph: # check this
+                    toapp, test = print_compiled_res(min_en, min_ph)
+                    if test:
+                        success_tadd_tsub.append((tadd, tsub))
+                    else:
+                        break
+                    tot.append(toapp)
+                else:
+                    break
             tadd += 1
-            min_en = make_hist(energyfn, nosave=nosave, tadd=tadd)
-            min_ph = make_hist(phasefn, nosave=nosave, tadd=tadd)
-            tot_pos.append(print_compiled_res(min_en, min_ph))
-        tot_neg = []
-        tadd = 0
-        min_ph = min_ph1
-        min_en = min_en1
-        while min_en and min_ph:
-            tadd -= 1
-            min_en = make_hist(energyfn, nosave=nosave, tadd=tadd)
-            min_ph = make_hist(phasefn, nosave=nosave, tadd=tadd)
-            tot_neg.append(print_compiled_res(min_en, min_ph))
-        print_tot_pos(tot_pos)
-        print_tot_neg(tot_neg)
+        print("Successful (tadd, tsub):")
+        for i in success_tadd_tsub:
+            print(i)
+        print_tot(tot)
     else:
         for fname in sys.argv[1:]:
-            min_res = make_hist(fname, nosave=nosave)
+            min_res, _ = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
 
-def print_tot_pos(tot):
+def print_tot(tot):
     """Print results vs. tmin"""
-    tadd = -1
     tot_new = []
+    lenmax = 0
     for i in tot:
-        tadd += 1
-        print("tmin = tmin_start +", tadd)
-        if i:
+        i = list(i)
+        lenmax = max(lenmax, len(i))
+        if i and len(i) == lenmax:
             tot_new.append(i)
-        print(i)
+        if i:
+            topr = drop_fit_range_info(i)
+            if topr:
+                print(topr)
     tot = tot_new
     for dim, _ in enumerate(tot[0]):
-        plot_tmin_dep(tot, dim, 1, 'Phase shift', 'degrees')
-        plot_tmin_dep(tot, dim, 0, 'Energy', 'lattice units')
+        plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
+        plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
 
-def print_tot_neg(tot):
-    """Print results vs. tmax"""
-    tadd = 0
-    tot_new = []
-    for i in tot:
-        tadd -= 1
-        print("tmax = tmax_start -", -tadd)
-        if i:
-            tot_new.append(i)
-        print(i)
-    tot = tot_new
-    for dim, _ in enumerate(tot[0]):
-        plot_tmax_dep(tot, dim, 1, 'Phase shift', 'degrees')
-        plot_tmax_dep(tot, dim, 0, 'Energy', 'lattice units')
+def drop_fit_range_info(ilist):
+    """Drop fit range data from a 'tot' list item
+    (useful for prints)
+    """
+    ret = [[i[0][0], i[1][0]] if 'nan' not in str(
+        i[0][0]) else [] for i in ilist]
+    return ret
 
-def plot_tmin_dep(tot, dim, item_num, title, units):
+def plot_t_dep(tot, dim, item_num, title, units):
     """Plot the tmin dependence of an item"""
-    xarr = []
+    print("plotting t dependence of dim", dim, "item:", title)
     yarr = []
     yerr = []
-    tadd = -1
+    xticks = []
     for i in tot:
-        tadd += 1
-        item = gvar.gvar(i[dim][item_num])
-        xarr.append(tadd)
+        item, fitwin = i[dim][item_num]
+        item = gvar.gvar(item)
+        if np.isnan(item.val):
+            continue
         yarr.append(item.val)
         yerr.append(item.sdev)
+        xticks.append(str(fitwin))
+    xarr = range(len(xticks))
+    plt.xticks(xarr, xticks)
     plt.errorbar(xarr, yarr, yerr=yerr)
-    plt.xlabel('tmin-tmin global (lattice units)')
+    plt.xlabel('fit window (tmin, tmax) (lattice units)')
     plt.ylabel(title+' ('+units+')')
-    plt.title(title+' vs. '+'tmin; state '+str(dim))
+    plt.title(title+' vs. '+'fit window; state '+str(dim))
     plt.show()
-
-def plot_tmax_dep(tot, dim, item_num, title, units):
-    """Plot the tmin dependence of an item"""
-    xarr = []
-    yarr = []
-    yerr = []
-    tadd = 0
-    for i in tot:
-        tadd -= 1
-        item = gvar.gvar(i[dim][item_num])
-        xarr.append(tadd)
-        yarr.append(item.val)
-        yerr.append(item.sdev)
-    plt.errorbar(xarr, yarr, yerr=yerr)
-    xmin, xmax = plt.xlim()
-    plt.xlim(xmax, xmin)
-    plt.xlabel('tmax-tmax_global (lattice units)')
-    plt.ylabel(title+' ('+units+')')
-    plt.title(title+' vs. '+'tmax; state '+str(dim))
-    plt.show()
-
 
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
-    min_en = [str(i) for i in min_en]
-    min_ph = [str(i) for i in min_ph]
-    min_res = [list(i) for i in zip(min_en, min_ph)]
-    print("minimized error results:", min_res)
-    return min_res
+    min_enf = [(str(i), j) for i, j in min_en]
+    min_phf = [(str(i), j) for i, j in min_ph]
+
+    min_en = [str(i) for i, _ in min_en]
+    min_ph = [str(i) for i, _ in min_ph]
+
+    min_res = [list(i) for i in zip(min_en, min_ph) if list(i)]
+    min_res_pr = [i for i in min_res if 'nan' not in str(i[0])]
+    test = False
+    if min_res_pr:
+        print("minimized error results:", min_res_pr)
+        test = True
+    ret = list(zip(min_enf, min_phf))
+    return ret, test
 
 
 def trunc(val):
@@ -212,8 +214,8 @@ def err_arr(fname, freqarr, avg):
             errdat = np.real(np.array(errdat))
     assert np.array(errdat).shape, "error array not found"
 
-    print('shape:', freqarr.shape, avg)
-    print('shape2:', errdat.shape)
+    #print('shape:', freqarr.shape, avg)
+    #print('shape2:', errdat.shape)
     return errdat
 
 def plot_title(fname, dim):
@@ -241,8 +243,7 @@ def slice_energy_and_err(freqarr, errdat, dim):
 
 def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     """Setup loop over results to get medians/printable results"""
-    print("val(err); pvalue; ind diff; median difference;",
-          " avg difference; fit range")
+    reset_header()
     pdat_median = np.median(pdat_freqarr)
     median_diff = np.inf
     median_diff2 = np.inf
@@ -345,10 +346,10 @@ def plot_hist(freq, errlooparr):
             xerr=getxerr(freq, center,
                          np.asarray(errlooparr, dtype=float)))
 
-def make_hist(fname, nosave=False, tadd=0):
+def make_hist(fname, nosave=False, tadd=0, tsub=0):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
-    ret = []
+    ret = {}
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(freqarr, errdat, dim)
         save_str = re.sub(r'.p$', '_state'+str(dim)+'.pdf', fname)
@@ -381,22 +382,35 @@ def make_hist(fname, nosave=False, tadd=0):
             # prints the sorted results
             try:
                 output_loop.tadd = tadd
-                themin = output_loop(median_store, freqarr, avg[dim], dim,
-                                     build_sliced_fitrange_list(
-                                         median_store, freq, exclarr, dim))
+                output_loop.tsub = tsub
+                themin, fitwindow = output_loop(
+                    median_store, freqarr, avg[dim], dim,
+                    build_sliced_fitrange_list(
+                        median_store, freq, exclarr, dim))
             except FitRangeInconsistency:
                 continue
 
             if themin is not None:
-                ret.append(themin)
+                ret[dim] = (themin, fitwindow)
 
-            print("saving plot as filename:", save_str)
+            if not nosave:
+                print("saving plot as filename:", save_str)
 
             if not nosave:
                 pdf.savefig()
 
             if not nosave:
                 plt.show()
+    return fill_conv_dict(ret, freqarr.shape[-1])
+
+def fill_conv_dict(todict, dimlen):
+    """Convert"""
+    ret = []
+    for i in range(dimlen):
+        if i not in todict:
+            ret.append((gvar.gvar(np.nan, np.nan), (0, np.inf)))
+        else:
+            ret.append(todict[i])
     return ret
 
 def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
@@ -433,24 +447,11 @@ def global_tmin(fit_range_arr, dim):
     the minimum t for a successful fit"""
     tmin = np.inf
     for i in fit_range_arr:
-        try:
-            dimi = i[dim]
-        except IndexError:
-            if isinstance(i[0], float):
-                dimi = i[0]
-            else:
-                print('i', i)
-                raise
-        if not isinstance(dimi, float):
-            try:
-                nmin = min(dimi)
-                nmin = int(nmin)
-            except TypeError:
-                print('i',i , dimi)
-                raise
+        if len(i) > 1:
+            tee = min([min(j) for j in i])
         else:
-            nmin = dimi
-        tmin = min(tmin, nmin)
+            tee = i[0]
+        tmin = min(tee, tmin)
     return tmin
 
 def global_tmax(fit_range_arr, dim):
@@ -458,24 +459,11 @@ def global_tmax(fit_range_arr, dim):
     the maximum t for a successful fit"""
     tmax = 0
     for i in fit_range_arr:
-        try:
-            dimi = i[dim]
-        except IndexError:
-            if isinstance(i[0], float):
-                dimi = i[0]
-            else:
-                print('i', i)
-                raise
-        if not isinstance(dimi, float):
-            try:
-                nmax = max(dimi)
-                nmax = int(nmax)
-            except TypeError:
-                print('i',i , dimi)
-                raise
+        if len(i) > 1:
+            tee = max([max(j) for j in i])
         else:
-            nmax = dimi
-        tmax = max(tmax, nmax)
+            tee = i[0]
+        tmax = max(tmax, tee)
     return tmax
 
 
@@ -489,12 +477,16 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
 
     tmin_allowed = 0
     tmax_allowed = np.inf
-    if output_loop.tadd > 0:
+    if output_loop.tadd:
         tmin_allowed = global_tmin(fit_range_arr, dim) + output_loop.tadd
-    if output_loop.tadd < 0:
-        tmax_allowed = global_tmax(fit_range_arr, dim) + output_loop.tadd
-    tmax = tmax_allowed + 1
+    if output_loop.tsub:
+        tmax_allowed = global_tmax(fit_range_arr, dim) + output_loop.tsub
 
+    fitwindow = (tmin_allowed, tmax_allowed)
+    #if output_loop.tsub:
+    #    print(fitwindow)
+        #print(global_tmax(fit_range_arr, dim))
+        #print(output_loop.tadd, output_loop.tsub)
     themin = None
     minprev = None
 
@@ -519,16 +511,11 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                 continue
 
         # global tmax cut
-        if max(fit_range[dim]) > tmax_allowed:
+        if max([max(i) for i in fit_range]) > tmax_allowed:
             continue
 
         # global min cut
-        if min(fit_range[dim]) < tmin_allowed:
-            continue
-
-        # running tmax cut
-        # if max([max(j) for j in fit_range]) >= tmax:
-        if max(fit_range[dim]) >= tmax:
+        if min([min(i) for i in fit_range]) < tmin_allowed:
             continue
 
         # mostly obsolete params
@@ -540,10 +527,10 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
         avg_diff = gvar.gvar(abs(avg_diff.val),
                              max(effmass.sdev, avg_dim.sdev))
 
-
         # compare this result to all other results
-        ind_diff, errstr, tmax_ind = diff_ind(effmass, np.array(median_err)[:, 0],
-                                              fit_range_arr, dim, tmax)
+        ind_diff, errstr, tmax_ind = diff_ind(
+            effmass, np.array(median_err)[:, 0], fit_range_arr, dim,
+            fitwindow)
 
         if themin is None:
             themin = effmass
@@ -569,7 +556,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                     maxdiff = np.inf
 
             # print the result
-            print(effmass, pval, fit_range)
+            printres(effmass, pval, fit_range)
 
             # keep track of largest errors; print the running max 
             if maxdiff == sig:
@@ -577,51 +564,68 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                 print(ind_diff)
                 print("")
 
+            # disagreement is between two subsets
+            # of multiple data points
+            disagree_multi_multi_point = len(
+                fit_range) > 1 and not isinstance(errstr, float)
+
             # fit range inconsistency found; error handling below
+            # I=2 fits to a constant,
+            # so we must look at all disagreements
             try:
-                assert sig < 1.5 or fake_err
+                assert sig < 1.5 or fake_err or not (
+                    disagree_multi_multi_point or ISOSPIN == 2)
             except AssertionError:
 
                 themin = minprev
 
-                # disagreement is between two subsets
-                # of multiple data points
-                disagree_multi_multi_point = len(
-                    fit_range) > 1 and not isinstance(errstr, float)
-
-                # I=2 fits to a constant,
-                # so we must look at all disagreements
-                if (disagree_multi_multi_point or ISOSPIN == 2):
-                    if isinstance(errstr, float):
-                        if errstr:
-                            print("disagreement (mass) with data point at t=",
-                                    errstr, 'dim:', dim, "sig =", sig)
-                            tmax1 = max(fit_range[dim])
-                            tmax1 = max(tmax1, errstr)
-                            print("current tmax1:", tmax1)
-                            tmax = min(tmax1, tmax)
-                            print("current tmax=", tmax)
-                            print("")
-                    else:
-                        #tmax1 = max([max(j) for j in fit_range[dim]])
+                if isinstance(errstr, float):
+                    if errstr:
+                        print("disagreement (mass) with data point at t=",
+                                errstr, 'dim:', dim, "sig =", sig)
                         tmax1 = max(fit_range[dim])
-                        tmax1 = max(tmax1, tmax_ind)
+                        tmax1 = max(tmax1, errstr)
                         print("current tmax1:", tmax1)
-                        tmax = min(tmax1, tmax)
-                        print("disagreement at", sig, "sigma")
-                        print(errstr, 'dim:', dim)
-                        print("current tmax=", tmax)
-                        #raise FitRangeInconsistency
+                        tmax_allowed = min(tmax1, tmax_allowed)
+                        print("current tmax=", tmax_allowed)
                         print("")
+                else:
+                    #tmax1 = max([max(j) for j in fit_range[dim]])
+                    tmax1 = max(fit_range[dim])
+                    tmax1 = max(tmax1, tmax_ind)
+                    print("current tmax1:", tmax1)
+                    tmax_allowed = min(tmax1, tmax_allowed)
+                    print("disagreement at", sig, "sigma")
+                    print(errstr, 'dim:', dim)
+                    print("current tmax=", tmax_allowed)
+                    print("")
+
+                raise FitRangeInconsistency
         else:
             # no differences found; print the result
             # skip effective mass points for I=0 fits (const+exp)
             if ISOSPIN == 2 or len(fit_range) != 1.0:
-                print(effmass, pval, fit_range)
-    print('p-value weighted median =', str(median))
-    print("p-value weighted mean =", avg_dim)
-    return themin
+                printres(effmass, pval, fit_range)
+    if themin is not None:
+        print('p-value weighted median =', str(median))
+        print("p-value weighted mean =", avg_dim)
+    return themin, fitwindow
 output_loop.tadd = 0
+output_loop.tsub = 0
+
+def printres(effmass, pval, fit_range):
+    """Print the result (and a header for the first result printed)"""
+    if not printres.prt:
+        print("val(err); pvalue; ind diff; median difference;",
+              " avg difference; fit range")
+        printres.prt = True
+    print(effmass, pval, fit_range)
+printres.prt = False
+
+def reset_header():
+    """Reset header at the beginning of the output loop"""
+    printres.prt = False
+
 
 def errfake(fit_range_dim, errstr):
     """Is the disagreement with an effective mass point outside of this
@@ -660,7 +664,7 @@ def addoffset(hist):
 
 ISOSPIN = 2
 
-def diff_ind(res, arr, fit_range_arr, dim, tmax):
+def diff_ind(res, arr, fit_range_arr, dim, fitwindow):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -681,12 +685,13 @@ def diff_ind(res, arr, fit_range_arr, dim, tmax):
 
         # tmax cut
         if hasattr(fit_range_arr[i][0], '__iter__'):
-            #tmax1 = max([max(j) for j in fit_range_arr[i]])
-            tmax1 = max(fit_range_arr[i][dim])
+            tmax = max([max(j) for j in fit_range_arr[i]])
+            tmin = max([max(j) for j in fit_range_arr[i]])
         else:
-            tmax1 = fit_range_arr[i][0]
+            tmax = fit_range_arr[i][0]
+            tmin = fit_range_arr[i][0]
             err2str = str((tmax1, gres))
-        if tmax1 >= tmax:
+        if tmax > fitwindow[1] or tmin < fitwindow[0]:
             continue
 
         if len(fit_range_arr[i]) == 1 and ISOSPIN != 2:
@@ -704,7 +709,7 @@ def diff_ind(res, arr, fit_range_arr, dim, tmax):
         if maxsig == sig and maxsig:
             maxdiff = np.abs(diff)
             maxerr = err
-            tmax_ind = max(tmax1, tmax_ind)
+            tmax_ind = max(tmax, tmax_ind)
             if len(fit_range_arr[i]) > 1:
                 errstr = "disagree:"+str(i)+" "+str(gres)+" "+str(
                     fit_range_arr[i])
