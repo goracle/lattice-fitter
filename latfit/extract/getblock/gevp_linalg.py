@@ -446,8 +446,8 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        if timeij + 1 == 13:
-            debug = False
+        if timeij + 1 == 12 + np.nan:
+            debug = True
         #if debug or timeij + 1 == 13:
         #    print("\nevals init", evals)
         fallback = True

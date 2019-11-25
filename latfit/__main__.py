@@ -24,7 +24,7 @@ from mpi4py import MPI
 from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
 from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
 from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
-from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS
+from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS, LT
 from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
@@ -91,7 +91,7 @@ except NameError:
     PROFILE = profile
 
 @PROFILE
-def fit(tadd=0):
+def fit(tadd=0, tsub=0):
     """Main for latfit"""
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
@@ -103,10 +103,12 @@ def fit(tadd=0):
 
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
-        if tadd:
-           print("tadd =", tadd) 
+        if tadd or tsub:
+           print("tadd =", tadd, "tsub =", tsub) 
            for _ in range(tadd):
                meta.incr_xmin()
+           for _ in range(tadd):
+               meta.decr_xmax()
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -620,7 +622,8 @@ if EFF_MASS:
                 # add structure in arr for backwards compatibility
                 arr = np.asarray([[i] for i in arr])
                 assert isinstance(err[0], float),\
-                    "error array does not have same structure as eff mass array"
+                    "error array does not have same structure as"+\
+                    " eff mass array"
                 err = np.asarray([[i] for i in err])
             assert len(arr.shape) == 2,\
                 "first dim is time, second dim is operator"
@@ -819,7 +822,8 @@ def errerr(param_err_arr):
         avgerr[i] = em.acmean(param_err_arr[:, i])
     return err, avgerr
 
-# obsolete, we should simply pick the model with the smallest errors and an adequate chi^2 (t^2)
+# obsolete, we should simply pick the model with the smallest errors
+# and an adequate chi^2 (t^2)
 @PROFILE
 def min_excl(min_arr):
     """Find the minimum reduced chisq (t^2) from all the fits considered"""
@@ -1138,20 +1142,24 @@ def main():
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-            flag = 1
-            tadd = 0
-            while flag: # this is basically the loop over tmin
-                reset_main(mintol) # reset the fitter for next fit
-                flag = 0 # flag stays 0 if fit succeeds
-                print("t indices:", i, j)
-                try:
-                    fit(tadd=tadd)
-                except (FitRangeInconsistency, FitFail):
-                    print("starting a new main() (inconsistent/fitfail)")
-                    flag = 1
-                    tadd += 1 # add this to tmin
-                except DOFNonPos: # exit the loop; we're totally out of dof
-                    break
+            for tsub in range(LT):
+                tadd = 0
+                flag = 1
+                while flag: # this is basically the loop over tmin
+                    reset_main(mintol) # reset the fitter for next fit
+                    flag = 0 # flag stays 0 if fit succeeds
+                    print("t indices:", i, j)
+                    try:
+                        fit(tadd=tadd, tsub=tsub)
+                    except (FitRangeInconsistency, FitFail):
+                        print("starting a new main()",
+                              "(inconsistent/fitfail)")
+                        flag = 1
+                        tadd += 1 # add this to tmin
+                    
+                    except DOFNonPos:
+                        # exit the loop; we're totally out of dof
+                        break
     print("End of t loop.  latfit exiting.")
 
 def reset_main(mintol):

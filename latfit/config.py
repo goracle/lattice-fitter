@@ -32,6 +32,7 @@ TLOOP = True
 TLOOP = False if not FIT else TLOOP
 # start indices (in case the fit exits early)
 TLOOP_START = (0, 0)
+TLOOP_START = (0, 0) if not FIT else TLOOP_START
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -41,17 +42,16 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 0
+ISOSPIN = 2
 
 # group irrep
 IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
+IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 
 if ISOSPIN == 1:
     # control
@@ -93,6 +93,7 @@ SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
 
 GEVP_DEBUG = True
 GEVP_DEBUG = False
+TLOOP = False if GEVP_DEBUG else TLOOP
 
 T0 = 'ROUND' # ceil(t/2)
 T0 = 'LOOP' # ceil(t/2)
@@ -638,7 +639,8 @@ PLOT_DISPERSIVE = False if not GEVP else True
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
 DECREASE_VAR = 1
-DECREASE_VAR = 1e-4
+DECREASE_VAR = 1e-0
+DECREASE_VAR = 1e-6
 DECREASE_VAR = 1 if not GEVP else DECREASE_VAR
 
 # delete operators which plausibly give rise to negative eigenvalues
@@ -947,4 +949,5 @@ sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
 sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
-assert len(fit_func(3, START_PARAMS)) == MULT
+if FIT:
+    assert len(fit_func(3, START_PARAMS)) == MULT

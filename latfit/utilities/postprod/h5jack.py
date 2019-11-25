@@ -75,7 +75,6 @@ TSEP = 3
 TDIS_MAX = 16
 TSTEP = 8
 
-
 #### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
 
 def tdismax():
