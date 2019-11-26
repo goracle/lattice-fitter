@@ -4,7 +4,6 @@ all getblock module energy related functionality is contained here
 import sys
 from collections import deque
 import numpy as np
-from mpi4py import MPI
 
 from latfit.utilities import exactmean as em
 from latfit.mathfun.proc_meff import proc_meff
@@ -37,7 +36,7 @@ from latfit.config import DECREASE_VAR, ISOSPIN
 from latfit.config import HINTS_ELIM
 from latfit.config import REINFLATE_BEFORE_LOG
 
-MPIRANK = MPI.COMM_WORLD.rank
+#MPIRANK = MPI.COMM_WORLD.rank
 
 #if STYPE == 'hdf5':
 def getline_loc(filetup, num):

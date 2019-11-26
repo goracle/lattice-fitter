@@ -6,12 +6,12 @@ from mpi4py import MPI
 
 SENT = object()
 
-MPIRANK = MPI.COMM_WORLD.rank
+#MPIRANK = MPI.COMM_WORLD.rank
 
 class NegLogArgument(Exception):
     """Exception for bad jackknife distribution"""
     def __init__(self, arg=None, message='', corrs=None, no_print=False):
-        if not no_print and MPIRANK == 0:
+        if not no_print:
             warn("argument to log in eff. mass"+" calc is than 0: "+str(
                 arg))
             print("argument to log in effective mass",
@@ -61,7 +61,6 @@ def testsol(sol, corrs, times=None):
             if times[0] not in testsol.problemtimes:
                 no_print = False
                 testsol.problemtimes.append(times[0])
-                if MPIRANK == 0:
-                    print("problematic time slices:", times)
+                print("problematic time slices:", times)
         raise NegLogArgument(arg=sol, corrs=corrs, no_print=no_print)
 testsol.problemtimes = []

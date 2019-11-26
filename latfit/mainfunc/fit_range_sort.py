@@ -11,6 +11,7 @@ from latfit.mainfunc.metaclass import filter_sparse
 from latfit.singlefit import singlefit
 import latfit.singlefit
 
+assert not BIASED_SPEEDUP
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -298,7 +299,8 @@ def sort_fit_ranges(meta, tsorted, sampler):
                 break
             #if MULT == 1 or lenprod == 1:
             #    break
-            if i == 0 and MPIRANK == 0:
+            #if i == 0 and MPIRANK == 0:
+            if not i:
                 print("Setting up sorting of exhaustive "+\
                         "list of fit ranges")
             sampi = sortfit.sortcombinations(
@@ -313,7 +315,7 @@ def get_tsorted(plotdata):
     for i in range(MULT):
         #if MULT == 1:
         #    break
-        if i == 0 and MPIRANK == 0:
+        if not i:
             print("Finding best times ("+\
                     "most likely to give small chi^2 (t^2) contributions)")
         if MULT > 1 or GEVP:

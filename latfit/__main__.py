@@ -146,9 +146,9 @@ def fit(tadd=0, tsub=0):
             for idx in range(meta.lenprod):
 
                 # parallelize loop
-                if idx % MPISIZE != MPIRANK:
+                #if idx % MPISIZE != MPIRANK:
                     #print("mpi skip")
-                    continue
+                    #continue
 
                 # exit the fit loop?
                 if frsort.exitp(meta, min_arr, overfit_arr, idx):
@@ -191,11 +191,10 @@ def fit(tadd=0, tsub=0):
 
                 min_arr, overfit_arr = mpi_gather(min_arr, overfit_arr)
 
-            if MPIRANK == 0:
-
-                test = post_loop(meta,
-                                 (min_arr, overfit_arr),
-                                 plotdata, retsingle_save, test_success)
+            #if MPIRANK == 0:
+            test = post_loop(meta,
+                             (min_arr, overfit_arr),
+                             plotdata, retsingle_save, test_success)
 
         else:
             nofit_plot(meta, plotdata, retsingle_save)
@@ -221,15 +220,15 @@ def old_fit_style(meta, trials, plotdata):
 
 def nofit_plot(meta, plotdata, retsingle_save):
     """No fit scatter plot """
-    if MPIRANK == 0:
-        if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
-            retsingle = sfit.singlefit(
-                meta.input_f, meta.fitwindow, meta.options.xmin,
-                meta.options.xmax, meta.options.xstep)
-            plotdata.coords, plotdata.cov = retsingle
-        else:
-            plotdata.coords, plotdata.cov = retsingle_save
-        mkplot.mkplot(plotdata, meta.input_f)
+    #if MPIRANK == 0:
+    if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
+        retsingle = sfit.singlefit(
+            meta.input_f, meta.fitwindow, meta.options.xmin,
+            meta.options.xmax, meta.options.xstep)
+        plotdata.coords, plotdata.cov = retsingle
+    else:
+        plotdata.coords, plotdata.cov = retsingle_save
+    mkplot.mkplot(plotdata, meta.input_f)
 
 
 def post_loop(meta, loop_store, plotdata,
@@ -1154,6 +1153,10 @@ def main():
                     reset_main(mintol) # reset the fitter for next fit
                     flag = 0 # flag stays 0 if fit succeeds
                     print("t indices:", i, j)
+
+                    # parallelize loop
+                    if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK:
+                        continue
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         if not test:
