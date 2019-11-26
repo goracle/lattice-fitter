@@ -511,8 +511,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 print("votes", votes, "soft_votes", soft_votes)
             votes.extend(soft_votes)
             dot_map = votes_to_map(votes, stop=stop_votes_len, debug=debug)
-        elif len(votes) >= 2:
-            dot_map = votes_to_map(votes, debug=debug)
         if debug:
             print("final votes", votes)
             print("final dot map:", dot_map)
