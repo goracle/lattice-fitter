@@ -1151,12 +1151,12 @@ def main():
             for tsub in range(LT):
                 tadd = 0
                 flag = 1
-                while flag: # this is basically the loop over tmin
+                while flag and tadd <= LT: # this is basically the loop over tmin
                     reset_main(mintol) # reset the fitter for next fit
                     print("t indices:", i, j)
 
                     # parallelize loop
-                    if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK:
+                    if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK and MPISIZE > 1:
                         tadd += 1
                         continue
                     try:
