@@ -40,7 +40,7 @@ def earliest_time(fname):
             tmin = i
         elif tmax is None:
             tmax = i
-    dtee = max(dtee, tminus)
+    dtee += tminus
     assert tmin is not None, str(fname)
     assert tmax is not None, str(fname)
     ret = tmin-dtee

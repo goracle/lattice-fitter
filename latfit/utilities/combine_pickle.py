@@ -10,7 +10,6 @@ def main():
     """main"""
     ret = []
     outfn = start_str(sys.argv[1:])
-    outfn = outfn + '.cp'
     shape = ()
     res_mean = None
     err_check = None
@@ -78,6 +77,7 @@ def main():
         pass
     #print("final shape:", ret.shape)
     print("finished combining:", sys.argv[1:])
+    outfn = outfn + '_tmin' + str(int(early)) + '.cp'
     print("writing results into file:", outfn)
     earlylist = prune_earlylist(earlylist)
     print("earliest time:", early, "from:")

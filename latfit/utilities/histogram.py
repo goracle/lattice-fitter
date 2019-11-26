@@ -67,7 +67,7 @@ def main(nosave=True):
         print_tot(tot)
     else:
         for fname in sys.argv[1:]:
-            min_res, _ = make_hist(fname, nosave=nosave)
+            min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
 
 def print_tot(tot):
@@ -101,21 +101,68 @@ def plot_t_dep(tot, dim, item_num, title, units):
     print("plotting t dependence of dim", dim, "item:", title)
     yarr = []
     yerr = []
-    xticks = []
-    for i in tot:
-        item, fitwin = i[dim][item_num]
+    xticks_min = []
+    xticks_max = []
+    itemprev = None
+    fitwinprev = None
+    tot_new = [i[dim][item_num] for i in tot if not np.isnan(
+        gvar.gvar(i[dim][item_num][0]).val)]
+    for item, fitwin in tot_new:
         item = gvar.gvar(item)
+        trfitwin = (fitwin[0], fitwin[1] + 1)
+        if item == itemprev and trfitwin == fitwinprev and len(tot_new) > 10:
+            # decreasing tmax while holding tmin fixed will usually
+            # not change the min, so don't plot these
+            fitwinprev = fitwin
+            itemprev = item
+            print("omitting (item, dim, val(err), fitwindow):",
+                  title, dim, item, fitwin)
+            continue
         if np.isnan(item.val):
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        xticks.append(str(fitwin))
-    xarr = range(len(xticks))
-    plt.xticks(xarr, xticks)
-    plt.errorbar(xarr, yarr, yerr=yerr)
-    plt.xlabel('fit window (tmin, tmax) (lattice units)')
-    plt.ylabel(title+' ('+units+')')
-    plt.title(title+' vs. '+'fit window; state '+str(dim))
+        xticks_min.append(str(fitwin[0]))
+        xticks_max.append(str(fitwin[1]))
+        fitwinprev = fitwin
+        itemprev = item
+    xarr = list(range(len(xticks_min)))
+    assert len(xticks_min) == len(xticks_max)
+
+    fname = sys.argv[1]
+
+    tmin = int(fname.split('tmin')[1].split('.')[0])
+
+    save_str = re.sub('phase_shift_', '', fname)
+    save_str = re.sub('energy_', '', save_str)
+    save_str = re.sub(' ', '_', save_str)
+    save_str = re.sub(r'.p$', '_tdep_'+title+'_state'+str(
+        dim)+'.pdf', save_str)
+
+    with PdfPages(save_str) as pdf:
+        ax1 = plt.subplot(1,1,1)
+        ax1.errorbar(xarr, yarr, yerr=yerr, linestyle="None")
+        ax1.set_xticks(xarr)
+        ax1.set_xticklabels(xticks_min)
+        ax1.set_xlabel('fit window tmin (lattice units)')
+        ax1.set_ylabel(title+' ('+units+')')
+
+        ax2 = ax1.twiny()
+        ax2.set_xticks(xarr)
+        ax2.set_xticklabels(xticks_max)
+        ax2.set_xlabel('fit window tmax (lattice units)')
+        ax2.set_xlim(ax1.get_xlim())
+
+        # ok
+        #ax2.xaxis.set_ticks_position('bottom') # set the position of the second x-axis to bottom
+        #ax2.xaxis.set_label_position('bottom') # set the position of the second x-axis to bottom
+        #ax2.spines['bottom'].set_position(('outward', 36))
+
+        ax2.set_title(title+' vs. '+'fit window; state '+str(
+            dim)+","+r' $t_{min,param}=$'+str(tmin), y=1.12)
+        plt.subplots_adjust(top=0.85)
+        print("saving fig:", save_str)
+        pdf.savefig()
     plt.show()
 
 def print_compiled_res(min_en, min_ph):
@@ -475,12 +522,10 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
     usegevp = gevpp(freqarr)
     used = set()
 
-    tmin_allowed = 0
-    tmax_allowed = np.inf
-    if output_loop.tadd:
-        tmin_allowed = global_tmin(fit_range_arr, dim) + output_loop.tadd
-    if output_loop.tsub:
-        tmax_allowed = global_tmax(fit_range_arr, dim) + output_loop.tsub
+    #tmin_allowed = 0
+    #tmax_allowed = np.inf
+    tmin_allowed = global_tmin(fit_range_arr, dim) + output_loop.tadd
+    tmax_allowed = global_tmax(fit_range_arr, dim) + output_loop.tsub
 
     fitwindow = (tmin_allowed, tmax_allowed)
     #if output_loop.tsub:
