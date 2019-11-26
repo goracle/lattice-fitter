@@ -1156,7 +1156,7 @@ def main():
                     print("t indices:", i, j)
 
                     # parallelize loop
-                    if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK and MPISIZE > 1:
+                    if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK and MPISIZE > 1:
                         tadd += 1
                         continue
                     else:
