@@ -1,5 +1,7 @@
 """Utilities to sort fit ranges, skip fit ranges"""
 import numpy as np
+import mpi4py
+mpi4py.rc.recv_mprobe = False
 from mpi4py import MPI
 import latfit.analysis.sortfit as sortfit
 from latfit.config import ISOSPIN, GEVP, MAX_RESULTS

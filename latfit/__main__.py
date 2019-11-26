@@ -19,6 +19,8 @@ import time
 import sys
 import pickle
 import numpy as np
+import mpi4py
+mpi4py.rc.recv_mprobe = False
 from mpi4py import MPI
 
 from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
