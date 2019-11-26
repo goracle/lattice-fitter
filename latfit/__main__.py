@@ -107,7 +107,7 @@ def fit(tadd=0, tsub=0):
            print("tadd =", tadd, "tsub =", tsub) 
            for _ in range(tadd):
                meta.incr_xmin()
-           for _ in range(tadd):
+           for _ in range(tsub):
                meta.decr_xmax()
         print("Trying initial test fit.")
         start = time.perf_counter()
@@ -193,15 +193,16 @@ def fit(tadd=0, tsub=0):
 
             if MPIRANK == 0:
 
-                post_loop(meta,
-                          (min_arr, overfit_arr),
-                          plotdata, retsingle_save, test_success)
+                test = post_loop(meta,
+                                 (min_arr, overfit_arr),
+                                 plotdata, retsingle_save, test_success)
 
         else:
             nofit_plot(meta, plotdata, retsingle_save)
     else:
         old_fit_style(meta, trials, plotdata)
     print("END STDOUT OUTPUT")
+    return test
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style
@@ -237,6 +238,8 @@ def post_loop(meta, loop_store, plotdata,
     result_min = {}
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)
+    # did anything succeed?
+    test = False if not list(min_arr) and not meta.random_fit else True
     if not meta.skiploop:
 
         result_min = find_mean_and_err(meta, min_arr)
@@ -281,6 +284,8 @@ def post_loop(meta, loop_store, plotdata,
     # plot the result
     mkplot.mkplot(plotdata, meta.input_f, result_min,
                   param_err, meta.fitwindow)
+
+    return test
 
 @PROFILE
 def combine_results(result_min, result_min_close,
@@ -1150,7 +1155,9 @@ def main():
                     flag = 0 # flag stays 0 if fit succeeds
                     print("t indices:", i, j)
                     try:
-                        fit(tadd=tadd, tsub=tsub)
+                        test = fit(tadd=tadd, tsub=tsub)
+                        if not test:
+                            break
                     except (FitRangeInconsistency, FitFail):
                         print("starting a new main()",
                               "(inconsistent/fitfail)")
