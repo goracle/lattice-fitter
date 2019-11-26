@@ -18,7 +18,7 @@ import gvar
 from latfit.utilities import read_file as rf
 from latfit.config import fit_func, MOMSTR, L_BOX
 from latfit.config import FINE
-from latfit.config import TITLE
+from latfit.config import TITLE, TLOOP
 from latfit.config import XLABEL
 from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR, UNCORR_OP
@@ -127,28 +127,29 @@ def mkplot(plotdata, input_f,
         return 0
 
     # DO PLOT
-    with PdfPages(file_str) as pdf:
-        print("file name of saved plot:", file_str)
-        plot_errorbar(dimops, xcoord, ycoord, error2)
+    if not TLOOP:
+        with PdfPages(file_str) as pdf:
+            print("file name of saved plot:", file_str)
+            plot_errorbar(dimops, xcoord, ycoord, error2)
 
-        #plot dispersion analysis
-        if PLOT_DISPERSIVE:
-            plot_dispersive(xcoord)
+            #plot dispersion analysis
+            if PLOT_DISPERSIVE:
+                plot_dispersive(xcoord)
 
-        if FIT:
-            # plot fit function
-            plot_fit(plotdata.fitcoord, result_min_mod, dimops)
+            if FIT:
+                # plot fit function
+                plot_fit(plotdata.fitcoord, result_min_mod, dimops)
 
-            # tolerance box plot
-            if EFF_MASS and BOX_PLOT:
-                plot_box(plotdata.fitcoord, result_min_mod, param_err,
-                         dimops)
+                # tolerance box plot
+                if EFF_MASS and BOX_PLOT:
+                    plot_box(plotdata.fitcoord, result_min_mod, param_err,
+                            dimops)
 
-            annotate(dimops_mod, result_min_mod, param_err,
-                     param_chisq, plotdata.coords)
+                annotate(dimops_mod, result_min_mod, param_err,
+                        param_chisq, plotdata.coords)
 
-        # save, output
-        do_plot(title, pdf)
+            # save, output
+            do_plot(title, pdf)
 
     return 0
 
@@ -563,11 +564,13 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
             ycurve = np.array([ycoord[i][curve_num]
                                for i in range(lcoord)])
             yerr = np.array([error2[i][curve_num] for i in range(lcoord)])
-            plt.errorbar(xcoord, ycurve, yerr=yerr,
-                         linestyle='None', ms=3.75, marker=next(marker),)
+            if not TLOOP:
+                plt.errorbar(xcoord, ycurve, yerr=yerr,
+                             linestyle='None', ms=3.75, marker=next(marker),)
     else:
-        plt.errorbar(xcoord, ycoord, yerr=error2,
-                     linestyle='None', ms=3.75, marker='o')
+        if not TLOOP:
+            plt.errorbar(xcoord, ycoord, yerr=error2,
+                         linestyle='None', ms=3.75, marker='o')
 
 def interleave_energies_systematic(result_min):
     """Combine the energies and systematic parameters for final result"""
@@ -628,7 +631,8 @@ def plot_fit(xcoord, result_min, dimops):
             continue
         # only plot fit function if minimizer result makes sense
         # if result_min.misc.status == 0:
-        plt.plot(xfit[curve_num], yfit)
+        if not TLOOP:
+            plt.plot(xfit[curve_num], yfit)
 
 def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
     """Return the abscissa for the plot of the fit function."""
@@ -658,7 +662,8 @@ def plot_box(xcoord, result_min, param_err, dimops):
     """plot tolerance box around straight line fit for effective mass
     assumes xstep = 1
     """
-    axvar = plt.gca()
+    if not TLOOP:
+        axvar = plt.gca()
     # gca, gcf = getcurrentaxes getcurrentfigure
     fig = plt.gcf()
     xfit = get_xfit(dimops, xcoord, 1, box_plot=True)
@@ -841,11 +846,13 @@ if UNCORR:
         """Annotate plot with uncorr"""
         ldisp = len(DISP_ENERGIES)
         if dimops > 1:
-            plt.annotate("Uncorrelated fit.", xy=(0.05,
-                                                  0.90-(ldisp+dimops)*0.05),
+            if not TLOOP:
+                plt.annotate("Uncorrelated fit.", xy=(
+                    0.05, 0.90-(ldisp+dimops)*0.05),
                          xycoords='axes fraction')
         else:
-            plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
+            if not TLOOP:
+                plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")
 
 
 else:
