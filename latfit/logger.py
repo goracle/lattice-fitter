@@ -22,12 +22,14 @@ class Logger(object):
             self.log = open("fit.log", "a")
         else:
             self.log = open("fit_"+str(fname)+".log", "a")
+        self.flush()
 
     @PROFILE
     def write(self, message):
         """write to log"""
         self.terminal.write(message)
         self.log.write(message)
+        self.flush()
 
     @PROFILE
     def flush(self):
@@ -35,7 +37,7 @@ class Logger(object):
         this handles the flush command by doing nothing.
         you might want to specify some extra behavior here.
         """
-        pass
+        self.terminal.flush()
 
 
 @PROFILE

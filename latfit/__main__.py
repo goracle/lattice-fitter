@@ -1153,14 +1153,15 @@ def main():
                 flag = 1
                 while flag: # this is basically the loop over tmin
                     reset_main(mintol) # reset the fitter for next fit
-                    flag = 0 # flag stays 0 if fit succeeds
                     print("t indices:", i, j)
 
                     # parallelize loop
                     if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK:
+                        tadd += 1
                         continue
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
+                        flag = 0 # flag stays 0 if fit succeeds
                         if not test:
                             break
                     except (FitRangeInconsistency, FitFail):
