@@ -1159,6 +1159,8 @@ def main():
                     if 1000*j+100*i+10*tsub+tadd % MPISIZE == MPIRANK and MPISIZE > 1:
                         tadd += 1
                         continue
+                    else:
+                        print("tadd, tsub, MPIRANK", tadd, tsub, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
