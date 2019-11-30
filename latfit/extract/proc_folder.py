@@ -2,6 +2,7 @@
 import re
 import os
 import sys
+import copy
 import linecache
 import numpy as np
 import h5py
@@ -23,6 +24,21 @@ if STYPE == 'hdf5':
             0]][:, ctime])
 
     def proc_folder(hdf5_file, ctime, other_regex=""):
+        """Check cache, otherwise, proc_folder"""
+        key = (hdf5_file, ctime)
+        if key in proc_folder.cache:
+            out = copy.deepcopy(np.array(np.copy(proc_folder.cache[key])))
+            out = np.asarray(out)
+        else:
+            out = proc_folder_get(hdf5_file, ctime, other_regex)
+            proc_folder.cache[key] = copy.deepcopy(np.array(np.copy(out)))
+            proc_folder.cache[key] = np.asarray(proc_folder.cache[key])
+        return out
+    proc_folder.sent = object()
+    proc_folder.prefix = GROUP_LIST[0]
+    proc_folder.cache = {}
+        
+    def proc_folder_get(hdf5_file, ctime, other_regex=""):
         """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:
             pass
@@ -61,8 +77,6 @@ if STYPE == 'hdf5':
         #out = halftotal(out, ctime=ctime,override='first half')
         out = binout(out)
         return out
-    proc_folder.sent = object()
-    proc_folder.prefix = GROUP_LIST[0]
 
     def roundtozero(arr, ctime, opdim=(None, None)):
         """If the correlator is close to 0,

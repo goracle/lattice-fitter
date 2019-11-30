@@ -71,6 +71,7 @@ def powerset(iterable):
 def update_num_configs(num_configs=None, input_f=None):
     """Update the number of configs in the case that FIT is False.
     """
+    assert None, "not supported"
     num_configs = -1 if num_configs is None else num_configs
     if not FIT and STYPE == 'hdf5' and num_configs == -1:
         infile = input_f if input_f is not None else\
@@ -263,6 +264,7 @@ class FitRangeMetaData:
         plotdata.fitcoord = self.fit_coord()
         trials = trials_err(self.options.trials)
         if STYPE != 'hdf5':
+            assert None, "not supported"
             update_num_configs(input_f=(
                 self.input_f if not GEVP else None))
 
