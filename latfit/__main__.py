@@ -104,12 +104,6 @@ def fit(tadd=0, tsub=0):
 
     if trials == -1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
-        if tadd or tsub:
-           print("tadd =", tadd, "tsub =", tsub) 
-           for _ in range(tadd):
-               meta.incr_xmin()
-           for _ in range(tsub):
-               meta.decr_xmax()
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -120,7 +114,15 @@ def fit(tadd=0, tsub=0):
         # update the known exclusion information with plot points
         # which are nan (not a number) or
         # which have error bars which are too large
+        # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
+        if tadd or tsub:
+           print("tadd =", tadd, "tsub =", tsub) 
+           for _ in range(tadd):
+               meta.incr_xmin()
+           for _ in range(tsub):
+               meta.decr_xmax()
+
         if FIT:
 
             ## allocate results storage, do second initial test fit
