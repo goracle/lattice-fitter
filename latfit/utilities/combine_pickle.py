@@ -77,7 +77,10 @@ def main():
         pass
     #print("final shape:", ret.shape)
     print("finished combining:", sys.argv[1:])
-    outfn = outfn + '_tmin' + str(int(early)) + '.cp'
+    if outfn[-1] != '_':
+        outfn = outfn + '_tmin' + str(int(early)) + '.cp'
+    else:
+        outfn = outfn + 'tmin' + str(int(early)) + '.cp'
     print("writing results into file:", outfn)
     earlylist = prune_earlylist(earlylist)
     print("earliest time:", early, "from:")
