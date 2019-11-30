@@ -73,16 +73,15 @@ ACCEPT_ERRORS_INIT = (NegChisq, RelGammaError, NoConvergence,
 
 
 # for subsequent fits
-ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence,OverflowError, 
-                 BadJackknifeDist, DOFNonPosFit, EnergySortError,
-                 TooManyBadFitsError, XmaxError,
-                 BadChisq, ZetaError)
+ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError, 
+                 EnergySortError, TooManyBadFitsError, BadJackknifeDist,
+                 DOFNonPosFit, BadChisq, ZetaError, XmaxError)
 
 # for final representative fit.  dof should be deterministic, so should work
 # (at least)
 ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
-                     OverflowError, BadJackknifeDist, EnergySortError,
-                     TooManyBadFitsError, BadChisq, ZetaError)
+                     OverflowError, EnergySortError, TooManyBadFitsError,
+                     BadJackknifeDist, BadChisq, ZetaError)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -795,8 +794,6 @@ def divbychisq(param_arr, pvalue_arr):
     return ret
 
 
-
-
 @PROFILE
 def closest_fit_to_avg(result_min_avg, min_arr):
     """Find closest fit to average fit
@@ -992,6 +989,15 @@ def dofit_second_initial(meta, retsingle_save, test_success):
                                                  meta.options.xstep)
             print("Test fit succeeded.")
             test_success = True
+
+    except XmaxError as err:
+        test_success = False
+        try:
+            meta = xmax_err(meta, err)
+        except XminError as err2:
+            meta = xmax_err(meta, err2)
+        plotdata.fitcoord = meta.fit_coord()
+        fit_range_init = None
     except ACCEPT_ERRORS as err:
         print("fit failed (acceptably) with error:",
               err.__class__.__name__)
