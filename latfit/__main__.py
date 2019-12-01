@@ -97,6 +97,9 @@ def fit(tadd=0, tsub=0):
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
+    if tadd or tsub:
+        print("tadd =", tadd, "tsub =", tsub) 
+
     meta = FitRangeMetaData()
     trials, plotdata, dump_fit_range.fn1 = meta.setup(plotdata)
 
@@ -116,12 +119,6 @@ def fit(tadd=0, tsub=0):
         # which have error bars which are too large
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
-        if tadd or tsub:
-           print("tadd =", tadd, "tsub =", tsub) 
-           for _ in range(tadd):
-               meta.incr_xmin()
-           for _ in range(tsub):
-               meta.decr_xmax()
 
         if FIT:
 
@@ -129,7 +126,8 @@ def fit(tadd=0, tsub=0):
             ## (if necessary)
             start = time.perf_counter()
             min_arr, overfit_arr, retsingle_save, fit_range_init = \
-                dofit_second_initial(meta, retsingle_save, test_success)
+                dofit_second_initial(meta, retsingle_save, test_success,
+                                     (tadd, tsub))
             print("Total elapsed time =",
                   time.perf_counter()-start, "seconds")
 
@@ -966,7 +964,7 @@ def dofit_initial(meta, plotdata):
     # plotdata, meta, test_success, fit_range_init
     return (meta, plotdata, test_success, retsingle_save)
 
-def dofit_second_initial(meta, retsingle_save, test_success):
+def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
     """Do second initial test fit and cut on error size"""
 
     # store different excluded, and the avg chisq/dof (t^2/dof)
@@ -974,8 +972,19 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     overfit_arr = [] # allow overfits if no usual fits succeed
 
     # cut late time points from the fit range
-    samerange = frsort.cut_on_errsize(meta) # did we make any cuts?
+    # did we make any cuts?
+    samerange = frsort.cut_on_errsize(meta)
     samerange = frsort.cut_on_growing_exp(meta) and samerange
+
+    # tadd tsub cut
+    tadd, tsub = tadd_sub
+    if tadd or tsub:
+        print("tadd =", tadd, "tsub =", tsub) 
+        for _ in range(tadd):
+            meta.incr_xmin()
+        for _ in range(tsub):
+            meta.decr_xmax()
+        partial_reset()
 
     fit_range_init = str(latfit.config.FIT_EXCL)
     print("Trying second initial fit with excluded times:",
@@ -985,13 +994,16 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             print("Trying second test fit.")
             print("fit excl:", fit_range_init)
             retsingle_save = sfit.singlefit(meta.input_f,
-                                                 meta.fitwindow,
-                                                 meta.options.xmin,
-                                                 meta.options.xmax,
-                                                 meta.options.xstep)
+                                            meta.fitwindow,
+                                            meta.options.xmin,
+                                            meta.options.xmax,
+                                            meta.options.xstep)
             print("Test fit succeeded.")
             test_success = True
-
+    except AssertionError:
+        print(meta.input_f, meta.fitwindow, meta.options.xmin,
+              meta.options.xmax, meta.options.xstep)
+        raise
     except XmaxError as err:
         test_success = False
         try:
@@ -1159,12 +1171,13 @@ def main():
             for tsub in range(LT):
                 tadd = 0
                 flag = 1
-                while flag and tadd <= LT: # this is basically the loop over tmin
+                while flag and tadd <= LT: # this is the tmin loop
                     reset_main(mintol) # reset the fitter for next fit
                     print("t indices:", i, j)
 
                     # parallelize loop
-                    if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK and MPISIZE > 1:
+                    if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
+                       and MPISIZE > 1:
                         tadd += 1
                         continue
                     else:
@@ -1190,6 +1203,10 @@ def reset_main(mintol):
     latfit.config.MINTOL = mintol
     latfit.config.FIT_EXCL = np.copy(EXCL_ORIG)
     latfit.config.FIT_EXCL = [list(i) for i in latfit.config.FIT_EXCL]
+    partial_reset()
+
+def partial_reset():
+    """Partial reset during tloop"""
     glin.reset_sortevals()
     sfit.singlefit_reset()
 
