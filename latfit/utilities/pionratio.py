@@ -190,8 +190,7 @@ def effparams(corrorig, dt1, dt2=None, tsrc=None):
     except FloatingPointError:
         #print('floating point error in correlator log.')
         #print("args:")
-        for i, rat in enumerate(np.real(corr[:, tmin])/np.real(
-                corr[:, tmax])):
+        for rat in np.real(corr[:, tmin])/np.real(corr[:, tmax]):
             # if imaginary energy
             # (either numerator or denominator has decayed completely)
             # set amps to NaN
@@ -256,7 +255,7 @@ def append_energy_amps(loop, ttup, corr, gflag):
 
     num, ratio = loop
     tmin, tmax = ttup
-    energies = []
+    #energies = []
 
     assert ratio
 
@@ -404,7 +403,8 @@ def morecorr(amp, expo, tdis, dt2, corr):
     pow1 = tdis-dt2
     corr = np.real(corr)
     corr_ancillary = np.copy(np.roll(corr, pow1, axis=1))
-    if tdis < LT/4 and tdis > pow1 and False:
+    #if tdis < LT/4 and tdis > pow1 and False:
+    if False:
         assert None, "not supported"
         newpi1 = np.copy(corr)[:, tdis]
         newpi2 = np.copy(corr*simpledivide(corr/corr_ancillary, pow1))
@@ -478,19 +478,20 @@ def innerouter(top1pair, top2pair, mompair):
     return ret
 
 
-def avgtsrc(top, pstr):
+#def avgtsrc(top, pstr):
+def avgtsrc(top, _):
     """Average over tsrc """
-    pr1 = np.any(np.isnan(top))
+    #pr1 = np.any(np.isnan(top))
     if DELETE_TSRC:
         assert np.asarray(top).shape[1] == LT
         top1 = np.delete(top, skiplist(), axis=1)
     else:
         top1 = top
     ret = em.acmean(top1, axis=1)
-    if pr1 and not MPIRANK:
+    #if pr1 and not MPIRANK:
         #print(pstr)
-        for i in ret[0]:
-            pass
+        #for i in ret[0]:
+        #    pass
             #print(i)
     return ret
 
@@ -938,7 +939,6 @@ def do_ratio(ptotstr, dosub):
     hn1[filesplit[0]+'_pionratio'] = c_pipiminus/pionminus
     hn1.close()
     print("Finished with", sys.argv[1])
-    return
 
 
 @PROFILE

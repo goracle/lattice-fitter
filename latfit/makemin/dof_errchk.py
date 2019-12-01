@@ -1,5 +1,4 @@
 """Check to make sure dof>0"""
-import sys
 from latfit.config import START_PARAMS
 from latfit.config import AUTO_FIT
 from latfit.config import FIT

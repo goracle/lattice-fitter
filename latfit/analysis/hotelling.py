@@ -24,7 +24,7 @@ def getcor(dof, em1, dee2):
     """Get correction to F distribution"""
     cor = dof*em1/dee2
     return cor
-    
+
 
 def avg(dof, nconf):
     """Compute the average of the hotelling t^2 dist."""
@@ -41,4 +41,3 @@ def hstr(dof, nconf):
     mean = avg(dof, nconf)
     ret = 'Hotelling (variance, mean):'+str(vare)+", "+str(mean)
     return ret
-

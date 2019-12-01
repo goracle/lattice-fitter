@@ -11,14 +11,13 @@ from matplotlib.mlab import PCA
 
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
-from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.extract.getblock.gevp_linalg import variance_reduction
 from latfit.extract.getblock.gevp_linalg import printevecs, convtosmat
 from latfit.extract.getblock.gevp_linalg import finaleval_imag_check
 from latfit.extract.getblock.gevp_linalg import all0imag_ignorenan, makeneg
 from latfit.extract.getblock.gevp_linalg import checkherm, inflate_with_nan
 from latfit.extract.getblock.gevp_linalg import removerowcol, check_solve
-from latfit.extract.getblock.gevp_linalg import bracket, cmatdot, defsign
+from latfit.extract.getblock.gevp_linalg import defsign
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity
 from latfit.extract.getblock.gevp_linalg import is_pos_semidef, check_bracket
 from latfit.extract.getblock.gevp_linalg import log_matrix, drop0imag
@@ -121,7 +120,7 @@ def solve_gevp(c_lhs, c_rhs=None):
             dimops, dimremaining, toelim, c_lhs, c_rhs)
         # find the maximum number of non-negative entries
         if dimdeldict:
-            dimdel = dimdeldict[max([count for count in dimdeldict])]
+            dimdel = dimdeldict[max(dimdeldict)]
             c_lhs = removerowcol(c_lhs, dimdel)
             c_rhs = removerowcol(c_rhs,
                                  dimdel) if c_rhs is not None else c_rhs
@@ -184,7 +183,7 @@ def get_eigvals(c_lhs, c_rhs, print_evecs=False,
         get_eigvals.sent = True
     eigvals, evecs = solve_gevp(c_lhs, c_rhs)
     #checkgteq0(eigvals)
-    late = False if all0imag_ignorenan(eigvals) else True
+    late = not all0imag_ignorenan(eigvals)
     try:
         assert not late
     except AssertionError:
@@ -304,10 +303,8 @@ def comm_correct_evp(c_lhs, c_rhs, late, eigvals):
             if USE_LATE_TIMES and not skip_late and late:
                 eigvals, _ = solve_gevp(c_lhs_new)
                 break
-            else:
-                print("late, skip_late, eigvals", late, skip_late, eigvals)
-                sys.exit(1)
-                raise ImaginaryEigenvalue
+            print("late, skip_late, eigvals", late, skip_late, eigvals)
+            raise ImaginaryEigenvalue
     return eigvals, commutator_norm, commutator_norms
 
 def neg_op_trials(dimops, dimremaining, toelim, c_lhs, c_rhs=None):

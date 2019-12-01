@@ -92,9 +92,8 @@ def getopstr(opstr):
     for i, sub in enumerate(split):
         if 'pipi' in sub or 'sigma' in sub or 'rho' in sub:
             continue
-        else:
-            split = split[i:]
-            break
+        split = split[i:]
+        break
     ret = ''
     for sub in split:
         ret = ret+sub+'_'
@@ -283,8 +282,8 @@ def checksum_diagrams(ocs, allblks, auxblks):
     check_inner_outer(
         ocs, allblks.keys() | set(), auxblks.keys() | set())
     unused = set()
-    for fig in ['FigureR' 'FigureC' 'FigureD',
-                # 'FigureV', 'FigureCv3', 'FigureCv3R',
+    # 'FigureV', 'FigureCv3', 'FigureCv3R',
+    for fig in ['FigureR', 'FigureC', 'FigureD',
                 'FigureBub2', 'FigureT']:
         unused = find_unused(
             ocs, allblks.keys() | set(),

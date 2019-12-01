@@ -39,7 +39,7 @@ def deltat(momdiag):
 def proc_sigma_type23(type23, trajl, otype):
     """Process type 23 sigma diagrams into Q_i pieces"""
     # ltraj = len(trajl)
-    type12 = False if '3' in otype else True
+    type12 = '3' not in otype
     ncontract = 4 if type12 else 8
     for num, traj in enumerate(trajl):
         trajstr = 'traj_'+str(traj)
@@ -64,8 +64,8 @@ def proc_sigma_type23(type23, trajl, otype):
 
             for i in np.arange(1, 11):
                 assert str(i) in kpp.QOP_SIGMA, "Missing Q:"+str(i)
-                assert otype == 'type2' or otype == 'type3',\
-                    "bad type name given for sigma diagram:"+str(otype)
+                assert otype in ('type2', 'type3'),\
+                    ("bad type name given for sigma diagram:", str(otype))
                 if otype == 'type2':
                     kpp.QOP_SIGMA[str(i)][keyirr][num] +=\
                         kaonprojop.qi_proj_sigma_type2(t1arr, i)
@@ -77,7 +77,7 @@ def proc_sigma_type23(type23, trajl, otype):
 
 def proctype123(type123, trajl, otype):
     """Process type 1 diagrams into Q_i pieces"""
-    type12 = False if '3' in otype else True
+    type12 = '3' not in otype
     ncontract = 4 if type12 else 8
     # ltraj = len(trajl)
     ret = defaultdict(lambda: np.zeros((len(trajl), 2, LT_CHECK),

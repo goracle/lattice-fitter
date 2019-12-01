@@ -147,9 +147,8 @@ def main():
         if os.path.isfile(outfile):
             print("Skipping:'"+outfile+"'.  File exists.")
             continue
-        else:
-            outarr = getaux_filestrs(filen)
-            rf.write_mat_str(outarr, outfile)
+        outarr = getaux_filestrs(filen)
+        rf.write_mat_str(outarr, outfile)
 
     print("Done writing auxiliary periodic bc files")
     sys.exit(0)

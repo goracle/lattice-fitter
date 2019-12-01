@@ -2,6 +2,7 @@
 import sys
 from collections import namedtuple
 from itertools import product
+from numdifftools import Jacobian # , Hessian
 from scipy.optimize import minimize
 # from scipy.optimize import curve_fit
 # from iminuit import Minuit
@@ -11,7 +12,7 @@ import numpy as np
 from latfit.config import METHOD
 # from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS, KICK_DELTA
-from latfit.config import BINDS, SYS_ENERGY_GUESS
+from latfit.config import BINDS
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
@@ -53,6 +54,7 @@ def prealloc_chi(covinv, coords):
     assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
 
 def sym_range(covinv, lcord):
+    """Create iterable for symmetric i,j indices of covinv"""
     ret = []
     for i in range(lcord):
         for j in np.arange(i, lcord):
@@ -64,7 +66,7 @@ def sym_range(covinv, lcord):
 def sym_norm(covinv):
     """Divide diagonal by 2 to prevent overcounting"""
     for i in chi.RCORD:
-        covinv[i,i] /= 2
+        covinv[i, i] /= 2
     return covinv
 
 def check_covinv(covinv):
@@ -83,7 +85,7 @@ def check_covinv(covinv):
                 print(i, j)
                 print(err)
                 raise PrecisionLossError
-                
+
 
 SPARAMS = list(START_PARAMS)
 PARAMS = None
@@ -121,11 +123,11 @@ def kick_params(kick_delta=KICK_DELTA):
     but we are only stuck in a local minimum
     kick delta determines the kick strength
     """
-    skew = np.asarray(START_PARAMS) - np.asarray(SPARAMS) 
+    skew = np.asarray(START_PARAMS) - np.asarray(SPARAMS)
     #print("kicking start params; currently:", SPARAMS)
     if not np.any(skew):
         skew = np.ones_like(START_PARAMS)
-    for i, param in enumerate(SPARAMS):
+    for i, _ in enumerate(SPARAMS):
         noise = np.random.normal()
         SPARAMS[i] += skew[i]*kick_delta*noise
     #print("after kick:", SPARAMS)
@@ -222,9 +224,9 @@ def mkmin_loop(covinv, coords, method, kick=False):
     # print "chi^2 minimized check = ", chi_sq(res_min.x, covinv, coords)
     # print covinv
     if (res_min.status and latfit.config.BOOTSTRAP) or False:
-        from numdifftools import Jacobian, Hessian
-        def fun_der(x, covinv, coords):
-            return Jacobian(lambda x: chi.chi_sq(x, covinv, coords))(x).ravel()
+        def fun_der(xst, covinv, coords):
+            return Jacobian(
+                lambda xarg: chi.chi_sq(xarg, covinv, coords))(xst).ravel()
         print("boostrap debug")
         #print("covinv =", covinv)
         print("covinv.shape", covinv.shape)
@@ -232,7 +234,7 @@ def mkmin_loop(covinv, coords, method, kick=False):
         print("start_params =", start_params)
         # covinv = np.ones_like(np.zeros(covinv.shape), dtype=np.float)
         #for i in range(len(coords)):
-        #    coords[i][1] = np.ones_like(np.zeros(coords[i][1].shape), dtype=np.float) 
+        #    coords[i][1] = np.ones_like(np.zeros(coords[i][1].shape), dtype=np.float)
         # start_params = np.ones_like(np.zeros(len(start_params)), dtype=np.float)
         print("chisq =", chi.chi_sq(start_params, covinv, coords))
         if GRAD is not None:

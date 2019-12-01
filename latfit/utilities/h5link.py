@@ -17,8 +17,7 @@ def get_trajl():
         mat = re.search(r'traj_(\d+)_', filen)
         if not mat:
             continue
-        else:
-            traj = int(mat.group(1))
+        traj = int(mat.group(1))
         trajl.append(traj)
     trajl = sorted(list(set(trajl)))
     return trajl

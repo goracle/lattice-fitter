@@ -1,3 +1,4 @@
+"""Check consistency of fit results"""
 import numpy as np
 from gvar import gvar
 from latfit.config import GEVP
@@ -26,7 +27,7 @@ def err_handle(meta, consis, lparam, name):
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
         raise FitRangeInconsistency
-    
+
 def sort_by_val(lparam):
     """Sort a list of Param objects by val"""
     assert isinstance(lparam, list), str(lparam)
@@ -76,6 +77,6 @@ def consistent_params(item1, item2):
     else:
         ret = not test > 1.5
     if not ret:
-        print("problematic diff:", gvar(item1.val[idx], item1.err[idx]), 
+        print("problematic diff:", gvar(item1.val[idx], item1.err[idx]),
               gvar(item2.val[idx], item2.err[idx]))
     return ret

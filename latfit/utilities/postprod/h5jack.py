@@ -412,8 +412,8 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                     print("does not match:", ntchk)
                     flag = 1
                     break
-            if base == 'FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110'\
-               or base == 'FigureC_sep3_mom1src000_mom2src000_mom1snk000':
+            if base in ('FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110',
+                        'FigureC_sep3_mom1src000_mom2src000_mom1snk000'):
                 printt = checkb.debugprint(allblks[base], base=base)
             try:
                 outsum.append(coeff*allblks[base])
@@ -438,7 +438,6 @@ def h5sum_blks(allblks, ocs, outblk_shape):
             h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
     if MPIRANK == 0:
         print("Done writing summed blocks.")
-    return
 
 @PROFILE
 def h5write_blk(blk, outfile, extension='.jkdat', ocs=None):
@@ -619,9 +618,10 @@ def fold_time(outblk, base=''):
         else:
             retblk = [1/2 * (outblk[:, t] + outblk[:, (LT-t-2*tsep) % LT])
                       for t in range(LT)]
-        return np.array(retblk).T
+        ret = np.array(retblk).T
     else:
-        return outblk
+        ret = outblk
+    return ret
 auxb.fold_time = fold_time
 bubb.fold_time = fold_time
 mostb.fold_time = fold_time

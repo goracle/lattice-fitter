@@ -78,7 +78,6 @@ def bin_tsrc_sum(binsize, step, already_summed=False):
     onlyfiles = [f for f in listdir('.') if isfile(join('.', f))]
     if nmax == 1:
         inter_sum(already_summed, onlyfiles)
-        return
     else:
         if not already_summed:
             dur = 'summed_tsrc_diagrams/binned_diagrams/binsize' + str(
@@ -115,8 +114,6 @@ def bin_tsrc_sum(binsize, step, already_summed=False):
                     count = 0
                     data = None
         print("Done writing files binned with bin size =", binsize)
-        return
-
 
 def main():
     """Sum tsrc and block"""

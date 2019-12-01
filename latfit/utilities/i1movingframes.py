@@ -1018,24 +1018,23 @@ OPLIST = {}
 for IRR in dir(CMOD):
     if 'mom' not in IRR:
         continue
-    else:
-        IRRVAR = getattr(CMOD, IRR)
-        if not hasattr(IRRVAR, '__iter__'):
-            continue
-        IRRVAR = sortmom(IRRVAR, IRR)
-        MOM = rf.mom(IRR)
-        assert len(MOM) == 3, "bad momentum specified:"+str(MOM)
-        for IDX in MOM:
-            assert isinstance(IDX, int),\
-                "momentum has non-int value:"+str(MOM)
-        TOADD = [(1, 'rho', list(MOM))]
-        IRRVAR.insert(0, *TOADD)
-        KEY = str(IRR)+'?pol='
-        TARR = [bool(IDX) for IDX in MOM]
+    IRRVAR = getattr(CMOD, IRR)
+    if not hasattr(IRRVAR, '__iter__'):
+        continue
+    IRRVAR = sortmom(IRRVAR, IRR)
+    MOM = rf.mom(IRR)
+    assert len(MOM) == 3, "bad momentum specified:"+str(MOM)
+    for IDX in MOM:
+        assert isinstance(IDX, int),\
+            "momentum has non-int value:"+str(MOM)
+    TOADD = [(1, 'rho', list(MOM))]
+    IRRVAR.insert(0, *TOADD)
+    KEY = str(IRR)+'?pol='
+    TARR = [bool(IDX) for IDX in MOM]
 
-        KEY += rho.rho_pol(IRR, MOM)
+    KEY += rho.rho_pol(IRR, MOM)
 
-        OPLIST[KEY] = IRRVAR
+    OPLIST[KEY] = IRRVAR
 
 AVG_ROWS = {
     'A_1PLUS_mom1': ('A_1PLUS_mom00_1',

@@ -20,7 +20,6 @@ import sys
 import pickle
 import numpy as np
 import mpi4py
-mpi4py.rc.recv_mprobe = False
 from mpi4py import MPI
 
 from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
@@ -47,7 +46,7 @@ from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
 from latfit.analysis.result_min import Param
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT
-from latfit.config import MULT
+from latfit.config import MULT, TSTEP
 from latfit.checks.consistency import fit_range_consistency_check
 from latfit.utilities import exactmean as em
 from latfit.mainfunc.metaclass import FitRangeMetaData
@@ -58,22 +57,24 @@ import latfit.mainfunc.print_res as print_res
 import latfit.checks.checks_and_statements as sands
 import latfit.singlefit as sfit
 import latfit.config
+import latfit.fit_funcs
 import latfit.extract.getblock.gevp_linalg as glin
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
 
 # acceptable errors for initial fit
 ACCEPT_ERRORS_INIT = (NegChisq, RelGammaError, NoConvergence,
-                OverflowError, EnergySortError, TooManyBadFitsError,
-                np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                DOFNonPosFit, BadChisq, ZetaError)
+                      OverflowError, EnergySortError, TooManyBadFitsError,
+                      np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                      DOFNonPosFit, BadChisq, ZetaError)
 
 
 # for subsequent fits
-ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError, 
+ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
                  EnergySortError, TooManyBadFitsError, BadJackknifeDist,
                  DOFNonPosFit, BadChisq, ZetaError, XmaxError)
 
@@ -98,7 +99,7 @@ def fit(tadd=0, tsub=0):
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
     if tadd or tsub:
-        print("tadd =", tadd, "tsub =", tsub) 
+        print("tadd =", tadd, "tsub =", tsub)
 
     meta = FitRangeMetaData()
     trials, plotdata, dump_fit_range.fn1 = meta.setup(plotdata)
@@ -214,8 +215,8 @@ def old_fit_style(meta, trials, plotdata):
         ninput = os.path.join(meta.input_f, ifile)
         result_min, _, plotdata.coords, plotdata.cov =\
             sfit.singlefit(ninput, meta.fitwindow,
-                                meta.options.xmin, meta.options.xmax,
-                                meta.options.xstep)
+                           meta.options.xmin, meta.options.xmax,
+                           meta.options.xstep)
         list_fit_params.append(result_min.energy.val)
     printerr(*get_fitparams_loc(list_fit_params, trials))
 
@@ -239,7 +240,8 @@ def post_loop(meta, loop_store, plotdata,
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)
     # did anything succeed?
-    test = False if not list(min_arr) and not meta.random_fit else True
+    # test = False if not list(min_arr) and not meta.random_fit else True
+    test = list(min_arr) or meta.random_fit
     if not meta.skiploop:
 
         result_min = find_mean_and_err(meta, min_arr)
@@ -676,12 +678,12 @@ def pickle_res_err(name, min_arr):
         if len(np.asarray(ret).shape) > 1:
             # dimops check
             dimops1 = (np.array(ret).shape)[1]
-            if 'min_params' == name and SYS_ENERGY_GUESS:
+            if name == 'min_params' and SYS_ENERGY_GUESS:
                 dimops1 = int((dimops1-1)/2)
             dimops2 = (np.asarray(sfit.singlefit.error2).shape)[1]
-            assert dimops1 == dimops2, str(np.array(ret).shape)+" "+str(
-                        np.asarray(sfit.singlefit.error2))+" "+str(
-                            name)
+            assert dimops1 == dimops2, (np.array(ret).shape,
+                                        np.asarray(sfit.singlefit.error2),
+                                        name)
     if 'energy' in name:
         _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
         ret = np.array([*ret, *erreff])
@@ -801,15 +803,15 @@ def closest_fit_to_avg(result_min_avg, min_arr):
     """
     minmax = np.nan
     ret_excl = []
-    for i, fit in enumerate(min_arr):
-        minmax_i = max(abs(fit[0].energy.val-result_min_avg))
+    for i, fiti in enumerate(min_arr):
+        minmax_i = max(abs(fiti[0].energy.val-result_min_avg))
         if i == 0:
             minmax = minmax_i
-            ret_excl = fit[2]
+            ret_excl = fiti[2]
         else:
             minmax = min(minmax_i, minmax)
             if minmax == minmax_i:
-                ret_excl = fit[2]
+                ret_excl = fiti[2]
     return ret_excl
 
 
@@ -958,7 +960,7 @@ def dofit_initial(meta, plotdata):
         except ACCEPT_ERRORS_INIT as err:
             flag = False
             print("fit failed (acceptably) with error:",
-                err.__class__.__name__)
+                  err.__class__.__name__)
 
     # results need for return
     # plotdata, meta, test_success, fit_range_init
@@ -975,11 +977,12 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
     # did we make any cuts?
     samerange = frsort.cut_on_errsize(meta)
     samerange = frsort.cut_on_growing_exp(meta) and samerange
+    tadd, tsub = tadd_sub
+    samerange = not tadd and not tsub and samerange
 
     # tadd tsub cut
-    tadd, tsub = tadd_sub
     if tadd or tsub:
-        print("tadd =", tadd, "tsub =", tsub) 
+        #print("tadd =", tadd, "tsub =", tsub)
         for _ in range(tadd):
             meta.incr_xmin()
         for _ in range(tsub):
@@ -1010,7 +1013,7 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
             meta = xmax_err(meta, err)
         except XminError as err2:
             meta = xmax_err(meta, err2)
-        plotdata.fitcoord = meta.fit_coord()
+        # plotdata.fitcoord = meta.fit_coord()
         fit_range_init = None
     except ACCEPT_ERRORS as err:
         print("fit failed (acceptably) with error:",
@@ -1038,6 +1041,7 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
 def store_init(plotdata):
     """Storage modification;
     act on info from initial fit ranges"""
+    assert sfit.singlefit.coords_full is not None
     plotdata.coords, plotdata.cov = sfit.singlefit.coords_full, \
         sfit.singlefit.cov_full
     augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
@@ -1120,6 +1124,8 @@ def tsep_based_incr(dtee):
     return ret
 
 def incr_t0():
+    """Increment t0, the RHS GEVP time assuming t-t0=const.
+    (increment this const.)"""
     dtee = int(latfit.config.T0[6:])
     dtee = tsep_based_incr(dtee)
     latfit.config.T0 = 'TMINUS'+str(dtee)
@@ -1132,9 +1138,12 @@ def incr_t0():
     print("new GEVP t-t0 =", latfit.config.T0)
 
 def incr_dt():
+    """Increment the matrix subtraction time separation in
+    D(t):= C(t)-C(t-dt), where D is the subtracted GEVP matrix"""
     dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION
     dtee = tsep_based_incr(dtee)
     latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee
+    # check this!!!
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
     latfit.config.FITS.select_and_update(ADD_CONST)
     print("new delta t matsub =", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
@@ -1180,8 +1189,7 @@ def main():
                        and MPISIZE > 1:
                         tadd += 1
                         continue
-                    else:
-                        print("tadd, tsub, MPIRANK", tadd, tsub, MPIRANK)
+                    print("tadd, tsub, MPIRANK", tadd, tsub, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
@@ -1192,7 +1200,7 @@ def main():
                               "(inconsistent/fitfail)")
                         flag = 1
                         tadd += 1 # add this to tmin
-                    
+
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break

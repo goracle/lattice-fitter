@@ -1,6 +1,5 @@
 """Contains result min class used in jackknife fit loop; stores results
  of fit"""
-import sys
 from collections import namedtuple
 from random import randint
 import numpy as np

@@ -12,7 +12,7 @@ except NameError:
         return arg2
     PROFILE = profile
 
-class Logger(object):
+class Logger:
     """log output from fit"""
     @PROFILE
     def __init__(self, fname=None):

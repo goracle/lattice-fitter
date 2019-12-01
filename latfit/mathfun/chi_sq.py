@@ -6,7 +6,7 @@ import numpy as np
 
 from latfit.config import fit_func
 from latfit.config import GEVP, START_PARAMS, SYSTEMATIC_EST
-from latfit.config import SYS_ENERGY_GUESS
+#from latfit.config import SYS_ENERGY_GUESS
 
 if SYSTEMATIC_EST and False:
 
@@ -16,7 +16,7 @@ if SYSTEMATIC_EST and False:
         """ansatz to estimate systematic errors"""
         return [fit_func(ctime, trial_params[:LSTART])[i]+
                 trial_params[LSTART+2*i]*exp(-(trial_params[
-                        LSTART+(2*i+1)]-trial_params[i]*0)*ctime)
+                    LSTART+(2*i+1)]-trial_params[i]*0)*ctime)
                 for i in RANGE_START]
 
 else:
@@ -40,11 +40,11 @@ if GEVP:
         # print(coords[0][1]-fit_func(coords[0][0], trial_params))
         retval = np.sum(
             np.fromiter((np.linalg.multi_dot([
-            (coords[outer][1] - fit_func_systematic(
-                coords[outer][0], trial_params)),
-            covinv[outer][inner], (
-                coords[inner][1]-fit_func_systematic(
-                    coords[inner][0], trial_params))])
+                (coords[outer][1] - fit_func_systematic(
+                    coords[outer][0], trial_params)),
+                covinv[outer][inner], (
+                    coords[inner][1]-fit_func_systematic(
+                        coords[inner][0], trial_params))])
                          for outer, inner in SYMRANGE),
                         dtype=np.float, count=COUNT))
         retval *= 2
@@ -85,8 +85,8 @@ else:
         retval = np.sum(np.fromiter(
             (np.dot(np.dot((coords[outer][1] - fit_func_systematic(
                 coords[outer][0], trial_params)[0]), covinv[outer][inner]),
-                 (coords[inner][1]-fit_func_systematic(
-                     coords[inner][0], trial_params)[0]))
+                    (coords[inner][1]-fit_func_systematic(
+                        coords[inner][0], trial_params)[0]))
              for outer, inner in SYMRANGE),
             dtype=np.float, count=COUNT))
         #retval2 = np.sum(np.fromiter(

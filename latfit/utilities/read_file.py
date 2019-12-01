@@ -365,7 +365,7 @@ def pchange(filename, pnew):
         sys.exit(1)
     nmom1 = nold
     filen = filen.replace(ptostr(pold), ptostr(pnew)) if nmom1 == 1 else filen
-    if nmom1 == 2 or nmom1 == 3:
+    if nmom1 in (2, 3):
         for i in range(nmom1):
             filen = filen.replace(ptostr(pold[i]), "temp"+str(i), 1)
         for i in range(nmom1):

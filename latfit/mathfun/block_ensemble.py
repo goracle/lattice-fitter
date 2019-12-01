@@ -1,12 +1,8 @@
 """Block the ensemble by dropping JACKKNIFE_BLOCK_SIZE configs"""
-
-import sys
 import copy
-import random
 import numpy as np
 from latfit.config import JACKKNIFE_BLOCK_SIZE
 from latfit.extract.inverse_jk import inverse_jk
-from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.h5jack import dojackknife
 from latfit.utilities import exactmean as em
 from latfit.config import BOOTSTRAP_BLOCK_SIZE, NBOOT
@@ -33,7 +29,7 @@ def build_choices_set(block, nconfigs, nboot=0):
     # balanced bootstrap
     if nboot and build_choices_set.choices is None:
         ret2 = []
-        for i in range(nboot):
+        for _ in range(nboot):
             for j in ret:
                 ret2.append(j)
         np.random.shuffle(ret2)

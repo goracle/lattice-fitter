@@ -143,10 +143,10 @@ def mkplot(plotdata, input_f,
                 # tolerance box plot
                 if EFF_MASS and BOX_PLOT:
                     plot_box(plotdata.fitcoord, result_min_mod, param_err,
-                            dimops)
+                             dimops)
 
                 annotate(dimops_mod, result_min_mod, param_err,
-                        param_chisq, plotdata.coords)
+                         param_chisq, plotdata.coords)
 
             # save, output
             do_plot(title, pdf)
@@ -432,8 +432,7 @@ def print2(result_min, param_err, param_chisq):
         print("t^2 minimized = ", chisq_str)
     print("degrees of freedom = ", result_min.misc.dof)
     print("epsilon (inflation/deflation of GEVP parameter)", DECREASE_VAR)
-    if (JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE') and \
-       JACKKNIFE == 'YES':
+    if JACKKNIFE_FIT in ('DOUBLE', 'SINGLE') and JACKKNIFE == 'YES':
         print("avg p-value = ", gvar.gvar(result_min.pvalue.val,
                                           result_min.pvalue.err))
         assert NUM_CONFIGS > 0, "num configs not set (bug):"+str(NUM_CONFIGS)
@@ -543,7 +542,7 @@ def format_chisq_str(chisq, plus=False):
     """Format the chi^2/dof string for plot annotation, jackknife fit"""
     formstr = '{:0.'+str(int(PREC_DISP))+'e}'
     form_str_plus = '{:0.'+str(int(PREC_DISP)+1)+'e}'
-    if chisq >= 1 and chisq < 10:
+    if 1 <= chisq < 10:
         retstr = str(round(chisq, PREC_DISP))
     else:
         if plus:
@@ -820,7 +819,6 @@ if JACKKNIFE_FIT:
 
         def annotate_jack():
             """Annotate jackknife type (double)"""
-            pass
             #plt.annotate('Double jackknife fit.', xy=(
             #    0.10, 0.95), xycoords='axes fraction')
 
@@ -837,8 +835,6 @@ else:
 
     def annotate_jack():
         """Annotate jackknife type (none)"""
-        pass
-
 
 if UNCORR:
 
@@ -849,7 +845,7 @@ if UNCORR:
             if not TLOOP:
                 plt.annotate("Uncorrelated fit.", xy=(
                     0.05, 0.90-(ldisp+dimops)*0.05),
-                         xycoords='axes fraction')
+                             xycoords='axes fraction')
         else:
             if not TLOOP:
                 plt.text(coords[3][0], coords[2][1], "Uncorrelated fit.")

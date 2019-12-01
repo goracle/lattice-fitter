@@ -21,7 +21,7 @@ from latfit.extract.getblock.gevp_linalg import variance_reduction
 from latfit.extract.proc_folder import proc_folder
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import XminError, XmaxError
-from latfit.config import PIONRATIO, GEVP_DIRS, SIGMA, GEVP_DERIV
+from latfit.config import PIONRATIO, GEVP_DIRS, GEVP_DERIV
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
@@ -88,10 +88,10 @@ def evals_pionratio(timeij, delta_t, switch=False):
             continue
         if 'rho' in diag[i] or 'sigma' in diag[i]:
             diag = GEVP_DIRS_PLUS_ONE[i+1] if not FULLDIM else GEVP_DIRS[i-1]
-            zeroit = True if FULLDIM else False
+            zeroit = bool(FULLDIM)
             name = re.sub(r'.jkdat', r'_pisq.jkdat',
                           diag[i+(1 if not FULLDIM else -1)])
-            skip_next = True if not FULLDIM else False
+            skip_next = not FULLDIM
         else:
             skip_next = False
             name = re.sub(r'.jkdat', r'_pisq.jkdat', diag[i])
@@ -427,7 +427,7 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                 name = re.sub(r'.jkdat', r'_pisq.jkdat',
                               diag[i-1])
             else:
-                skip_next = False
+                #skip_next = False
                 name = re.sub(r'.jkdat', suffix, diag[i])
             #print(diag, name)
             assert 'rho' not in name

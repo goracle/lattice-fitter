@@ -89,16 +89,13 @@ def swap_minmax(xmin, xmax):
     while not TLOOP:
         print("xmax < xmin.  Contradiction.", "Swap xmax for xmin? (y/n)")
         response = str(input())
-        if (response == "n" or response == "no" or
-                response == "No" or response == "N"):
+        if response in ("n", "no", "No", "N"):
             while True:
                 print("Abort? (y/n)")
                 response = str(input())
-                if (response == "n" or response == "no" or
-                        response == "No" or response == "N"):
+                if response in ("n", "no", "No", "N"):
                     break
-                if (response == "y" or response == "yes"
-                        or response == "Yes" or response == "Y"):
+                if response in ("y", "yes", "Yes", "Y"):
                     sys.exit(0)
                 else:
                     print("Sorry, I didn't understand that.")
@@ -110,15 +107,11 @@ def swap_minmax(xmin, xmax):
             xmax = float(input())
             if xmax < xmin:
                 continue
-            else:
-                break
-        if (response == "y" or response == "yes"
-                or response == "Yes" or response == "Y"):
+            break
+        if response in ("y", "yes", "Yes", "Y"):
             xmin, xmax = xmax, xmin
             break
-        else:
-            print("Sorry, I didn't understand that.")
-            continue
+        print("Sorry, I didn't understand that.")
     else:
         raise DOFNonPos
     return xmin, xmax

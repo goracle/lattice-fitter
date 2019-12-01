@@ -265,7 +265,7 @@ DISP_ENERGIES = opc.free_energies(
     IRREP, misc.massfunc(), L_BOX) if GEVP else []
 
 # switch to include the sigma in the gevp fits
-SIGMA = True if ISOSPIN == 0 else False
+SIGMA = ISOSPIN == 0
 
 # get dispersive energies
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
@@ -634,7 +634,7 @@ PLOT_LEGEND = True
 
 # dispersive lines
 PLOT_DISPERSIVE = True
-PLOT_DISPERSIVE = False if not GEVP else True
+PLOT_DISPERSIVE = bool(GEVP)
 
 # Decrease variance in GEVP (avoid eigenvalue misordering due to large noise)
 # should be < 1
@@ -880,7 +880,7 @@ START_PARAMS = sands.start_params_pencils(START_PARAMS, ORIGL,
                                           SYS_ENERGY_GUESS)
 
 if EFF_MASS:
-    if EFF_MASS_METHOD == 1 or EFF_MASS_METHOD == 2 or EFF_MASS_METHOD == 4:
+    if EFF_MASS_METHOD in (1, 2, 4):
         # if no systematic, fit to const
         PREFIT_FUNC = fitfunc.constfit(len(START_PARAMS), RESCALE)
         if SYS_ENERGY_GUESS is not None:

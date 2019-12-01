@@ -2,8 +2,8 @@
 import sys
 import os
 from collections import namedtuple
-from numpy import sqrt
 import cloudpickle
+from numpy import sqrt
 import numpy as np
 
 # package modules
@@ -15,26 +15,22 @@ from latfit.finalout.geterr import geterr
 from latfit.mathfun.covinv_avg import covinv_avg
 from latfit.jackknife_fit import jackknife_fit
 from latfit.analysis.get_fit_params import get_fit_params
-from latfit.analysis.result_min import Param, ResultMin
 from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import NoConvergence, PrecisionLossError
-from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 from latfit.analysis.errorcodes import XmaxError
 
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
-from latfit.config import PRINT_CORR, SYS_ENERGY_GUESS
+from latfit.config import PRINT_CORR
 from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.jackknife_fit as jack_module
 import latfit.mathfun.block_ensemble as blke
-
-import latfit.mathfun.chi_sq as chisq
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -114,7 +110,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
             except PrecisionLossError:
                 singlefit_reset()
                 raise XmaxError(problemx=xmax)
-        
+
 
 
     # correct covariance matrix for jackknife factor
@@ -182,9 +178,10 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
 
         result_min = error_bar_scheme(result_min, fitrange, xmin, xmax)
 
-        return result_min, param_err, coords_full, cov_full
+        ret = (result_min, param_err, coords_full, cov_full)
     else:
-        return coords, cov
+        ret = (coords, cov)
+    return ret
 singlefit.reuse = None
 singlefit.coords_full = None
 singlefit.cov_full = None

@@ -58,7 +58,6 @@ def avg_vdis():
                 'ai,aj->ij', err_fact, err_fact))/(numt*(numt-1)))
             rf.write_vec_str(err_fact, outerr)
     print("Done writing Vdis averaged over trajectories.")
-    return
 
 
 def get_outfile(filen, fign, dur):

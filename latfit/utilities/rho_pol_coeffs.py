@@ -2,7 +2,6 @@
  the proper polarization
 (due to group theory from A. Meyer)
 """
-import sys
 import numpy as np
 
 def lstr(arr):
@@ -121,7 +120,7 @@ def p1_b0(mom):
     else:
         mdie(mom)
     return ret
-    
+
 
 
 def p111_a1p(mom):
@@ -202,13 +201,13 @@ def mdie(mom):
     assert None
 
 def a2p_pos_check(ret, mom):
-     """Check to make sure the two vectors
-     are 0 in the same place"""
-     for i, j in zip(ret, mom):
-         iandj = i and j
-         niandnj = not i and not j
-         assert iandj or niandnj,\
-             str(ret)+" "+str(mom)
+    """Check to make sure the two vectors
+    are 0 in the same place"""
+    for i, j in zip(ret, mom):
+        iandj = i and j
+        niandnj = not i and not j
+        assert iandj or niandnj,\
+            str(ret)+" "+str(mom)
 
 def a2p_same_sign_check(ret, mom):
     """If the momentum components have the same sign
@@ -227,4 +226,3 @@ def a2p_same_sign_check(ret, mom):
         print(ret)
         print(mom)
         raise
-

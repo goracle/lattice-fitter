@@ -73,10 +73,9 @@ def aux_jack(basl, trajl, numt, openlist):
         if base in auxblks:
             if AUX_TESTING:
                 continue
-            else:
-                print("aux pair found in data set (redundancy)")
-                print("pair =", base, outfn)
-                sys.exit(1)
+            print("aux pair found in data set (redundancy)")
+            print("pair =", base, outfn)
+            sys.exit(1)
         if not outfn:
             continue
         if TESTKEY and TESTKEY != outfn:

@@ -95,7 +95,7 @@ def norm_fix(filen):
         norm = 1.0
     elif name == 'D':
         norm = 1.0
-    elif name == 'Hbub' or name == 'pioncorr':
+    elif name in ('Hbub', 'pioncorr'):
         norm = 2.0
     elif name == 'scalar-bubble':
         norm = 1.0
@@ -170,7 +170,7 @@ def iso0(vecp, name):
         norm = -5.0/(sqrt(6.0))
     elif name == 'Hbub' and not vecp:
         norm = -1.0
-    elif name == 'Bub2' or name == 'bub2':
+    elif name in ('Bub2', 'bub2'):
         norm = 2.0
     else:
         norm = None

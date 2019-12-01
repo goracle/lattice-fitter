@@ -19,7 +19,7 @@ from latfit.mathfun.block_ensemble import delblock, block_ensemble
 from latfit.mathfun.block_ensemble import bootstrap_ensemble
 
 from latfit.config import START_PARAMS, RANDOMIZE_ENERGIES
-from latfit.config import JACKKNIFE_FIT, NBOOT
+from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX, EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import JACKKNIFE_BLOCK_SIZE, NOLOOP
@@ -132,12 +132,12 @@ else:
     def collapse_shift(shift):
         """Collapse the shift structure for non GEVP fits"""
         return shift
-        
+
 
 if JACKKNIFE_FIT == 'FROZEN':
     pass
 
-elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
+elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
     @PROFILE
     def jackknife_fit(params, reuse, reuse_blocked, coords, _=None):
         """Fit under a double jackknife.
@@ -242,7 +242,7 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
             # to fix the leading order around the world term
             # so shift it back
             if not latfit.config.BOOTSTRAP:
-                
+
                 result_min.energy.arr[config_num] += correction_en(
                     result_min, config_num)
 
@@ -256,8 +256,8 @@ elif JACKKNIFE_FIT == 'DOUBLE' or JACKKNIFE_FIT == 'SINGLE':
                 result_min_jack.fun)
 
             sys_str = str(result_min.systematics.arr[config_num][-1])\
-                if not np.isnan(result_min.systematics.arr[
-                        config_num][-1]) else ''
+                if not np.isnan(result_min.systematics.arr[config_num][-1])\
+                   else ''
 
             # print results for this config
             print("config", config_num, ":",
@@ -395,7 +395,7 @@ def skip_range(params, result_min, skip_votes,
         raise BadChisq(
             chisq=result_min_jack.fun/result_min.misc.dof,
             dof=result_min.misc.dof, uncorr=UNCORR)
-    elif skip_votes:
+    if skip_votes:
         # the second sample should never have a good fit
         # if the first one has that bad a fit
         print("fiducial cut =", chisq_fiduc_cut)
@@ -873,7 +873,7 @@ def svd_check(corrjack):
     cond = evals[-1]/evals[0]
     assert cond >= 1, str(evals)+" "+str(cond)
     if cond > 1e10:
-        print("condition number of correlation matrix is > 1e10:",  cond)
+        print("condition number of correlation matrix is > 1e10:", cond)
         raise PrecisionLossError
 
 if CORRMATRIX:
@@ -1081,8 +1081,8 @@ def prune_covjack(params, covjack, coords_jack, flag):
 
 def symp(matrix):
     """Assert matrix is symmetric"""
-    for i in range(len(matrix)):
-        for j in range(len(matrix)):
+    for i, _ in enumerate(matrix):
+        for j, _ in enumerate(matrix):
             eva = matrix[i][j]
             evb = matrix[j][i]
             err = str(eva)+" "+str(evb)
@@ -1096,9 +1096,9 @@ def symp(matrix):
                     raise PrecisionLossError
 
 
-def invp(matrix, inv):
+def invp(matrix, invf):
     """Check if matrix is inverted"""
-    assert np.allclose(np.dot(matrix, inv), np.eye(len(inv)), rtol=1e-14)
+    assert np.allclose(np.dot(matrix, invf), np.eye(len(invf)), rtol=1e-14)
 
 @PROFILE
 def invertmasked(params, len_time, excl, covjack):
@@ -1148,8 +1148,7 @@ def invertmasked(params, len_time, excl, covjack):
                   "considered suspect.")
             raise np.linalg.linalg.LinAlgError
             # flag = 1 # old way of handling error
-        else:
-            raise
+        raise
     marray[marray.mask] = marray.fill_value
     return marray, flag
 invertmasked.params2 = None
@@ -1216,8 +1215,10 @@ elif JACKKNIFE_FIT == 'DOUBLE':
                 print(reuse_blocked[config_num])
                 raise
             ret = np.array([
-                np.mean(np.delete(reuse_inv_red, i, axis=0), axis=0)
-                for i in range(num_configs_reduced)]) - reuse_blocked[
-                        config_num]
+                np.mean(
+                    np.delete(
+                        reuse_inv_red, i, axis=0), axis=0)
+                for i in range(num_configs_reduced)]) -\
+                    reuse_blocked[config_num]
             assert len(ret) == num_configs_reduced
         return ret

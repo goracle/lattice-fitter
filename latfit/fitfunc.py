@@ -62,13 +62,13 @@ def const_plus_exp(start_params):
             ret = []
             energies = [trial_params[2*i] for i in rlen]
             for i in rlen:
-                exp = -1*ctime*(trial_params[-1]-energies[i])
-                ret.append(1+trial_params[2*i+1]*ctime*np.exp(exp))
-                ret.append(np.exp(exp))
+                expo = -1*ctime*(trial_params[-1]-energies[i])
+                ret.append(1+trial_params[2*i+1]*ctime*np.exp(expo))
+                ret.append(np.exp(expo))
             toapp = []
             for i in rlen:
-                exp = -1*ctime*(trial_params[-1]-energies[i])
-                toapp.append(-1*trial_params[2*i+1]*ctime*np.exp(exp))
+                expo = -1*ctime*(trial_params[-1]-energies[i])
+                toapp.append(-1*trial_params[2*i+1]*ctime*np.exp(expo))
             ret.append(toapp)
             ret = np.array(ret)
             dfdparam.mem[key] = ret
@@ -84,8 +84,8 @@ def const_plus_exp(start_params):
             if outer == inner:
                 covinv[outer][inner] *= 2
             rightdot = np.dot(covinv[outer][inner],
-                                   (coords[inner][1]-prefit_func(
-                                       coords[inner][0], trial_params)))
+                              (coords[inner][1]-prefit_func(
+                                  coords[inner][0], trial_params)))
             arr = dfdparam(coords[outer][0], trial_params)
             # assert len(rightdot) == len(rlen), str(rightdot)
             for opa, item in enumerate(rightdot):
@@ -94,7 +94,7 @@ def const_plus_exp(start_params):
                 retval[-1] += arr[-1][opa]*item
         retval *= -2
         return retval
-    grad.PRODRANGE = None
+    grad.PRODRANGE = []
     return prefit_func, grad
 
 def mod_start_params(start_params, sys_energy_guess):
@@ -261,7 +261,6 @@ def expfit(fit, origl, add_const, rescale, fits):
     else:
         def prefit_func(__, _):
             """fit function doesn't do anything because FIT = False"""
-            pass
     return prefit_func
 
 # DO NOT EDIT BELOW THIS LINE

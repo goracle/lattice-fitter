@@ -31,7 +31,6 @@ from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import GEVP_DEBUG, GEVP_DERIV, STYPE
-from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DECREASE_VAR, ISOSPIN
 from latfit.config import HINTS_ELIM
 from latfit.config import REINFLATE_BEFORE_LOG
@@ -72,14 +71,14 @@ if GEVP_DEBUG:
         check_variance = np.asarray(check_variance)
         print("average evecs:")
         for i in list(zip(avg_evecs/num_configs,
-                            norms(avg_evecs/num_configs))):
+                          norms(avg_evecs/num_configs))):
             print(i)
         if not np.any(np.isnan(check_variance)):
             error_check = jack_mean_err(check_variance)
         else:
             error_check = None
         print("time, avg evals, variance of evals:",
-                timeij, error_check)
+              timeij, error_check)
     final_gevp_debug_print.check_variance = None
     final_gevp_debug_print.avg_evecs = {}
 
@@ -187,7 +186,7 @@ if EFF_MASS:
                       'sample', blkdict[dt1][0])
                 errdict, countdict, check_length = gevp_block_checks(
                     dt1, blkdict, errdict, countdict)
-            keymax = countdict[max([count for count in countdict])]
+            keymax = countdict[max(countdict)]
             print("final tlhs, trhs =", timeij, timeij-keymax, "next hint:(",
                   np.count_nonzero(~np.isnan(blkdict[keymax][0])),
                   ", ", errdict[keymax], ")")

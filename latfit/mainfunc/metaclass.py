@@ -80,7 +80,7 @@ def update_num_configs(num_configs=None, input_f=None):
         for i in fn1:
             if GEVP:
                 for j in fn1[i]:
-                    num_configs = np.array(fn1[i+'/'+j]).shape[0]
+                    num_configs = np.array(fn1[i + '/' + j]).shape[0]
                     break
             else:
                 num_configs = np.array(fn1[i]).shape[0]
@@ -156,7 +156,7 @@ class FitRangeMetaData:
     @PROFILE
     def skip_loop(self):
         """Set the loop condition"""
-        self.skiploop = False if self.lenprod > 1 else True
+        self.skiploop = not self.lenprod > 1
         self.skiploop = True if NOLOOP else self.skiploop
         if not self.random_fit and not self.skiploop:
             for excl in EXCL_ORIG:

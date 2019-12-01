@@ -20,7 +20,6 @@ def main(nosave=True):
             'phase_shift' in sys.argv[1] or\
             'energy' in sys.argv[1]) and nosave:
         fname = sys.argv[1]
-        newfn = None
         if 'phase_shift' in fname:
             energyfn = re.sub('phase_shift', 'energy', fname)
             phasefn = fname
@@ -38,7 +37,6 @@ def main(nosave=True):
         if test:
             success_tadd_tsub.append((0, 0))
         tadd = 0
-        tbreak = False
         while tadd < 22:
             tsub = 0
             while np.abs(tsub) < 22:
@@ -140,7 +138,7 @@ def plot_t_dep(tot, dim, item_num, title, units):
         dim)+'.pdf', save_str)
 
     with PdfPages(save_str) as pdf:
-        ax1 = plt.subplot(1,1,1)
+        ax1 = plt.subplot(1, 1, 1)
         ax1.errorbar(xarr, yarr, yerr=yerr, linestyle="None")
         ax1.set_xticks(xarr)
         ax1.set_xticklabels(xticks_min)
@@ -242,7 +240,7 @@ def pvalue_arr(spl, fname):
             sys.exit(1)
     return pdat_freqarr
 
-def err_arr(fname, freqarr, avg):
+def err_arr(fname):
     """Get the error array"""
     # get file name for error
     if 'I' not in fname:
@@ -295,7 +293,7 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     median_diff = np.inf
     median_diff2 = np.inf
     #print(freqarr[:, dim], errlooparr)
-    prelim_loop = zip(freq, errlooparr, exclarr)
+    #prelim_loop = zip(freq, errlooparr, exclarr)
     loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
                   key=lambda elem: elem[2], reverse=True)
     medians = (median_diff, median_diff2, pdat_median)
@@ -308,8 +306,8 @@ def setup_make_hist(fname):
     the array of energies, the average energy
     and the fit ranges used
     """
-    if 'I2' in fname:
-        ISOSPIN = 2
+    #if 'I2' in fname:
+    #    ISOSPIN = 2
     with open(fname, 'rb') as fn1:
         dat = pickle.load(fn1)
         try:
@@ -331,7 +329,7 @@ def get_raw_arrays(fname):
 
     pdat_freqarr = fill_pvalue_arr(pdat_freqarr, exclarr)
 
-    errdat = err_arr(fname, freqarr, avg)
+    errdat = err_arr(fname)
     return freqarr, exclarr, pdat_freqarr, errdat, avg
 
 def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
@@ -433,7 +431,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0):
                 themin, fitwindow = output_loop(
                     median_store, freqarr, avg[dim], dim,
                     build_sliced_fitrange_list(
-                        median_store, freq, exclarr, dim))
+                        median_store, freq, exclarr))
             except FitRangeInconsistency:
                 continue
 
@@ -460,7 +458,7 @@ def fill_conv_dict(todict, dimlen):
             ret.append(todict[i])
     return ret
 
-def build_sliced_fitrange_list(median_store, freq, exclarr, dim):
+def build_sliced_fitrange_list(median_store, freq, exclarr):
     """Get all the fit ranges for a particular dimension"""
     ret = []
     for _, i in enumerate(median_store[0]):
@@ -489,7 +487,7 @@ def gevpp(freqarr):
         ret = freqarr.shape[-1] > 1
     return ret
 
-def global_tmin(fit_range_arr, dim):
+def global_tmin(fit_range_arr):
     """Find the global tmin for this dimension:
     the minimum t for a successful fit"""
     tmin = np.inf
@@ -501,7 +499,7 @@ def global_tmin(fit_range_arr, dim):
         tmin = min(tee, tmin)
     return tmin
 
-def global_tmax(fit_range_arr, dim):
+def global_tmax(fit_range_arr):
     """Find the global tmax for this dimension:
     the maximum t for a successful fit"""
     tmax = 0
@@ -524,8 +522,8 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
 
     #tmin_allowed = 0
     #tmax_allowed = np.inf
-    tmin_allowed = global_tmin(fit_range_arr, dim) + output_loop.tadd
-    tmax_allowed = global_tmax(fit_range_arr, dim) + output_loop.tsub
+    tmin_allowed = global_tmin(fit_range_arr) + output_loop.tadd
+    tmax_allowed = global_tmax(fit_range_arr) + output_loop.tsub
 
     fitwindow = (tmin_allowed, tmax_allowed)
     #if output_loop.tsub:
@@ -574,7 +572,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
 
         # compare this result to all other results
         ind_diff, errstr, tmax_ind = diff_ind(
-            effmass, np.array(median_err)[:, 0], fit_range_arr, dim,
+            effmass, np.array(median_err)[:, 0], fit_range_arr,
             fitwindow)
 
         if themin is None:
@@ -589,7 +587,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
             fake_err = False
             if isinstance(errstr, float):
                 fake_err = errfake(fit_range[dim], errstr)
-            
+
             # find the stat. significance
             if ind_diff.sdev:
                 sig = np.abs(ind_diff.val)/ind_diff.sdev
@@ -603,7 +601,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
             # print the result
             printres(effmass, pval, fit_range)
 
-            # keep track of largest errors; print the running max 
+            # keep track of largest errors; print the running max
             if maxdiff == sig:
                 print("")
                 print(ind_diff)
@@ -627,7 +625,7 @@ def output_loop(median_store, freqarr, avg_dim, dim, fit_range_arr):
                 if isinstance(errstr, float):
                     if errstr:
                         print("disagreement (mass) with data point at t=",
-                                errstr, 'dim:', dim, "sig =", sig)
+                              errstr, 'dim:', dim, "sig =", sig)
                         tmax1 = max(fit_range[dim])
                         tmax1 = max(tmax1, errstr)
                         print("current tmax1:", tmax1)
@@ -672,16 +670,17 @@ def reset_header():
     printres.prt = False
 
 
-def errfake(fit_range_dim, errstr):
+def errfake(fr_dim, errstr):
     """Is the disagreement with an effective mass point outside of this
     dimension's fit window?  Then regard this error as spurious"""
-    tmin = min(fit_range_dim)
-    tmax = max(fit_range_dim)
-    ret = False if errstr >= tmin and errstr <= tmax else True
+    tmin = min(fr_dim)
+    tmax = max(fr_dim)
+    #ret = False if errstr >= tmin and errstr <= tmax else True
+    ret = errstr < tmin or errstr > tmax
     if not ret:
-        print(tmin, tmax, errstr, fit_range_dim)
+        print(tmin, tmax, errstr, fr_dim)
     return ret
-    
+
 
 def addoffset(hist):
     """Add an offset to each histogram so the horizontal error bars
@@ -709,7 +708,7 @@ def addoffset(hist):
 
 ISOSPIN = 2
 
-def diff_ind(res, arr, fit_range_arr, dim, fitwindow):
+def diff_ind(res, arr, fit_range_arr, fitwindow):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -717,7 +716,6 @@ def diff_ind(res, arr, fit_range_arr, dim, fitwindow):
     maxdiff = 0
     maxerr = 0
     errstr = ''
-    err2str = ''
     tmax_ind = 0
     for i, gres in enumerate(arr):
         # length cut, exactly like the calling function
@@ -735,7 +733,7 @@ def diff_ind(res, arr, fit_range_arr, dim, fitwindow):
         else:
             tmax = fit_range_arr[i][0]
             tmin = fit_range_arr[i][0]
-            err2str = str((tmax1, gres))
+            #err2str = str((tmax, gres))
         if tmax > fitwindow[1] or tmin < fitwindow[0]:
             continue
 

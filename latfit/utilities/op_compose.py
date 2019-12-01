@@ -36,7 +36,7 @@ def freemomenta(irrep, dim):
         if cdim == dim and len(mom) == 2:
             ret = mom
             break
-        elif cdim == dim:
+        if cdim == dim:
             dim += 1
     return ret
 

@@ -407,14 +407,15 @@ def formnum(num):
     """Format complex number in scientific notation"""
     real = '%.8e' % num.real
     if num.imag == 0:
-        return real
+        ret = real
     else:
         if num.imag < 0:
             plm = ''
         else:
             plm = '+'
         imag = '%.8e' % num.imag
-        return real+plm+imag+'j'
+        ret = real+plm+imag+'j'
+    return ret
 
 
 

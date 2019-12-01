@@ -161,7 +161,7 @@ def defsign(cmat):
         print("eigenvalues are not all the same sign:", str(evals))
         print(cmat)
         raise EigenvalueSignInconsistency
-        ret = False
+        #ret = False
     return ret
 
 
@@ -334,7 +334,7 @@ def ratio_evals(evecs, c_lhs, c_rhs):
 def map_evals(evals_from, evals_to, debug=False):
     """Get similarity mapping"""
     ret = {}
-    used = set()
+    #used = set()
     leval = len(evals_from)
     assert leval == len(evals_to), str(
         evals_from)+" "+str(evals_to)
@@ -346,7 +346,7 @@ def map_evals(evals_from, evals_to, debug=False):
     rdleft = np.abs(evals_from - eleft)/evals_from
     rdright = np.abs(evals_from - eright)/evals_from
 
-    fallback = False # unambiguous mapping
+    #fallback = False # unambiguous mapping
     test_arr = [1 if i > 0.01 else 0 for i in rel_diff]
     for idx, item in enumerate(test_arr):
         lcomp = np.real(rdleft[idx]/rel_diff[idx])
@@ -422,14 +422,6 @@ def map_evals(evals_from, evals_to, debug=False):
     assert len(ret) == leval, str(ret)
     return ret, fallback_level, unambig_indices
 
-def make_id(mlen):
-    """Get the identity mapping"""
-    ret = {}
-    for i in range(mlen):
-        ret[i] = i
-    assert isid(ret), str(ret)
-    return ret
-
 
 def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     """Sort eigenvalues in order of increasing energy"""
@@ -437,23 +429,22 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     ret = fallback_sort(evals, evecs)
     if evecs is not None:
         evals = ret[0]
-        if evecs is None:
-            raise
+        assert evecs is not None, evecs
         evecs = ret[1]
         evals = list(evals)
     dot_map = make_id(len(evals))
     debug = False
-    timeij_start = None
+    #timeij_start = None
     if sortevals.last_time is not None and c_lhs is not None\
        and c_rhs is not None and not np.any(np.isnan(evals)):
         count = 5
-        timeij_start = sortevals.last_time
+        #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
         if timeij + 1 == 12 + np.nan:
             debug = True
         #if debug or timeij + 1 == 13:
         #    print("\nevals init", evals)
-        fallback = True
+        #fallback = True
         votes = []
         soft_votes = []
         while timeij in sortevals.sorted_evecs:
@@ -465,7 +456,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
 
             evecs_past = sortevals.sorted_evecs[timeij][sortevals.config]
             if debug and False:
-                print("evecs(", timeij, ") =", evecs_past) 
+                print("evecs(", timeij, ") =", evecs_past)
             assert len(evecs_past) == len(evals), str(evecs_past)
             assert len(evecs_past[0]) == len(evals), str(evecs_past[0])
             assert len(evecs_past[0]) == len(c_lhs), str(
@@ -489,7 +480,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             # ambiguous sorting, throw out this map
             if fallback_level == 2:
                 continue
-            elif fallback_level == 1:
+            if fallback_level == 1:
                 soft_votes.append((vote_map, unambig_indices))
             else:
                 assert not fallback_level
@@ -506,20 +497,19 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                     #print("good votes")
                 #break
         if len(votes) >= 3:
-            dot_map = votes_to_map(votes, debug=debug)
+            dot_map = votes_to_map(votes)
         elif len(votes) + np.floor(len(soft_votes)/2) >= 3:
             stop_votes_len = len(votes)+np.floor(len(soft_votes)/2)
             stop_votes_len = int(stop_votes_len)
             if debug:
                 print("votes", votes, "soft_votes", soft_votes)
             votes.extend(soft_votes)
-            dot_map = votes_to_map(votes, stop=stop_votes_len, debug=debug)
+            dot_map = votes_to_map(votes, stop=stop_votes_len)
         if debug:
             print("final votes", votes)
             print("final dot map:", dot_map)
-    exitp = False
+    #exitp = False
     if not isid(dot_map):
-        exitp = True
         sevals = np.zeros(len(evals))
         sevecs = np.zeros(np.asarray(evecs).T.shape)
         for i in dot_map:
@@ -539,7 +529,7 @@ sortevals.sorted_evecs = {}
 sortevals.last_time = None
 sortevals.config = None
 
-def votes_to_map(votes, stop=np.inf, debug=False):
+def votes_to_map(votes, stop=np.inf):
     """Get sorting map based on previous time slice votes
     for what each one thinks is the right ordering"""
     ret, _ = votes[0]
@@ -689,15 +679,15 @@ def fallback_sort(evals, evecs=None):
     ind = []
     for i, val in enumerate(evals):
         if val < 0 and LOGFORM:
-            ret[i] += np.inf
+            #ret[i] += np.inf
             ind.append(i)
 
-    sortrev = False if LOGFORM else True
+    sortrev = not LOGFORM
 
     if evecs is not None:
-        evecs = [x for y,x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+        evecs = [x for y, x in sorted(zip(evals, evecs.T), reverse=sortrev)]
         evecs = np.array(evecs).T
-        evals = [y for y,x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+        evals = [y for y, x in sorted(zip(evals, evecs.T), reverse=sortrev)]
     else:
         evals = sorted(evals, reverse=sortrev)
     for i, _ in enumerate(ind):

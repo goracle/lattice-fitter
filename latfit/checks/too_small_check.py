@@ -26,13 +26,10 @@ def too_small_check(ccov, eigcut=10**(-10)):
         while True:
             print("Continue? (y/n)")
             cresp = str(input())
-            if (cresp == "n" or cresp == "no"
-                    or cresp == "No" or cresp == "N"):
+            if cresp in ("n", "no", "No", "N"):
                 sys.exit(0)
-            if (cresp == "y" or cresp == "yes"
-                    or cresp == "Yes" or cresp == "Y"):
+            if cresp in ("y", "yes", "Yes", "Y"):
                 break
-            else:
-                print("Sorry, I didn't understand that.")
-                continue
+            print("Sorry, I didn't understand that.")
+            continue
     return 0

@@ -115,27 +115,26 @@ def start_str(strlist):
             if not ret:
                 ret = common_start(i, j)
                 break
-            else:
-                assert ret, "blank file name in given string list:" + \
-                    str(strlist)
+            assert ret, "blank file name in given string list:" + \
+                str(strlist)
         ret = common_start(i, ret)
     return ret
 
 # from
-# https://stackoverflow.com/questions/18715688/find-common-substring-between-two-strings        
+# https://stackoverflow.com/questions/18715688/find-common-substring-between-two-strings
 def common_start(stra, strb):
     """ returns the longest common substring from the
     beginning of sa and sb """
     def _iter():
-        for a, b in zip(stra, strb):
-            if a == b:
-                yield a
+        for astr, bstr in zip(stra, strb):
+            if astr == bstr:
+                yield astr
             else:
                 return
 
     return ''.join(_iter())
 
-    
+
 
 
 if __name__ == '__main__':

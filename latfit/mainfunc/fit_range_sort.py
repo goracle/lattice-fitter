@@ -1,8 +1,7 @@
 """Utilities to sort fit ranges, skip fit ranges"""
-import numpy as np
 import mpi4py
-mpi4py.rc.recv_mprobe = False
 from mpi4py import MPI
+import numpy as np
 import latfit.analysis.sortfit as sortfit
 from latfit.config import ISOSPIN, GEVP, MAX_RESULTS
 from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
@@ -17,6 +16,7 @@ assert not BIASED_SPEEDUP
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -61,7 +61,7 @@ def earlier(already_cut, jdx, kdx):
         if kinit == kdx and jdx > jinit:
             ret = True
     return ret
-    
+
 
 def cut_on_growing_exp(meta):
     """Growing exponential is a signal for around the world contamination"""
@@ -77,43 +77,43 @@ def cut_on_growing_exp(meta):
         for j, _ in enumerate(coords):
             if i >= j:
                 continue
-        excl_add = coords[j][0]
-        actual_range = meta.actual_range()
-        if excl_add not in actual_range:
-            continue
-        if MULT > 1:
-            for k in range(len(coords[0][1])):
-                if (j, k) in already_cut:
-                    continue
-                merr = max(err[i][k], err[j][k])
-                assert merr > 0, str(merr)
-                sig = np.abs(coords[i][1][k]-coords[j][1][k])/merr
-                earlier_cut = earlier(already_cut, j, k)
-                if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
-                   earlier_cut:
-                    print("(max) err =", merr, "coords =",
-                          coords[i][1][k], coords[j][1][k])
-                    print("cutting dimension", k,
-                          "for time slice", excl_add, "(exp grow cut)")
-                    print("err/coords > diff cut =", 1.5)
-                    latfit.config.FIT_EXCL[k].append(excl_add)
-                    latfit.config.FIT_EXCL[k] = list(set(
-                        latfit.config.FIT_EXCL[k]))
-                    already_cut.add((j, k))
-        else:
-            if j in already_cut:
+            excl_add = coords[j][0]
+            actual_range = meta.actual_range()
+            if excl_add not in actual_range:
                 continue
-            merr = max(err[i], err[j])
-            if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
-                print("(max) err =", merr, "coords =",
-                      coords[i][1], coords[j][1])
-                print("cutting dimension", 0, "for time slice",
-                      excl_add, "(exp grow cut)")
-                print("err/coords > diff cut =", 1.5)
-                latfit.config.FIT_EXCL[0].append(excl_add)
-                latfit.config.FIT_EXCL[0] = list(set(
-                    latfit.config.FIT_EXCL[0]))
-                already_cut.add(j)
+            if MULT > 1:
+                for k in range(len(coords[0][1])):
+                    if (j, k) in already_cut:
+                        continue
+                    merr = max(err[i][k], err[j][k])
+                    assert merr > 0, str(merr)
+                    sig = np.abs(coords[i][1][k]-coords[j][1][k])/merr
+                    earlier_cut = earlier(already_cut, j, k)
+                    if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
+                    earlier_cut:
+                        print("(max) err =", merr, "coords =",
+                              coords[i][1][k], coords[j][1][k])
+                        print("cutting dimension", k,
+                              "for time slice", excl_add, "(exp grow cut)")
+                        print("err/coords > diff cut =", 1.5)
+                        latfit.config.FIT_EXCL[k].append(excl_add)
+                        latfit.config.FIT_EXCL[k] = list(set(
+                            latfit.config.FIT_EXCL[k]))
+                        already_cut.add((j, k))
+            else:
+                if j in already_cut:
+                    continue
+                merr = max(err[i], err[j])
+                if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
+                    print("(max) err =", merr, "coords =",
+                          coords[i][1], coords[j][1])
+                    print("cutting dimension", 0, "for time slice",
+                          excl_add, "(exp grow cut)")
+                    print("err/coords > diff cut =", 1.5)
+                    latfit.config.FIT_EXCL[0].append(excl_add)
+                    latfit.config.FIT_EXCL[0] = list(set(
+                        latfit.config.FIT_EXCL[0]))
+                    already_cut.add(j)
     ret = start == str(latfit.config.FIT_EXCL)
     return ret
 
@@ -263,7 +263,7 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
                 samp_mult[i][1], p=samp_mult[i][0])
                     for i in range(MULT)]
     # add user info
-    excl = augment_excl([[i for i in j] for j in excl])
+    excl = augment_excl([list(j) for j in excl])
 
     key = keyexcl(excl)
     ret = None
@@ -326,7 +326,7 @@ def get_tsorted(plotdata):
         if MULT > 1 or GEVP:
             coords = np.array([j[i] for j in plotdata.coords[:, 1]])
         else:
-            coords = np.array([j for j in plotdata.coords[:, 1]])
+            coords = np.asarray(plotdata.coords[:, 1])
         times = np.array(list(plotdata.coords[:, 0]))
         if MULT > 1 or GEVP:
             tsorted.append(sortfit.best_times(

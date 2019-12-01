@@ -37,7 +37,7 @@ if STYPE == 'hdf5':
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]
     proc_folder.cache = {}
-        
+
     def proc_folder_get(hdf5_file, ctime, other_regex=""):
         """Get data from hdf5 file (even though it's called proc_folder)"""
         if other_regex:

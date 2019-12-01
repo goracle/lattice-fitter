@@ -19,6 +19,9 @@ def gevp_statements(gevp_dirs, gevp, dim, mult, tvecs):
         " for each diagonal element of GEVP matrix"
 
 def mod_superjack(superjack_cutoff, jackknife_block_size, check_ids_minus_2):
+    """Change the cutoff point where there's variance in the superjackknife
+    blocks (based on binning).
+    """
     superjack_cutoff /= jackknife_block_size
     # assert int(superjack_cutoff) == superjack_cutoff
     print("int(superjack_cutoff), superjack_cutoff:",
@@ -34,7 +37,7 @@ def start_params_pencils(start_params, origl, num_pencils,
     if len(start_params) % 2 == 1 and origl > 1:
         start_params = list(start_params[:-1])*mult
         start_params.append(sys_energy_guess)
-        assert num_penciles == 1, "more pencils is not supported right now"
+        assert num_pencils == 1, "more pencils is not supported right now"
         start_params = start_params*2**num_pencils
     else:
         start_params = (list(start_params)*mult)*2**num_pencils
@@ -153,4 +156,3 @@ def randomize_data_check(randomize_energies, eff_mass):
     """Assert for random gaussian data"""
     assert not randomize_energies or eff_mass,\
         "only constant fits supported for random data"
-
