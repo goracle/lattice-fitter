@@ -121,7 +121,9 @@ def fit(tadd=0, tsub=0):
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
 
-        if FIT:
+        test = not FIT
+
+        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1:
 
             ## allocate results storage, do second initial test fit
             ## (if necessary)
@@ -193,12 +195,10 @@ def fit(tadd=0, tsub=0):
 
                 min_arr, overfit_arr = mpi_gather(min_arr, overfit_arr)
 
-            #if MPIRANK == 0:
-            test = post_loop(meta,
-                             (min_arr, overfit_arr),
+            test = post_loop(meta, (min_arr, overfit_arr),
                              plotdata, retsingle_save, test_success)
 
-        else:
+        elif not FIT:
             nofit_plot(meta, plotdata, retsingle_save)
     else:
         old_fit_style(meta, trials, plotdata)
@@ -1177,7 +1177,7 @@ def main():
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-            for tsub in range(LT):
+            for tsub in range(int(np.ceil(LT/2))):
                 tadd = 0
                 flag = 1
                 while flag and tadd <= LT: # this is the tmin loop
