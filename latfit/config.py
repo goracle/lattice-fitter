@@ -49,9 +49,9 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A_1PLUS_mom000'
 IRREP = 'A1_avg_mom111'
 IRREP = 'A1_mom1'
+IRREP = 'A_1PLUS_mom000'
 
 if ISOSPIN == 1:
     # control
@@ -78,8 +78,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
+LATTICE_ENSEMBLE = '32c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
