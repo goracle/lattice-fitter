@@ -311,6 +311,12 @@ FIT_SPACING_CORRECTION = False if ISOSPIN != 2 else FIT_SPACING_CORRECTION
 FIT_SPACING_CORRECTION = True if PIONRATIO else FIT_SPACING_CORRECTION
 misc.CONTINUUM = FIT_SPACING_CORRECTION
 
+# use pseudo-eigenvalues of the GEVP to sort GEVP eigenvalues
+# pseudo-eigenvalues are obtained from a ratio solve of the GEVP
+# using eigenvectors from past time slices
+PSEUDO_SORT = False
+PSEUDO_SORT = True
+PSEUDO_SORT = False if ISOSPIN == 2 else PSEUDO_SORT
 
 # no around the world subtraction at all
 NOATWSUB = True

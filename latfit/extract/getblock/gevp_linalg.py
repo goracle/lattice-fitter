@@ -9,7 +9,7 @@ from sympy import S
 from sympy.matrices import Matrix
 
 from latfit.utilities import exactmean as em
-from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR
+from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSUEDO_SORT
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
@@ -436,7 +436,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     debug = False
     #timeij_start = None
     if sortevals.last_time is not None and c_lhs is not None\
-       and c_rhs is not None and not np.any(np.isnan(evals)):
+       and c_rhs is not None and not np.any(np.isnan(evals)) and PSEUDO_SORT:
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
