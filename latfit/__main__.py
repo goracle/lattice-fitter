@@ -931,11 +931,11 @@ def dofit_initial(meta, plotdata):
 
     test_success = False
     retsingle_save = None
-    print("Trying initial fit with excluded times:",
-          latfit.config.FIT_EXCL)
     flag = True
     while flag:
         try:
+            print("Trying initial fit with excluded times:",
+                  latfit.config.FIT_EXCL)
             retsingle_save = sfit.singlefit(
                 meta.input_f, meta.fitwindow, meta.options.xmin,
                 meta.options.xmax, meta.options.xstep)
@@ -990,12 +990,10 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
         partial_reset()
 
     fit_range_init = str(latfit.config.FIT_EXCL)
-    print("Trying second initial fit with excluded times:",
-          latfit.config.FIT_EXCL)
     try:
         if not samerange and FIT:
-            print("Trying second test fit.")
-            print("fit excl:", fit_range_init)
+            print("Trying second initial fit with excluded times:",
+                  latfit.config.FIT_EXCL)
             retsingle_save = sfit.singlefit(meta.input_f,
                                             meta.fitwindow,
                                             meta.options.xmin,
