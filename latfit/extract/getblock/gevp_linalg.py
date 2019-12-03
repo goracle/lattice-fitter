@@ -9,7 +9,7 @@ from sympy import S
 from sympy.matrices import Matrix
 
 from latfit.utilities import exactmean as em
-from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSUEDO_SORT
+from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSEUDO_SORT
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
