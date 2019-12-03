@@ -397,30 +397,31 @@ def simpledivide(arr, pow1):
     return ret
 
 
-def morecorr(amp, expo, tdis, dt2, corr):
+#def morecorr(amp, expo, tdis, dt2, corr):
+def morecorr(amp, expo, tdis, _, corr):
     """Return pions which are more correlated
     """
-    pow1 = tdis-dt2
     corr = np.real(corr)
-    corr_ancillary = np.copy(np.roll(corr, pow1, axis=1))
+    #corr_ancillary = np.copy(np.roll(corr, pow1, axis=1))
+    #pow1 = tdis-dt2
     #if tdis < LT/4 and tdis > pow1 and False:
-    if False:
-        assert None, "not supported"
-        newpi1 = np.copy(corr)[:, tdis]
-        newpi2 = np.copy(corr*simpledivide(corr/corr_ancillary, pow1))
-        newpi2 = newpi2[:, tdis]
-        if tdis < LT/2:
-            assert newpi2[0] < newpi1[0], str(newpi2)+" "+str(newpi1)
-    else:
-        try:
-            newpi1 = amp*np.exp(-expo*tdis)
-            newpi2 = amp*np.exp(-expo*(LT-tdis))
-        except TypeError:
-            print(amp.shape)
-            print(expo.shape)
-            print(LT)
-            print(tdis)
-            raise
+    #if False:
+    #    assert None, "not supported"
+    #    newpi1 = np.copy(corr)[:, tdis]
+    #    newpi2 = np.copy(corr*simpledivide(corr/corr_ancillary, pow1))
+    #    newpi2 = newpi2[:, tdis]
+    #    if tdis < LT/2:
+    #        assert newpi2[0] < newpi1[0], str(newpi2)+" "+str(newpi1)
+    #else:
+    try:
+        newpi1 = amp*np.exp(-expo*tdis)
+        newpi2 = amp*np.exp(-expo*(LT-tdis))
+    except TypeError:
+        print(amp.shape)
+        print(expo.shape)
+        print(LT)
+        print(tdis)
+        raise
     return newpi1, newpi2
 
 def getpi(fname, reverseatw):
