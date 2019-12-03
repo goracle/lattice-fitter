@@ -17,6 +17,7 @@ import re
 from math import sqrt
 import time
 import sys
+import signal
 import pickle
 import numpy as np
 import mpi4py
@@ -1151,7 +1152,12 @@ def main():
     try:
         tloop()
     except KeyboardInterrupt:
+        signal_handler(signal.SIGINT, "")
+
+def signal_handler(sig, frame):
+        print('Ctrl+C pressed; raising.')
         raise
+signal.signal(signal.SIGINT, signal_handler)
 
 def tloop():
     """main"""
