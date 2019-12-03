@@ -1148,6 +1148,12 @@ def incr_dt():
     print("current GEVP t-t0 =", latfit.config.T0)
 
 def main():
+    try:
+        tloop()
+    except KeyboardInterrupt:
+        raise
+
+def tloop():
     """main"""
     mintol = latfit.config.MINTOL # store tolerance preferences
     if TLOOP: # don't pause (show anything) since we are looping over plots
