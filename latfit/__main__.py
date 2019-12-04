@@ -98,6 +98,7 @@ def fit(tadd=0, tsub=0):
     """Main for latfit"""
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
+    test = not FIT
 
     if tadd or tsub:
         print("tadd =", tadd, "tsub =", tsub)
@@ -121,8 +122,6 @@ def fit(tadd=0, tsub=0):
         # which have error bars which are too large
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
-
-        test = not FIT
 
         if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1:
 
@@ -1192,7 +1191,6 @@ def tloop():
                 flag = 1
                 while flag and tadd <= LT: # this is the tmin loop
                     reset_main(mintol) # reset the fitter for next fit
-                    print("t indices:", i, j)
 
                     # parallelize loop
                     if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
@@ -1200,6 +1198,7 @@ def tloop():
                         tadd += 1
                         continue
                     print("tadd, tsub, MPIRANK", tadd, tsub, MPIRANK)
+                    print("t indices, mpi rank:", i, j, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds

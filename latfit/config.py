@@ -50,15 +50,15 @@ IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
 IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
+IRREP = 'A1_mom1'
 
 if ISOSPIN == 1:
     # control
     IRREP = 'T_1_3MINUS_mom000'
     IRREP = 'T_1_MINUS'
     # working
-    IRREP = 'A_2MINUS_mom11' 
+    IRREP = 'A_2MINUS_mom11'
     IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
     IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
     IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
