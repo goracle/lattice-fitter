@@ -108,7 +108,7 @@ def fit(tadd=0, tsub=0):
 
     # error processing, parameter extractions
 
-    if trials == -1: # get rid of this
+    if trials == -1 and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1: # get rid of this
         # try an initial plot, shrink the xmax if it's too big
         print("Trying initial test fit.")
         start = time.perf_counter()
