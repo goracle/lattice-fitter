@@ -3,6 +3,13 @@ import sys
 import os
 import time
 import subprocess as sp
+import mpi4py
+from mpi4py import MPI
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
+
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -21,7 +28,8 @@ class Logger:
         if fname is None:
             self.log = open("fit.log", "a")
         else:
-            self.log = open("fit_"+str(fname)+".log", "a")
+            self.log = open("fit_"+str(fname)+"_"+str(
+                MPIRANK)+".log", "a")
         self.flush()
 
     @PROFILE
