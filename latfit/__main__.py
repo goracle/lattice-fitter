@@ -122,8 +122,23 @@ def fit(tadd=0, tsub=0):
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
 
-        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1:
+        # a significant level of work is needed if we are entering the
+        # fit loop at all; thus parallelize
+        if meta.lenprod and not meta.skiploop:
+            fit.count += 1
 
+        if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
+            tloop.ijstr = ""
+
+        if tloop.ijstr:
+            print(tloop.ijstr)
+            if tadd or tsub:
+                print("tadd =", tadd, "tsub =",
+                        tsub, "rank =", MPIRANK)
+
+        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1 and tloop.ijstr:
+
+            tloop.ijstr = ""
             ## allocate results storage, do second initial test fit
             ## (if necessary)
             start = time.perf_counter()
@@ -147,22 +162,7 @@ def fit(tadd=0, tsub=0):
             print("starting loop of max length:"+str(
                 meta.lenprod), "random fit:", meta.random_fit)
 
-            # a significant level of work is needed if we are entering the
-            # fit loop at all; thus parallelize
-            if meta.lenprod and not meta.skiploop:
-                fit.count += 1
-
             for idx in range(meta.lenprod):
-
-                if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
-                    break
-
-                if tloop.ijstr:
-                    print(tloop.ijstr)
-                    if tadd or tsub:
-                        print("tadd =", tadd, "tsub =",
-                              tsub, "rank =", MPIRANK)
-                    tloop.ijstr = ""
 
                 # exit the fit loop?
                 if frsort.exitp(meta, min_arr, overfit_arr, idx):
