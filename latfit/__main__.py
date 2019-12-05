@@ -365,8 +365,8 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
     # reject model at 10% level
     if result_min.pvalue.val < PVALUE_MIN:
         print("Not storing result because p-value"+\
-                " is below rejection threshold. number"+\
-                " of non-overfit results so far =", len(min_arr))
+              " is below rejection threshold. number"+\
+              " of non-overfit results so far =", len(min_arr))
         print("number of overfit results =", len(overfit_arr))
         ret = True
 
@@ -449,7 +449,8 @@ def find_mean_and_err(meta, min_arr):
 
         # dump the results to file
         # if not (ISOSPIN == 0 and GEVP):
-        dump_fit_range(meta, min_arr, name, res_mean, err_check)
+        if len(min_arr) > 1:
+            dump_fit_range(meta, min_arr, name, res_mean, err_check)
 
         # error propagation check
         result_min = parametrize_entry(result_min, name)
