@@ -100,15 +100,14 @@ def fit(tadd=0, tsub=0):
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
     test = not FIT
 
-    if tadd or tsub:
-        print("tadd =", tadd, "tsub =", tsub)
-
     meta = FitRangeMetaData()
     trials, plotdata, dump_fit_range.fn1 = meta.setup(plotdata)
 
     # error processing, parameter extractions
 
-    if trials == -1 and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1: # get rid of this
+    # todo:  get rid of "trials" param
+    if trials == -1 and tadd + tsub < meta.fitwindow[
+            1] - meta.fitwindow[0] + 1:
         # try an initial plot, shrink the xmax if it's too big
         print("Trying initial test fit.")
         start = time.perf_counter()
@@ -147,12 +146,19 @@ def fit(tadd=0, tsub=0):
             meta.skip_loop()
             print("starting loop of max length:"+str(
                 meta.lenprod), "random fit:", meta.random_fit)
+
+            # a significant level of work is needed if we are entering the
+            # fit loop at all; thus parallelize
+            if meta.lenprod and not meta.skiploop:
+                fit.count += 1
+                print(tloop.ijstr)
+                if tadd or tsub:
+                    print("tadd =", tadd, "tsub =", tsub, "rank =", MPIRANK)
+
             for idx in range(meta.lenprod):
 
-                # parallelize loop
-                #if idx % MPISIZE != MPIRANK:
-                    #print("mpi skip")
-                    #continue
+                if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
+                    break
 
                 # exit the fit loop?
                 if frsort.exitp(meta, min_arr, overfit_arr, idx):
@@ -204,6 +210,7 @@ def fit(tadd=0, tsub=0):
         old_fit_style(meta, trials, plotdata)
     print("END STDOUT OUTPUT")
     return test
+fit.count = 0
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style
@@ -1034,6 +1041,8 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
                 overfit_arr.append(result)
         else:
             print("cutting result of test fits")
+    assert len(min_arr) + len(overfit_arr) <= 1, len(
+        min_arr) + len(overfit_arr)
     return min_arr, overfit_arr, retsingle_save, fit_range_init
 
 def store_init(plotdata):
@@ -1193,12 +1202,12 @@ def tloop():
                     reset_main(mintol) # reset the fitter for next fit
 
                     # parallelize loop
-                    if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
-                       and MPISIZE > 1:
-                        tadd += 1
-                        continue
-                    print("tadd, tsub, MPIRANK", tadd, tsub, MPIRANK)
-                    print("t indices, mpi rank:", i, j, MPIRANK)
+                    #if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
+                    #   and MPISIZE > 1:
+                        #tadd += 1
+                        #continue
+                    tloop.ijstr = "t indices, mpi rank: "+str(
+                        i)+" "+str(j)+" "+str(MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
@@ -1213,7 +1222,8 @@ def tloop():
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break
-    print("End of t loop.  latfit exiting.")
+    print("End of t loop.  latfit exiting, rank:" MPIRANK)
+tloop.ijstr = ""
 
 def reset_main(mintol):
     """Reset all dynamic variables"""
