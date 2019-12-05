@@ -151,14 +151,18 @@ def fit(tadd=0, tsub=0):
             # fit loop at all; thus parallelize
             if meta.lenprod and not meta.skiploop:
                 fit.count += 1
-                print(tloop.ijstr)
-                if tadd or tsub:
-                    print("tadd =", tadd, "tsub =", tsub, "rank =", MPIRANK)
 
             for idx in range(meta.lenprod):
 
                 if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
                     break
+
+                if tloop.ijstr:
+                    print(tloop.ijstr)
+                    if tadd or tsub:
+                        print("tadd =", tadd, "tsub =",
+                              tsub, "rank =", MPIRANK)
+                    tloop.ijstr = ""
 
                 # exit the fit loop?
                 if frsort.exitp(meta, min_arr, overfit_arr, idx):
