@@ -1222,7 +1222,7 @@ def tloop():
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break
-    print("End of t loop.  latfit exiting, rank:" MPIRANK)
+    print("End of t loop.  latfit exiting, rank:", MPIRANK)
 tloop.ijstr = ""
 
 def reset_main(mintol):
