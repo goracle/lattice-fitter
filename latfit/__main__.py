@@ -130,15 +130,13 @@ def fit(tadd=0, tsub=0):
         if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
             tloop.ijstr = ""
 
-        if tloop.ijstr:
+        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1 and tloop.ijstr:
+
             print(tloop.ijstr)
             if tadd or tsub:
                 print("tadd =", tadd, "tsub =",
                         tsub, "rank =", MPIRANK)
 
-        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1 and tloop.ijstr:
-
-            tloop.ijstr = ""
             ## allocate results storage, do second initial test fit
             ## (if necessary)
             start = time.perf_counter()
