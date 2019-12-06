@@ -3,6 +3,8 @@ import sys
 import copy
 import os
 import numbers
+import mpi4py
+from mpi4py import MPI
 from collections import namedtuple
 import pickle
 import numpy as np
@@ -44,6 +46,10 @@ from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.result_min import ResultMin
 from latfit.utilities import exactmean as em
 from latfit.utilities.actensordot import actensordot
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
@@ -265,7 +271,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                   sys_str,
                   torchi(), result_min_jack.fun/result_min.misc.dof,
                   "p-value=", result_min.pvalue.arr[config_num],
-                  'dof=', result_min.misc.dof)
+                  'dof=', result_min.misc.dof, "rank=", MPIRANK)
 
             assert not np.isnan(result_min.pvalue.arr[
                 config_num]), "pvalue is nan"

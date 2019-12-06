@@ -124,14 +124,16 @@ def fit(tadd=0, tsub=0):
 
         # a significant level of work is needed if we are entering the
         # fit loop at all; thus parallelize
-        if meta.lenprod and not meta.skiploop:
+        if list(meta.generate_combinations()[0]) and not meta.skiploop:
             fit.count += 1
 
         if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
             tloop.ijstr = ""
+        print("fit.count =", fit.count)
 
         if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1 and tloop.ijstr:
 
+            # print loop info
             print(tloop.ijstr)
             if tadd or tsub:
                 print("tadd =", tadd, "tsub =",
