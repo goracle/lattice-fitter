@@ -36,6 +36,7 @@ from latfit.makemin.mkmin import convert_to_namedtuple
 
 from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.proc_folder import proc_folder
+import latfit.extract.extract as ext
 from latfit.finalout.printerr import printerr
 from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
@@ -609,6 +610,9 @@ if EFF_MASS:
                 times.append(key)
         times = sorted(times)
         for _, time1 in enumerate(times):
+            # we may have extra time slices
+            if time1 not in xcoord:
+                continue
             if not isinstance(time1, int) and not isinstance(time1, float):
                 continue
             if mindim is None:
@@ -620,8 +624,7 @@ if EFF_MASS:
                 assert dimops == len(sfit.singlefit.reuse[time1][0])
                 if not getavg:
                     arr = sfit.singlefit.reuse[time1][:, mindim]
-                    err = sfit.singlefit.error2[
-                        xcoord.index(time1)][mindim]
+                    err = sfit.singlefit.error2[xcoord.index(time1)][mindim]
                     assert isinstance(err, float), str(err)
                 else:
                     arr = sfit.singlefit.reuse[time1]
@@ -1189,6 +1192,8 @@ def tloop():
             else:
                 break
         for j in range(TSEP_VEC[0]+1): # loop over t-t0
+            # get rid of all gevp/eff mass processing
+            ext.reset_extract()
             if j < TLOOP_START[1]:
                 continue
             if j:

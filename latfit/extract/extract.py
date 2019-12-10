@@ -33,7 +33,7 @@ def extract(input_f, xmin, xmax, xstep):
     elif os.path.isdir(input_f) or STYPE == 'hdf5':
 
         # reuse results
-        reuse = {xmin: 0}
+        reuse = extract.reuse
 
         # allocate space for return values
 
@@ -70,7 +70,7 @@ def extract(input_f, xmin, xmax, xstep):
 
                 # fill in dictionary for reusing already extracted blocks
                 # with the newest block
-                if i == 0:
+                if i == 0 and timej not in reuse:
                     reuse[timej] = resret_proc.returnblk
 
                 if j == 0:
@@ -79,9 +79,13 @@ def extract(input_f, xmin, xmax, xstep):
                     # only store coordinates once.
                     resret.coords[i][0] = timei
                     resret.coords[i][1] = resret_proc.coord
-
+    extract.reuse = reuse
     return resret.coords, resret.cov, reuse
+extract.reuse = {}
 
+def reset_extract():
+    """zero out reuse dict"""
+    extract.reuse = {}
 
 # side effects warning
 def reuse_ij(reuse, time):

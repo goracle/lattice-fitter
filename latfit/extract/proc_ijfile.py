@@ -24,7 +24,10 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=N
     try:
         num_configs = len(reuse['i'])
     except TypeError:
-        reuse['i'] = getblock(ifile_tup, reuse, timeij[0], delta_t=delta_t)
+        if timeij[0] in reuse:
+            reuse['i'] = reuse[timeij[0]]
+        else:
+            reuse['i'] = getblock(ifile_tup, reuse, timeij[0], delta_t=delta_t)
         num_configs = len(reuse['i'])
     avg_i = em.acmean(reuse['i'], axis=0)
 
@@ -50,7 +53,10 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=N
                 print("Offending files:", ifile_tup, "\nand", jfile_tup)
                 sys.exit(1)
         except TypeError:
-            reuse['j'] = getblock(jfile_tup, reuse, timeij[1], delta_t=delta_t)
+            if timeij[1] in reuse:
+                reuse['j'] = reuse[timeij[1]]
+            else:
+                reuse['j'] = getblock(jfile_tup, reuse, timeij[1], delta_t=delta_t)
 
     return rets(coord=avg_i, covar=get_coventry(reuse, sameblk, avg_i),
                 returnblk=reuse['j'])
