@@ -540,7 +540,7 @@ def compare_eff_mass_to_range(arr, errmin, mindim=None):
     the errors on subsets of effective mass points
     and the error on the points themselves.
     """
-    arreff, erreff = min_eff_mass_errors(mindim)
+    arreff, erreff = min_eff_mass_errors(mindim=mindim)
     if errmin == erreff:
         arr = arreff
     else:
@@ -582,79 +582,120 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
         fname = fname+'_mindim'+str(mindim)
         arr = np.asarray(getattr(min_arr[ind][0], 'energy').arr[:, mindim])
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
-    if SYS_ENERGY_GUESS:
-        fname += "_sys"
-    if MATRIX_SUBTRACTION:
-        fname += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-    fname = fname + meta.window_str()+"_"+latfit.config.T0
+
+    fname = filename_plus_config_info(fname)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
+
+def time_slice_list():
+    """Get list of time slices from reuse dictionary keys"""
+    # time slice list
+    times = []
+    for key in sfit.singlefit.reuse:
+        if not isinstance(key, float) and not isinstance(key, int):
+            continue
+        if int(key) == key:
+            times.append(int(key))
+    times = sorted(times)
+    return times
+
+def get_dimops_at_time(time1):
+    """ get the dimension of the GEVP (should be == MULT)
+    (also, dimops should be == first config's energy values at time1)"""
+    dimops = len(sfit.singlefit.reuse[time1][0])
+    assert dimops == MULT, (dimops, MULT)
+    assert dimops == len(sfit.singlefit.reuse[time1][0])
+
 
 if EFF_MASS:
     @PROFILE
     def min_eff_mass_errors(mindim=None, getavg=False):
         """Append the errors of the effective mass points
         to errarr"""
-        errlist = []
-        arrlist = []
+
+        # time slice list
         xcoord = list(sfit.singlefit.coords_full[:, 0])
         assert mindim is None or isinstance(mindim, int),\
             "type check failed"
-        times = []
+
+        # build the time slice lists of eff mass, errors
         dimops = None
-        for key in sfit.singlefit.reuse:
-            if not isinstance(key, float) and not isinstance(key, int):
-                continue
-            if int(key) == key:
-                times.append(key)
-        times = sorted(times)
-        for _, time1 in enumerate(times):
+        errlist = []
+        arrlist = []
+        for _, time1 in enumerate(time_slice_list()):
+
             # we may have extra time slices
+            # (due to fit window cuts from TLOOP)
             if time1 not in xcoord:
                 continue
-            if not isinstance(time1, int) and not isinstance(time1, float):
-                continue
-            if mindim is None:
-                arr = sfit.singlefit.reuse[time1]
-                err = sfit.singlefit.error2[xcoord.index(time1)]
-            else:
-                dimops = len(sfit.singlefit.reuse[time1][0])\
-                    if dimops is None else dimops
-                assert dimops == len(sfit.singlefit.reuse[time1][0])
-                if not getavg:
-                    arr = sfit.singlefit.reuse[time1][:, mindim]
-                    err = sfit.singlefit.error2[xcoord.index(time1)][mindim]
-                    assert isinstance(err, float), str(err)
-                else:
-                    arr = sfit.singlefit.reuse[time1]
-                    err = sfit.singlefit.error2[xcoord.index(time1)]
+
+            # check dimensionality
+            dimops = get_dimops_at_time(time1) if dimops is None else dimops
+            assert dimops == get_dimops_at_time(time1), (
+                get_dimops_at_time(time1), dimops)
+
+            # masses and errors at this time slice
+            arr = sfit.singlefit.reuse[time1]
+            err = sfit.singlefit.error2[xcoord.index(time1)]
+
+            # reduce to a specific GEVP dimension
+            if mindim is not None:
+                arr = arr[:, mindim]
+                err = err[mindim]
+                assert isinstance(err, float), str(err)
             arrlist.append(arr)
             errlist.append(err)
-        if not getavg:
-            assert isinstance(errlist[0], float),\
-                str(errlist)+" "+str(sfit.singlefit.error2[
-                    xcoord.index(10)])
-            err = min(errlist)
-            arr = arrlist[errlist.index(err)]
+
+        if getavg and mindim is None:
+            arr, err = config_avg_eff_mass(arrlist, errlist)    
+        elif not getavg and mindim is not None:
+            arr, err = mindim_eff_mass(arrlist, errlist)
+        elif not getavg and mindim is None:
+            arr, err = np.array(arrlist), np.array(errlist)
         else:
-            err = np.asarray(errlist)
-            arr = em.acmean(np.asarray(arrlist), axis=1)
-            if isinstance(arr[0], float):
-                # add structure in arr for backwards compatibility
-                arr = np.asarray([[i] for i in arr])
-                assert isinstance(err[0], float),\
-                    "error array does not have same structure as"+\
-                    " eff mass array"
-                err = np.asarray([[i] for i in err])
-            assert len(arr.shape) == 2,\
-                "first dim is time, second dim is operator"
-            assert len(err.shape) == 2,\
-                "first dim is time, second dim is operator"
-            assert len(err) == len(arr)
-            assert mindim is None
+            assert None, ("mode check fail:", getavg, mindim)
+
         assert isinstance(err, float) or mindim is None, "index bug"
         return arr, err
+
+    def mindim_eff_mass(arrlist, errlist):
+        """find the time slice which gives the minimum error
+        then get the energy and error at that point
+        this only makes sense if we are at a particular GEVP dimension
+        """
+        assert isinstance(errlist[0], float),\
+            (errlist," ",sfit.singlefit.error2[xcoord.index(10)],
+                np.asarray(errlist).shape, np.asarray(errlist[0]).shape)
+        err = min(errlist)
+        arr = arrlist[errlist.index(err)]
+        return arr, err
+
+    def config_avg_eff_mass(arrlist, errlist):
+        """Get the config average of the effective mass points.
+        Add structure to non-GEVP points to make files dumped like a 1x1 GEVP
+        """
+        err = np.asarray(errlist)
+        # average over configs
+        arr = em.acmean(np.asarray(arrlist), axis=1)
+
+        # add structure in arr for backwards compatibility
+        if isinstance(arr[0], float): # no GEVP
+            assert MULT == 1, MULT
+            arr = np.asarray([[i] for i in arr])
+            assert isinstance(err[0], float),\
+                "error array does not have same structure as"+\
+                " eff mass array"
+            err = np.asarray([[i] for i in err])
+
+        # index checks
+        assert len(arr.shape) == 2, (
+            arr, "first dim is time, second dim is operator", arr.shape)
+        assert len(err.shape) == 2, (
+            err, "first dim is time, second dim is operator", err.shape)
+        assert len(err) == len(arr), (len(err), len(arr))
+        return arr, err
+
 else:
     @PROFILE
     def min_eff_mass_errors(_):
@@ -666,12 +707,12 @@ def pickle_res(name, min_arr):
     """Return the fit range results to be pickled,
     append the effective mass points
     """
-    ret = [getattr(i[0], name).val for i in min_arr]
+    ret = [getattr(i[0], name).arr for i in min_arr]
     origlshape = np.asarray(ret, dtype=object).shape
     print("res shape", origlshape)
     origl = len(ret)
     if 'energy' in name:
-        arreff, _ = min_eff_mass_errors(mindim=None, getavg=True)
+        arreff, _ = min_eff_mass_errors()
         ret = [*ret, *arreff]
     ret = np.asarray(ret, dtype=object)
     assert len(origlshape) == len(ret.shape), str(origlshape)+","+str(
@@ -700,7 +741,7 @@ def pickle_res_err(name, min_arr):
                                         np.asarray(sfit.singlefit.error2),
                                         name)
     if 'energy' in name:
-        _, erreff = min_eff_mass_errors(mindim=None, getavg=True)
+        _, erreff = min_eff_mass_errors(getavg=True)
         ret = np.array([*ret, *erreff])
     ret = np.asarray(ret)
     flen = len(ret)
@@ -741,29 +782,33 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
                           pickl_res, pickl_excl], dtype=object)
     assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
         str(pickl_res_err.shape)+str(pickl_res[2].shape)
+    assert len(pickl_res) == 4, "bad result length"
+
     if not GEVP:
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
             name = name+'_'+dump_fit_range.fn1
         name = re.sub('.jkdat', '', name)
-        filename = name
-        filename_err = name+'_err'
-    else:
-        filename = name+"_"+MOMSTR+'_I'+str(ISOSPIN)
-        filename_err = name+'_err'+"_"+MOMSTR+'_I'+str(ISOSPIN)
-    assert len(pickl_res) == 4, "bad result length"
+    filename = filename_plus_config_info(name)
+    filename_err = filename_plus_config_info(name+'_err')
+    write_pickle_file_verb(filename, pickl_res)
+    write_pickle_file_verb(filename_err, pickl_res_err)
+dump_fit_range.fn1 = None
+
+def write_pickle_file_verb(filename, arr):
+    """Write pickle file; print info"""
+    print("writing pickle file", filename)
+    pickle.dump(arr, open(filename+'.p', "wb"))
+
+def filename_plus_config_info(filename):
+    """Add config info to file name"""
+    if GEVP:
+        filename += "_"+MOMSTR+'_I'+str(ISOSPIN)
     if SYS_ENERGY_GUESS:
         filename += "_sys"
-        filename_err += '_sys'
     if MATRIX_SUBTRACTION:
         filename += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-        filename_err += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-    filename = filename + meta.window_str()+"_"+latfit.config.T0
-    print("writing file", filename)
-    filename_err = filename_err + meta.window_str()+"_"+latfit.config.T0
-    pickle.dump(pickl_res, open(filename+'.p', "wb"))
-    print("writing file", filename_err)
-    pickle.dump(pickl_res_err, open(filename_err+'.p', "wb"))
-dump_fit_range.fn1 = None
+    filename += meta.window_str()+"_"+latfit.config.T0
+    return filename
 
 @PROFILE
 def divbychisq(param_arr, pvalue_arr):
