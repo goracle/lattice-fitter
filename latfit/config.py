@@ -78,8 +78,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '24c'
 LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
