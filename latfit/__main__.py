@@ -780,8 +780,8 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     pickl_excl = pickle_excl(meta, min_arr)
     pickl_res = np.array([res_mean, err_check,
                           pickl_res, pickl_excl], dtype=object)
-    assert pickl_res_err.shape == pickl_res[2].shape, "array mismatch:"+\
-        str(pickl_res_err.shape)+str(pickl_res[2].shape)
+    assert pickl_res_err.shape == pickl_res[2].shape[0::2], (
+        "array mismatch:", pickl_res_err.shape, pickl_res[2].shape)
     assert len(pickl_res) == 4, "bad result length"
 
     if not GEVP:
