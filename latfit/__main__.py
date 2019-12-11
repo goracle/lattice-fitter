@@ -583,7 +583,7 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
         arr = np.asarray(getattr(min_arr[ind][0], 'energy').arr[:, mindim])
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
 
-    fname = filename_plus_config_info(fname)
+    fname = filename_plus_config_info(meta, fname)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
     pickle.dump(arr, open(fname+'.p', "wb"))
@@ -788,8 +788,8 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
         if dump_fit_range.fn1 is not None and dump_fit_range.fn1 != '.':
             name = name+'_'+dump_fit_range.fn1
         name = re.sub('.jkdat', '', name)
-    filename = filename_plus_config_info(name)
-    filename_err = filename_plus_config_info(name+'_err')
+    filename = filename_plus_config_info(meta, name)
+    filename_err = filename_plus_config_info(meta, name+'_err')
     write_pickle_file_verb(filename, pickl_res)
     write_pickle_file_verb(filename_err, pickl_res_err)
 dump_fit_range.fn1 = None
@@ -799,7 +799,7 @@ def write_pickle_file_verb(filename, arr):
     print("writing pickle file", filename)
     pickle.dump(arr, open(filename+'.p', "wb"))
 
-def filename_plus_config_info(filename):
+def filename_plus_config_info(meta, filename):
     """Add config info to file name"""
     if GEVP:
         filename += "_"+MOMSTR+'_I'+str(ISOSPIN)
