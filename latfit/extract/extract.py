@@ -34,6 +34,8 @@ def extract(input_f, xmin, xmax, xstep):
 
         # reuse results
         reuse = extract.reuse
+        if not reuse:
+            reuse = {xmin: 0}
 
         # allocate space for return values
 
@@ -70,8 +72,9 @@ def extract(input_f, xmin, xmax, xstep):
 
                 # fill in dictionary for reusing already extracted blocks
                 # with the newest block
-                if i == 0 and timej not in reuse:
+                if i == 0:
                     reuse[timej] = resret_proc.returnblk
+                    extract.reuse[timej] = np.copy(reuse[timej])
 
                 if j == 0:
                     # only when j=0 does the i block need updating
@@ -79,12 +82,12 @@ def extract(input_f, xmin, xmax, xstep):
                     # only store coordinates once.
                     resret.coords[i][0] = timei
                     resret.coords[i][1] = resret_proc.coord
-    extract.reuse = reuse
     return resret.coords, resret.cov, reuse
 extract.reuse = {}
 
 def reset_extract():
     """zero out reuse dict"""
+    print("zeroing out reuse dictionary")
     extract.reuse = {}
 
 # side effects warning
