@@ -2,6 +2,8 @@
 from collections import namedtuple
 import os
 import numpy as np
+import mpi4py
+from mpi4py import MPI
 
 from latfit.extract.simple_proc_file import simple_proc_file
 from latfit.extract.proc_ijfile import proc_ijfile
@@ -13,6 +15,9 @@ from latfit.config import EIGCUT
 from latfit.config import NUM_PENCILS
 from latfit.config import STYPE
 
+MPIRANK = MPI.COMM_WORLD.rank
+#MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 def extract(input_f, xmin, xmax, xstep):
     """Get covariance matrix, coordinates, jackknife blocks.
@@ -87,7 +92,7 @@ extract.reuse = {}
 
 def reset_extract():
     """zero out reuse dict"""
-    print("zeroing out reuse dictionary")
+    print("zeroing out reuse dictionary, rank:", MPIRANK)
     extract.reuse = {}
 
 # side effects warning

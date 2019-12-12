@@ -42,7 +42,7 @@ from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
 from latfit.analysis.errorcodes import XminError, FitRangeInconsistency
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq, FitFail
-from latfit.analysis.errorcodes import DOFNonPosFit
+from latfit.analysis.errorcodes import DOFNonPosFit, MpiSkip
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
 from latfit.analysis.result_min import Param
@@ -94,6 +94,11 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def winsize_check(meta, tadd, tsub):
+    """Check proposed new fit window size to be sure
+    there are enough time slices"""
+    return tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1
+
 @PROFILE
 def fit(tadd=0, tsub=0):
     """Main for latfit"""
@@ -104,11 +109,15 @@ def fit(tadd=0, tsub=0):
     meta = FitRangeMetaData()
     trials, plotdata, dump_fit_range.fn1 = meta.setup(plotdata)
 
-    # error processing, parameter extractions
+    ## error processing, parameter extractions
+
+    # check to be sure we have zero'd out the old eff mass blocks
+    # if we, e.g., change the GEVP params
+    if not tadd and not tsub:
+        assert not ext.extract.reuse, list(ext.extract.reuse)
 
     # todo:  get rid of "trials" param
-    if trials == -1 and tadd + tsub < meta.fitwindow[
-            1] - meta.fitwindow[0] + 1:
+    if trials == -1 and winsize_check(meta, tadd, tsub):
         # try an initial plot, shrink the xmax if it's too big
         print("Trying initial test fit.")
         start = time.perf_counter()
@@ -129,10 +138,10 @@ def fit(tadd=0, tsub=0):
             fit.count += 1
 
         if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
-            tloop.ijstr = ""
+            raise MpiSkip
         print("fit.count =", fit.count)
 
-        if FIT and tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1 and tloop.ijstr:
+        if FIT and winsize_check(meta, tadd, tsub):
 
             # print loop info
             print(tloop.ijstr)
@@ -213,7 +222,7 @@ def fit(tadd=0, tsub=0):
             nofit_plot(meta, plotdata, retsingle_save)
     else:
         old_fit_style(meta, trials, plotdata)
-    print("END STDOUT OUTPUT")
+    print("END FIT, rank:", MPIRANK)
     return test
 fit.count = 0
 
@@ -1238,7 +1247,6 @@ def tloop():
                 break
         for j in range(TSEP_VEC[0]+1): # loop over t-t0
             # get rid of all gevp/eff mass processing
-            ext.reset_extract()
             if j < TLOOP_START[1]:
                 continue
             if j:
@@ -1246,17 +1254,24 @@ def tloop():
                     incr_t0()
                 else:
                     break
+            ext.reset_extract()
             if i or j:
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-            for tsub in range(int(np.ceil(LT/2))):
+            for tsub in range(int(np.ceil(LT/2))): # this is the tmax loop
                 tadd = 0
                 flag = 1
-                while flag and tadd <= LT: # this is the tmin loop
+                if not TLOOP and tsub:
+                    break
+
+                while flag and tadd <= LT: # this is the tmin/tadd loop
+                    if not TLOOP and tadd:
+                        break
+
                     reset_main(mintol) # reset the fitter for next fit
 
-                    # parallelize loop
+                   # parallelize loop
                     #if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
                     #   and MPISIZE > 1:
                         #tadd += 1
@@ -1268,16 +1283,19 @@ def tloop():
                         flag = 0 # flag stays 0 if fit succeeds
                         if not test:
                             break
-                    except (FitRangeInconsistency, FitFail):
+                    except (FitRangeInconsistency, FitFail, MpiSkip):
                         print("starting a new main()",
-                              "(inconsistent/fitfail)")
+                              "(inconsistent/fitfail/mpi skip)")
                         flag = 1
                         tadd += 1 # add this to tmin
 
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break
-    print("End of t loop.  latfit exiting, rank:", MPIRANK)
+    if TLOOP:
+        print("End of t loop.  latfit exiting, rank:", MPIRANK)
+    else:
+        print("End of selected parameter fit.  latfit exiting, rank:", MPIRANK)
 tloop.ijstr = ""
 
 def reset_main(mintol):

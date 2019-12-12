@@ -1,4 +1,9 @@
 """All error classes for custom error handling"""
+import mpi4py
+from mpi4py import MPI
+MPIRANK = MPI.COMM_WORLD.rank
+#MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -29,6 +34,13 @@ class FitFail(Exception):
         super(FitFail, self).__init__(message)
         self.message = message
 
+
+class MpiSkip(Exception):
+    """Skip something due to parallelism"""
+    def __init__(self, message=''):
+        print("Skipping fit, rank:", MPIRANK)
+        super(MpiSkip, self).__init__(message)
+        self.message = message
 
 class FitRangeInconsistency(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
