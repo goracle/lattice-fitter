@@ -224,7 +224,7 @@ def fit(tadd=0, tsub=0):
         old_fit_style(meta, trials, plotdata)
     print("END FIT, rank:", MPIRANK)
     return test
-fit.count = 0
+fit.count = -1
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style
