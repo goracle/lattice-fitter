@@ -11,12 +11,20 @@ from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
 
 ISOSPIN = 2
 LENMIN = 3
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
+@PROFILE
 def geterr(allow):
     ret = allow
     if allow is not None:
@@ -30,6 +38,7 @@ def geterr(allow):
 
 SYS_ALLOWANCE = geterr(SYS_ALLOWANCE)
 
+@PROFILE
 def main(nosave=True):
     """Make the histograms.
     """
@@ -88,6 +97,7 @@ def main(nosave=True):
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
 
+@PROFILE
 def print_tot(tot):
     """Print results vs. tmin"""
     tot_new = []
@@ -107,6 +117,7 @@ def print_tot(tot):
         plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
         plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
 
+@PROFILE
 def drop_fit_range_info(ilist):
     """Drop fit range data from a 'tot' list item
     (useful for prints)
@@ -115,6 +126,7 @@ def drop_fit_range_info(ilist):
         i[0][0]) else [] for i in ilist]
     return ret
 
+@PROFILE
 def plot_t_dep(tot, dim, item_num, title, units):
     """Plot the tmin dependence of an item"""
     print("plotting t dependence of dim", dim, "item:", title)
@@ -132,6 +144,7 @@ def plot_t_dep(tot, dim, item_num, title, units):
         print("not enough consistent results for a complete set of plots")
         sys.exit(1)
 
+@PROFILE
 def check_fitwin_continuity(tot_new):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
@@ -164,6 +177,7 @@ def check_fitwin_continuity(tot_new):
         assert not check_set-cwin[tmin],\
             (cwin[tmin], check_set, check_set-cwin[tmin])
 
+@PROFILE
 def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
     """Generate the set of fit windows
     which is necessary for successful continuity"""
@@ -176,6 +190,7 @@ def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
             ret[tmin].add((tmin, tmin+minsep+i))
     return ret
 
+@PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
     """Plot something (not nothing)"""
     yarr = []
@@ -246,6 +261,7 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
         pdf.savefig()
     plt.show()
 
+@PROFILE
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
     min_enf = [(str(i), j) for i, j in min_en]
@@ -264,6 +280,7 @@ def print_compiled_res(min_en, min_ph):
     return ret, test
 
 
+@PROFILE
 def trunc(val):
     """Truncate the precision of a number
     using gvar"""
@@ -273,6 +290,7 @@ def trunc(val):
         ret = float(str(gvar.gvar(val))[:-3])
     return ret
 
+@PROFILE
 def fill_pvalue_arr(pdat_freqarr, exclarr):
     """the pvalue should be 1.0 if the fit range is length 1 (forced fit)
     prelim_loop = zip(freq, errlooparr, exclarr)
@@ -293,6 +311,7 @@ def fill_pvalue_arr(pdat_freqarr, exclarr):
     ret = np.array(ret)
     return ret
 
+@PROFILE
 def pvalue_arr(spl, fname):
     """Get pvalue array (over fit ranges)"""
     pvalfn = re.sub(spl, 'pvalue', fname)
@@ -314,6 +333,7 @@ def pvalue_arr(spl, fname):
     pdat_freqarr = np.array([em.acmean(i) for i in pdat_freqarr])
     return pdat_freqarr
 
+@PROFILE
 def err_arr(fname):
     """Get the error array"""
     # get file name for error
@@ -337,6 +357,7 @@ def err_arr(fname):
     #print('shape2:', errdat.shape)
     return errdat
 
+@PROFILE
 def plot_title(fname, dim):
     """Get title for histograms"""
     # get title
@@ -354,6 +375,7 @@ def plot_title(fname, dim):
     title_dim = title+' state:'+str(dim)
     plt.title(title_dim)
 
+@PROFILE
 def slice_energy_and_err(freqarr, errdat, dim):
     """Slice the energy array and error array
     for a particular dimension"""
@@ -374,6 +396,7 @@ def slice_energy_and_err(freqarr, errdat, dim):
         errdat.shape) > 1 else errdat
     return freq, errlooparr
 
+@PROFILE
 def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     """Setup loop over results to get medians/printable results
     """
@@ -389,6 +412,7 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
 
     return loop, medians
 
+@PROFILE
 def setup_make_hist(fname):
     """Get some initial variables from file fname
     including the processed string
@@ -408,6 +432,7 @@ def setup_make_hist(fname):
     spl = fname.split('_')[0]
     return spl, freqarr, avg, exclarr
 
+@PROFILE
 def get_raw_arrays(fname):
     """Get the raw arrays from the fit output files"""
     spl, freqarr, avg, exclarr = setup_make_hist(fname)
@@ -419,6 +444,7 @@ def get_raw_arrays(fname):
     errdat = err_arr(fname)
     return freqarr, exclarr, pdat_freqarr, errdat, avg
 
+@PROFILE
 def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
     """Get medians of various quantities (over fit ranges)
     loop:
@@ -456,6 +482,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
     median = systematic_err_est(freq, median_err, freq_median, nosave=nosave)
     return (median_err, median), freq_median
 
+@PROFILE
 def systematic_err_est(freq, median_err, freq_median, nosave=False):
     """Standard deviation of results over fit ranges
     is an estimate of the systematic error.
@@ -479,6 +506,7 @@ def systematic_err_est(freq, median_err, freq_median, nosave=False):
     median = np.array(median)
     return median
 
+@PROFILE
 def plot_hist(freq, errlooparr):
     """Plot (plt) the histogram (but do not show)"""
     # print(freq, em.acmean(freq))
@@ -491,6 +519,7 @@ def plot_hist(freq, errlooparr):
             xerr=getxerr(freq, center,
                          np.asarray(errlooparr, dtype=float)))
 
+@PROFILE
 def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
@@ -551,6 +580,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
                 plt.show()
     return fill_conv_dict(ret, freqarr.shape[-1])
 
+@PROFILE
 def fill_conv_dict(todict, dimlen):
     """Convert"""
     ret = []
@@ -561,6 +591,7 @@ def fill_conv_dict(todict, dimlen):
             ret.append(todict[i])
     return ret
 
+@PROFILE
 def build_sliced_fitrange_list(median_store, freq, exclarr):
     """Get all the fit ranges for a particular dimension"""
     ret = []
@@ -575,6 +606,7 @@ def build_sliced_fitrange_list(median_store, freq, exclarr):
         ret.append(dimfit)
     return ret
 
+@PROFILE
 def fit_range_dim(lexcl, dim):
     """Get the fit range for a particular dimension"""
     ret = np.asarray(lexcl)
@@ -584,6 +616,7 @@ def fit_range_dim(lexcl, dim):
         print(ret)
     return ret
 
+@PROFILE
 def gevpp(freqarr):
     """Are we using the GEVP?"""
     ret = False
@@ -594,6 +627,7 @@ def gevpp(freqarr):
         ret = shape[-1] > 1
     return ret
 
+@PROFILE
 def global_tmin(fit_range_arr):
     """Find the global tmin for this dimension:
     the minimum t for a successful fit"""
@@ -606,6 +640,7 @@ def global_tmin(fit_range_arr):
         tmin = min(tee, tmin)
     return tmin
 
+@PROFILE
 def global_tmax(fit_range_arr):
     """Find the global tmax for this dimension:
     the maximum t for a successful fit"""
@@ -618,12 +653,14 @@ def global_tmax(fit_range_arr):
         tmax = max(tmax, tee)
     return tmax
 
+@PROFILE
 def avg_gvar(arr):
     """Average array of gvar objects"""
     ret = em.acmean([i.val for i in arr])
     ret = np.asarray(ret)
     return ret
 
+@PROFILE
 def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     """The print loop
     """
@@ -751,6 +788,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 output_loop.tadd = 0
 output_loop.tsub = 0
 
+@PROFILE
 def printres(effmass, pval, fit_range):
     """Print the result (and a header for the first result printed)"""
     effmass1 = avg_gvar(effmass)
@@ -762,11 +800,13 @@ def printres(effmass, pval, fit_range):
     print(effmass1, pval, fit_range)
 printres.prt = False
 
+@PROFILE
 def reset_header():
     """Reset header at the beginning of the output loop"""
     printres.prt = False
 
 
+@PROFILE
 def errfake(frdim, errstr):
     """Is the disagreement with an effective mass point outside of this
     dimension's fit window?  Then regard this error as spurious"""
@@ -778,6 +818,7 @@ def errfake(frdim, errstr):
     return ret
 
 
+@PROFILE
 def addoffset(hist):
     """Add an offset to each histogram so the horizontal error bars
     don't overlap
@@ -802,6 +843,7 @@ def addoffset(hist):
     print(hist)
     return hist
 
+@PROFILE
 def lencut(fit_range):
     """Length cut; we require each fit range to have
     a minimum number of time slices
@@ -821,6 +863,7 @@ def lencut(fit_range):
         ret = len(fit_range) < LENMIN
     return ret
 
+@PROFILE
 def fitwincut(fit_range, fitwindow):
     """Cut all fit ranges outside this fit window"""
     # tmin, tmax cut
@@ -836,6 +879,7 @@ def fitwincut(fit_range, fitwindow):
     return ret
 
 
+@PROFILE
 def discrep(res, gres, maxsys_errcurr):
     """Calculate the stat. sig of the disagreement"""
     resarr = [i.val for i in res]
@@ -851,6 +895,7 @@ def discrep(res, gres, maxsys_errcurr):
     #maxsig = max(sig, maxsigcurr)
     return diff, sys_err
 
+@PROFILE
 def statlvl(diff):
     """Calculate the statistical significance of a gvar diff"""
     if diff.val:
@@ -862,6 +907,7 @@ def statlvl(diff):
         sig = 0
     return sig
 
+@PROFILE
 def maxarr(arr1, arr2):
     """Get the max between two arrays element by element"""
     if arr1 is None:
@@ -875,6 +921,7 @@ def maxarr(arr1, arr2):
         ret = np.array(ret)
     return ret
 
+@PROFILE
 def diff_ind(res, arr, fit_range_arr, fitwindow):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
@@ -912,10 +959,12 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     ret = gvar.gvar(mean, np.sqrt(maxsyserr**2+res[0].sdev**2))
     return ret, sig, errstr
 
+@PROFILE
 def jkerr(arr):
     """jackknife error"""
     return em.acstd(arr)*np.sqrt(len(arr)-1)
 
+@PROFILE
 def getxerr(freq, center, errdat_dim):
     """Get horiz. error bars"""
     err = np.zeros(len(center), dtype=np.float)
@@ -936,7 +985,7 @@ def getxerr(freq, center, errdat_dim):
     return err
 
 
-
+@PROFILE
 def check_ids_hist():
     """Check the ensemble id file to be sure
     not to run processing parameters from a different ensemble"""
