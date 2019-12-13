@@ -79,9 +79,9 @@ def main(nosave=True):
                 else:
                     break
             tadd += 1
-        #print("Successful (tadd, tsub):")
-        #for i in success_tadd_tsub:
-        #    print(i)
+        print("Successful (tadd, tsub):")
+        for i in success_tadd_tsub:
+            print(i)
         print_tot(tot)
     else:
         for fname in sys.argv[1:]:
@@ -124,6 +124,7 @@ def plot_t_dep(tot, dim, item_num, title, units):
         check_fitwin_continuity(tot_new)
     except AssertionError:
         print("fit windows are not continuous for dim, item:", dim, title)
+        raise
         tot_new = []
     if tot_new:
         plot_t_dep_totnew(tot_new, dim, title, units)
@@ -158,7 +159,8 @@ def check_fitwin_continuity(tot_new):
 
         # check tmax is continuous
         assert not cwin[tmin]-check_set,\
-            (cwin[tmin], check_set, cwin[tmin]-check_set)
+            (cwin[tmin]-check_set)
+            #(cwin[tmin], check_set, cwin[tmin]-check_set)
         assert not check_set-cwin[tmin],\
             (cwin[tmin], check_set, check_set-cwin[tmin])
 
