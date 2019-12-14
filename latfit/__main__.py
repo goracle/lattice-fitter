@@ -31,6 +31,7 @@ from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
 from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
+from latfit.utilities.postprod.h5jack import TDIS_MAX
 from latfit.jackknife_fit import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 
@@ -85,6 +86,8 @@ ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
 ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
                      OverflowError, EnergySortError, TooManyBadFitsError,
                      BadJackknifeDist, BadChisq, ZetaError)
+
+assert int(TDIS_MAX) == TDIS_MAX, TDIS_MAX
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -143,6 +146,7 @@ def fit(tadd=0, tsub=0):
 
         if FIT and winsize_check(meta, tadd, tsub):
 
+            test = True
             # print loop info
             print(tloop.ijstr)
             if tadd or tsub:
@@ -532,15 +536,16 @@ def mpi_gather(min_arr, overfit_arr):
     """Gather mpi results.
     Does not work for some reason
     """
-    min_arr_send = np.array(min_arr)
-    MPI.COMM_WORLD.barrier()
-    min_arr = MPI.COMM_WORLD.gather(min_arr_send, 0)
-    MPI.COMM_WORLD.barrier()
-    print("results gather complete.")
-    overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
-    MPI.COMM_WORLD.barrier()
-    print("overfit gather complete.")
     return min_arr, overfit_arr
+    #min_arr_send = np.array(min_arr)
+    #MPI.COMM_WORLD.barrier()
+    #min_arr = MPI.COMM_WORLD.gather(min_arr_send, 0)
+    #MPI.COMM_WORLD.barrier()
+    #print("results gather complete.")
+    #overfit_arr = MPI.COMM_WORLD.gather(overfit_arr, 0)
+    #MPI.COMM_WORLD.barrier()
+    #print("overfit gather complete.")
+    #return min_arr, overfit_arr
 
 @PROFILE
 def compare_eff_mass_to_range(arr, errmin, mindim=None):
@@ -812,6 +817,8 @@ def filename_plus_config_info(meta, filename):
     """Add config info to file name"""
     if GEVP:
         filename += "_"+MOMSTR+'_I'+str(ISOSPIN)
+    if meta.random_fit:
+        filename += '_randfit'
     if SYS_ENERGY_GUESS:
         filename += "_sys"
     if MATRIX_SUBTRACTION:
@@ -972,9 +979,9 @@ def xmax_err(meta, err):
         print("***ERROR***")
         print("fit window beyond xmax:", meta.fitwindow)
         sys.exit(1)
-    meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
-                                  meta.options.xmax)
-    print("new fit window = ", meta.fitwindow)
+    #meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
+    #                              meta.options.xmax)
+    #print("new fit window = ", meta.fitwindow)
     return meta
 
 def xmin_err(meta, err):
@@ -990,9 +997,9 @@ def xmin_err(meta, err):
         print("***ERROR***")
         print("fit window beyond xmin:", meta.fitwindow)
         sys.exit(1)
-    meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
-                                  meta.options.xmax)
-    print("new fit window = ", meta.fitwindow)
+    #meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
+    #                              meta.options.xmax)
+    #print("new fit window = ", meta.fitwindow)
     return meta
 
 def dofit_initial(meta, plotdata):
@@ -1259,13 +1266,13 @@ def tloop():
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-            for tsub in range(int(np.ceil(LT/2))): # this is the tmax loop
+            for tsub in range(int(TDIS_MAX)): # this is the tmax loop
                 tadd = 0
                 flag = 1
                 if not TLOOP and tsub:
                     break
 
-                while flag and tadd <= LT: # this is the tmin/tadd loop
+                while flag and tadd <= int(TDIS_MAX): # this is the tmin/tadd loop
                     if not TLOOP and tadd:
                         break
 

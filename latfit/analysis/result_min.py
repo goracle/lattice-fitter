@@ -147,6 +147,12 @@ class ResultMin:
     def compute_dof(self, params, coords):
         """Correct the degrees of freedom based on the chosen fit range"""
         # compute degrees of freedom
+        try:
+            assert len(coords) == len(WINDOW)
+        except AssertionError:
+            print("dof from WINDOW", WINDOW)
+            print("dof from coords", coords)
+            raise
         self.misc.dof = len(coords)*params.dimops-len(START_PARAMS)
         for i in coords[:, 0]:
             for j in latfit.config.FIT_EXCL:

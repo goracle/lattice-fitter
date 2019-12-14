@@ -207,36 +207,59 @@ def excl_inrange(meta, excl):
         ret.append(newexc)
     return ret
 
+def skipped_all(meta, excl):
+    """Skipped all points in a given GEVP dim"""
+    ret = False
+    win = meta.actual_range()
+    for i in excl:
+        check = []
+        for j in i:
+            if j in win:
+                check.append(j)
+        if len(check) >= len(win):
+            ret = True
+    return ret
+
+def onlynpts(meta, excl, npts):
+    """Fit dim contains only n points"""
+    ret = False
+    win = meta.actual_range()
+    for i in excl:
+        check = []
+        for j in i:
+            if j in win:
+                check.append(j)
+        if len(check) + 1 == len(win):
+            ret = True
+    return ret
+
 @PROFILE
 def toosmallp(meta, excl):
     """Skip a fit range if it has too few points"""
     ret = False
     excl = excl_inrange(meta, excl)
     # each energy should be included
-    if max([len(i) for i in excl]) >= meta.fitwindow[
-            1]-meta.fitwindow[0]+meta.options.xstep:
+    if skipped_all(meta, excl):
         print("skipped all the data points for a GEVP dim, "+\
                 "so continuing.")
         ret = True
 
     # each fit curve should be to more than one data point
-    if not ret and meta.fitwindow[1]-meta.fitwindow[0] in [
-            len(i) for i in excl] and\
-            not ONLY_SMALL_FIT_RANGES:
-        print("only one data point in fit curve, continuing")
+    if onlynpts(meta, excl, 1) and not ONLY_SMALL_FIT_RANGES:
+        print("warning:  only one data point in fit curve")
         # ret = True
-    if not ret and meta.fitwindow[1]-meta.fitwindow[0]-meta.options.xstep > 0 and\
-        not ONLY_SMALL_FIT_RANGES:
-        if meta.fitwindow[1]-meta.fitwindow[0]-1 in [len(i) for i in excl]:
-            print("warning: only two data points in fit curve")
-            # allow for very noisy excited states in I=0
-            if not (ISOSPIN == 0 and GEVP):
-                #ret = True
-                pass
+
+    if not ret and onlynpts(meta, excl, 2) and not ONLY_SMALL_FIT_RANGES:
+        print("warning: only two data points in fit curve")
+        # allow for very noisy excited states in I=0
+        if not (ISOSPIN == 0 and GEVP):
+            #ret = True
+            pass
+
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
-        print("not an arithmetic sequence")
+        print("warning:  not an arithmetic sequence")
     ret = False if ISOSPIN == 0 and GEVP else ret
     return ret
 

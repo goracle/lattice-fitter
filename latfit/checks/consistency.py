@@ -20,7 +20,7 @@ def err_handle(meta, consis, lparam, name):
         assert consis
     except AssertionError:
         print("fit ranges are inconsistent with respect to:", name)
-        print("fit window:", meta.fitwindow)
+        meta.pr_fit_window()
         print("t-t0:", latfit.config.T0)
         if MATRIX_SUBTRACTION:
             print("dt matsub:", latfit.config.DELTA_T_MATRIX_SUBTRACTION)

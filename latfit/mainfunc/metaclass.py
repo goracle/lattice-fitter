@@ -168,10 +168,8 @@ class FitRangeMetaData:
     @PROFILE
     def generate_combinations(self):
         """Generate all possible fit ranges"""
-        posexcl = powerset(
-            np.arange(self.fitwindow[0],
-                      self.fitwindow[1]+self.options.xstep,
-                      self.options.xstep))
+        posexcl = powerset(self.actual_range(),
+                           self.options.xstep))
         sampler = filter_sparse(posexcl, self.fitwindow, self.options.xstep)
         sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
         posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
@@ -196,21 +194,19 @@ class FitRangeMetaData:
     @PROFILE
     def fit_coord(self):
         """Get xcoord to plot fit function."""
-        return np.arange(self.fitwindow[0],
-                         self.fitwindow[1]+self.options.xstep,
-                         self.options.xstep)
+        return self.actual_range()
 
 
     @PROFILE
     def length_fit(self, prod, sampler):
         """Get length of fit window data"""
-        self.lenfit = len(np.arange(self.fitwindow[0],
-                                    self.fitwindow[1]+self.options.xstep,
-                                    self.options.xstep))
-        assert self.lenfit > 0 or not FIT, "length of fit range not > 0"
+        self.lenfit = len(self.actual_range())
+        assert self.lenfit > 0 or not FIT,\
+            "length of fit range not > 0"
         self.lenprod = len(sampler)**(MULT)
         if NOLOOP:
-            assert self.lenprod == 1, "Number of fit ranges is too large."
+            assert self.lenprod == 1,\
+                "Number of fit ranges is too large."
         latfit.config.MINTOL = True if self.lenprod == 0 else\
             latfit.config.MINTOL
         #latfit.config.BOOTSTRAP = True if self.lenprod == 0 else\
@@ -224,7 +220,8 @@ class FitRangeMetaData:
             prod = [str(i) for i in prod]
             prod = sorted(prod)
             prod = [ast.literal_eval(i) for i in prod]
-            assert len(prod) == self.lenprod, "powerset length mismatch"+\
+            assert len(prod) == self.lenprod,\
+                "powerset length mismatch"+\
                 " vs. expected length."
         return prod
 
@@ -245,6 +242,9 @@ class FitRangeMetaData:
 
     def pr_fit_window(self):
         """Print the current fit window"""
+        win = self.actual_range()
+        assert self.fitwindow[0] == win[0]
+        assert self.fitwindow[1] == win[-1]
         assert len(self.fitwindow) == 2, str(self.fitwindow)
         print("current fit window = ", self.fitwindow)
         print("current xmin, xmax = ", self.options.xmin, self.options.xmax)
