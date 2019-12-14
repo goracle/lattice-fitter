@@ -38,6 +38,19 @@ def geterr(allow):
 
 SYS_ALLOWANCE = geterr(SYS_ALLOWANCE)
 
+def arithseq(fitrange):
+    """Check if arithmetic sequence"""
+    minp = fitrange[0]
+    nextp = fitrange[1]
+    step = nextp-minp
+    maxp = fitrange[-1]
+    rchk = np.arange(minp, maxp+step, step)
+    ret = False
+    if list(rchk) == list(fitrange):
+        ret = True
+    return ret
+
+
 @PROFILE
 def main(nosave=True):
     """Make the histograms.
@@ -697,6 +710,10 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         if lencut(fit_range):
             continue
 
+        # arithmetic sequence cut
+        if arithseq(fit_range):
+            continue
+
         # fit window cut
         if fitwincut(fit_range, fitwindow):
             continue
@@ -933,6 +950,8 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
 
         # apply cuts
         if lencut(fit_range_arr[i]):
+            continue
+        if arithseq(fit_range):
             continue
         if fitwincut(fit_range_arr[i], fitwindow):
             continue
