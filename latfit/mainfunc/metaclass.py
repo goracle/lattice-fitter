@@ -168,8 +168,7 @@ class FitRangeMetaData:
     @PROFILE
     def generate_combinations(self):
         """Generate all possible fit ranges"""
-        posexcl = powerset(self.actual_range(),
-                           self.options.xstep))
+        posexcl = powerset(self.actual_range())
         sampler = filter_sparse(posexcl, self.fitwindow, self.options.xstep)
         sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
         posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
