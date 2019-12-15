@@ -40,14 +40,15 @@ SYS_ALLOWANCE = geterr(SYS_ALLOWANCE)
 
 def arithseq(fitrange):
     """Check if arithmetic sequence"""
-    minp = fitrange[0]
-    nextp = fitrange[1]
-    step = nextp-minp
-    maxp = fitrange[-1]
-    rchk = np.arange(minp, maxp+step, step)
-    ret = False
-    if list(rchk) == list(fitrange):
-        ret = True
+    ret = True
+    for fitr in fitrange:
+        minp = fitr[0]
+        nextp = fitr[1]
+        step = nextp-minp
+        maxp = fitr[-1]
+        rchk = np.arange(minp, maxp+step, step)
+        if list(rchk) != list(fitr):
+            ret = False
     return ret
 
 
@@ -166,7 +167,7 @@ def check_fitwin_continuity(tot_new):
     # singleton cut
     assert len(tot_new) > 1, tot_new
 
-    for _, fitwin in tot_new:
+    for _, _, fitwin in tot_new:
         if fitwin[0] in maxtmax:
             maxtmax[fitwin[0]] = max(maxtmax[fitwin[0]],
                                      fitwin[1])
@@ -179,7 +180,7 @@ def check_fitwin_continuity(tot_new):
     cwin = generate_continuous_windows(maxtmax, minsep=LENMIN-1)
     for tmin in maxtmax:
         check_set = set()
-        for _, fitwin in tot_new:
+        for _, _, fitwin in tot_new:
             if fitwin[0] == tmin:
                 check_set.add(fitwin)
 
@@ -274,14 +275,46 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
         pdf.savefig()
     plt.show()
 
+def round_to_n(val, places):
+    """Round to two sigfigs"""
+    # from
+    # https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
+    ret = round(val, -int(np.floor(np.log10(val))) + (places - 1))
+    return ret
+
+def round_wrt(err1, err2):
+    """Round err2 with respect to err1"""
+    err1 = round_to_n(err1, 2)
+    err1 = str(err1)
+    places = len(err1.split('.')[1])
+    ret = round(err2, places)
+    return ret
+
+
+def other_err_str(val, err1, err2):
+    """Get string for other error from a given gvar"""
+    if isinstance(val, np.float) and not np.isnan(val) and not np.isnan(err2):
+        err2 = round_wrt(err1, err2)
+        err = gvar.gvar(val, err2)
+        try:
+            ret = str(err).split('(')[1][:-1]
+        except IndexError:
+            print('va', val)
+            print('er', err2)
+            raise
+        ret = '(' + ret + ')'
+    else:
+        ret = ''
+    return ret
+
 @PROFILE
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
-    min_enf = [(str(i), j) for i, j in min_en]
-    min_phf = [(str(i), j) for i, j in min_ph]
+    min_enf = [(str(i), j, k) for i, j, k in min_en]
+    min_phf = [(str(i), j, k) for i, j, k in min_ph]
 
-    min_en = [str(i) for i, _ in min_en]
-    min_ph = [str(i) for i, _ in min_ph]
+    min_en = [str(i)+other_err_str(i.val, i.sdev, j) for i, j, _ in min_en]
+    min_ph = [str(i)+other_err_str(i.val, i.sdev, j) for i, j, _ in min_ph]
 
     min_res = [list(i) for i in zip(min_en, min_ph) if list(i)]
     min_res_pr = [i for i in min_res if 'nan' not in str(i[0])]
@@ -572,7 +605,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
             try:
                 output_loop.tadd = tadd
                 output_loop.tsub = tsub
-                themin, fitwindow = output_loop(
+                themin, sys_err, fitwindow = output_loop(
                     median_store, freqarr, avg[dim],
                     (dim, allowidx),
                     build_sliced_fitrange_list(
@@ -581,7 +614,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
                 continue
 
             if themin is not None:
-                ret[dim] = (themin, fitwindow)
+                ret[dim] = (themin, sys_err, fitwindow)
 
             if not nosave:
                 print("saving plot as filename:", save_str)
@@ -599,7 +632,7 @@ def fill_conv_dict(todict, dimlen):
     ret = []
     for i in range(dimlen):
         if i not in todict:
-            ret.append((gvar.gvar(np.nan, np.nan), (0, np.inf)))
+            ret.append((gvar.gvar(np.nan, np.nan), np.nan, (0, np.inf)))
         else:
             ret.append(todict[i])
     return ret
@@ -711,7 +744,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             continue
 
         # arithmetic sequence cut
-        if arithseq(fit_range):
+        if not arithseq(fit_range):
             continue
 
         # fit window cut
@@ -730,9 +763,11 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             [gvar.gvar(i.val, max(sdev, avg_dim.sdev)) for i in avg_diff])
 
         # compare this result to all other results
-        ind_diff, sig, errstr = diff_ind(
+        ind_diff, sig, errstr, syserr = diff_ind(
             effmass, np.array(median_err)[:, 0],
             fit_range_arr, fitwindow)
+
+        assert ind_diff.sdev >= syserr
 
         allowable_err = 0.0
         if SYS_ALLOWANCE is not None:
@@ -742,10 +777,10 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
         if themin is not None:
             minprev = themin
-            if themin.sdev >= ind_diff.sdev:
-                themin = gvar.gvar(avg_gvar(effmass), ind_diff.sdev)
+            if themin[0].sdev >= ind_diff.sdev:
+                themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr)
         else:
-            themin = gvar.gvar(avg_gvar(effmass), ind_diff.sdev)
+            themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr)
 
         # if the max difference is not zero
         if ind_diff.val:
@@ -801,7 +836,9 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
-    return themin, fitwindow
+    else:
+        themin = (None, None)
+    return themin[0], themin[1], fitwindow
 output_loop.tadd = 0
 output_loop.tsub = 0
 
@@ -951,7 +988,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
         # apply cuts
         if lencut(fit_range_arr[i]):
             continue
-        if arithseq(fit_range):
+        if not arithseq(fit_range_arr[i]):
             continue
         if fitwincut(fit_range_arr[i], fitwindow):
             continue
@@ -976,7 +1013,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     mean = em.acmean(maxdiff)
     sig = statlvl(gvar.gvar(mean, jkerr(maxdiff)))
     ret = gvar.gvar(mean, np.sqrt(maxsyserr**2+res[0].sdev**2))
-    return ret, sig, errstr
+    return ret, sig, errstr, maxsyserr
 
 @PROFILE
 def jkerr(arr):
