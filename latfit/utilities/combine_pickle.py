@@ -5,7 +5,13 @@ import sys
 import pickle
 import numpy as np
 import latfit.utilities.read_file as rf
+import latfit.utilities.histogram as hist
 
+def lenfit(fname):
+    """Find length of fit"""
+    fitw = rf.pickle_fitwin(fname)
+    return fitw[1]-fitw[0]+1
+    
 def main():
     """main"""
     ret = []
@@ -38,7 +44,7 @@ def main():
             err_check = add[1]
             assert len(res) == len(excl_arr)
             newfrs = add[3][:len(add[2])]
-            if len(add[2]) > 1:
+            if len(add[2]) > 1 lenfit(fname) > hist.LENMIN:
                 count = 0
                 for j in newfrs:
                     if len(j) > 1:

@@ -10,6 +10,7 @@ import gvar
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
+from latfit.config import RANGE_LENGTH_MIN
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -21,6 +22,7 @@ except NameError:
 
 ISOSPIN = 2
 LENMIN = 3
+assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 

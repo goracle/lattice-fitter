@@ -17,7 +17,16 @@ FORMAT = 'ASCII'
 # regex on filename stuff
 
 def earliest_time(fname):
-    """Find the earliest time in the fit range result"""
+    """Find the earliest time in the pickle file name"""
+    return pickle_times(fname)[0]
+
+def pickle_fitwin(fname):
+    """Find the earliest time in the pickle file name"""
+    _, tmin, tmax = pickle_times(fname)
+    return (tmin, tmax) 
+
+def pickle_times(fname):
+    """Find the fitwin info in the pickle file name"""
     spl = fname.split("_")
     tmin = None
     tmax = None
@@ -45,7 +54,7 @@ def earliest_time(fname):
     assert tmax is not None, str(fname)
     ret = tmin-dtee
     assert ret >= 0, str(fname)
-    return ret
+    return ret, tmin, tmax
 
 def pol(filename):
     """Get polarization info from filename"""
