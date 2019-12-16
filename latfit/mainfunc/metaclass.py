@@ -94,7 +94,7 @@ class FitRangeMetaData:
     @PROFILE
     def __init__(self):
         """Define meta data container."""
-        self.skiploop = False
+        self.__skiploop = False
         self.lenprod = 0
         self.lenfit = 0
         #self.xmin = 0
@@ -102,7 +102,6 @@ class FitRangeMetaData:
         #self.options.xstep = 1
         self.fitwindow = []
         self.random_fit = True
-        self.lenprod = 0
         self.input_f = None
         self.options = recordtype('ops',
                                   'xmin xmax xstep trials fitmin fitmax')
@@ -156,14 +155,14 @@ class FitRangeMetaData:
     @PROFILE
     def skip_loop(self):
         """Set the loop condition"""
-        self.skiploop = not self.lenprod > 1
-        self.skiploop = True if NOLOOP else self.skiploop
-        if not self.random_fit and not self.skiploop:
+        self.__skiploop = not self.lenprod > 1
+        self.__skiploop = True if NOLOOP else self.__skiploop
+        if not self.random_fit and not self.__skiploop:
             for excl in EXCL_ORIG:
                 if len(excl) > 1:
                     #assert None
                     #self.skiploop = True
-                    self.skiploop = False
+                    self.__skiploop = False
 
     @PROFILE
     def generate_combinations(self):
