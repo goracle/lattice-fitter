@@ -122,6 +122,7 @@ def fit(tadd=0, tsub=0):
     # todo:  get rid of "trials" param
     if trials == -1 and winsize_check(meta, tadd, tsub):
         # try an initial plot, shrink the xmax if it's too big
+        update_fitwin(meta, tadd, tsub)
         print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
@@ -137,7 +138,7 @@ def fit(tadd=0, tsub=0):
 
         # a significant level of work is needed if we are entering the
         # fit loop at all; thus parallelize
-        if list(meta.generate_combinations()[0]) and not meta.skiploop:
+        if list(meta.generate_combinations()[0]) and not meta.skip_loop():
             fit.count += 1
 
         if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
@@ -267,7 +268,7 @@ def post_loop(meta, loop_store, plotdata,
     # did anything succeed?
     # test = False if not list(min_arr) and not meta.random_fit else True
     test = list(min_arr) or meta.random_fit
-    if not meta.skiploop:
+    if not meta.skip_loop():
 
         result_min = find_mean_and_err(meta, min_arr)
         param_err = result_min['energy'].err
@@ -279,7 +280,7 @@ def post_loop(meta, loop_store, plotdata,
         print("fit excluded points (indices):",
               latfit.config.FIT_EXCL)
 
-    if (not (meta.skiploop and latfit.config.MINTOL)\
+    if (not (meta.skip_loop() and latfit.config.MINTOL)\
         and METHOD == 'NaN') or not test_success\
         and (len(min_arr) + len(overfit_arr) > 1):
         if not TLOOP:
@@ -319,14 +320,14 @@ def combine_results(result_min, result_min_close,
                     meta, param_err, param_err_close):
     """use the representative fit's goodness of fit in final print
     """
-    if meta.skip_loop:
+    if meta.skip_loop():
         result_min, param_err = result_min_close, param_err_close
     else:
         result_min['chisq'].val = result_min_close.chisq.val
         result_min['chisq'].err = result_min_close.chisq.err
-        result_min['dof'] = result_min_close.dof
+        result_min['misc'] = result_min_close.misc
         result_min['pvalue'] = result_min_close.pvalue
-        result_min['pvalue'].err = result_min_close.pvalue.err
+        #result_min['pvalue'].err = result_min_close.pvalue.err
         print("closest representative fit result (lattice units):")
         # convert here since we can't set attributes afterwards
         result_min = convert_to_namedtuple(result_min)
@@ -467,7 +468,7 @@ def find_mean_and_err(meta, min_arr):
 
         # dump the results to file
         # if not (ISOSPIN == 0 and GEVP):
-        if len(min_arr) > 1:
+        if len(min_arr) > 1 or (meta.lenprod == 1 and len(min_arr) == 1):
             dump_fit_range(meta, min_arr, name, res_mean, err_check)
 
         # error propagation check
@@ -1042,6 +1043,18 @@ def dofit_initial(meta, plotdata):
     # plotdata, meta, test_success, fit_range_init
     return (meta, plotdata, test_success, retsingle_save)
 
+def update_fitwin(meta, tadd, tsub):
+    """Update fit window"""
+    # tadd tsub cut
+    if tadd or tsub:
+        #print("tadd =", tadd, "tsub =", tsub)
+        for _ in range(tadd):
+            meta.incr_xmin()
+        for _ in range(tsub):
+            meta.decr_xmax()
+        partial_reset()
+
+
 def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
     """Do second initial test fit and cut on error size"""
 
@@ -1055,15 +1068,6 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
     samerange = frsort.cut_on_growing_exp(meta) and samerange
     tadd, tsub = tadd_sub
     samerange = not tadd and not tsub and samerange
-
-    # tadd tsub cut
-    if tadd or tsub:
-        #print("tadd =", tadd, "tsub =", tsub)
-        for _ in range(tadd):
-            meta.incr_xmin()
-        for _ in range(tsub):
-            meta.decr_xmax()
-        partial_reset()
 
     fit_range_init = str(latfit.config.FIT_EXCL)
     try:
