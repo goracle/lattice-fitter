@@ -11,6 +11,7 @@ from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
 from latfit.config import RANGE_LENGTH_MIN
+from latfit.jackknife_fit import jack_mean_err
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -22,7 +23,7 @@ except NameError:
 
 ISOSPIN = 2
 LENMIN = 3
-assert LENMIN == RANGE_LENGTH_MIN
+#assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
@@ -179,7 +180,8 @@ def check_fitwin_continuity(tot_new):
 
     # check tmin is continuous
     assert not set(tmin_cont)-set(maxtmax), list(maxtmax)
-    cwin = generate_continuous_windows(maxtmax, minsep=LENMIN-1)
+    cwin = generate_continuous_windows(maxtmax,
+                                       minsep=LENMIN-1)
     for tmin in maxtmax:
         check_set = set()
         for _, _, fitwin in tot_new:
@@ -215,7 +217,7 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    for item, fitwin in tot_new:
+    for item, _, fitwin in tot_new:
         item = gvar.gvar(item)
         trfitwin = (fitwin[0], fitwin[1] + 1)
         if item == itemprev and trfitwin == fitwinprev and len(
@@ -395,10 +397,14 @@ def err_arr(fname):
         with open(errfn, 'rb') as fn1:
             errdat = pickle.load(fn1)
             errdat = np.real(np.array(errdat))
+            print("file used for error:", errfn,
+                  'shape:', errdat.shape)
     except FileNotFoundError:
         with open(errfn2, 'rb') as fn1:
             errdat = pickle.load(fn1)
             errdat = np.real(np.array(errdat))
+            print("file used for error:", errfn2,
+                  'shape:', errdat.shape)
     assert np.array(errdat).shape, "error array not found"
 
     #print('shape:', freqarr.shape, avg)
@@ -442,6 +448,7 @@ def slice_energy_and_err(freqarr, errdat, dim):
     #freq = em.acmean(freq, axis=1)
     errlooparr = errdat[:, dim] if len(
         errdat.shape) > 1 else errdat
+    assert len(errlooparr) == len(freq), (len(freq), len(errlooparr))
     return freq, errlooparr
 
 @PROFILE
@@ -475,6 +482,8 @@ def setup_make_hist(fname):
             print("value error for file:", fname)
             raise
         freqarr = np.real(np.array(freqarr))
+        print("using results from file", fname,
+              "shape", freqarr.shape)
         exclarr = np.asarray(exclarr)
         avg = gvar.gvar(avg, err)
     spl = fname.split('_')[0]
@@ -503,7 +512,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
     median_err = []
     half = 0
     usegevp = gevpp(freqarr)
-    for effmass, pval, err, _ in loop: # drop the fit range from the loop
+    for effmass, pval, err, drop in loop: # drop the fit range from the loop
         # skip the single time slice points for GEVP
         if pval == 1.0 and usegevp:
             pass
@@ -522,6 +531,8 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
         except AssertionError:
             print(jkerr(effmass))
             print(err)
+            print(jkerr2(effmass))
+            print(drop)
             raise
         median_err.append([efferr, pval])
         #print(median_err[-1], j)
@@ -707,6 +718,10 @@ def avg_gvar(arr):
     ret = em.acmean([i.val for i in arr])
     ret = np.asarray(ret)
     return ret
+
+def lenfitw(fitwin):
+    """Length of fit window"""
+    return fitwin[1]-fitwin[0]+1
 
 @PROFILE
 def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
@@ -913,10 +928,11 @@ def lencut(fit_range):
     effmasspt = not iterf and len(fit_range) == 1
     if effmasspt:
         ret = True
-    elif iterf:
-        ret = any([len(i) < LENMIN for i in fit_range])
-    else:
-        ret = len(fit_range) < LENMIN
+    if not ret:
+        if iterf:
+            ret = any([len(i) < LENMIN for i in fit_range])
+        else:
+            ret = len(fit_range) < LENMIN
     return ret
 
 @PROFILE
@@ -927,11 +943,16 @@ def fitwincut(fit_range, fitwindow):
     iterf = hasattr(fit_range[0], '__iter__')
     if iterf:
         tmax = max([max(j) for j in fit_range])
-        tmin = max([max(j) for j in fit_range])
+        tmin = min([min(j) for j in fit_range])
     else:
         tmax = max(fit_range)
         tmin = min(fit_range)
     ret = tmax > fitwindow[1] or tmin < fitwindow[0]
+    if not ret and lenfitw(fitwindow) == 1:
+        print(fitwindow)
+        print(tmin, tmax)
+        print(fit_range)
+        sys.exit(1)
     return ret
 
 
@@ -1019,6 +1040,10 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
 
 @PROFILE
 def jkerr(arr):
+    """jackknife error"""
+    return jack_mean_err(arr)[1]
+
+def jkerr2(arr):
     """jackknife error"""
     return em.acstd(arr)*np.sqrt(len(arr)-1)
 

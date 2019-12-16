@@ -10,11 +10,11 @@ from latfit.mathfun.proc_meff import proc_meff
 from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
-from latfit.jackknife_fit import jack_mean_err
 from latfit.analysis.errorcodes import XmaxError, NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError, NegativeEnergy
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
+from latfit.analysis.superjack import jack_mean_err
 
 from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
 from latfit.extract.getblock.gevp_linalg import degenerate_subspace_check

@@ -15,7 +15,6 @@ def lenfit(fname):
 def main():
     """main"""
     ret = []
-    outfn = start_str(sys.argv[1:])
     shape = ()
     res_mean = None
     err_check = None
@@ -24,32 +23,39 @@ def main():
     rotate = False
     early = np.inf
     earlylist = []
+    rescount = 0
+    useset = set()
     for i in sys.argv[1:]:
         if '.cp' in i:
+            continue
+        if 'energy_min' in i:
             continue
         try:
             new_early = rf.earliest_time(i)
         except ValueError:
             continue
+        useset.add(i)
         early = min(early, new_early)
         if early == new_early:
             earlylist.append(i)
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
+        print(i, "add.shape", add.shape)
         if add.shape == (4,) and ('pvalue' not in i or 'err' not in i):
+            rescount += len(add[3]) 
             rotate = True # top index is not fit ranges
             print(i, "shape:", add.shape)
             res_mean = add[0]
             err_check = add[1]
             assert len(res) == len(excl_arr)
             newfrs = add[3][:len(add[2])]
-            if len(add[2]) > 1 lenfit(fname) > hist.LENMIN:
+            if len(add[2]) > 1 or lenfit(i) == hist.LENMIN:
                 count = 0
                 for j in newfrs:
                     if len(j) > 1:
                         count += 1
-                if count <= 1:
+                if count <= 1 and lenfit(i) != hist.LENMIN:
                     continue
                 res.extend(add[2])
             else:
@@ -57,6 +63,7 @@ def main():
             excl_arr.extend(newfrs)
             assert len(res) == len(excl_arr)
         else:
+            rescount += len(add)
             print(i, "shape:", add.shape)
         if not shape:
             shape = np.asarray(add[0]).shape
@@ -70,6 +77,7 @@ def main():
                 raise
         if not rotate:
             ret.extend(add)
+    outfn = start_str(sorted(list(useset)))
     if rotate:
         res = np.array(res)
         print('res.shape:', res.shape)
@@ -79,10 +87,11 @@ def main():
     try:
         ret = np.array(ret)
         print("final shape:", ret.shape)
+        print("final rescount:", rescount)
     except ValueError:
         pass
     #print("final shape:", ret.shape)
-    print("finished combining:", sys.argv[1:])
+    print("finished combining:", sorted(list(useset)))
     if outfn[-1] != '_':
         outfn = outfn + '_tmin' + str(int(early)) + '.cp'
     else:

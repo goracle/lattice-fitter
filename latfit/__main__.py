@@ -32,7 +32,7 @@ from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.utilities.postprod.h5jack import TDIS_MAX
-from latfit.jackknife_fit import jack_mean_err
+from latfit.analysis.superjack import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 
 from latfit.extract.errcheck.xlim_err import fitrange_err
