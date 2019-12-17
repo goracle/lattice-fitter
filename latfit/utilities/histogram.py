@@ -12,6 +12,7 @@ from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
 from latfit.config import RANGE_LENGTH_MIN
 from latfit.jackknife_fit import jack_mean_err
+from latfit.utilities.postprod.h5jack import TDIS_MAX
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -23,7 +24,7 @@ except NameError:
 
 ISOSPIN = 2
 LENMIN = 3
-#assert LENMIN == RANGE_LENGTH_MIN
+assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
@@ -71,18 +72,21 @@ def main(nosave=True):
             energyfn = fname
         min_en1 = make_hist(energyfn, nosave=nosave, allowidx=0)
         min_ph1 = make_hist(phasefn, nosave=nosave, allowidx=1)
-        min_res, test = print_compiled_res(min_en1, min_ph1)
+        min_res, test, min_res_pr = print_compiled_res(
+            min_en1, min_ph1)
         tot = []
+        tot_pr = []
         min_ph = min_ph1
         min_en = min_en1
         tot.append(min_res)
+        tot_pr.append(min_res_pr)
         success_tadd_tsub = []
         if test:
             success_tadd_tsub.append((0, 0))
         tadd = 0
-        while tadd < 22:
+        while tadd < TDIS_MAX:
             tsub = 0
-            while np.abs(tsub) < 22:
+            while np.abs(tsub) < TDIS_MAX:
                 if tsub or tadd:
                     min_en = make_hist(
                         energyfn, nosave=nosave,
@@ -95,24 +99,33 @@ def main(nosave=True):
                     tsub -= 1
                     continue
                 if min_en and min_ph: # check this
-                    toapp, test = print_compiled_res(
+                    toapp, test, toapp_pr = print_compiled_res(
                         min_en, min_ph)
                     if test:
                         success_tadd_tsub.append((tadd, tsub))
                     else:
                         break
                     tot.append(toapp)
+                    tot_pr.append(toapp_pr)
                 else:
                     break
             tadd += 1
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
             print(i)
+        print_sep_errors(tot_pr)
         print_tot(tot)
     else:
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
+
+def print_sep_errors(tot_pr):
+    """Print results with separate errors"""
+    for i in tot_pr:
+        i = list(i)
+        if i:
+            print(i)
 
 @PROFILE
 def print_tot(tot):
@@ -300,16 +313,58 @@ def other_err_str(val, err1, err2):
     if isinstance(val, np.float) and not np.isnan(val) and not np.isnan(err2):
         err2 = round_wrt(err1, err2)
         err = gvar.gvar(val, err2)
+        places = place_diff_gvar(gvar.gvar(val, err1),
+                                 gvar.gvar(val, err2))
+        assert places >= 0, (val, err1, err2, places)
         try:
             ret = str(err).split('(')[1][:-1]
         except IndexError:
             print('va', val)
             print('er', err2)
             raise
+        if places and err2:
+            assert places == 1
+            ret = '0'+ret[0]
         ret = '(' + ret + ')'
     else:
         ret = ''
     return ret
+
+def place_diff_gvar(gvar1, gvar2):
+    """Find difference in places between gvar1 and gvar2"""
+    one = str(gvar1)
+    two = str(gvar2)
+    one = len(one.split('(')[0])
+    two = len(two.split('(')[0])
+    return two-one
+
+def tot_to_stat(res, sys_err):
+    """Get result object which has separate stat
+    and sys errors"""
+    err = res.sdev
+    assert err > sys_err, (err, sys_err)
+    err = np.sqrt(err**2-sys_err**2)
+    ret = gvar.gvar(res.val, err)
+    return ret
+
+def errstr(res, sys_err):
+    """Print error string"""
+    if not np.isnan(res.val):
+        assert res.sdev >= sys_err, (res.sdev, sys_err)
+        newr = tot_to_stat(res, sys_err)
+        assert newr.sdev >= sys_err, "reverse not supported"
+        ret = other_err_str(newr.val, newr.sdev, sys_err)
+        ret = str(newr)+ret
+    else:
+        ret = res
+    return ret
+
+def swap_err(gvar1, newerr):
+    """Swap the errors in the gvar object"""
+    err1 = gvar1.sdev
+    val = gvar1.val
+    ret = gvar.gvar(gvar1, newerr)
+    return ret, err1
 
 @PROFILE
 def print_compiled_res(min_en, min_ph):
@@ -317,17 +372,19 @@ def print_compiled_res(min_en, min_ph):
     min_enf = [(str(i), j, k) for i, j, k in min_en]
     min_phf = [(str(i), j, k) for i, j, k in min_ph]
 
-    min_en = [str(i)+other_err_str(i.val, i.sdev, j) for i, j, _ in min_en]
-    min_ph = [str(i)+other_err_str(i.val, i.sdev, j) for i, j, _ in min_ph]
+    min_en = [errstr(i, j) for i, j, _ in min_en]
+    min_ph = [errstr(i, j) for i, j, _ in min_ph]
 
-    min_res = [list(i) for i in zip(min_en, min_ph) if list(i)]
-    min_res_pr = [i for i in min_res if 'nan' not in str(i[0])]
+    min_res = [
+        list(i) for i in zip(min_en, min_ph) if list(i)]
+    min_res_pr = [
+        i for i in min_res if 'nan' not in str(i[0])]
     test = False
     if min_res_pr:
         print("minimized error results:", min_res_pr)
         test = True
     ret = list(zip(min_enf, min_phf))
-    return ret, test
+    return ret, test, min_res_pr
 
 
 @PROFILE
