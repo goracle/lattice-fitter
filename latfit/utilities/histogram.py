@@ -84,7 +84,10 @@ def main(nosave=True):
         if test:
             success_tadd_tsub.append((0, 0))
         tadd = 0
+        breakadd = False
         while tadd < TDIS_MAX:
+            if breakadd:
+                break
             tsub = 0
             while np.abs(tsub) < TDIS_MAX:
                 if tsub or tadd:
@@ -104,6 +107,8 @@ def main(nosave=True):
                     if test:
                         success_tadd_tsub.append((tadd, tsub))
                     else:
+                        if tsub == -1:
+                            breakadd = True
                         break
                     tot.append(toapp)
                     tot_pr.append(toapp_pr)
@@ -125,6 +130,8 @@ def print_sep_errors(tot_pr):
     for i in tot_pr:
         i = list(i)
         if i:
+            fitwin, i = i
+            print("fitwin", fitwin)
             print(i)
 
 @PROFILE
@@ -139,22 +146,79 @@ def print_tot(tot):
         if i and len(i) == lenmax:
             tot_new.append(i)
         if i:
-            topr = drop_fit_range_info(i)
+            topr = drop_extra_info(i)
             if topr:
-                print(topr)
+                fitwin, fit_range, res = topr
+                print('fitwin =', fitwin)
+                if fit_range is not None:
+                    print("fit range:", fit_range)
+                for i, item in enumerate(res):
+                    print("dim", i, ":", item)
     tot = tot_new
     for dim, _ in enumerate(tot[0]):
         plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
         plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
 
 @PROFILE
-def drop_fit_range_info(ilist):
+def drop_extra_info(ilist):
     """Drop fit range data from a 'tot' list item
     (useful for prints)
+    i[0][0]==energy
+    i[1][0]==phase
+    (in general i[j][0] == result)
+    i[j][1] == sys_err
+    i[j][2] == (fit_range, fit window)
     """
-    ret = [[i[0][0], i[1][0]] if 'nan' not in str(
+    # find the common fit range, for this fit window if it exists
+    fit_range = None
+    for i in ilist:
+        fitr1 = i[0][2][0]
+        fitr2 = i[1][2][0]
+        if fit_range_equality(fitr1, fitr2):
+            if fit_range is None:
+                fit_range = fitr1
+            else:
+                if not fit_range_equality(fitr1, fit_range):
+                    fit_range = None
+                    break
+        else:
+            fit_range = None
+            break
+    # printable results
+    ret = []
+    if fit_range is None: 
+        # ret is (energy, fit range), (phase, fit range)
+        for i in ilist:
+            if 'nan' in str(i[0][0]):
+                toapp = []
+            else:
+                fitr1 = i[0][2][0]
+                fitr2 = i[1][2][0]
+                # check for sub consistency of fit ranges
+                if fit_range_equality(fitr1, fitr2):
+                    toapp = ([i[0][0], i[1][0]], fitr1)
+                else:
+                    assert None, (fitr1, fitr2)
+                    toapp = [(i[0][0], fitr1), (i[1][0], fitr2)]
+            ret.append(toapp)
+    else:
+        # ret is ((energy, phase)..., fit range)
+        ret = [[i[0][0], i[1][0]] if 'nan' not in str(
+            i[0][0]) else [] for i in ilist]
+
+    # get common fit window, make sure there is a common fit window
+    fitwin = [[i[0][2][1], i[1][2][1]] if 'nan' not in str(
         i[0][0]) else [] for i in ilist]
-    return ret
+    fitw = None
+    for i in fitwin:
+        if fitw is None:
+            fitw = i
+        else:
+            assert list(fitw) == list(i), (fitw, i)
+    if hasattr(fitw[0], '__iter__'):
+        assert list(fitw[0]) == list(fitw[1])
+        fitw = fitw[0]
+    return (fitw, fit_range, ret)
 
 @PROFILE
 def plot_t_dep(tot, dim, item_num, title, units):
@@ -175,6 +239,16 @@ def plot_t_dep(tot, dim, item_num, title, units):
         sys.exit(1)
 
 @PROFILE
+def fit_range_equality(fitr1, fitr2):
+    """Check if two fit ranges are the same"""
+    ret = True
+    assert len(fitr1) == len(fitr2), (fitr1, fitr2)
+    for i, j in zip(fitr1, fitr2):
+        if list(i) != list(j):
+            ret = False
+    return ret
+
+@PROFILE
 def check_fitwin_continuity(tot_new):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
@@ -184,6 +258,7 @@ def check_fitwin_continuity(tot_new):
     assert len(tot_new) > 1, tot_new
 
     for _, _, fitwin in tot_new:
+        fitwin = fitwin[1]
         if fitwin[0] in maxtmax:
             maxtmax[fitwin[0]] = max(maxtmax[fitwin[0]],
                                      fitwin[1])
@@ -198,6 +273,7 @@ def check_fitwin_continuity(tot_new):
     for tmin in maxtmax:
         check_set = set()
         for _, _, fitwin in tot_new:
+            fitwin = fitwin[1]
             if fitwin[0] == tmin:
                 check_set.add(fitwin)
 
@@ -231,6 +307,7 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
     itemprev = None
     fitwinprev = None
     for item, _, fitwin in tot_new:
+        fitwin = fitwin[1]
         item = gvar.gvar(item)
         trfitwin = (fitwin[0], fitwin[1] + 1)
         if item == itemprev and trfitwin == fitwinprev and len(
@@ -372,6 +449,7 @@ def print_compiled_res(min_en, min_ph):
     min_enf = [(str(i), j, k) for i, j, k in min_en]
     min_phf = [(str(i), j, k) for i, j, k in min_ph]
 
+    fitwin = min_en[0][2][1]
     min_en = [errstr(i, j) for i, j, _ in min_en]
     min_ph = [errstr(i, j) for i, j, _ in min_ph]
 
@@ -384,7 +462,7 @@ def print_compiled_res(min_en, min_ph):
         print("minimized error results:", min_res_pr)
         test = True
     ret = list(zip(min_enf, min_phf))
-    return ret, test, min_res_pr
+    return ret, test, (fitwin, min_res_pr)
 
 
 @PROFILE
@@ -640,6 +718,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = {}
+    print("tadd, tsub", tadd, tsub)
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(
             freqarr, errdat, dim)
@@ -852,9 +931,9 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         if themin is not None:
             minprev = themin
             if themin[0].sdev >= ind_diff.sdev:
-                themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr)
+                themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr, fit_range)
         else:
-            themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr)
+            themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr, fit_range)
 
         # if the max difference is not zero
         if ind_diff.val:
@@ -911,8 +990,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
     else:
-        themin = (None, None)
-    return themin[0], themin[1], fitwindow
+        themin = (None, None, None)
+    return themin[0], themin[1], (themin[2], fitwindow)
 output_loop.tadd = 0
 output_loop.tsub = 0
 
