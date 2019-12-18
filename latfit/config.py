@@ -165,7 +165,7 @@ RANGE_LENGTH_MIN = 2 if not GEVP and EFF_MASS else RANGE_LENGTH_MIN
 # (useful for error optimization after a full fit range loop)
 ONLY_SMALL_FIT_RANGES = True
 ONLY_SMALL_FIT_RANGES = False
-ONLY_SMALL_FIT_RANGES = False if not RANGE_LENGTH_MIN else ONLY_SMALL_FIT_RANGES
+ONLY_SMALL_FIT_RANGES = False if RANGE_LENGTH_MIN > 2 else ONLY_SMALL_FIT_RANGES
 
 # block size of blocked jackknifed technique
 # usual jackknife sets this to 1

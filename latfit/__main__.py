@@ -49,7 +49,7 @@ from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
 from latfit.analysis.result_min import Param
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import PHASE_SHIFT_ERR_CUT
-from latfit.config import MULT, TSTEP
+from latfit.config import MULT, TSTEP, RANGE_LENGTH_MIN
 from latfit.checks.consistency import fit_range_consistency_check
 from latfit.utilities import exactmean as em
 from latfit.mainfunc.metaclass import FitRangeMetaData
@@ -100,7 +100,9 @@ except NameError:
 def winsize_check(meta, tadd, tsub):
     """Check proposed new fit window size to be sure
     there are enough time slices"""
-    return tadd + tsub < meta.fitwindow[1] - meta.fitwindow[0] + 1
+    new_fitwin_len = meta.fitwindow[1] - meta.fitwindow[0] + 1 - tadd - tsub
+    ret = new_fitwin_len > 0 and RANGE_LENGTH_MIN >= new_fitwin_len
+    return ret
 
 @PROFILE
 def fit(tadd=0, tsub=0):
@@ -140,12 +142,11 @@ def fit(tadd=0, tsub=0):
         # fit loop at all; thus parallelize
         if list(meta.generate_combinations()[0]) and not meta.skip_loop():
             fit.count += 1
+            if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
+                raise MpiSkip
+            print("fit.count =", fit.count)
 
-        if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
-            raise MpiSkip
-        print("fit.count =", fit.count)
-
-        if FIT and winsize_check(meta, tadd, tsub):
+        if FIT:
 
             test = True
             # print loop info
