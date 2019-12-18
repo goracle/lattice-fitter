@@ -246,20 +246,29 @@ def toosmallp(meta, excl):
 
     # each fit curve should be to more than one data point
     if onlynpts(meta, excl, 1) and not ONLY_SMALL_FIT_RANGES:
-        print("warning:  only one data point in fit curve")
-        # ret = True
+        if not (ISOSPIN == 0 and GEVP):
+            print("skip: only one data point in fit curve")
+            ret = True
+        else:
+            print("warning: only one data point in fit curve")
 
     if not ret and onlynpts(meta, excl, 2) and not ONLY_SMALL_FIT_RANGES:
-        print("warning: only two data points in fit curve")
         # allow for very noisy excited states in I=0
         if not (ISOSPIN == 0 and GEVP):
-            #ret = True
-            pass
+            print("skip: only two data points in fit curve")
+            ret = True
+        else:
+            print("warning: only two data points in fit curve")
 
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
-        print("warning:  not an arithmetic sequence")
+        if not (ISOSPIN == 0 and GEVP):
+            print("skip: not an arithmetic sequence")
+            ret = True
+        else:
+            print("warning: not an arithmetic sequence")
+
     ret = False if ISOSPIN == 0 and GEVP else ret
     return ret
 
