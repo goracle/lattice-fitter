@@ -10,9 +10,9 @@ import gvar
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
-from latfit.config import RANGE_LENGTH_MIN
+from latfit.config import RANGE_LENGTH_MIN, ISOSPIN
 from latfit.jackknife_fit import jack_mean_err
-from latfit.utilities.postprod.h5jack import TDIS_MAX, ISOSPIN
+from latfit.utilities.postprod.h5jack import TDIS_MAX
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
