@@ -12,7 +12,7 @@ from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.utilities import read_file as rf
 from latfit.config import RANGE_LENGTH_MIN
 from latfit.jackknife_fit import jack_mean_err
-from latfit.utilities.postprod.h5jack import TDIS_MAX
+from latfit.utilities.postprod.h5jack import TDIS_MAX, ISOSPIN
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -22,7 +22,6 @@ except NameError:
         return arg2
     PROFILE = profile
 
-ISOSPIN = 2
 LENMIN = 3
 assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
