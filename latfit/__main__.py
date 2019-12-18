@@ -101,7 +101,7 @@ def winsize_check(meta, tadd, tsub):
     """Check proposed new fit window size to be sure
     there are enough time slices"""
     new_fitwin_len = meta.fitwindow[1] - meta.fitwindow[0] + 1 - tadd - tsub
-    ret = new_fitwin_len > 0 and RANGE_LENGTH_MIN >= new_fitwin_len
+    ret = new_fitwin_len > 0 and RANGE_LENGTH_MIN <= new_fitwin_len
     return ret
 
 @PROFILE
