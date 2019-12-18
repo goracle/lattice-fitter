@@ -793,8 +793,17 @@ def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     pickl_res = pickle_res(name, min_arr)
     pickl_res_err = pickle_res_err(name, min_arr)
     pickl_excl = pickle_excl(meta, min_arr)
-    pickl_res = np.array([res_mean, err_check,
-                          pickl_res, pickl_excl], dtype=object)
+    pickl_res_fill = np.empty(4, object)
+    try:
+        pickl_res_fill[:] = [res_mean, err_check, pickl_res, pickl_excl]
+        pickl_res = pickl_res_fill
+    except ValueError:
+        print(np.asarray(res_mean).shape)
+        print(np.asarray(err_check).shape)
+        print(np.asarray(pickl_res).shape)
+        print(np.asarray(pickl_excl).shape)
+        print(name)
+        raise
     assert pickl_res_err.shape == pickl_res[2].shape[0::2], (
         "array mismatch:", pickl_res_err.shape, pickl_res[2].shape)
     assert len(pickl_res) == 4, "bad result length"
