@@ -901,18 +901,6 @@ def closest_fit_to_avg(result_min_avg, min_arr):
     return ret_excl
 
 
-@PROFILE
-def errerr(param_err_arr):
-    """Find the error on the parameter error."""
-    err = np.zeros(param_err_arr[0].shape)
-    avgerr = np.zeros(param_err_arr[0].shape)
-    param_err_arr = np.asarray(param_err_arr)
-    for i, _ in enumerate(err):
-        err[i] = em.acstd(param_err_arr[:, i], ddof=1)/np.sqrt(
-            len(err))/np.sqrt(MPISIZE)
-        avgerr[i] = em.acmean(param_err_arr[:, i])
-    return err, avgerr
-
 # obsolete, we should simply pick the model with the smallest errors
 # and an adequate chi^2 (t^2)
 @PROFILE
