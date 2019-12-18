@@ -1009,7 +1009,7 @@ def dofit_initial(meta, plotdata):
     while flag:
         try:
             print("Trying initial fit with excluded times:",
-                  latfit.config.FIT_EXCL)
+                  latfit.config.FIT_EXCL, 'rank:', MPIRANK)
             retsingle_save = sfit.singlefit(
                 meta.input_f, meta.fitwindow, meta.options.xmin,
                 meta.options.xmax, meta.options.xstep)
