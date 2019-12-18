@@ -15,7 +15,7 @@ import latfit.singlefit
 assert not BIASED_SPEEDUP
 
 MPIRANK = MPI.COMM_WORLD.rank
-MPISIZE = MPI.COMM_WORLD.Get_size()
+#MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
 try:
@@ -174,8 +174,8 @@ def exitp(meta, min_arr, overfit_arr, idx):
         ret = True
 
     if not ret and meta.random_fit:
-        if len(min_arr) >= MAX_RESULTS/MPISIZE or (
-                len(overfit_arr) >= MAX_RESULTS/MPISIZE
+        if len(min_arr) >= MAX_RESULTS or (
+                len(overfit_arr) >= MAX_RESULTS
                 and not min_arr):
             ret = True
             print("a reasonably large set of indices"+\
