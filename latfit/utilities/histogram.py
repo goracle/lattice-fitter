@@ -939,9 +939,12 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             #SYS_ALLOWANCE, dim, allowidx)
 
         errterm = np.sqrt(sdev**2+syserr**2)
+        noprint = False
         if themin is not None:
             if themin[0].sdev >= errterm:
                 themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
+            else:
+                noprint = True
         else:
             themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
 
@@ -955,7 +958,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             maxsig = max(maxsig, sig)
 
             # print the result
-            printres(effmass, pval, fit_range)
+            if not noprint:
+                printres(themin[0], pval, fit_range)
 
             # keep track of largest errors;
             # print the running max
@@ -997,7 +1001,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             # no differences found; print the result
             # skip effective mass points for I=0 fits (const+exp)
             if ISOSPIN == 2 or len(fit_range) != 1.0:
-                printres(effmass, pval, fit_range)
+                if not noprint:
+                    printres(themin[0], pval, fit_range)
     if themin is not None:
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
@@ -1009,10 +1014,10 @@ output_loop.tadd = 0
 output_loop.tsub = 0
 
 @PROFILE
-def printres(effmass, pval, fit_range):
+def printres(effmass1, pval, fit_range):
     """Print the result (and a header for the first result printed)"""
-    effmass1 = avg_gvar(effmass)
-    effmass1 = gvar.gvar(effmass1, effmass[0].sdev)
+    #effmass1 = avg_gvar(effmass)
+    #effmass1 = gvar.gvar(effmass1, effmass[0].sdev)
     if not printres.prt:
         print("val(err); pvalue; ind diff; median difference;",
               " avg difference; fit range")
