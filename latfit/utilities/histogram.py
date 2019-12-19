@@ -92,9 +92,10 @@ def main(nosave=True):
                     min_en = make_hist(
                         energyfn, nosave=nosave,
                         tadd=tadd, tsub=tsub, allowidx=0)
-                    min_ph = make_hist(
-                        phasefn, nosave=nosave,
-                        tadd=tadd, tsub=tsub, allowidx=1)
+                    if min_en:
+                        min_ph = make_hist(
+                            phasefn, nosave=nosave,
+                            tadd=tadd, tsub=tsub, allowidx=1)
                     tsub -= 1
                 else:
                     tsub -= 1
@@ -888,13 +889,12 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         #print(global_tmax(fit_range_arr, dim))
         #print(output_loop.tadd, output_loop.tsub)
     themin = None
-    minprev = None
 
     for i, (effmass, pval) in enumerate(median_err):
 
         if lenfitw(fitwindow) < LENMIN:
             break
-            
+
         sdev = effmass[0].sdev
         # don't print the same thing twice
         #if str((effmass, pval)) in used:
@@ -930,7 +930,6 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         ind_diff, sig, errstr1, syserr = diff_ind(
             effmass, np.array(median_err)[:, 0],
             fit_range_arr, fitwindow)
-
         assert ind_diff.sdev >= syserr
 
         allowable_err = 0.0
@@ -939,12 +938,12 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         #assert isinstance(allowable_err, np.float), (
             #SYS_ALLOWANCE, dim, allowidx)
 
+        errterm = np.sqrt(sdev**2+syserr**2)
         if themin is not None:
-            minprev = themin
-            if themin[0].sdev >= ind_diff.sdev:
-                themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr, fit_range)
+            if themin[0].sdev >= errterm:
+                themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
         else:
-            themin = (gvar.gvar(avg_gvar(effmass), ind_diff.sdev), syserr, fit_range)
+            themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
 
         # if the max difference is not zero
         if ind_diff.val:
@@ -977,7 +976,10 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             try:
                 #assert sig < 1.5 or fake_err or not (
                 #    disagree_multi_multi_point or ISOSPIN == 2)
-                assert sig < 1.5 or ind_diff.sdev <= allowable_err
+                # more of a sanity check at this point, than
+                # an actual cut, given that we preserve systematic error
+                # information
+                assert sig < 2.0 or ind_diff.sdev <= allowable_err
             except AssertionError:
 
                 if isinstance(errstr1, float):
@@ -1114,7 +1116,7 @@ def discrep(res, gres, maxsys_errcurr):
     sys_err = max(0, mean-1.5*err)
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
     #maxsig = max(sig, maxsigcurr)
-    return diff, sys_err
+    return mean, err, sys_err
 
 @PROFILE
 def statlvl(diff):
@@ -1149,6 +1151,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     """
     maxdiff = None
     maxsyserr = 0
+    maxerr = 0
     errstr1 = ''
     for i, gres in enumerate(arr):
 
@@ -1161,7 +1164,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
             continue
 
         # cuts are passed, calculate the discrepancy
-        diff, syserr = discrep(res, gres, maxsyserr)
+        diff, err, syserr = discrep(res, gres, maxsyserr)
         maxsyserr = max(syserr, maxsyserr)
         #maxdiff = maxarr(diff, maxdiff)
         #if np.all(diff == maxdiff):
@@ -1169,7 +1172,8 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
 
         #if maxsig == sig and maxsig:
         if syserr == maxsyserr:
-            maxdiff = np.asarray(diff)
+            maxdiff = diff
+            maxerr = np.sqrt(syserr**2+err**2)
             #mean = avg_gvar(gres)
             sdev = gres[0].sdev
             if len(fit_range_arr[i]) > 1:
@@ -1177,9 +1181,8 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
                     gvar.gvar(0, sdev))+" "+str(fit_range_arr[i])
             else:
                 errstr1 = float(fit_range_arr[i][0])
-    mean = em.acmean(maxdiff)
-    sig = statlvl(gvar.gvar(mean, jkerr(maxdiff)))
-    ret = gvar.gvar(mean, np.sqrt(maxsyserr**2+res[0].sdev**2))
+    ret = gvar.gvar(maxdiff, maxerr)
+    sig = statlvl(ret)
     return ret, sig, errstr1, maxsyserr
 
 @PROFILE
