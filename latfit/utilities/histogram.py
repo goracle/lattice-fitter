@@ -71,8 +71,7 @@ def main(nosave=True):
             energyfn = fname
         min_en1 = make_hist(energyfn, nosave=nosave, allowidx=0)
         min_ph1 = make_hist(phasefn, nosave=nosave, allowidx=1)
-        min_res, test, min_res_pr = print_compiled_res(
-            min_en1, min_ph1)
+        min_res, test, min_res_pr = print_compiled_res(min_en1, min_ph1)
         tot = []
         tot_pr = []
         min_ph = min_ph1
@@ -197,7 +196,7 @@ def drop_extra_info(ilist):
                 if fit_range_equality(fitr1, fitr2):
                     toapp = ([i[0][0], i[1][0]], fitr1)
                 else:
-                    assert None, (fitr1, fitr2)
+                    #assert None, (fitr1, fitr2)
                     toapp = [(i[0][0], fitr1), (i[1][0], fitr2)]
             ret.append(toapp)
     else:
@@ -428,11 +427,20 @@ def errstr(res, sys_err):
     if not np.isnan(res.val):
         assert res.sdev >= sys_err, (res.sdev, sys_err)
         newr = tot_to_stat(res, sys_err)
-        assert newr.sdev >= sys_err, "reverse not supported"
-        ret = other_err_str(newr.val, newr.sdev, sys_err)
-        ret = str(newr)+ret
+        if newr.sdev >= sys_err:
+            ret = other_err_str(newr.val, newr.sdev, sys_err)
+            ret = str(newr)+ret
+        else:
+            ret = other_err_str(newr.val, sys_err, newr.sdev)
+            ret = swap_err_str(gvar.gvar(newr.val, sys_err), ret)
     else:
         ret = res
+    return ret
+
+def swap_err_str(gvar1, errstr1):
+    """Swap the gvar error string with the new one"""
+    val, errs = str(gvar1).split("(")
+    ret = str(val)+errstr1+'('+errs
     return ret
 
 def swap_err(gvar1, newerr):
@@ -661,7 +669,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
         # check jackknife error and superjackknife error are somewhat close
         efferr = np.array([gvar.gvar(i, err) for i in effmass])
         try:
-            assert np.allclose(jkerr(effmass), err, rtol=1e-1)
+            assert np.allclose(jkerr(effmass), err, rtol=1e-4)
         except AssertionError:
             print(jkerr(effmass))
             print(err)
@@ -866,7 +874,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     median_err, median = median_store
     maxsig = 0
     usegevp = gevpp(freqarr)
-    used = set()
+    #used = set()
 
     #tmin_allowed = 0
     #tmax_allowed = np.inf
@@ -874,6 +882,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     tmax_allowed = global_tmax(fit_range_arr) + output_loop.tsub
 
     fitwindow = (tmin_allowed, tmax_allowed)
+    print("fit window:", fitwindow)
     #if output_loop.tsub:
     #    print(fitwindow)
         #print(global_tmax(fit_range_arr, dim))
@@ -883,11 +892,14 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
     for i, (effmass, pval) in enumerate(median_err):
 
+        if lenfitw(fitwindow) < LENMIN:
+            break
+            
         sdev = effmass[0].sdev
         # don't print the same thing twice
-        if str((effmass, pval)) in used:
-            continue
-        used.add(str((effmass, pval)))
+        #if str((effmass, pval)) in used:
+            #continue
+        #used.add(str((effmass, pval)))
 
         fit_range = fit_range_arr[i]
 
@@ -915,17 +927,17 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             [gvar.gvar(i.val, max(sdev, avg_dim.sdev)) for i in avg_diff])
 
         # compare this result to all other results
-        ind_diff, sig, errstr, syserr = diff_ind(
+        ind_diff, sig, errstr1, syserr = diff_ind(
             effmass, np.array(median_err)[:, 0],
             fit_range_arr, fitwindow)
 
         assert ind_diff.sdev >= syserr
 
         allowable_err = 0.0
-        if SYS_ALLOWANCE is not None:
-            allowable_err = SYS_ALLOWANCE[dim][allowidx]
-        assert isinstance(allowable_err, np.float), (
-            SYS_ALLOWANCE, dim, allowidx)
+        #if SYS_ALLOWANCE is not None:
+        #    allowable_err = SYS_ALLOWANCE[dim][allowidx]
+        #assert isinstance(allowable_err, np.float), (
+            #SYS_ALLOWANCE, dim, allowidx)
 
         if themin is not None:
             minprev = themin
@@ -965,17 +977,17 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             try:
                 #assert sig < 1.5 or fake_err or not (
                 #    disagree_multi_multi_point or ISOSPIN == 2)
-                assert sig < 1.5 or ind_diff.sdev > allowable_err
+                assert sig < 1.5 or ind_diff.sdev <= allowable_err
             except AssertionError:
 
-                if isinstance(errstr, float):
-                    if errstr:
+                if isinstance(errstr1, float):
+                    if errstr1:
                         print("disagreement (mass) with data point at t=",
-                              errstr, 'dim:', dim, "sig =", sig)
+                              errstr1, 'dim:', dim, "sig =", sig)
                         print("")
                 else:
                     print("disagreement at", sig, "sigma")
-                    print(errstr, 'dim:', dim)
+                    print(errstr1, 'dim:', dim)
                     print("")
 
                 raise FitRangeInconsistency
@@ -1013,14 +1025,14 @@ def reset_header():
 
 
 @PROFILE
-def errfake(frdim, errstr):
+def errfake(frdim, errstr1):
     """Is the disagreement with an effective mass point outside of this
     dimension's fit window?  Then regard this error as spurious"""
     tmin = min(frdim)
     tmax = max(frdim)
-    ret = errstr < tmin or errstr > tmax
+    ret = errstr1 < tmin or errstr1 > tmax
     if not ret:
-        print(tmin, tmax, errstr, frdim)
+        print(tmin, tmax, errstr1, frdim)
     return ret
 
 
@@ -1094,15 +1106,12 @@ def fitwincut(fit_range, fitwindow):
 @PROFILE
 def discrep(res, gres, maxsys_errcurr):
     """Calculate the stat. sig of the disagreement"""
-    resarr = [i.val for i in res]
-    gresarr = [i.val for i in gres]
-    diff = []
-    for i, j in zip(resarr, gresarr):
-        diff.append(abs(i-j))
-    diff = np.array(diff)
+    assert len(res) == len(gres)
+    diff = np.fromiter((abs(i.val-j.val) for i, j in zip(res, gres)),
+                       count=len(res), dtype=np.float)
     # needs super jack
-    err = jkerr(diff)
-    sys_err = max(0, em.acmean(diff)-1.5*err)
+    mean, err = jack_mean_err(diff)
+    sys_err = max(0, mean-1.5*err)
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
     #maxsig = max(sig, maxsigcurr)
     return diff, sys_err
@@ -1140,7 +1149,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     """
     maxdiff = None
     maxsyserr = 0
-    errstr = ''
+    errstr1 = ''
     for i, gres in enumerate(arr):
 
         # apply cuts
@@ -1160,22 +1169,23 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
 
         #if maxsig == sig and maxsig:
         if syserr == maxsyserr:
-            maxdiff = diff
-            mean = avg_gvar(gres)
+            maxdiff = np.asarray(diff)
+            #mean = avg_gvar(gres)
             sdev = gres[0].sdev
             if len(fit_range_arr[i]) > 1:
-                errstr = "disagree:"+str(i)+" "+str(
-                    gvar.gvar(mean, sdev))+" "+str(fit_range_arr[i])
+                errstr1 = "disagree:"+str(i)+" "+str(
+                    gvar.gvar(0, sdev))+" "+str(fit_range_arr[i])
             else:
-                errstr = float(fit_range_arr[i][0])
+                errstr1 = float(fit_range_arr[i][0])
     mean = em.acmean(maxdiff)
     sig = statlvl(gvar.gvar(mean, jkerr(maxdiff)))
     ret = gvar.gvar(mean, np.sqrt(maxsyserr**2+res[0].sdev**2))
-    return ret, sig, errstr, maxsyserr
+    return ret, sig, errstr1, maxsyserr
 
 @PROFILE
 def jkerr(arr):
     """jackknife error"""
+    arr = np.asarray(arr)
     return jack_mean_err(arr)[1]
 
 def jkerr2(arr):
@@ -1224,7 +1234,7 @@ if __name__ == '__main__':
               "correctly")
         print("edit histogram.py to remove the hold then rerun")
         # the hold
-        sys.exit(1)
+        # sys.exit(1)
         IDS_HIST = [ISOSPIN, LENMIN]
         IDS_HIST = np.asarray(IDS_HIST)
         pickle.dump(IDS_HIST, open('ids_hist.p', "wb"))
