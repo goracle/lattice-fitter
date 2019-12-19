@@ -188,8 +188,7 @@ def fit(tadd=0, tsub=0):
                     meta, prod, idx, sorted_fit_ranges, checked)
                 if excl is None:
                     continue
-                if frsort.toosmallp(meta, excl):
-                    print('excl:', excl, 'is too small')
+                if sfit.toosmallp(meta, excl):
                     continue
 
                 # update global info about excluded points
@@ -1004,7 +1003,7 @@ def dofit_initial(meta, plotdata):
             print("Trying initial fit with excluded times:",
                   latfit.config.FIT_EXCL, 'rank:', MPIRANK)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
-            test_success = True
+            test_success = True if len(retsingle_save) > 2 else test_success
             flag = False
             if FIT:
                 print("Test fit succeeded.")
