@@ -159,8 +159,7 @@ def fit(tadd=0, tsub=0):
             ## (if necessary)
             start = time.perf_counter()
             min_arr, overfit_arr, retsingle_save, fit_range_init = \
-                dofit_second_initial(meta, retsingle_save, test_success,
-                                     (tadd, tsub))
+                dofit_second_initial(meta, retsingle_save, test_success)
             print("Total elapsed time =",
                   time.perf_counter()-start, "seconds")
 
@@ -241,9 +240,7 @@ def old_fit_style(meta, trials, plotdata):
         ifile = proc_folder(meta.input_f, ctime, "blk")
         ninput = os.path.join(meta.input_f, ifile)
         result_min, _, plotdata.coords, plotdata.cov =\
-            sfit.singlefit(ninput, meta.fitwindow,
-                           meta.options.xmin, meta.options.xmax,
-                           meta.options.xstep)
+            sfit.singlefit(meta, ninput)
         list_fit_params.append(result_min.energy.val)
     printerr(*get_fitparams_loc(list_fit_params, trials))
 
@@ -251,9 +248,7 @@ def nofit_plot(meta, plotdata, retsingle_save):
     """No fit scatter plot """
     #if MPIRANK == 0:
     if not latfit.config.MINTOL or METHOD == 'Nelder-Mead':
-        retsingle = sfit.singlefit(
-            meta.input_f, meta.fitwindow, meta.options.xmin,
-            meta.options.xmax, meta.options.xstep)
+        retsingle = sfit.singlefit(meta, meta.input_f)
         plotdata.coords, plotdata.cov = retsingle
     else:
         plotdata.coords, plotdata.cov = retsingle_save
@@ -288,10 +283,7 @@ def post_loop(meta, loop_store, plotdata,
             latfit.config.MINTOL = True
         print("fitting for representative fit")
         try:
-            retsingle = sfit.singlefit(meta.input_f, meta.fitwindow,
-                                       meta.options.xmin,
-                                       meta.options.xmax,
-                                       meta.options.xstep)
+            retsingle = sfit.singlefit(meta, meta.input_f)
         except ACCEPT_ERRORS_FIN:
             print("reusing first successful fit"+\
                   " since representative fit failed (NoConvergence)")
@@ -1011,9 +1003,7 @@ def dofit_initial(meta, plotdata):
         try:
             print("Trying initial fit with excluded times:",
                   latfit.config.FIT_EXCL, 'rank:', MPIRANK)
-            retsingle_save = sfit.singlefit(
-                meta.input_f, meta.fitwindow, meta.options.xmin,
-                meta.options.xmax, meta.options.xstep)
+            retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True
             flag = False
             if FIT:
@@ -1053,7 +1043,7 @@ def update_fitwin(meta, tadd, tsub):
         partial_reset()
 
 
-def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
+def dofit_second_initial(meta, retsingle_save, test_success):
     """Do second initial test fit and cut on error size"""
 
     # store different excluded, and the avg chisq/dof (t^2/dof)
@@ -1062,21 +1052,16 @@ def dofit_second_initial(meta, retsingle_save, test_success, tadd_sub):
 
     # cut late time points from the fit range
     # did we make any cuts?
-    samerange = frsort.cut_on_errsize(meta)
-    samerange = frsort.cut_on_growing_exp(meta) and samerange
-    tadd, tsub = tadd_sub
-    samerange = not tadd and not tsub and samerange
+    samerange = sfit.cut_on_errsize(meta)
+    samerange = sfit.cut_on_growing_exp(meta) and samerange
+    assert samerange
 
     fit_range_init = str(latfit.config.FIT_EXCL)
     try:
         if not samerange and FIT:
             print("Trying second initial fit with excluded times:",
                   latfit.config.FIT_EXCL)
-            retsingle_save = sfit.singlefit(meta.input_f,
-                                            meta.fitwindow,
-                                            meta.options.xmin,
-                                            meta.options.xmax,
-                                            meta.options.xstep)
+            retsingle_save = sfit.singlefit(meta, meta.input_f)
             print("Test fit succeeded.")
             test_success = True
     except AssertionError:
@@ -1146,15 +1131,11 @@ def dofit(meta, fit_range_data, results_store, plotdata):
         skip = True
     else:
         try:
-            retsingle = sfit.singlefit(meta.input_f,
-                                       meta.fitwindow,
-                                       meta.options.xmin,
-                                       meta.options.xmax,
-                                       meta.options.xstep)
+            retsingle = sfit.singlefit(meta, meta.input_f)
             if retsingle_save is None:
                 retsingle_save = retsingle
             print("fit succeeded for this selection"+\
-                    " excluded points=", excl)
+                  " excluded points=", excl)
             if meta.lenprod == 1 or MAX_RESULTS == 1:
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:

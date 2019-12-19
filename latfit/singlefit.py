@@ -25,7 +25,7 @@ from latfit.analysis.errorcodes import XmaxError
 from latfit.config import FIT, NBOOT, fit_func
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
-from latfit.config import PRINT_CORR
+from latfit.config import PRINT_CORR, MULT, ERR_CUT
 from latfit.config import GEVP, RANDOMIZE_ENERGIES
 import latfit.config
 import latfit.analysis.result_min as resmin
@@ -76,10 +76,12 @@ def randomize_data(params, reuse, reuse_blocked, coords):
 
 
 @PROFILE
-def singlefit(input_f, fitrange, xmin, xmax, xstep):
+def singlefit(meta, input_f):
     """Get data to fit
     and minimized params for the fit function (if we're fitting)
     """
+    fitwindow, xmin, xmax, xstep = meta.fitwindow, meta.options.xmin,\
+        meta.options.xmax, meta.options.xstep
     # test to see if file/folder exists
     inputexists(input_f)
 
@@ -93,7 +95,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # Now that we have the data to fit, do pre-proccess it
     params = namedtuple('fit_params', ['dimops', 'num_configs',
                                        'prefactor', 'time_range'])
-    params = get_fit_params(cov_full, reuse, xmin, fitrange, xstep)
+    params = get_fit_params(cov_full, reuse, xmin, fitwindow, xstep)
 
     # make reuse into an array, rearrange
     reuse = rearrange_reuse_dict(params, reuse)
@@ -124,7 +126,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
     # select subset of data for fit
     coords, cov = fit_select(coords_full, cov_full,
                              index_select(xmin, xmax, xstep,
-                                          fitrange, coords_full))
+                                          fitwindow, coords_full))
 
     # error handling for Degrees of Freedom <= 0 (it should be > 0).
     # number of points plotted = len(cov).
@@ -148,11 +150,14 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
                                          singlefit.error2
         print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
 
+
     if RANDOMIZE_ENERGIES:
         reuse, singlefit.reuse_blocked, coords = randomize_data(
             params, reuse, singlefit.reuse_blocked, coords)
 
     if FIT:
+        cut_on_errsize(meta)
+        cut_on_growing_exp(meta)
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
             # initial fit
@@ -176,7 +181,7 @@ def singlefit(input_f, fitrange, xmin, xmax, xstep):
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
-        result_min = error_bar_scheme(result_min, fitrange, xmin, xmax)
+        result_min = error_bar_scheme(result_min, fitwindow, xmin, xmax)
 
         ret = (result_min, param_err, coords_full, cov_full)
     else:
@@ -208,12 +213,12 @@ def covinv_compute(params, cov):
                 covinv[i][j] = np.nan
     return covinv
 
-def error_bar_scheme(result_min, fitrange, xmin, xmax):
+def error_bar_scheme(result_min, fitwindow, xmin, xmax):
     """use a consistent error bar scheme;
-    if fitrange isn't max use conventional,
+    if fit window isn't max use conventional,
     otherwise use the new double jackknife estimate
     """
-    if xmin != fitrange[0] or xmax != fitrange[1]:
+    if xmin != fitwindow[0] or xmax != fitwindow[1]:
         try:
             result_min.misc.error_bars = None
         except AttributeError:
@@ -319,11 +324,11 @@ def singlefit_reset():
 
 
 @PROFILE
-def index_select(xmin, xmax, xstep, fitrange, coords_full):
+def index_select(xmin, xmax, xstep, fitwindow, coords_full):
     """Get the starting and ending indices
     for the fitted subset of the data"""
-    start_index = int((fitrange[0]-xmin)/xstep)
-    stop_index = int(len(coords_full)-1-(xmax-fitrange[1])/xstep)
+    start_index = int((fitwindow[0]-xmin)/xstep)
+    stop_index = int(len(coords_full)-1-(xmax-fitwindow[1])/xstep)
     blke.test_avgs.start_index = start_index
     blke.test_avgs.stop_index = stop_index
     return start_index, stop_index
@@ -338,6 +343,16 @@ def fit_select(coords_full, cov_full, selection):
     coords = coords_full[start_index:stop_index+1]
     cov = cov_full[start_index:stop_index+1, start_index:stop_index+1]
     return coords, cov
+
+def earlier(already_cut, jdx, kdx):
+    """If a time slice in dimension kdx is cut,
+    all the later time slices should also be cut"""
+    ret = False
+    for tup in already_cut:
+        jinit, kinit = tup
+        if kinit == kdx and jdx > jinit:
+            ret = True
+    return ret
 
 
 # do this so reuse goes from reuse[time][config]
@@ -355,3 +370,93 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
     return np.array([[reuse[time][config]
                       for time in params.time_range]
                      for config in range(total_configs)])
+
+@PROFILE
+def cut_on_growing_exp(meta):
+    """Growing exponential is a signal for around the world contamination"""
+    err = singlefit.error2
+    coords = singlefit.coords_full
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    #assert GEVP, "other versions not supported yet"+str(
+    # err.shape)+" "+str(coords.shape)
+    start = str(latfit.config.FIT_EXCL)
+    actual_range = meta.actual_range()
+    already_cut = set()
+    for i, _ in enumerate(coords):
+        for j, _ in enumerate(coords):
+            if i >= j:
+                continue
+            excl_add = coords[j][0]
+            actual_range = meta.actual_range()
+            if excl_add not in actual_range:
+                continue
+            if MULT > 1:
+                for k in range(len(coords[0][1])):
+                    if (j, k) in already_cut:
+                        continue
+                    merr = max(err[i][k], err[j][k])
+                    assert merr > 0, str(merr)
+                    sig = np.abs(coords[i][1][k]-coords[j][1][k])/merr
+                    earlier_cut = earlier(already_cut, j, k)
+                    if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
+                    earlier_cut:
+                        print("(max) err =", merr, "coords =",
+                              coords[i][1][k], coords[j][1][k])
+                        print("cutting dimension", k,
+                              "for time slice", excl_add, "(exp grow cut)")
+                        print("err/coords > diff cut =", sig)
+                        latfit.config.FIT_EXCL[k].append(excl_add)
+                        latfit.config.FIT_EXCL[k] = list(set(
+                            latfit.config.FIT_EXCL[k]))
+                        already_cut.add((j, k))
+            else:
+                if j in already_cut:
+                    continue
+                merr = max(err[i], err[j])
+                if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
+                    print("(max) err =", merr, "coords =",
+                          coords[i][1], coords[j][1])
+                    print("cutting dimension", 0, "for time slice",
+                          excl_add, "(exp grow cut)")
+                    print("err/coords > diff cut =", 1.5)
+                    latfit.config.FIT_EXCL[0].append(excl_add)
+                    latfit.config.FIT_EXCL[0] = list(set(
+                        latfit.config.FIT_EXCL[0]))
+                    already_cut.add(j)
+    ret = start == str(latfit.config.FIT_EXCL)
+    return ret
+
+@PROFILE
+def cut_on_errsize(meta):
+    """Cut on the size of the error bars on individual points"""
+    err = singlefit.error2
+    coords = singlefit.coords_full
+    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    #assert GEVP, "other versions not supported yet"+str(
+    # err.shape)+" "+str(coords.shape)
+    start = str(latfit.config.FIT_EXCL)
+    for i, _ in enumerate(coords):
+        excl_add = coords[i][0]
+        actual_range = meta.actual_range()
+        if excl_add not in actual_range:
+            continue
+        if MULT > 1:
+            for j in range(len(coords[0][1])):
+                if err[i][j]/coords[i][1][j] > ERR_CUT:
+                    print("err =", err[i][j], "coords =", coords[i][1][j])
+                    print("cutting dimension", j,
+                          "for time slice", excl_add)
+                    print("err/coords > ERR_CUT =", ERR_CUT)
+                    latfit.config.FIT_EXCL[j].append(excl_add)
+                    latfit.config.FIT_EXCL[j] = list(set(
+                        latfit.config.FIT_EXCL[j]))
+        else:
+            if err[i]/coords[i][1] > ERR_CUT:
+                print("err =", err[i], "coords =", coords[i][1])
+                print("cutting dimension", 0, "for time slice", excl_add)
+                print("err/coords > ERR_CUT =", ERR_CUT)
+                latfit.config.FIT_EXCL[0].append(excl_add)
+                latfit.config.FIT_EXCL[0] = list(set(
+                    latfit.config.FIT_EXCL[0]))
+    ret = start == str(latfit.config.FIT_EXCL)
+    return ret
