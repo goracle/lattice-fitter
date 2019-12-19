@@ -20,6 +20,7 @@ from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import NoConvergence, PrecisionLossError
 from latfit.analysis.errorcodes import XmaxError
+from latfit.mainfunc.metaclass import filter_sparse
 
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func, ONLY_SMALL_FIT_RANGES

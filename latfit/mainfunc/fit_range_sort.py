@@ -8,7 +8,6 @@ from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
 from latfit.config import ONLY_SMALL_FIT_RANGES
 from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
-from latfit.mainfunc.metaclass import filter_sparse
 from latfit.singlefit import singlefit
 import latfit.singlefit
 
