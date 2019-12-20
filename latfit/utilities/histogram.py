@@ -112,6 +112,8 @@ def main(nosave=True):
                     tot.append(toapp)
                     tot_pr.append(toapp_pr)
                 else:
+                    if tsub == -1:
+                        breakadd = True
                     break
             tadd += 1
         print("Successful (tadd, tsub):")
@@ -155,8 +157,9 @@ def print_tot(tot):
                     print("dim", i, ":", item)
     tot = tot_new
     for dim, _ in enumerate(tot[0]):
-        plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
         plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
+        plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
+    print(plot_t_dep.coll)
 
 @PROFILE
 def drop_extra_info(ilist):
@@ -296,15 +299,28 @@ def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
             ret[tmin].add((tmin, tmin+minsep+i))
     return ret
 
+def quick_compare(tot_new):
+    """Check final results for consistency"""
+    for item, _, _ in tot_new:
+        item = gvar.gvar(item)
+        for item2, _, _ in tot_new:
+            item2 = gvar.gvar(item2)
+            diff = np.abs(item.val-item2.val)
+            dev = max(item.sdev, item2.sdev)
+            sig = statlvl(gvar.gvar(diff, dev))
+            assert sig <= 1.5, (item, item2, sig)
+
 @PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
     """Plot something (not nothing)"""
+    quick_compare(tot_new)
     yarr = []
     yerr = []
     xticks_min = []
     xticks_max = []
     itemprev = None
     fitwinprev = None
+    itmin = gvar.gvar(np.nan, np.inf)
     for item, _, fitwin in tot_new:
         fitwin = fitwin[1]
         item = gvar.gvar(item)
@@ -322,6 +338,8 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
+        if item.sdev <= itmin.sdev:
+            itmin = item
         xticks_min.append(str(fitwin[0]))
         xticks_max.append(str(fitwin[1]))
         fitwinprev = fitwin
@@ -364,9 +382,20 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
         ax2.set_title(title+' vs. '+'fit window; state '+str(
             dim)+","+r' $t_{min,param}=$'+str(tmin), y=1.12)
         plt.subplots_adjust(top=0.85)
+        print("minimum error:", itmin)
+        app_itmin(itmin)
         print("saving fig:", save_str)
         pdf.savefig()
     plt.show()
+plot_t_dep.coll = []
+
+def app_itmin(itmin):
+    """Append next minimum result"""
+    app_itmin.curr.append(str(itmin))
+    if len(app_itmin.curr) == 2:
+        plot_t_dep.coll.append(app_itmin.curr)
+        app_itmin.curr = []
+app_itmin.curr = []
 
 def round_to_n(val, places):
     """Round to two sigfigs"""
@@ -726,7 +755,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = {}
-    print("tadd, tsub", tadd, tsub)
+    print("tadd, tsub", tadd, tsub, "fname", fname)
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(
             freqarr, errdat, dim)
@@ -787,11 +816,14 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
 def fill_conv_dict(todict, dimlen):
     """Convert"""
     ret = []
-    for i in range(dimlen):
-        if i not in todict:
-            ret.append((gvar.gvar(np.nan, np.nan), np.nan, (0, np.inf)))
-        else:
-            ret.append(todict[i])
+    if todict:
+        for i in range(dimlen):
+            if i not in todict:
+                ret.append((gvar.gvar(np.nan, np.nan), np.nan, (0, np.inf)))
+            else:
+                ret.append(todict[i])
+    else:
+        print("found skip")
     return ret
 
 @PROFILE
@@ -889,6 +921,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         #print(global_tmax(fit_range_arr, dim))
         #print(output_loop.tadd, output_loop.tsub)
     themin = None
+    fitrmin = None
+    pvalmin = None
 
     for i, (effmass, pval) in enumerate(median_err):
 
@@ -943,9 +977,13 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         if themin is not None:
             if themin[0].sdev >= errterm:
                 themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
+                pvalmin = pval
+                fitrmin = fit_range
             else:
                 noprint = True
         else:
+            pvalmin = pval
+            fitrmin = fit_range
             themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
 
         # if the max difference is not zero
@@ -965,7 +1003,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             # print the running max
             if maxsig == sig:
                 print("")
-                print(ind_diff)
+                print(ind_diff, '(', trunc(sig), 'sigma )' )
                 print("")
 
             # disagreement is between two subsets
@@ -1007,6 +1045,9 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
+        print("final smallest error result =")
+        printres(themin[0], pvalmin, fitrmin)
+        print("BREAK")
     else:
         themin = (None, None, None)
     return themin[0], themin[1], (themin[2], fitwindow)
