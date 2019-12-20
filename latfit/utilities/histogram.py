@@ -2,6 +2,7 @@
 """Make histograms from fit results over fit ranges"""
 import sys
 import re
+import ast
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -229,12 +230,12 @@ def plot_t_dep(tot, dim, item_num, title, units):
     tot_new = [i[dim][item_num] for i in tot if not np.isnan(
         gvar.gvar(i[dim][item_num][0]).val)]
     try:
-        check_fitwin_continuity(tot_new)
+        tot_new = check_fitwin_continuity(tot_new)
     except AssertionError:
         print("fit windows are not continuous for dim, item:", dim, title)
         raise
         tot_new = []
-    if tot_new:
+    if list(tot_new):
         plot_t_dep_totnew(tot_new, dim, title, units)
     else:
         print("not enough consistent results for a complete set of plots")
@@ -254,22 +255,37 @@ def fit_range_equality(fitr1, fitr2):
 def check_fitwin_continuity(tot_new):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
-    maxtmax = {}
+    continuous_tmin_singleton(tot_new)
+    flag = 1
+    while flag:
+        try:
+            continuous_tmax(tot_new)
+            flag = 0
+        except AssertionError as err:
+            tocut = set()
+            err = ast.literal_eval(str(err))
+            for i in err:
+                assert len(i) == 2, (i, err)
+                tocut.add(i[0])
+            tot_new = cut_tmin(tot_new, tocut)
+            continuous_tmin_singleton(tot_new)
+    return tot_new
 
-    # singleton cut
-    assert len(tot_new) > 1, tot_new
+def cut_tmin(tot_new, tocut):
+    """Cut tmin"""
+    todel = []
+    for i, (_, _, fitwin) in enumerate(tot_new):
+        fitwin = fitwin[1] # cut out the fit range info
+        assert isinstance(fitwin[0], np.float), fitwin
+        if fitwin[0] in tocut or fitwin[0] > max(tocut):
+            todel.append(i)
+    ret = np.delete(tot_new, todel, axis=0)
+    return ret
 
-    for _, _, fitwin in tot_new:
-        fitwin = fitwin[1]
-        if fitwin[0] in maxtmax:
-            maxtmax[fitwin[0]] = max(maxtmax[fitwin[0]],
-                                     fitwin[1])
-        else:
-            maxtmax[fitwin[0]] = fitwin[1]
-    tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
 
-    # check tmin is continuous
-    assert not set(tmin_cont)-set(maxtmax), list(maxtmax)
+def continuous_tmax(tot_new, sert=False):
+    """Check continuous tmax"""
+    maxtmax = max_tmax(tot_new)
     cwin = generate_continuous_windows(maxtmax,
                                        minsep=LENMIN-1)
     for tmin in maxtmax:
@@ -283,8 +299,33 @@ def check_fitwin_continuity(tot_new):
         assert not cwin[tmin]-check_set,\
             (cwin[tmin]-check_set)
             #(cwin[tmin], check_set, cwin[tmin]-check_set)
+        # sanity check
         assert not check_set-cwin[tmin],\
             (cwin[tmin], check_set, check_set-cwin[tmin])
+
+def continuous_tmin_singleton(tot_new):
+    """Check for continous tmin, singleton cut"""
+
+    # singleton cut
+    assert len(tot_new) > 1, tot_new
+    maxtmax = max_tmax(tot_new)
+    tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
+
+    # check tmin is continuous
+    assert not set(tmin_cont)-set(maxtmax), list(maxtmax)
+
+def max_tmax(tot_new):
+    """Find the maximum tmax for each tmin"""
+    ret = {}
+    for _, _, fitwin in tot_new:
+        fitwin = fitwin[1]
+        if fitwin[0] in ret:
+            ret[fitwin[0]] = max(ret[fitwin[0]],
+                                     fitwin[1])
+        else:
+            ret[fitwin[0]] = fitwin[1]
+    return ret
+
 
 @PROFILE
 def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
@@ -927,18 +968,18 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     fitrmin = None
     pvalmin = None
 
-    for i, (effmass, pval) in enumerate(median_err):
+    for idx, (effmass, pval) in enumerate(median_err):
 
         if lenfitw(fitwindow) < LENMIN:
             break
 
         sdev = effmass[0].sdev
-        # don't print the same thing twice
-        #if str((effmass, pval)) in used:
-            #continue
-        #used.add(str((effmass, pval)))
+        # skip if the error is already too big
+        if themin is not None:
+            if sdev >= themin[0].sdev:
+                continue
 
-        fit_range = fit_range_arr[i]
+        fit_range = fit_range_arr[idx]
 
         # length cut
         if lencut(fit_range):
@@ -963,22 +1004,24 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         avg_diff = np.array(
             [gvar.gvar(i.val, max(sdev, avg_dim.sdev)) for i in avg_diff])
 
-        # compare this result to all other results
-        ind_diff, sig, errstr1, syserr = diff_ind(
-            effmass, np.array(median_err)[:, 0],
-            fit_range_arr, fitwindow)
+        # compare this result to all other results, up to
+        # NOTE:
+        # :idx is because we only want to do the comparisons
+        # once.  Since the data is sorted with desc.
+        # stat error, we can ignore later indices as these
+        # comparisons will not affect the final min
+        if idx:
+            ind_diff, sig, errstr1, syserr = diff_ind(
+                effmass, np.array(median_err)[:idx, 0],
+                fit_range_arr, fitwindow)
+        else:
+            ind_diff, sig, errstr1, syserr = (gvar.gvar(0,0), 0, "", 0)
         assert ind_diff.sdev >= syserr
-
-        allowable_err = 0.0
-        #if SYS_ALLOWANCE is not None:
-        #    allowable_err = SYS_ALLOWANCE[dim][allowidx]
-        #assert isinstance(allowable_err, np.float), (
-            #SYS_ALLOWANCE, dim, allowidx)
 
         errterm = np.sqrt(sdev**2+syserr**2)
         noprint = False
         if themin is not None:
-            if themin[0].sdev >= errterm:
+            if themin[0].sdev > errterm:
                 themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
                 pvalmin = pval
                 fitrmin = fit_range
@@ -1009,11 +1052,6 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
                 print(ind_diff, '(', trunc(sig), 'sigma )' )
                 print("")
 
-            # disagreement is between two subsets
-            # of multiple data points
-            #disagree_multi_multi_point = len(
-            #    fit_range) > 1 and not isinstance(errstr, float)
-
             # fit range inconsistency found;
             # error handling below
             # I=2 fits to a constant,
@@ -1024,7 +1062,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
                 # more of a sanity check at this point, than
                 # an actual cut, given that we preserve systematic error
                 # information
-                assert sig < 2.0 or ind_diff.sdev <= allowable_err
+                assert sig < 2.0
             except AssertionError:
 
                 if isinstance(errstr1, float):
@@ -1048,9 +1086,6 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
-        print("final smallest error result =")
-        printres(themin[0], pvalmin, fitrmin)
-        print("BREAK")
     else:
         themin = (None, None, None)
     return themin[0], themin[1], (themin[2], fitwindow)
@@ -1199,7 +1234,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
-    maxdiff = None
+    maxdiff = 0
     maxsyserr = 0
     maxerr = 0
     errstr1 = ''
