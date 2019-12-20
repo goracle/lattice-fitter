@@ -978,7 +978,11 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
     sort_check(median_err, reverse=REVERSE)
 
+    don = {}
+
     for idx, (effmass, pval) in enumerate(median_err):
+
+        midx = None
 
         if lenfitw(fitwindow) < LENMIN:
             break
@@ -1016,13 +1020,18 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
         # compare this result to all other results, up to
         # NOTE:
-        # :idx is because we only want to do the comparisons
-        # once.  Since the data is sorted with desc.
-        # stat error, we can ignore later indices as these
-        # comparisons will not affect the final min
-        ind_diff, sig, errstr1, syserr = diff_ind(
-            effmass, np.array(median_err)[:, 0],
-            fit_range_arr, fitwindow)
+        # midx is because we only want to do the comparisons once.
+        if len(np.array(median_err)[:, 0]):
+            if (idx, midx) not in don and (midx, idx) not in don:
+                ind_diff, sig, errstr1, syserr, midx = diff_ind(
+                    effmass, np.array(median_err)[:, 0],
+                    fit_range_arr, fitwindow)
+                don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx)
+                don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx)
+            else:
+                ind_diff, sig, errstr1, syserr, midx = don[(idx, midx)]
+        else:
+            ind_diff, sig, errstr1, syserr = (gvar.gvar(0,0), 0, '', 0)
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
@@ -1245,6 +1254,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
     maxsyserr = 0
     maxerr = 0
     errstr1 = ''
+    midx = None
     for i, gres in enumerate(arr):
 
         # apply cuts
@@ -1266,6 +1276,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
         if syserr == maxsyserr:
             maxdiff = diff
             maxerr = np.sqrt(syserr**2+err**2)
+            midx = i
             #mean = avg_gvar(gres)
             sdev = gres[0].sdev
             if len(fit_range_arr[i]) > 1:
@@ -1275,7 +1286,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
                 errstr1 = float(fit_range_arr[i][0])
     ret = gvar.gvar(maxdiff, maxerr)
     sig = statlvl(ret)
-    return ret, sig, errstr1, maxsyserr
+    return ret, sig, errstr1, maxsyserr, midx
 
 @PROFILE
 def jkerr(arr):
