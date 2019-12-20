@@ -469,7 +469,8 @@ def errstr(res, sys_err):
 
 def swap_err_str(gvar1, errstr1):
     """Swap the gvar error string with the new one"""
-    val, errs = str(gvar1).split("(")
+    val, errs = str(gvar1).split("(") # sys err
+    assert np.float(errs[:-1]) >= gvar.gvar('0'+errstr1).val, (gvar1, errstr1)
     ret = str(val)+errstr1+'('+errs
     return ret
 
@@ -801,6 +802,8 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
 
             if themin is not None:
                 ret[dim] = (themin, sys_err, fitwindow)
+            else:
+                break
 
             if not nosave:
                 print("saving plot as filename:", save_str)
@@ -993,7 +996,6 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             #if isinstance(errstr, float):
             #    fake_err = errfake(fit_range[dim], errstr)
 
-            maxsig = max(maxsig, sig)
 
             # print the result
             if not noprint:
@@ -1001,7 +1003,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
             # keep track of largest errors;
             # print the running max
-            if maxsig == sig:
+            if maxsig < sig:
+                maxsig = max(maxsig, sig)
                 print("")
                 print(ind_diff, '(', trunc(sig), 'sigma )' )
                 print("")
@@ -1155,11 +1158,12 @@ def fitwincut(fit_range, fitwindow):
 def discrep(res, gres, maxsys_errcurr):
     """Calculate the stat. sig of the disagreement"""
     assert len(res) == len(gres)
-    diff = np.fromiter((abs(i.val-j.val) for i, j in zip(res, gres)),
+    diff = np.fromiter((i.val-j.val for i, j in zip(res, gres)),
                        count=len(res), dtype=np.float)
     # needs super jack
     mean, err = jack_mean_err(diff)
-    sys_err = max(0, mean-1.5*err)
+    sys_err = np.sqrt(max((mean/1.5)**2-err**2, 0))
+    #sys_err = max(0, mean-1.5*err)
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
     #maxsig = max(sig, maxsigcurr)
     return mean, err, sys_err
