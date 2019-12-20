@@ -28,6 +28,8 @@ assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
+REVERSE = False
+
 @PROFILE
 def geterr(allow):
     ret = allow
@@ -675,8 +677,9 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     median_diff2 = np.inf
     # print(freqarr[:, dim], errlooparr)
     # prelim_loop = zip(freq, errlooparr, exclarr)
+    assert len(freq) == len(errlooparr)
     loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
-                  key=lambda elem: elem[2], reverse=True)
+                  key=lambda elem: elem[2], reverse=REVERSE)
     medians = (median_diff, median_diff2, pdat_median)
 
     return loop, medians
@@ -866,8 +869,6 @@ def fill_conv_dict(todict, dimlen):
                 ret.append((gvar.gvar(np.nan, np.nan), np.nan, (0, np.inf)))
             else:
                 ret.append(todict[i])
-    else:
-        print("found skip")
     return ret
 
 @PROFILE
@@ -943,6 +944,19 @@ def lenfitw(fitwin):
     """Length of fit window"""
     return fitwin[1]-fitwin[0]+1
 
+def sort_check(median_err, reverse=False):
+    """Make sure array is sorted by stat error size"""
+    emax = 0
+    for _, (effmass, _) in enumerate(median_err):
+        sdev = effmass[0].sdev
+        emax = max(sdev, emax)
+        if reverse:
+            assert sdev <= emax
+        else:
+            assert sdev == emax
+
+
+
 @PROFILE
 def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     """The print loop
@@ -951,22 +965,18 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
     median_err, median = median_store
     maxsig = 0
     usegevp = gevpp(freqarr)
-    #used = set()
 
-    #tmin_allowed = 0
-    #tmax_allowed = np.inf
     tmin_allowed = global_tmin(fit_range_arr) + output_loop.tadd
     tmax_allowed = global_tmax(fit_range_arr) + output_loop.tsub
 
     fitwindow = (tmin_allowed, tmax_allowed)
     print("fit window:", fitwindow)
-    #if output_loop.tsub:
-    #    print(fitwindow)
-        #print(global_tmax(fit_range_arr, dim))
-        #print(output_loop.tadd, output_loop.tsub)
+
     themin = None
     fitrmin = None
     pvalmin = None
+
+    sort_check(median_err, reverse=REVERSE)
 
     for idx, (effmass, pval) in enumerate(median_err):
 
@@ -977,7 +987,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         # skip if the error is already too big
         if themin is not None:
             if sdev >= themin[0].sdev:
-                continue
+                break
 
         fit_range = fit_range_arr[idx]
 
@@ -1010,12 +1020,9 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         # once.  Since the data is sorted with desc.
         # stat error, we can ignore later indices as these
         # comparisons will not affect the final min
-        if idx:
-            ind_diff, sig, errstr1, syserr = diff_ind(
-                effmass, np.array(median_err)[:idx, 0],
-                fit_range_arr, fitwindow)
-        else:
-            ind_diff, sig, errstr1, syserr = (gvar.gvar(0,0), 0, "", 0)
+        ind_diff, sig, errstr1, syserr = diff_ind(
+            effmass, np.array(median_err)[:, 0],
+            fit_range_arr, fitwindow)
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
