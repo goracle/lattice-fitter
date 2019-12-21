@@ -214,14 +214,16 @@ def drop_extra_info(ilist):
     # get common fit window, make sure there is a common fit window
     fitwin = [[i[0][2][1], i[1][2][1]] if 'nan' not in str(
         i[0][0]) else [] for i in ilist]
+    fitr = [[i[0][2][0], i[1][2][0]] if 'nan' not in str(
+        i[0][0]) else [] for i in ilist]
     fitw = None
-    for i in fitwin:
+    for i, j in zip(fitwin, fitr):
         if fitw is None:
             fitw = i
         else:
-            assert list(fitw) == list(i), (fitw, i)
+            assert list(fitw) == list(i), (fitw, i, j)
     if hasattr(fitw[0], '__iter__'):
-        assert list(fitw[0]) == list(fitw[1])
+        assert list(fitw[0]) == list(fitw[1]), fitw
         fitw = fitw[0]
     return (fitw, fit_range, ret)
 
@@ -744,7 +746,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
         # check jackknife error and superjackknife error are somewhat close
         efferr = np.array([gvar.gvar(i, err) for i in effmass])
         try:
-            assert np.allclose(jkerr(effmass), err, rtol=1e-4)
+            assert np.allclose(jkerr(effmass), err, rtol=1e-3)
         except AssertionError:
             print(jkerr(effmass))
             print(err)
