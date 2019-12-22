@@ -57,6 +57,15 @@ def arithseq(fitrange):
             ret = False
     return ret
 
+def enph_filenames(fname):
+    """Get energy and phase shift file names"""
+    if 'phase_shift' in fname:
+        energyfn = re.sub('phase_shift', 'energy', fname)
+        phasefn = fname
+    elif 'energy' in fname:
+        phasefn = re.sub('energy', 'phase_shift', fname)
+        energyfn = fname
+    return energyfn, phasefn
 
 @PROFILE
 def main(nosave=True):
@@ -65,59 +74,45 @@ def main(nosave=True):
     if len(sys.argv[1:]) == 1 and (
             'phase_shift' in sys.argv[1] or\
             'energy' in sys.argv[1]) and nosave:
+
+        # init variables
         fname = sys.argv[1]
-        if 'phase_shift' in fname:
-            energyfn = re.sub('phase_shift', 'energy', fname)
-            phasefn = fname
-        elif 'energy' in fname:
-            phasefn = re.sub('energy', 'phase_shift', fname)
-            energyfn = fname
-        min_en1 = make_hist(energyfn, nosave=nosave, allowidx=0)
-        min_ph1 = make_hist(phasefn, nosave=nosave, allowidx=1)
-        min_res, test, min_res_pr = print_compiled_res(min_en1, min_ph1)
         tot = []
         tot_pr = []
-        min_ph = min_ph1
-        min_en = min_en1
-        tot.append(min_res)
-        tot_pr.append(min_res_pr)
         success_tadd_tsub = []
-        if test:
-            success_tadd_tsub.append((0, 0))
         tadd = 0
         breakadd = False
+
+        # get file names
+        energyfn, phasefn = enph_filenames(fname)
+
+        # loop over fit windows
         while tadd < TDIS_MAX:
             if breakadd:
                 break
             tsub = 0
             while np.abs(tsub) < TDIS_MAX:
-                if tsub or tadd:
-                    min_en = make_hist(
-                        energyfn, nosave=nosave,
-                        tadd=tadd, tsub=tsub, allowidx=0)
-                    if min_en:
-                        min_ph = make_hist(
-                            phasefn, nosave=nosave,
-                            tadd=tadd, tsub=tsub, allowidx=1)
-                    tsub -= 1
-                else:
-                    tsub -= 1
-                    continue
+                min_en = make_hist(
+                    energyfn, nosave=nosave,
+                    tadd=tadd, tsub=tsub, allowidx=0)
+                if min_en:
+                    min_ph = make_hist(
+                        phasefn, nosave=nosave,
+                        tadd=tadd, tsub=tsub, allowidx=1)
                 if min_en and min_ph: # check this
                     toapp, test, toapp_pr = print_compiled_res(
                         min_en, min_ph)
                     if test:
                         success_tadd_tsub.append((tadd, tsub))
                     else:
-                        if tsub == -1:
-                            breakadd = True
+                        breakadd = not tsub
                         break
                     tot.append(toapp)
                     tot_pr.append(toapp_pr)
                 else:
-                    if tsub == -1:
-                        breakadd = True
+                    breakadd = not tsub
                     break
+                tsub -= 1
             tadd += 1
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
@@ -163,6 +158,19 @@ def print_tot(tot):
         plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
         plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
     print(plot_t_dep.coll)
+    pr_best_fitwin(plot_t_dep.fitwin_votes)
+
+def pr_best_fitwin(fitwin_votes):
+    """Print the best fit window
+    (most minimum results)"""
+    mvotes = 0
+    key = None
+    for i in fitwin_votes:
+        mvotes = max(fitwin_votes[i], mvotes)
+        if mvotes == fitwin_votes[i]:
+            key = i
+    assert key is not None, key
+    print("best fit window:", key)
 
 @PROFILE
 def drop_extra_info(ilist):
@@ -365,7 +373,7 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    itmin = gvar.gvar(np.nan, np.inf)
+    itmin = [gvar.gvar(np.nan, np.inf), []]
     for item, _, fitwin in tot_new:
         fitwin = fitwin[1]
         item = gvar.gvar(item)
@@ -383,12 +391,15 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        if item.sdev <= itmin.sdev:
-            itmin = item
+        if item.sdev <= itmin[0].sdev:
+            itmin = (item, fitwin)
         xticks_min.append(str(fitwin[0]))
         xticks_max.append(str(fitwin[1]))
         fitwinprev = fitwin
         itemprev = item
+    if itmin[1] not in plot_t_dep.fitwin_votes:
+        plot_t_dep.fitwin_votes[itmin[1]] = 0
+    plot_t_dep.fitwin_votes[itmin[1]] += 1
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
@@ -427,11 +438,12 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
         ax2.set_title(title+' vs. '+'fit window; state '+str(
             dim)+","+r' $t_{min,param}=$'+str(tmin), y=1.12)
         plt.subplots_adjust(top=0.85)
-        print("minimum error:", itmin)
-        app_itmin(itmin)
+        print("minimum error:", itmin[0], "fit window:", itmin[1])
+        app_itmin(itmin[0])
         print("saving fig:", save_str)
         pdf.savefig()
     plt.show()
+plot_t_dep.fitwin_votes = {}
 plot_t_dep.coll = []
 
 def app_itmin(itmin):
@@ -533,6 +545,8 @@ def print_compiled_res(min_en, min_ph):
     min_phf = [(str(i), j, k) for i, j, k in min_ph]
 
     fitwin = min_en[0][2][1]
+    fitwin2 = min_ph[0][2][1]
+    assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
     min_en = [errstr(i, j) for i, j, _ in min_en]
     min_ph = [errstr(i, j) for i, j, _ in min_ph]
 
@@ -915,10 +929,9 @@ def global_tmin(fit_range_arr):
     the minimum t for a successful fit"""
     tmin = np.inf
     for i in fit_range_arr:
+        tee = np.inf
         if len(i) > 1:
             tee = min([min(j) for j in i])
-        else:
-            tee = i[0]
         tmin = min(tee, tmin)
     return tmin
 
@@ -928,10 +941,9 @@ def global_tmax(fit_range_arr):
     the maximum t for a successful fit"""
     tmax = 0
     for i in fit_range_arr:
+        tee = 0
         if len(i) > 1:
             tee = max([max(j) for j in i])
-        else:
-            tee = i[0]
         tmax = max(tmax, tee)
     return tmax
 
