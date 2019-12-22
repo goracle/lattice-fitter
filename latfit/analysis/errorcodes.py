@@ -37,8 +37,9 @@ class FitFail(Exception):
 
 class MpiSkip(Exception):
     """Skip something due to parallelism"""
-    def __init__(self, message=''):
-        print("Skipping fit, rank:", MPIRANK)
+    def __init__(self, message='', prin=False):
+        if prin:
+            print("Skipping fit, rank:", MPIRANK)
         super(MpiSkip, self).__init__(message)
         self.message = message
 
@@ -103,14 +104,18 @@ class NoConvergence(Exception):
 class DOFNonPos(Exception):
     """Exception for dof < 0"""
     @PROFILE
-    def __init__(self, dof=None, message='', excl=None):
-        print("***ERROR***")
+    def __init__(self, dof=None, message='', excl=None, prin=False):
+        if prin:
+            print("***ERROR***")
         if dof is not None:
-            print("dof < 1: dof=", dof)
+            if prin:
+                print("dof < 1: dof=", dof)
         else:
-            print("dof < 1")
+            if prin:
+                print("dof < 1")
         if excl is not None:
-            print("FIT_EXCL=", excl)
+            if prin:
+                print("FIT_EXCL=", excl)
         super(DOFNonPos, self).__init__(message)
         self.dof = dof
         self.message = message
@@ -118,10 +123,11 @@ class DOFNonPos(Exception):
 class DOFNonPosFit(Exception):
     """Exception for dof < 0 (within fit; after getting coords)"""
     @PROFILE
-    def __init__(self, dof=None, message='', excl=None):
-        print("***ERROR***")
-        print("dof < 1: dof=", dof)
-        print("FIT_EXCL=", excl)
+    def __init__(self, dof=None, message='', excl=None, prin=False):
+        if prin:
+            print("***ERROR***")
+            print("dof < 1: dof=", dof)
+            print("FIT_EXCL=", excl)
         super(DOFNonPosFit, self).__init__(message)
         self.dof = dof
         self.message = message
@@ -183,9 +189,10 @@ class EigenvalueSignInconsistency(Exception):
 
 class XminError(Exception):
     """Exception for early time inconsistencies"""
-    def __init__(self, problemx=None, message=''):
-        print("***ERROR***")
-        print('xmin likely too small, increasing')
+    def __init__(self, problemx=None, message='', prin=False):
+        if prin:
+            print("***ERROR***")
+            print('xmin likely too small, increasing')
         super(XminError, self).__init__(message)
         self.problemx = problemx
         self.message = message
@@ -193,9 +200,10 @@ class XminError(Exception):
 
 class XmaxError(Exception):
     """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, problemx=None, message=''):
-        print("***ERROR***")
-        print('xmax likely too large, decreasing')
+    def __init__(self, problemx=None, message='', prin=False):
+        if prin:
+            print("***ERROR***")
+            print('xmax likely too large, decreasing')
         super(XmaxError, self).__init__(message)
         self.problemx = problemx
         self.message = message

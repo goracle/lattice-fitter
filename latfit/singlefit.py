@@ -2,6 +2,8 @@
 import sys
 import os
 from collections import namedtuple
+import mpi4py
+from mpi4py import MPI
 import cloudpickle
 from numpy import sqrt
 import numpy as np
@@ -19,7 +21,7 @@ from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.mathfun.binconf import binconf
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import NoConvergence, PrecisionLossError
-from latfit.analysis.errorcodes import XmaxError
+from latfit.analysis.errorcodes import XmaxError, FitFail
 from latfit.mainfunc.metaclass import filter_sparse
 
 # import global variables
@@ -27,11 +29,15 @@ from latfit.config import FIT, NBOOT, fit_func, ONLY_SMALL_FIT_RANGES
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
 from latfit.config import PRINT_CORR, MULT, ERR_CUT, ISOSPIN
-from latfit.config import GEVP, RANDOMIZE_ENERGIES
+from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.jackknife_fit as jack_module
 import latfit.mathfun.block_ensemble as blke
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -156,9 +162,7 @@ def singlefit(meta, input_f):
         reuse, singlefit.reuse_blocked, coords = randomize_data(
             params, reuse, singlefit.reuse_blocked, coords)
 
-    if FIT:
-        cut_on_errsize(meta)
-        cut_on_growing_exp(meta)
+    fiduc_point_cuts(meta)
     if not toosmallp(meta, latfit.config.FIT_EXCL):
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
@@ -195,6 +199,16 @@ singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
+
+def fiduc_point_cuts(meta):
+    """Perform fiducial cuts on individual effective mass points"""
+    if FIT:
+        samerange = cut_on_errsize(meta)
+        samerange = cut_on_growing_exp(meta) and samerange
+        if not samerange:
+            if toosmallp(meta, latfit.config.FIT_EXCL):
+                print("fiducial cuts leave nothing to fit.  rank:", MPIRANK)
+                raise FitFail
 
 def non_jackknife_fit(params, cov, coords):
     """Compute using a very old fit style"""
@@ -402,11 +416,13 @@ def cut_on_growing_exp(meta):
                     earlier_cut = earlier(already_cut, j, k)
                     if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
                     earlier_cut:
-                        print("(max) err =", merr, "coords =",
-                              coords[i][1][k], coords[j][1][k])
-                        print("cutting dimension", k,
-                              "for time slice", excl_add, "(exp grow cut)")
-                        print("err/coords > diff cut =", sig)
+                        if VERBOSE:
+                            print("(max) err =", merr, "coords =",
+                                  coords[i][1][k], coords[j][1][k])
+                            print("cutting dimension", k,
+                                  "for time slice", excl_add,
+                                  "(exp grow cut)")
+                            print("err/coords > diff cut =", sig)
                         latfit.config.FIT_EXCL[k].append(excl_add)
                         latfit.config.FIT_EXCL[k] = list(set(
                             latfit.config.FIT_EXCL[k]))
@@ -416,11 +432,12 @@ def cut_on_growing_exp(meta):
                     continue
                 merr = max(err[i], err[j])
                 if np.abs(coords[i][1]-coords[j][1])/merr > 1.5:
-                    print("(max) err =", merr, "coords =",
-                          coords[i][1], coords[j][1])
-                    print("cutting dimension", 0, "for time slice",
-                          excl_add, "(exp grow cut)")
-                    print("err/coords > diff cut =", 1.5)
+                    if VERBOSE:
+                        print("(max) err =", merr, "coords =",
+                              coords[i][1], coords[j][1])
+                        print("cutting dimension", 0, "for time slice",
+                              excl_add, "(exp grow cut)")
+                        print("err/coords > diff cut =", 1.5)
                     latfit.config.FIT_EXCL[0].append(excl_add)
                     latfit.config.FIT_EXCL[0] = list(set(
                         latfit.config.FIT_EXCL[0]))
@@ -445,18 +462,21 @@ def cut_on_errsize(meta):
         if MULT > 1:
             for j in range(len(coords[0][1])):
                 if err[i][j]/coords[i][1][j] > ERR_CUT:
-                    print("err =", err[i][j], "coords =", coords[i][1][j])
-                    print("cutting dimension", j,
-                          "for time slice", excl_add)
-                    print("err/coords > ERR_CUT =", ERR_CUT)
+                    if VERBOSE:
+                        print("err =", err[i][j], "coords =",
+                              coords[i][1][j])
+                        print("cutting dimension", j,
+                              "for time slice", excl_add)
+                        print("err/coords > ERR_CUT =", ERR_CUT)
                     latfit.config.FIT_EXCL[j].append(excl_add)
                     latfit.config.FIT_EXCL[j] = list(set(
                         latfit.config.FIT_EXCL[j]))
         else:
             if err[i]/coords[i][1] > ERR_CUT:
-                print("err =", err[i], "coords =", coords[i][1])
-                print("cutting dimension", 0, "for time slice", excl_add)
-                print("err/coords > ERR_CUT =", ERR_CUT)
+                if VERBOSE:
+                    print("err =", err[i], "coords =", coords[i][1])
+                    print("cutting dimension", 0, "for time slice", excl_add)
+                    print("err/coords > ERR_CUT =", ERR_CUT)
                 latfit.config.FIT_EXCL[0].append(excl_add)
                 latfit.config.FIT_EXCL[0] = list(set(
                     latfit.config.FIT_EXCL[0]))
@@ -470,14 +490,16 @@ def toosmallp(meta, excl):
     excl = excl_inrange(meta, excl)
     # each energy should be included
     if skipped_all(meta, excl):
-        print("skipped all the data points for a GEVP dim, "+\
-                "so continuing.")
+        if VERBOSE:
+            print("skipped all the data points for a GEVP dim, "+\
+                  "so continuing.")
         ret = True
 
     # each fit curve should be to more than one data point
     if onlynpts(meta, excl, 1) and not ONLY_SMALL_FIT_RANGES:
         if not (ISOSPIN == 0 and GEVP):
-            print("skip: only one data point in fit curve")
+            if VERBOSE:
+                print("skip: only one data point in fit curve")
             ret = True
         else:
             print("warning: only one data point in fit curve")
@@ -485,7 +507,8 @@ def toosmallp(meta, excl):
     if not ret and onlynpts(meta, excl, 2) and not ONLY_SMALL_FIT_RANGES:
         # allow for very noisy excited states in I=0
         if not (ISOSPIN == 0 and GEVP):
-            print("skip: only two data points in fit curve")
+            if VERBOSE:
+                print("skip: only two data points in fit curve")
             ret = True
         else:
             print("warning: only two data points in fit curve")
@@ -494,14 +517,17 @@ def toosmallp(meta, excl):
     if not ret and len(filter_sparse(
             excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
         if not (ISOSPIN == 0 and GEVP):
-            print("skip: not an arithmetic sequence")
+            if VERBOSE:
+                print("skip: not an arithmetic sequence")
             ret = True
         else:
-            print("warning: not an arithmetic sequence")
+            if VERBOSE:
+                print("warning: not an arithmetic sequence")
 
     ret = False if ISOSPIN == 0 and GEVP else ret
     if ret:
-        print('excl:', excl, 'is too small')
+        if VERBOSE:
+            print('excl:', excl, 'is too small')
     return ret
 
 

@@ -2,7 +2,7 @@
 import os
 
 from latfit.procargs import procargs
-from latfit.config import STYPE
+from latfit.config import STYPE, VERBOSE
 
 
 def xstep_err(xstep, input_f):
@@ -25,6 +25,7 @@ def xstep_err(xstep, input_f):
             xstep = -1
     # We only care about step size for multi file setup
     if xstep == -1 and (os.path.isdir(input_f) or STYPE == 'hdf5'):
-        print("Assuming domain step size is 1 (int).")
+        if VERBOSE:
+            print("Assuming domain step size is 1 (int).")
         xstep = 1
     return xstep

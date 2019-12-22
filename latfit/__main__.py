@@ -27,7 +27,7 @@ from latfit.config import JACKKNIFE, TSEP_VEC, BINNUM, BIASED_SPEEDUP
 from latfit.config import FIT, METHOD, TLOOP, ADD_CONST, USE_LATE_TIMES
 from latfit.config import ISOSPIN, MOMSTR, UNCORR, GEVP_DEBUG
 from latfit.config import PVALUE_MIN, SYS_ENERGY_GUESS, LT
-from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS
+from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS, VERBOSE
 from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
@@ -125,12 +125,12 @@ def fit(tadd=0, tsub=0):
     if trials == -1 and winsize_check(meta, tadd, tsub):
         # try an initial plot, shrink the xmax if it's too big
         update_fitwin(meta, tadd, tsub)
-        print("Trying initial test fit.")
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
             meta, plotdata)
-        print("Total elapsed time =",
-              time.perf_counter()-start, "seconds")
+        if VERBOSE:
+            print("Total elapsed time =",
+                  time.perf_counter()-start, "seconds. rank:", MPIRANK)
 
         # update the known exclusion information with plot points
         # which are nan (not a number) or
@@ -144,7 +144,8 @@ def fit(tadd=0, tsub=0):
             fit.count += 1
             if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
                 raise MpiSkip
-            print("fit.count =", fit.count)
+            if VERBOSE:
+                print("fit.count =", fit.count)
 
         if FIT:
 
@@ -160,8 +161,9 @@ def fit(tadd=0, tsub=0):
             start = time.perf_counter()
             min_arr, overfit_arr, retsingle_save, fit_range_init = \
                 dofit_second_initial(meta, retsingle_save, test_success)
-            print("Total elapsed time =",
-                  time.perf_counter()-start, "seconds")
+            if VERBOSE:
+                print("Total elapsed time =",
+                      time.perf_counter()-start, "seconds. rank:", MPIRANK)
 
             ### Setup for fit range loop
 
@@ -202,7 +204,7 @@ def fit(tadd=0, tsub=0):
                                              retsingle_save),
                                             plotdata)
                 print("Total elapsed time =",
-                      time.perf_counter()-start, "seconds")
+                      time.perf_counter()-start, "seconds. rank:", MPIRANK)
                 if retsingle[0]: # skip processing
                     continue
 
@@ -962,9 +964,11 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
 
 def xmax_err(meta, err):
     """Handle xmax error"""
-    print("Test fit failed; bad xmax. problemx:", err.problemx)
+    if VERBOSE:
+        print("Test fit failed; bad xmax. problemx:", err.problemx)
     meta.decr_xmax(err.problemx)
-    print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
+    if VERBOSE:
+        print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[1] < meta.options.xmax and FIT:
         print("***ERROR***")
         print("fit window beyond xmax:", meta.fitwindow)
@@ -976,13 +980,15 @@ def xmax_err(meta, err):
 
 def xmin_err(meta, err):
     """Handle xmax error"""
-    print("Test fit failed; bad xmin.")
+    if VERBOSE:
+        print("Test fit failed; bad xmin.")
     # if we're past the halfway point, then this error is likely a late time
     # error, not an early time error (usually from pion ratio)
     if err.problemx > (meta.options.xmin + meta.options.xmax)/2:
         raise XmaxError(problemx=err.problemx)
     meta.incr_xmin(err.problemx)
-    print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
+    if VERBOSE:
+        print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[0] > meta.options.xmin and FIT:
         print("***ERROR***")
         print("fit window beyond xmin:", meta.fitwindow)
@@ -1001,12 +1007,13 @@ def dofit_initial(meta, plotdata):
     while flag:
         try:
             print("Trying initial fit with excluded times:",
-                  latfit.config.FIT_EXCL, 'rank:', MPIRANK)
+                  latfit.config.FIT_EXCL, "fit window:", meta.fitwindow,
+                  'rank:', MPIRANK)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             flag = False
-            if FIT:
-                print("Test fit succeeded.")
+            if FIT and test_success:
+                print("Test fit succeeded. rank:", MPIRANK)
         except XmaxError as err:
             test_success = False
             try:
@@ -1061,7 +1068,9 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             print("Trying second initial fit with excluded times:",
                   latfit.config.FIT_EXCL)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
-            print("Test fit succeeded.")
+            test_success = True if len(retsingle_save) > 2 else test_success
+            if test_success:
+                print("(second) Test fit succeeded. rank:", MPIRANK)
             test_success = True
     except AssertionError:
         print(meta.input_f, meta.fitwindow, meta.options.xmin,
@@ -1119,7 +1128,9 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     skip = False
 
     print("Trying fit with excluded times:",
-          latfit.config.FIT_EXCL, "fit:",
+          latfit.config.FIT_EXCL,
+          "fit window:", meta.fitwindow,
+          "fit:",
           str(idx+1)+"/"+str(meta.lenprod))
     print("number of results:", len(min_arr),
           "number of overfit", len(overfit_arr),
@@ -1274,7 +1285,7 @@ def tloop():
                             break
                     except (FitRangeInconsistency, FitFail, MpiSkip):
                         print("starting a new main()",
-                              "(inconsistent/fitfail/mpi skip)")
+                              "(inconsistent/fitfail/mpi skip).  rank:", MPIRANK)
                         flag = 1
                         tadd += 1 # add this to tmin
 

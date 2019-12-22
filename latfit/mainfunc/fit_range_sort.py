@@ -5,7 +5,7 @@ import numpy as np
 import latfit.analysis.sortfit as sortfit
 from latfit.config import ISOSPIN, GEVP, MAX_RESULTS
 from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
-from latfit.config import ONLY_SMALL_FIT_RANGES
+from latfit.config import ONLY_SMALL_FIT_RANGES, VERBOSE
 from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
 from latfit.singlefit import singlefit
@@ -120,7 +120,8 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
     key = keyexcl(excl)
     ret = None
     if key in checked:
-        print("key checked, continuing:", key)
+        if VERBOSE:
+            print("key checked, continuing:", key)
         ret = None
     else:
         ret = excl
@@ -173,8 +174,9 @@ def get_tsorted(plotdata):
         #if MULT == 1:
         #    break
         if not i:
-            print("Finding best times ("+\
-                    "most likely to give small chi^2 (t^2) contributions)")
+            if BIASED_SPEEDUP:
+                print("Finding best times ("+\
+                      "most likely to give small chi^2 (t^2) contributions)")
         if MULT > 1 or GEVP:
             coords = np.array([j[i] for j in plotdata.coords[:, 1]])
         else:

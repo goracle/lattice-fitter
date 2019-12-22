@@ -2,7 +2,7 @@
 import sys
 
 from latfit.procargs import procargs
-from latfit.config import FIT, TLOOP
+from latfit.config import FIT, TLOOP, VERBOSE
 from latfit.analysis.errorcodes import DOFNonPos
 
 if not FIT:
@@ -36,7 +36,8 @@ else:
                 print("Invalid min for fit range.")
                 procargs(["h"])
         if fitmin1 == sent1 and fitmax1 == sent2:
-            print("Assuming full fit range: ("+str(xmin)+', '+str(xmax)+')')
+            if VERBOSE:
+                print("Assuming full fit range: ("+str(xmin)+', '+str(xmax)+')')
             fitmin1 = xmin
             fitmax1 = xmax
         elif fitmin1 == sent1:

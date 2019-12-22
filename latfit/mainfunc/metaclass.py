@@ -11,7 +11,7 @@ from latfit.extract.errcheck.xlim_err import xlim_err
 from latfit.extract.errcheck.xlim_err import fitrange_err
 from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.config import GEVP, STYPE, MAX_ITER
-from latfit.config import NOLOOP, MULT, FIT
+from latfit.config import NOLOOP, MULT, FIT, VERBOSE
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import RANGE_LENGTH_MIN, TLOOP
 from latfit.config import ONLY_SMALL_FIT_RANGES
@@ -109,7 +109,8 @@ class FitRangeMetaData:
     def incr_xmin(self, problemx=None, inx=True):
         """Increment xmin by one*xstep"""
         assert self.fitwindow
-        print("increasing xmin by one*xstep")
+        if VERBOSE:
+            print("increasing xmin by one*xstep")
         if problemx is None:
             #self.options.xmin += self.options.xstep
             self.fitwindow = (self.fitwindow[0]+self.options.xstep,
@@ -132,7 +133,8 @@ class FitRangeMetaData:
 
     def decr_xmax(self, problemx=None, dex=True):
         """Decrement xmax by one*xstep"""
-        print("decreasing xmax by one*xstep")
+        if VERBOSE:
+            print("decreasing xmax by one*xstep")
         if problemx is None:
             #self.options.xmax -= self.options.xstep
             self.fitwindow = (self.fitwindow[0],
@@ -244,8 +246,10 @@ class FitRangeMetaData:
         assert self.fitwindow[0] == win[0]
         assert self.fitwindow[1] == win[-1]
         assert len(self.fitwindow) == 2, str(self.fitwindow)
-        print("current fit window = ", self.fitwindow)
-        print("current xmin, xmax = ", self.options.xmin, self.options.xmax)
+        if VERBOSE:
+            print("current fit window = ", self.fitwindow)
+            print("current xmin, xmax = ",
+                  self.options.xmin, self.options.xmax)
 
     @PROFILE
     def setup(self, plotdata):

@@ -49,9 +49,9 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_avg_mom111'
 IRREP = 'A_1PLUS_mom000'
-IRREP = 'A1_mom1'
+IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom11'
 
 if ISOSPIN == 1:
     # control
@@ -88,6 +88,10 @@ SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if ISOSPIN == 2 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
+
+# Verbose mode
+VERBOSE = True
+VERBOSE = False
 
 # print raw gevp info (for debugging source construction)
 

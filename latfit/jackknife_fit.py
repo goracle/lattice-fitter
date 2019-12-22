@@ -32,7 +32,7 @@ from latfit.config import CALC_PHASE_SHIFT, PION_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
-from latfit.config import ISOSPIN
+from latfit.config import ISOSPIN, VERBOSE
 from latfit.config import SKIP_OVERFIT
 from latfit.utilities.zeta.zeta import zeta
 import latfit.finalout.mkplot
@@ -266,12 +266,13 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                    else ''
 
             # print results for this config
-            print("config", config_num, ":",
-                  result_min.energy.arr[config_num],
-                  sys_str,
-                  torchi(), result_min_jack.fun/result_min.misc.dof,
-                  "p-value=", result_min.pvalue.arr[config_num],
-                  'dof=', result_min.misc.dof, "rank=", MPIRANK)
+            if VERBOSE:
+                print("config", config_num, ":",
+                      result_min.energy.arr[config_num],
+                      sys_str,
+                      torchi(), result_min_jack.fun/result_min.misc.dof,
+                      "p-value=", result_min.pvalue.arr[config_num],
+                      'dof=', result_min.misc.dof, "rank=", MPIRANK)
 
             assert not np.isnan(result_min.pvalue.arr[
                 config_num]), "pvalue is nan"
@@ -966,7 +967,7 @@ def compare_correlations(coords_jack, coords_jack_new):
 
 @PROFILE
 def prune_covjack(params, covjack, coords_jack, flag):
-    """Prune the covariance matrix based on config excluded time slices"""
+    """Prune the covariance matrix based on aonfig excluded time slices"""
     excl = []
     len_time = len(params.time_range)
     # convert x-coordinates to index basis

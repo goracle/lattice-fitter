@@ -24,11 +24,11 @@ from latfit.analysis.errorcodes import XminError, XmaxError
 from latfit.config import PIONRATIO, GEVP_DIRS, GEVP_DERIV
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
-from latfit.config import DELTA_E2_AROUND_THE_WORLD
+from latfit.config import DELTA_E2_AROUND_THE_WORLD, VERBOSE
 from latfit.config import DELTA_T_MATRIX_SUBTRACTION, ISOSPIN
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import GEVP_DIRS_PLUS_ONE, FULLDIM
-from latfit.config import PR_GROUND_ONLY
+from latfit.config import PR_GROUND_ONLY, VERBOSE
 import latfit.config
 import latfit.extract.getblock.disp_hacks as gdisp
 if PIONRATIO:
@@ -116,8 +116,9 @@ def energies_pionratio(timeij, delta_t):
     try:
         lhs_p1 = evals_pionratio(timeij+1, delta_t)
     except XmaxError:
-        print("raising from pion ratio")
         if GEVP_DERIV:
+            if VERBOSE:
+                print("raising from pion ratio")
             raise
     rhs = evals_pionratio(timeij-delta_t, delta_t, switch=True)
     avglhs = np.asarray(em.acmean(lhs, axis=0))
@@ -273,7 +274,8 @@ def check_map(mapi, timeij):
     for item in mapi:
         i, j = item
         if i != j:
-            print(str(mapi)+" "+str(i)+" "+str(j))
+            if VERBOSE:
+                print(str(mapi)+" "+str(i)+" "+str(j))
             raise XminError(problemx=timeij)
 
 
@@ -446,9 +448,10 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                     try:
                         assert (item or zeroit) and not np.isnan(item)
                     except AssertionError:
-                        print(item)
-                        print("nan error in (name, time slice):",
-                              name, timeij)
+                        if VERBOSE:
+                            print(item)
+                            print("nan error in (name, time slice):",
+                                  name, timeij)
                         raise XmaxError(problemx=timeij)
                 cmat[:, i, i] = cmat[:, i, i]-tosub*np.abs(gdisp.NORMS[i][i])
                 assert cmat[:, i, i].shape == tosub.shape
