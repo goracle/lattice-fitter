@@ -89,10 +89,6 @@ def exitp(meta, min_arr, overfit_arr, idx):
               "exceeded with no results")
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if len(min_arr) >= MAX_RESULTS*3:
-        print("Copious results found:", len(min_arr))
-        print("aborting to save on resources")
-        ret = True
     elif idx >= 10*MAX_ITER:
         print("Maximum iteration count * 10", 10 * MAX_ITER, "exceeded.")
         print("rank :", MPIRANK, "exiting fit loop")
