@@ -475,8 +475,11 @@ def other_err_str(val, err1, err2):
     if isinstance(val, np.float) and not np.isnan(val) and not np.isnan(err2):
         err2 = round_wrt(err1, err2)
         err = gvar.gvar(val, err2)
-        places = place_diff_gvar(gvar.gvar(val, err1),
-                                 gvar.gvar(val, err2))
+        if not err2:
+            places = np.inf
+        else:
+            places = place_diff_gvar(gvar.gvar(val, err1),
+                                     gvar.gvar(val, err2))
         assert places >= 0, (val, err1, err2, places)
         try:
             ret = str(err).split('(')[1][:-1]
@@ -758,13 +761,17 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
             median_diff2 = abs(pval-pdat_median)
             half = effmass
         # check jackknife error and superjackknife error are somewhat close
-        efferr = np.array([gvar.gvar(i, err) for i in effmass])
+        sjerr = jkerr(effmass)
+        efferr = np.array([gvar.gvar(i, sjerr) for i in effmass])
         try:
-            assert np.allclose(jkerr(effmass), err, rtol=1e-3)
+            if len(drop) == 1:
+                assert np.allclose(jkerr2(effmass), err, rtol=1e-12)
+            else:
+                assert np.allclose(sjerr, err, rtol=1e-12)
         except AssertionError:
-            print(jkerr(effmass))
-            print(err)
-            print(jkerr2(effmass))
+            print('superjack err =', jkerr(effmass))
+            print('saved err =', err)
+            print('jackknife error =', jkerr2(effmass))
             print(drop)
             raise
         median_err.append([efferr, pval])
