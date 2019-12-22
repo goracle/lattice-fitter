@@ -28,9 +28,10 @@ class AvgCovSingular(Exception):
 
 class FitFail(Exception):
     """Exception for bad jackknife distribution"""
-    def __init__(self, message=''):
-        print("***ERROR***")
-        print("No fits to given fit window succeeded")
+    def __init__(self, message='', prin=False):
+        if prin:
+            print("***ERROR***")
+            print("No fits to given fit window succeeded")
         super(FitFail, self).__init__(message)
         self.message = message
 

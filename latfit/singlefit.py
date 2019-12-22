@@ -207,7 +207,8 @@ def fiduc_point_cuts(meta):
         samerange = cut_on_growing_exp(meta) and samerange
         if not samerange:
             if toosmallp(meta, latfit.config.FIT_EXCL):
-                print("fiducial cuts leave nothing to fit.  rank:", MPIRANK)
+                if VERBOSE:
+                    print("fiducial cuts leave nothing to fit.  rank:", MPIRANK)
                 raise FitFail
 
 def non_jackknife_fit(params, cov, coords):

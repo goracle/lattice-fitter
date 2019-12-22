@@ -460,9 +460,10 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
                     try:
                         assert (item or zeroit) and not np.isnan(item)
                     except AssertionError:
-                        print(item)
-                        print("nan error in (name, time slice):",
-                              name, timeij)
+                        if VERBOSE:
+                            print(item)
+                            print("nan error in (name, time slice):",
+                                  name, timeij)
                         raise XmaxError(problemx=timeij)
                 cmat[:, i] = cmat[:, i]-tosub*np.abs(gdisp.NORMS[i][i])
             else:

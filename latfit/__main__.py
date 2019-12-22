@@ -1006,13 +1006,14 @@ def dofit_initial(meta, plotdata):
     flag = True
     while flag:
         try:
-            print("Trying initial fit with excluded times:",
-                  latfit.config.FIT_EXCL, "fit window:", meta.fitwindow,
-                  'rank:', MPIRANK)
+            if VERBOSE:
+                print("Trying initial fit with excluded times:",
+                      latfit.config.FIT_EXCL, "fit window:", meta.fitwindow,
+                      'rank:', MPIRANK)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             flag = False
-            if FIT and test_success:
+            if FIT and test_success and VERBOSE:
                 print("Test fit succeeded. rank:", MPIRANK)
         except XmaxError as err:
             test_success = False
@@ -1065,11 +1066,12 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     fit_range_init = str(latfit.config.FIT_EXCL)
     try:
         if not samerange and FIT:
-            print("Trying second initial fit with excluded times:",
-                  latfit.config.FIT_EXCL)
+            if VERBOSE:
+                print("Trying second initial fit with excluded times:",
+                      latfit.config.FIT_EXCL)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
-            if test_success:
+            if test_success and VERBOSE:
                 print("(second) Test fit succeeded. rank:", MPIRANK)
             test_success = True
     except AssertionError:
