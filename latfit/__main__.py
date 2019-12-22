@@ -1286,8 +1286,9 @@ def tloop():
                         if not test:
                             break
                     except (FitRangeInconsistency, FitFail, MpiSkip):
-                        print("starting a new main()",
-                              "(inconsistent/fitfail/mpi skip).  rank:", MPIRANK)
+                        if VERBOSE:
+                            print("starting a new main()",
+                                  "(inconsistent/fitfail/mpi skip).  rank:", MPIRANK)
                         flag = 1
                         tadd += 1 # add this to tmin
 

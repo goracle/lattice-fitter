@@ -10,7 +10,7 @@ from latfit.extract.proc_ijfile import proc_ijfile
 from latfit.extract.getfiles import getfiles
 
 from latfit.config import GEVP_DIRS
-from latfit.config import GEVP
+from latfit.config import GEVP, VERBOSE
 from latfit.config import EIGCUT
 from latfit.config import NUM_PENCILS
 from latfit.config import STYPE
@@ -92,7 +92,8 @@ extract.reuse = {}
 
 def reset_extract():
     """zero out reuse dict"""
-    print("zeroing out reuse dictionary, rank:", MPIRANK)
+    if VERBOSE:
+        print("zeroing out reuse dictionary, rank:", MPIRANK)
     extract.reuse = {}
 
 # side effects warning

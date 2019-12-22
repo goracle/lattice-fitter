@@ -296,7 +296,8 @@ if PIONRATIO:
         if timeij == 7.0 and False:
             print("original ground non interacting energies")
             show_original_data(ennon[:, 0], enint[:, 0])
-        print(timeij, 'pearson r:', pearsonr(enint[:, 0], ennon[:, 0]))
+        if VERBOSE:
+            print(timeij, 'pearson r:', pearsonr(enint[:, 0], ennon[:, 0]))
         if timeij == 7.0 and False:
             sys.exit(0)
         if not np.all(energies_noninteracting.shape == np.asarray(
