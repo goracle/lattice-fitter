@@ -298,8 +298,8 @@ def cut_tmin(tot_new, tocut):
 def continuous_tmax(tot_new, sert=False):
     """Check continuous tmax"""
     maxtmax = max_tmax(tot_new)
-    cwin = generate_continuous_windows(maxtmax,
-                                       minsep=LENMIN-1)
+    cwin = generate_continuous_windows(maxtmax)
+    print("cwin=", cwin)
     for tmin in maxtmax:
         check_set = set()
         for _, _, fitwin in tot_new:
@@ -312,8 +312,8 @@ def continuous_tmax(tot_new, sert=False):
             (cwin[tmin]-check_set)
             #(cwin[tmin], check_set, cwin[tmin]-check_set)
         # sanity check
-        assert not check_set-cwin[tmin],\
-            (cwin[tmin], check_set, check_set-cwin[tmin])
+        #assert not check_set-cwin[tmin],\
+            #(cwin[tmin], check_set, check_set-cwin[tmin])
 
 def continuous_tmin_singleton(tot_new):
     """Check for continous tmin, singleton cut"""
@@ -339,8 +339,9 @@ def max_tmax(tot_new):
     return ret
 
 
+#def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
 @PROFILE
-def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
+def generate_continuous_windows(maxtmax, minsep=LENMIN+1):
     """Generate the set of fit windows
     which is necessary for successful continuity"""
     ret = {}
@@ -354,14 +355,15 @@ def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
 
 def quick_compare(tot_new):
     """Check final results for consistency"""
-    for item, _, _ in tot_new:
+    for item, _, fitwin in tot_new:
         item = gvar.gvar(item)
-        for item2, _, _ in tot_new:
+        for item2, _, fitwin2 in tot_new:
             item2 = gvar.gvar(item2)
             diff = np.abs(item.val-item2.val)
             dev = max(item.sdev, item2.sdev)
             sig = statlvl(gvar.gvar(diff, dev))
-            assert sig <= 1.5, (item, item2, sig)
+            assert sig <= 1.5, (
+                item, item2, sig, fitwin, fitwin2)
 
 @PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
