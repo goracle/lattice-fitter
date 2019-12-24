@@ -5,6 +5,8 @@ MPIRANK = MPI.COMM_WORLD.rank
 #MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
+PRIN = False
+
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
@@ -28,7 +30,7 @@ class AvgCovSingular(Exception):
 
 class FitFail(Exception):
     """Exception for bad jackknife distribution"""
-    def __init__(self, message='', prin=False):
+    def __init__(self, message='', prin=PRIN):
         if prin:
             print("***ERROR***")
             print("No fits to given fit window succeeded")
@@ -38,7 +40,7 @@ class FitFail(Exception):
 
 class MpiSkip(Exception):
     """Skip something due to parallelism"""
-    def __init__(self, message='', prin=False):
+    def __init__(self, message='', prin=PRIN):
         if prin:
             print("Skipping fit, rank:", MPIRANK)
         super(MpiSkip, self).__init__(message)
@@ -105,7 +107,7 @@ class NoConvergence(Exception):
 class DOFNonPos(Exception):
     """Exception for dof < 0"""
     @PROFILE
-    def __init__(self, dof=None, message='', excl=None, prin=False):
+    def __init__(self, dof=None, message='', excl=None, prin=PRIN):
         if prin:
             print("***ERROR***")
         if dof is not None:
@@ -124,7 +126,7 @@ class DOFNonPos(Exception):
 class DOFNonPosFit(Exception):
     """Exception for dof < 0 (within fit; after getting coords)"""
     @PROFILE
-    def __init__(self, dof=None, message='', excl=None, prin=False):
+    def __init__(self, dof=None, message='', excl=None, prin=PRIN):
         if prin:
             print("***ERROR***")
             print("dof < 1: dof=", dof)
@@ -137,14 +139,17 @@ class BadChisq(Exception):
     """Exception for bad chi^2 (t^2)"""
     @PROFILE
     def __init__(self, chisq=None, message='', uncorr=BoolThrowErr(),
-                 dof=None):
-        print("***ERROR***")
+                 dof=None, prin=PRIN):
+        if prin:
+            print("***ERROR***")
         if uncorr:
-            print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
-                  chisq, "dof =", dof)
+            if prin:
+                print("chisq/dof >> 1 or p-value >> 0.5 chi^2/dof =",
+                      chisq, "dof =", dof)
         else:
-            print("t^2/dof >> 1 or p-value >> 0.5 t^2/dof =",
-                  chisq, "dof =", dof)
+            if prin:
+                print("t^2/dof >> 1 or p-value >> 0.5 t^2/dof =",
+                      chisq, "dof =", dof)
         super(BadChisq, self).__init__(message)
         self.chisq = chisq
         self.dof = dof
@@ -190,7 +195,7 @@ class EigenvalueSignInconsistency(Exception):
 
 class XminError(Exception):
     """Exception for early time inconsistencies"""
-    def __init__(self, problemx=None, message='', prin=False):
+    def __init__(self, problemx=None, message='', prin=PRIN):
         if prin:
             print("***ERROR***")
             print('xmin likely too small, increasing')
@@ -201,7 +206,7 @@ class XminError(Exception):
 
 class XmaxError(Exception):
     """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, problemx=None, message='', prin=False):
+    def __init__(self, problemx=None, message='', prin=PRIN):
         if prin:
             print("***ERROR***")
             print('xmax likely too large, decreasing')

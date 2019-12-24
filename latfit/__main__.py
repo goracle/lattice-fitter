@@ -203,8 +203,10 @@ def fit(tadd=0, tsub=0):
                                             (min_arr, overfit_arr,
                                              retsingle_save),
                                             plotdata)
-                print("Total elapsed time =",
-                      time.perf_counter()-start, "seconds. rank:", MPIRANK)
+                if VERBOSE:
+                    print("Total elapsed time =",
+                          time.perf_counter()-start,
+                          "seconds. rank:", MPIRANK)
                 if retsingle[0]: # skip processing
                     continue
 
@@ -1129,14 +1131,15 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     idx, excl, fit_range_init = fit_range_data
     skip = False
 
-    print("Trying fit with excluded times:",
-          latfit.config.FIT_EXCL,
-          "fit window:", meta.fitwindow,
-          "fit:",
-          str(idx+1)+"/"+str(meta.lenprod))
-    print("number of results:", len(min_arr),
-          "number of overfit", len(overfit_arr),
-          "rank:", MPIRANK)
+    if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*2)):
+        print("Trying fit with excluded times:",
+            latfit.config.FIT_EXCL,
+            "fit window:", meta.fitwindow,
+            "fit:",
+            str(idx+1)+"/"+str(meta.lenprod))
+        print("number of results:", len(min_arr),
+            "number of overfit", len(overfit_arr),
+            "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
     # retsingle_save needs a cut on error size
     if frsort.keyexcl(excl) == fit_range_init:
@@ -1152,9 +1155,10 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
             # skip on any error
-            print("fit failed for this selection."+\
-                  " excluded points=", excl, "with error:",
-                  err.__class__.__name__)
+            if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*2)):
+                print("fit failed for this selection."+\
+                      " excluded points=", excl, "with error:",
+                      err.__class__.__name__)
             skip = True
     if not skip:
         result_min, param_err, plotdata.coords, plotdata.cov = retsingle

@@ -27,6 +27,7 @@ from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
 from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.analysis.test_arg import NegLogArgument
+from latfit.analysis.errorcodes import NegativeEnergy
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -79,10 +80,11 @@ elif EFF_MASS_METHOD == 2:
         if sol[1] < 0:
             print("***ERROR***")
             print("negative energy found:", sol[1])
+            assert None
             if files:
                 for cfile in files:
                     print(files)
-            sys.exit(1)
+            raise NegativeEnergy
         return sol[1]
         #print("Found solution:", sol[1])
 
@@ -253,7 +255,8 @@ elif EFF_MASS_METHOD == 4:
                 print(corrs[0], fun, tryfun)
                 print(EFF_MASS_TOMIN[index](sol, times[0], ratioval))
                 print(EFF_MASS_TOMIN[index](-sol, times[0], ratioval))
-                sys.exit(1)
+                assert None
+                raise NegativeEnergy
         return sol
 
 elif FIT:

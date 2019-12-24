@@ -15,7 +15,7 @@ from latfit import fitfunc
 import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
-
+import latfit.analysis.errorcodes as errc
 
 # PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
 
@@ -88,10 +88,6 @@ SYS_ENERGY_GUESS = 1.2
 SYS_ENERGY_GUESS = None if not FIT else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if ISOSPIN == 2 else SYS_ENERGY_GUESS
 SYS_ENERGY_GUESS = None if not GEVP else SYS_ENERGY_GUESS
-
-# Verbose mode
-VERBOSE = True
-VERBOSE = False
 
 # print raw gevp info (for debugging source construction)
 
@@ -420,6 +416,12 @@ assert len(FIT_EXCL) == DIM or not GEVP
 # if true, do not loop over fit ranges.
 NOLOOP = True
 NOLOOP = False
+
+# Verbose mode
+VERBOSE = True
+VERBOSE = False
+VERBOSE = True if NOLOOP else VERBOSE
+errc.PRIN = VERBOSE
 
 # hints to eliminate
 HINTS_ELIM = {}
