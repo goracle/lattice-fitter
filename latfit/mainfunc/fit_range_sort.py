@@ -84,24 +84,24 @@ def exitp(meta, min_arr, overfit_arr, idx):
                 " has been checked, exiting fit range loop."+\
                 " (number of fit ranges checked:"+str(idx+1)+")")
             print("rank :", MPIRANK, "exiting fit loop")
-    if not len(min_arr) + len(overfit_arr) and idx >= MAX_ITER:
+    if not len(min_arr) + len(overfit_arr) and idx >= MAX_ITER and meta.random_fit:
         print("Maximum iteration count", MAX_ITER,
               "exceeded with no results")
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if idx >= MAX_ITER/8 and len(min_arr) < MAX_RESULTS/16:
+    if idx >= MAX_ITER/8 and len(min_arr) < MAX_RESULTS/16 and meta.random_fit:
         print("Maximum iteration count", MAX_ITER/8, "exceeded.")
         print("and results needed are < 1/16 of", MAX_RESULTS)
         print("results:", len(min_arr))
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if idx >= MAX_ITER/4 and len(min_arr) < MAX_RESULTS/8:
+    if idx >= MAX_ITER/4 and len(min_arr) < MAX_RESULTS/8 and meta.random_fit:
         print("Maximum iteration count", MAX_ITER/4, "exceeded.")
         print("and results needed are < 1/8 of", MAX_RESULTS)
         print("results:", len(min_arr))
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if idx >= MAX_ITER/2 and len(min_arr) < MAX_RESULTS/4:
+    if idx >= MAX_ITER/2 and len(min_arr) < MAX_RESULTS/4 and meta.random_fit:
         print("Maximum iteration count", MAX_ITER/2, "exceeded.")
         print("and results needed are < 1/4 of", MAX_RESULTS)
         print("results:", len(min_arr))
@@ -113,7 +113,7 @@ def exitp(meta, min_arr, overfit_arr, idx):
         print("results:", len(min_arr))
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if idx >= 2*MAX_ITER and len(min_arr) < 2*MAX_RESULTS/3:
+    if idx >= 2*MAX_ITER and len(min_arr) < 2*MAX_RESULTS/3 and meta.random_fit:
         print("Maximum iteration count * 2", 2 * MAX_ITER, "exceeded.")
         print("and results needed are < 2/3 of", MAX_RESULTS)
         print("results:", len(min_arr))
