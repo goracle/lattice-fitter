@@ -376,7 +376,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
     (result should be recorded or not)
     """
     ret = False
-    print("p-value = ", result_min.pvalue.val)
+    print("p-value = ", result_min.pvalue.val, "rank:", MPIRANK)
     # reject model at 10% level
     if result_min.pvalue.val < PVALUE_MIN:
         print("Not storing result because p-value"+\
@@ -1131,7 +1131,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     idx, excl, fit_range_init = fit_range_data
     skip = False
 
-    if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*2)):
+    if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*5)):
         print("Trying fit with excluded times:",
             latfit.config.FIT_EXCL,
             "fit window:", meta.fitwindow,
@@ -1155,7 +1155,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
             # skip on any error
-            if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*2)):
+            if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*5)):
                 print("fit failed for this selection."+\
                       " excluded points=", excl, "with error:",
                       err.__class__.__name__)
