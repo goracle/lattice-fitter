@@ -89,8 +89,45 @@ def exitp(meta, min_arr, overfit_arr, idx):
               "exceeded with no results")
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    elif idx >= 3*MAX_ITER:
-        print("Maximum iteration count * 3", 10 * MAX_ITER, "exceeded.")
+    if idx >= MAX_ITER/8 and len(min_arr) < MAX_RESULTS/16:
+        print("Maximum iteration count", MAX_ITER/8, "exceeded.")
+        print("and results needed are < 1/16 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= MAX_ITER/4 and len(min_arr) < MAX_RESULTS/8:
+        print("Maximum iteration count", MAX_ITER/4, "exceeded.")
+        print("and results needed are < 1/8 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= MAX_ITER/2 and len(min_arr) < MAX_RESULTS/4:
+        print("Maximum iteration count", MAX_ITER/2, "exceeded.")
+        print("and results needed are < 1/4 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= MAX_ITER and len(min_arr) < MAX_RESULTS/2:
+        print("Maximum iteration count", MAX_ITER, "exceeded.")
+        print("and results needed are < 1/2 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= 2*MAX_ITER and len(min_arr) < 2*MAX_RESULTS/3:
+        print("Maximum iteration count * 2", 2 * MAX_ITER, "exceeded.")
+        print("and results needed are < 2/3 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= 3*MAX_ITER and len(min_arr) < 3*MAX_RESULTS/4:
+        print("Maximum iteration count * 3", 3 * MAX_ITER, "exceeded.")
+        print("and results needed are < 3/4 of", MAX_RESULTS)
+        print("results:", len(min_arr))
+        print("rank :", MPIRANK, "exiting fit loop")
+        ret = True
+    if idx >= 4*MAX_ITER:
+        print("Maximum iteration count * 4", 4 * MAX_ITER, "exceeded.")
+        print("results:", len(min_arr))
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
     return ret

@@ -420,7 +420,7 @@ NOLOOP = False
 # Verbose mode
 VERBOSE = True
 VERBOSE = False
-VERBOSE = True if NOLOOP else VERBOSE
+VERBOSE = True if NOLOOP or not FIT else VERBOSE
 errc.PRIN = VERBOSE
 
 # hints to eliminate
