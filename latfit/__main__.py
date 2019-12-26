@@ -1130,8 +1130,17 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     min_arr, overfit_arr, retsingle_save = results_store
     idx, excl, fit_range_init = fit_range_data
     skip = False
+    try:
+        showint = int(min(np.floor(meta.lenprod/10), (MPISIZE*5)))
+        if not showint:
+            showint = 1
+    except FloatingPointError:
+        print("floating point problem or bug")
+        print(meta.lenprod)
+        print(MPISIZE)
+        showint = 1
 
-    if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*5)):
+    if VERBOSE or not idx % showint:
         print("Trying fit with excluded times:",
             latfit.config.FIT_EXCL,
             "fit window:", meta.fitwindow,
@@ -1155,7 +1164,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
             # skip on any error
-            if VERBOSE or not idx % min(np.floor(meta.lenprod/10), (MPISIZE*5)):
+            if VERBOSE or not idx % showint:
                 print("fit failed for this selection."+\
                       " excluded points=", excl, "with error:",
                       err.__class__.__name__)
