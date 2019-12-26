@@ -186,9 +186,10 @@ class NegativeEigenvalue(Exception):
 
 class EigenvalueSignInconsistency(Exception):
     """Exception for imaginary GEVP eigenvalue"""
-    def __init__(self, expression='', message=''):
-        print("***ERROR***")
-        print('negative eigenvalue found')
+    def __init__(self, expression='', message='', prin=PRIN):
+        if prin:
+            print("***ERROR***")
+            print('negative eigenvalue found (sign inconsistency)')
         super(EigenvalueSignInconsistency, self).__init__(message)
         self.expression = expression
         self.message = message
