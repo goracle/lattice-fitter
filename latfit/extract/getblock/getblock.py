@@ -226,6 +226,7 @@ if EFF_MASS:
                     checkgteq0(eigvals_mean_t)
                 break
             except AssertionError:
+                assert None, "no longer supported"
                 print("negative eigenvalues found")
                 print('eigvals:', eigvals_mean_t)
                 print("allowed operator eliminations:",
@@ -435,6 +436,7 @@ def continue_neg(eigvals):
         if DELETE_NEGATIVE_OPERATORS:
             checkgteq0(eigvals)
     except AssertionError:
+        assert None, "no longer supported"
         print("negative eigenvalues found (non-avg)")
         print('eigvals:', eigvals)
         print("allowed operator eliminations:",
@@ -493,6 +495,7 @@ if GEVP:
         for test1 in blk:
             for test in test1:
                 if test.imag != 0:
+                    assert None, "no longer supported"
                     print("***ERROR***")
                     print("GEVP has negative eigenvalues.")
                     sys.exit(1)
