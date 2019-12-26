@@ -111,10 +111,10 @@ if LATTICE_ENSEMBLE == '24c':
     DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
 if LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A_1PLUS_mom000':
-        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+        DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
     else:
-        DELTA_T_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
-    DELTA_T2_MATRIX_SUBTRACTION = 3 if not GEVP_DEBUG else 0
+        DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
+    DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 
 # generate random gaussian data after reading in real data
