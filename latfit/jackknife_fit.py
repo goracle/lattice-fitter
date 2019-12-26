@@ -44,6 +44,7 @@ from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 from latfit.analysis.errorcodes import EnergySortError, ZetaError
 from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.result_min import ResultMin
+import latfit.analysis.hotelling as hotelling
 from latfit.utilities import exactmean as em
 from latfit.utilities.actensordot import actensordot
 
@@ -382,6 +383,10 @@ def skip_range(params, result_min, skip_votes,
                result_min_jack, chisq_fiduc_cut):
     """Raise an error if we should skip this fit range"""
     skiprange = False
+    zero = 0+SUPERJACK_CUTOFF
+    one = 1+SUPERJACK_CUTOFF
+    nconf = params.num_configs-SUPERJACK_CUTOFF
+    dof = result_min.misc.dof
     # don't skip the fit range until we confirm
     # on 2nd config
     if len(skip_votes) == 2:
@@ -394,10 +399,11 @@ def skip_range(params, result_min, skip_votes,
         # if we have one bad fit and another which is within
         # 5 sigma of the bad chi^2 (t^2),
         # skip, else throw an error
-        skiprange = abs(result_min_jack.fun-result_min.chisq.arr[
-            0+SUPERJACK_CUTOFF]) < 5*np.sqrt(
-                2*result_min.misc.dof/(
-                    params.num_configs-1))
+        var_approx = np.sqrt(2*dof)
+        var = np.sqrt(hotelling.var(result_min.misc.dof, nconf))
+        div = 1/np.sqrt(nconf-1)
+        diff = abs(result_min_jack.fun-result_min.chisq.arr[zero])
+        skiprange = diff < 5*var*div
     if skiprange and not latfit.config.BOOTSTRAP and not NOLOOP:
         raise BadChisq(
             chisq=result_min_jack.fun/result_min.misc.dof,
@@ -407,17 +413,17 @@ def skip_range(params, result_min, skip_votes,
         # if the first one has that bad a fit
         print("fiducial cut =", chisq_fiduc_cut)
         print("dof=", result_min.misc.dof)
-        print(abs(result_min_jack.fun-result_min.chisq.arr[0]),
-              2*5*result_min.misc.dof/np.sqrt(
-                  params.num_configs))
-        print(result_min_jack.fun, result_min.chisq.arr[0])
+        print("first two chi^2's:",
+              result_min_jack.fun, result_min.chisq.arr[zero])
+        print("var, var_approx, div, diff", var, var_approx, div, diff)
         print("Bad jackknife distribution:"+\
-                str(result_min.chisq.arr[0]/result_min.misc.dof)+" "+\
-                str(result_min.chisq.arr[1]/result_min.misc.dof)+" "+\
-                str(result_min.pvalue.arr[0])+" "+\
-                str(result_min.pvalue.arr[1])+" ")
+                str(result_min.chisq.arr[zero]/result_min.misc.dof)+" "+\
+                str(result_min.chisq.arr[one]/result_min.misc.dof)+" "+\
+                str(result_min.pvalue.arr[zero])+" "+\
+                str(result_min.pvalue.arr[one])+" ")
         #sys.exit(1)
         if not latfit.config.BOOTSTRAP and not NOLOOP:
+            sys.exit(1)
             raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE
