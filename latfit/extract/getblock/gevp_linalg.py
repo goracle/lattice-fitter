@@ -10,6 +10,7 @@ from sympy.matrices import Matrix
 
 from latfit.utilities import exactmean as em
 from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSEUDO_SORT
+from latfit.config import VERBOSE
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
 from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
@@ -158,8 +159,9 @@ def defsign(cmat):
     elif np.all(np.real(evals) == 0) and np.all(np.imag(evals) == 0):
         ret = 0
     else:
-        print("eigenvalues are not all the same sign:", str(evals))
-        print(cmat)
+        if VERBOSE:
+            print("eigenvalues are not all the same sign:", str(evals))
+            print(cmat)
         raise EigenvalueSignInconsistency
         #ret = False
     return ret
