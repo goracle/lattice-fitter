@@ -425,7 +425,6 @@ def skip_range(params, result_min, skip_votes,
                 str(result_min.pvalue.arr[one])+" ")
         #sys.exit(1)
         if not latfit.config.BOOTSTRAP and not NOLOOP:
-            sys.exit(1)
             raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE
