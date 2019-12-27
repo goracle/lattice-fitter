@@ -1031,7 +1031,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             continue
 
         # fit window cut
-        if fitwincut(fit_range, fitwindow):
+        if fitwincut(fit_range, fitwindow, dim):
             continue
 
         # mostly obsolete params
@@ -1052,7 +1052,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             if (idx, midx) not in don and (midx, idx) not in don:
                 ind_diff, sig, errstr1, syserr, midx = diff_ind(
                     effmass, np.array(median_err)[:, 0],
-                    fit_range_arr, fitwindow)
+                    fit_range_arr, fitwindow, dim)
                 don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx)
                 don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx)
             else:
@@ -1085,7 +1085,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
             # print the result
             if not noprint:
-                printres(themin[0], pval, fit_range)
+                printres(themin[0], pval, syserr, fit_range)
 
             # keep track of largest errors;
             # print the running max
@@ -1124,7 +1124,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             # skip effective mass points for I=0 fits (const+exp)
             if ISOSPIN == 2 or len(fit_range) != 1.0:
                 if not noprint:
-                    printres(themin[0], pval, fit_range)
+                    printres(themin[0], pval, syserr, fit_range)
     if themin is not None:
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
@@ -1136,15 +1136,15 @@ output_loop.tadd = 0
 output_loop.tsub = 0
 
 @PROFILE
-def printres(effmass1, pval, fit_range):
+def printres(effmass1, pval, syserr, fit_range):
     """Print the result (and a header for the first result printed)"""
     #effmass1 = avg_gvar(effmass)
     #effmass1 = gvar.gvar(effmass1, effmass[0].sdev)
     if not printres.prt:
-        print("val(err); pvalue; ind diff; median difference;",
+        print("val(err); syserr; pvalue; ind diff; median difference;",
               " avg difference; fit range")
         printres.prt = True
-    print(effmass1, pval, fit_range)
+    print(effmass1, syserr, pval, fit_range)
 printres.prt = False
 
 @PROFILE
@@ -1211,11 +1211,35 @@ def lencut(fit_range):
             ret = len(fit_range) < LENMIN
     return ret
 
+DIMWIN = [(9,13), (7,11), (9,13), (7,11)]
+
 @PROFILE
-def fitwincut(fit_range, fitwindow):
+def fitwincut(fit_range, fitwindow, dim=None):
     """Cut all fit ranges outside this fit window"""
     # tmin, tmax cut
     ret = False
+    dim = None # appears to help somewhat with errors
+    iterf = hasattr(fit_range[0], '__iter__')
+    if dim is not None:
+        assert iterf, fit_range
+        fit_range = fit_range[dim]
+    ret = False
+    for i, fitr in enumerate(fit_range):
+        if i == dim:
+            ret = not inside_win(fitr, fitwindow) or ret
+        else:
+            #dimwin = DIMWIN[i] if iterf else fitwindow
+            dimwin = fitwindow
+            ret = not inside_win(fitr, dimwin) or ret
+    if not ret and lenfitw(fitwindow) == 1:
+        print(fitwindow)
+        print(tmin, tmax)
+        print(fit_range)
+        sys.exit(1)
+    return ret
+
+def inside_win(fit_range, fitwin):
+    """Check if fit range is inside the fit window"""
     iterf = hasattr(fit_range[0], '__iter__')
     if iterf:
         tmax = max([max(j) for j in fit_range])
@@ -1223,12 +1247,7 @@ def fitwincut(fit_range, fitwindow):
     else:
         tmax = max(fit_range)
         tmin = min(fit_range)
-    ret = tmax > fitwindow[1] or tmin < fitwindow[0]
-    if not ret and lenfitw(fitwindow) == 1:
-        print(fitwindow)
-        print(tmin, tmax)
-        print(fit_range)
-        sys.exit(1)
+    ret = tmax <= fitwin[1] and tmin >= fitwin[0]
     return ret
 
 
@@ -1239,7 +1258,7 @@ def discrep(res, gres, maxsys_errcurr):
     diff = np.fromiter((i.val-j.val for i, j in zip(res, gres)),
                        count=len(res), dtype=np.float)
     # needs super jack
-    mean, err = jack_mean_err(diff)
+    mean, err = jack_mean_err(diff, acc_sum=False)
     sys_err = np.sqrt(max((mean/1.5)**2-err**2, 0))
     #sys_err = max(0, mean-1.5*err)
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
@@ -1273,7 +1292,7 @@ def maxarr(arr1, arr2):
     return ret
 
 @PROFILE
-def diff_ind(res, arr, fit_range_arr, fitwindow):
+def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -1289,7 +1308,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow):
             continue
         if not arithseq(fit_range_arr[i]):
             continue
-        if fitwincut(fit_range_arr[i], fitwindow):
+        if fitwincut(fit_range_arr[i], fitwindow, dim):
             continue
 
         # cuts are passed, calculate the discrepancy
