@@ -1035,8 +1035,9 @@ def dofit_initial(meta, plotdata):
             plotdata.fitcoord = meta.fit_coord()
         except ACCEPT_ERRORS_INIT as err:
             flag = False
-            print("fit failed (acceptably) with error:",
-                  err.__class__.__name__)
+            if VERBOSE:
+                print("fit failed (acceptably) with error:",
+                      err.__class__.__name__)
 
     # results need for return
     # plotdata, meta, test_success, fit_range_init
