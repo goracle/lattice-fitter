@@ -195,7 +195,7 @@ def sort_fit_ranges(meta, tsorted, sampler):
             #if MULT == 1 or lenprod == 1:
             #    break
             #if i == 0 and MPIRANK == 0:
-            if not i:
+            if not i and VERBOSE:
                 print("Setting up sorting of exhaustive "+\
                         "list of fit ranges")
             sampi = sortfit.sortcombinations(

@@ -377,7 +377,8 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
     (result should be recorded or not)
     """
     ret = False
-    print("p-value = ", result_min.pvalue.val, "rank:", MPIRANK)
+    if VERBOSE:
+        print("p-value = ", result_min.pvalue.val, "rank:", MPIRANK)
     # reject model at 10% level
     if result_min.pvalue.val < PVALUE_MIN:
         print("Not storing result because p-value"+\
@@ -1109,7 +1110,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             else:
                 overfit_arr.append(result)
         else:
-            print("cutting result of test fits")
+            if VERBOSE:
+                print("cutting result of test fits")
     assert len(min_arr) + len(overfit_arr) <= 1, len(
         min_arr) + len(overfit_arr)
     return min_arr, overfit_arr, retsingle_save, fit_range_init
