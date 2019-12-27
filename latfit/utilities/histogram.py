@@ -764,7 +764,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
             half = effmass
         # check jackknife error and superjackknife error are somewhat close
         sjerr = jkerr(effmass)
-        efferr = np.array([gvar.gvar(i, sjerr) for i in effmass])
+        efferr = np.array([gvar.gvar(i, err) for i in effmass])
         try:
             if len(drop) == 1:
                 assert np.allclose(jkerr2(effmass), err, rtol=1e-12)
@@ -775,7 +775,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
             print('saved err =', err)
             print('jackknife error =', jkerr2(effmass))
             print(drop)
-            raise
+            continue
         median_err.append([efferr, pval])
         #print(median_err[-1], j)
     if median_diff != 0:
@@ -974,9 +974,9 @@ def sort_check(median_err, reverse=False):
         sdev = effmass[0].sdev
         emax = max(sdev, emax)
         if reverse:
-            assert sdev <= emax
+            assert sdev <= emax, (sdev, emax)
         else:
-            assert sdev == emax
+            assert sdev == emax, (sdev, emax)
 
 
 
@@ -1007,10 +1007,14 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
         midx = None
 
-        if lenfitw(fitwindow) < LENMIN:
+        if lenfitw(fitwindow) < LENMIN+1:
             break
 
         sdev = effmass[0].sdev
+        try:
+            assert sdev, effmass
+        except AssertionError:
+            continue
         # skip if the error is already too big
         if themin is not None:
             if sdev >= themin[0].sdev:
