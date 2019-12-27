@@ -399,11 +399,13 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
         if any(result_min.phase_shift.err > PHASE_SHIFT_ERR_CUT):
             if all(result_min.phase_shift.err[
                     :-1] < PHASE_SHIFT_ERR_CUT):
-                print("warning: phase shift errors on "+\
-                        "last state very large")
+                if VERBOSE:
+                    print("warning: phase shift errors on "+\
+                          "last state very large")
                 ret = True if ISOSPIN == 2 and GEVP else ret
             else:
-                print("phase shift errors too large")
+                if VERBOSE:
+                    print("phase shift errors too large")
                 ret = True
     return ret
 
