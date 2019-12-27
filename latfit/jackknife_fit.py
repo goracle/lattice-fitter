@@ -309,8 +309,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(
             result_min.energy.arr)
-        print('param err:', result_min.energy.err,
-              'np.std:', np.std(result_min.energy.arr, axis=0))
+        if VERBOSE:
+            print('param err:', result_min.energy.err,
+                  'np.std:', np.std(result_min.energy.arr, axis=0))
 
         # compute the systematics and errors
         if SYS_ENERGY_GUESS is not None:
@@ -331,8 +332,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         result_min.chisq.val, result_min.chisq.err = jack_mean_err(
             result_min.chisq.arr)
 
-        print(torchi(), result_min.chisq.val/result_min.misc.dof,
-              "std dev:", np.std(result_min.chisq.arr, ddof=1))
+        if VERBOSE:
+            print(torchi(), result_min.chisq.val/result_min.misc.dof,
+                  "std dev:", np.std(result_min.chisq.arr, ddof=1))
 
         return result_min, result_min.energy.err
 else:

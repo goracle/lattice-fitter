@@ -176,8 +176,9 @@ def fit(tadd=0, tsub=0):
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
-            print("starting loop of max length:"+str(
-                meta.lenprod), "random fit:", meta.random_fit)
+            if VERBOSE:
+                print("starting loop of max length:"+str(
+                    meta.lenprod), "random fit:", meta.random_fit)
 
             for idx in range(meta.lenprod):
 
@@ -1158,8 +1159,9 @@ def dofit(meta, fit_range_data, results_store, plotdata):
             retsingle = sfit.singlefit(meta, meta.input_f)
             if retsingle_save is None:
                 retsingle_save = retsingle
-            print("fit succeeded for this selection"+\
-                  " excluded points=", excl)
+            if VERBOSE:
+                print("fit succeeded for this selection"+\
+                      " excluded points=", excl)
             if meta.lenprod == 1 or MAX_RESULTS == 1:
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
