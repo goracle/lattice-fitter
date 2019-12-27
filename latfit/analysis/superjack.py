@@ -13,14 +13,24 @@ except NameError:
 
 
 @PROFILE
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=True):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
     """
     len_total = len(arr)
     len_sloppy = len_total-sjcut
+    mean1 = em.acmean(arr[:sjcut], axis=0)
+    mean1a = em.acmean(arr[sjcut:], axis=0)
+    if arr2 is None:
+        mean2 = mean1
+        mean2a = mean1a
+    else:
+        mean2 = em.acmean(arr2[:sjcut], axis=0)
+        mean2a = em.acmean(arr2[sjcut:], axis=0)
     arr2 = arr if arr2 is None else arr2
+    sumf = em.acsum if acc_sum else np.sum
+    meanf = em.acmean if acc_sum else np.mean
 
     if sjcut == 0:
         assert not sjcut, "sjcut bug"
@@ -41,9 +51,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
 
     # calculate error on exact and sloppy
     if sjcut:
-        errexact = exact_prefactor*em.acsum(
-            (arr[:sjcut]-em.acmean(arr[:sjcut], axis=0))*(
-                arr2[:sjcut]-em.acmean(arr2[:sjcut], axis=0)),
+        errexact = exact_prefactor*sumf(
+            (arr[:sjcut]-mean1)*(arr2[:sjcut]-mean2),
             axis=0)
     else:
         errexact = 0
@@ -54,9 +63,8 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     else:
         assert not any(np.isnan(errexact)), "exact err is nan"
 
-    errsloppy = sloppy_prefactor*em.acsum(
-        (arr[sjcut:]-em.acmean(arr[sjcut:], axis=0))*(
-            arr2[sjcut:]-em.acmean(arr2[sjcut:], axis=0)),
+    errsloppy = sloppy_prefactor*sumf(
+        (arr[sjcut:]-mean1a)*(arr2[sjcut:]-mean2a),
         axis=0)
     if isinstance(errsloppy, numbers.Number):
         assert not np.isnan(errsloppy), "sloppy err is nan"
@@ -75,7 +83,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False):
     assert err.shape == np.array(arr)[0].shape,\
         "Shape is not preserved (bug)."
 
-    mean = em.acmean(arr, axis=0)
+    mean = meanf(arr, axis=0)
 
     return flagtonan(mean, err, flag)
 
