@@ -1050,13 +1050,13 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         # midx is because we only want to do the comparisons once.
         if len(np.array(median_err)[:, 0]):
             if (idx, midx) not in don and (midx, idx) not in don:
-                ind_diff, sig, errstr1, syserr, midx = diff_ind(
+                ind_diff, sig, errstr1, syserr, midx, maxrange = diff_ind(
                     effmass, np.array(median_err)[:, 0],
                     fit_range_arr, fitwindow, dim)
-                don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx)
-                don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx)
+                don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx, maxrange)
+                don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx, maxrange)
             else:
-                ind_diff, sig, errstr1, syserr, midx = don[(idx, midx)]
+                ind_diff, sig, errstr1, syserr, midx, maxrange = don[(idx, midx)]
         else:
             ind_diff, sig, errstr1, syserr = (gvar.gvar(0,0), 0, '', 0)
         assert ind_diff.sdev >= syserr
@@ -1085,7 +1085,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
             # print the result
             if not noprint:
-                printres(themin[0], pval, syserr, fit_range)
+                printres(themin[0], pval, syserr, fit_range, maxrange)
 
             # keep track of largest errors;
             # print the running max
@@ -1124,7 +1124,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             # skip effective mass points for I=0 fits (const+exp)
             if ISOSPIN == 2 or len(fit_range) != 1.0:
                 if not noprint:
-                    printres(themin[0], pval, syserr, fit_range)
+                    printres(themin[0], pval, syserr, fit_range, maxrange)
     if themin is not None:
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
@@ -1136,15 +1136,15 @@ output_loop.tadd = 0
 output_loop.tsub = 0
 
 @PROFILE
-def printres(effmass1, pval, syserr, fit_range):
+def printres(effmass1, pval, syserr, fit_range, maxrange):
     """Print the result (and a header for the first result printed)"""
     #effmass1 = avg_gvar(effmass)
     #effmass1 = gvar.gvar(effmass1, effmass[0].sdev)
     if not printres.prt:
         print("val(err); syserr; pvalue; ind diff; median difference;",
-              " avg difference; fit range")
+              " avg difference; fit range; disagreeing fit range")
         printres.prt = True
-    print(effmass1, syserr, pval, fit_range)
+    print(effmass1, syserr, pval, fit_range, maxrange)
 printres.prt = False
 
 @PROFILE
@@ -1298,6 +1298,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
     """
     maxdiff = 0
     maxsyserr = 0
+    maxrange = []
     maxerr = 0
     errstr1 = ''
     midx = None
@@ -1322,6 +1323,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
         if syserr == maxsyserr:
             maxdiff = diff
             maxerr = np.sqrt(syserr**2+err**2)
+            maxrange = fit_range_arr[i]
             midx = i
             #mean = avg_gvar(gres)
             sdev = gres[0].sdev
@@ -1332,7 +1334,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
                 errstr1 = float(fit_range_arr[i][0])
     ret = gvar.gvar(maxdiff, maxerr)
     sig = statlvl(ret)
-    return ret, sig, errstr1, maxsyserr, midx
+    return ret, sig, errstr1, maxsyserr, midx, maxrange
 
 @PROFILE
 def jkerr(arr):
