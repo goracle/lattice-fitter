@@ -67,6 +67,11 @@ def enph_filenames(fname):
         energyfn = fname
     return energyfn, phasefn
 
+def select_ph_en(sel):
+    """Select which quantity we will analyze now"""
+    assert sel == 'phase' or sel == 'energy', sel
+    allow_cut.sel = sel
+
 @PROFILE
 def main(nosave=True):
     """Make the histograms.
@@ -92,10 +97,12 @@ def main(nosave=True):
                 break
             tsub = 0
             while np.abs(tsub) < TDIS_MAX:
+                select_ph_en('energy')
                 min_en = make_hist(
                     energyfn, nosave=nosave,
                     tadd=tadd, tsub=tsub, allowidx=0)
                 if min_en:
+                    select_ph_en('phase')
                     min_ph = make_hist(
                         phasefn, nosave=nosave,
                         tadd=tadd, tsub=tsub, allowidx=1)
@@ -242,7 +249,8 @@ def plot_t_dep(tot, dim, item_num, title, units):
     tot_new = [i[dim][item_num] for i in tot if not np.isnan(
         gvar.gvar(i[dim][item_num][0]).val)]
     try:
-        tot_new = check_fitwin_continuity(tot_new)
+        if not ALLOW_ENERGY and not ALLOW_PHASE:
+            tot_new = check_fitwin_continuity(tot_new)
     except AssertionError:
         print("fit windows are not continuous for dim, item:", dim, title)
         raise
@@ -359,11 +367,18 @@ def quick_compare(tot_new):
         item = gvar.gvar(item)
         for item2, _, fitwin2 in tot_new:
             item2 = gvar.gvar(item2)
-            diff = np.abs(item.val-item2.val)
-            dev = max(item.sdev, item2.sdev)
-            sig = statlvl(gvar.gvar(diff, dev))
-            assert sig <= 1.5, (
-                item, item2, sig, fitwin, fitwin2)
+            assert consistency(item, item2), (
+                item, item2, fitwin, fitwin2)
+
+def consistency(item1, item2):
+    """Check two gvar items for consistency"""
+    diff = np.abs(item1.val-item2.val)
+    dev = max(item1.sdev, item2.sdev)
+    sig = statlvl(gvar.gvar(diff, dev))
+    ret = sig <= 1.5
+    if not ret:
+        print("sig inconsis. =", sig)
+    return ret
 
 @PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
@@ -490,7 +505,7 @@ def other_err_str(val, err1, err2):
             print('er', err2)
             raise
         if places and err2:
-            assert places == 1
+            assert places == 1, (val, err1, err2)
             ret = '0'+ret[0]
         ret = '(' + ret + ')'
     else:
@@ -501,9 +516,17 @@ def place_diff_gvar(gvar1, gvar2):
     """Find difference in places between gvar1 and gvar2"""
     one = str(gvar1)
     two = str(gvar2)
-    one = len(one.split('(')[0])
-    two = len(two.split('(')[0])
+    one = one.split('(')[0]
+    two = two.split('(')[0]
+    one = remove_period(one)
+    two = remove_period(two)
+    two = len(two)
+    one = len(one)
     return two-one
+
+def remove_period(astr):
+    """Remove decimal point"""
+    return re.sub('\.', '', astr)
 
 def tot_to_stat(res, sys_err):
     """Get result object which has separate stat
@@ -978,6 +1001,33 @@ def sort_check(median_err, reverse=False):
         else:
             assert sdev == emax, (sdev, emax)
 
+def allow_cut(res, dim):
+    """If we already have a minimized error result,
+    cut all that are statistically incompatible"""
+    assert allow_cut.sel is not None, allow_cut.sel
+    sel = allow_cut.sel
+    if sel == 'phase':
+        best = ALLOW_PHASE
+    if sel == 'energy':
+        best = ALLOW_ENERGY
+    if best:
+        if hasattr(res, '__iter__'):
+            sdev = res[0].sdev
+            res = np.mean([i.val for i in res], axis=0)
+            try:
+                res = gvar.gvar(res, sdev)
+            except TypeError:
+                print(res)
+                print(sdev)
+                raise
+        best = best[dim]
+        best = gvar.gvar(best)
+        ret = not consistency(best, res)
+        ret = ret or best.sdev <= res.sdev
+    else:
+        ret = False
+    return ret
+allow_cut.sel = None
 
 
 @PROFILE
@@ -1021,6 +1071,10 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
                 break
 
         fit_range = fit_range_arr[idx]
+
+        # best known cut
+        if allow_cut(effmass, dim):
+            continue
 
         # length cut
         if lencut(fit_range):
@@ -1305,6 +1359,8 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
     for i, gres in enumerate(arr):
 
         # apply cuts
+        if allow_cut(res, dim):
+            continue
         if lencut(fit_range_arr[i]):
             continue
         if not arithseq(fit_range_arr[i]):
