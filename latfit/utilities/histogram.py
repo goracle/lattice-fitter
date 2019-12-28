@@ -1001,7 +1001,7 @@ def sort_check(median_err, reverse=False):
         else:
             assert sdev == emax, (sdev, emax)
 
-def allow_cut(res, dim):
+def allow_cut(res, dim, cutstat=True):
     """If we already have a minimized error result,
     cut all that are statistically incompatible"""
     assert allow_cut.sel is not None, allow_cut.sel
@@ -1023,7 +1023,8 @@ def allow_cut(res, dim):
         best = best[dim]
         best = gvar.gvar(best)
         ret = not consistency(best, res)
-        ret = ret or best.sdev <= res.sdev
+        if cutstat:
+            ret = ret or best.sdev <= res.sdev
     else:
         ret = False
     return ret
@@ -1359,7 +1360,7 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
     for i, gres in enumerate(arr):
 
         # apply cuts
-        if allow_cut(res, dim):
+        if allow_cut(res, dim, cutstat=False):
             continue
         if lencut(fit_range_arr[i]):
             continue
