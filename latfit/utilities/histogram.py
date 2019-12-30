@@ -265,6 +265,8 @@ def plot_t_dep(tot, dim, item_num, title, units):
 def fit_range_equality(fitr1, fitr2):
     """Check if two fit ranges are the same"""
     ret = True
+    assert hasattr(fitr1, '__iter__'), (fitr1, fitr2)
+    assert hasattr(fitr2, '__iter__'), (fitr1, fitr2)
     assert len(fitr1) == len(fitr2), (fitr1, fitr2)
     for i, j in zip(fitr1, fitr2):
         if list(i) != list(j):
@@ -1010,25 +1012,32 @@ def allow_cut(res, dim, cutstat=True):
         best = ALLOW_PHASE
     if sel == 'energy':
         best = ALLOW_ENERGY
+    ret = False
     if best:
-        if hasattr(res, '__iter__'):
-            sdev = res[0].sdev
-            res = np.mean([i.val for i in res], axis=0)
-            try:
-                res = gvar.gvar(res, sdev)
-            except TypeError:
-                print(res)
-                print(sdev)
-                raise
-        best = best[dim]
-        best = gvar.gvar(best)
-        ret = not consistency(best, res)
-        if cutstat:
-            ret = ret or best.sdev <= res.sdev
-    else:
-        ret = False
+        if hasattr(best[0], '__iter__'):
+            for i in best:
+                ret = ret or res_best_comp(
+                    res, i, dim, cutstat=cutstat)
     return ret
 allow_cut.sel = None
+
+def res_best_comp(res, best, dim, cutstat=True):
+    """Compare result with best known for consistency"""
+    if hasattr(res, '__iter__'):
+        sdev = res[0].sdev
+        res = np.mean([i.val for i in res], axis=0)
+        try:
+            res = gvar.gvar(res, sdev)
+        except TypeError:
+            print(res)
+            print(sdev)
+            raise
+    best = best[dim]
+    best = gvar.gvar(best)
+    ret = not consistency(best, res)
+    if cutstat:
+        ret = ret or best.sdev <= res.sdev
+    return ret
 
 
 @PROFILE
