@@ -28,8 +28,26 @@ assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
-REVERSE = False
+CBEST = [
+    ]
 
+def fill_best(cbest):
+    """Fill the ALLOW buffers with current best known result"""
+    rete = []
+    retph = []
+    for i in cbest:
+        aph = []
+        aen = []
+        for j in i:
+            aen.append(j[0])
+            aph.append(j[1])
+        rete.append(aen)
+        retph.append(aph)
+    return rete, retph
+
+ALLOW_ENERGY, ALLOW_PHASE = fill_best(CBEST)
+
+REVERSE = False
 @PROFILE
 def geterr(allow):
     ret = allow
@@ -299,7 +317,7 @@ def cut_tmin(tot_new, tocut):
     for i, (_, _, fitwin) in enumerate(tot_new):
         fitwin = fitwin[1] # cut out the fit range info
         assert isinstance(fitwin[0], np.float), fitwin
-        if fitwin[0] in tocut or fitwin[0] > max(tocut):
+        if fitwin[0] in tocut or fitwin[0] < min(tocut):
             todel.append(i)
     ret = np.delete(tot_new, todel, axis=0)
     return ret
@@ -377,9 +395,12 @@ def consistency(item1, item2):
     diff = np.abs(item1.val-item2.val)
     dev = max(item1.sdev, item2.sdev)
     sig = statlvl(gvar.gvar(diff, dev))
-    ret = sig <= 1.5
+    ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
     if not ret:
         print("sig inconsis. =", sig)
+        assert sig < 10, (sig, "check the best known list for",
+                          "compatibility with current set",
+                          "of results being analyzed")
     return ret
 
 @PROFILE
@@ -577,8 +598,12 @@ def print_compiled_res(min_en, min_ph):
     fitwin = min_en[0][2][1]
     fitwin2 = min_ph[0][2][1]
     assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
-    min_en = [errstr(i, j) for i, j, _ in min_en]
-    min_ph = [errstr(i, j) for i, j, _ in min_ph]
+    if not (ALLOW_ENERGY or ALLOW_PHASE):
+        min_en = [errstr(i, j) for i, j, _ in min_en]
+        min_ph = [errstr(i, j) for i, j, _ in min_ph]
+    else:
+        min_en = [i for i, _, _ in min_en]
+        min_ph = [i for i, _, _ in min_ph]
 
     min_res = [
         list(i) for i in zip(min_en, min_ph) if list(i)]
@@ -1014,10 +1039,13 @@ def allow_cut(res, dim, cutstat=True):
         best = ALLOW_ENERGY
     ret = False
     if best:
-        if hasattr(best[0], '__iter__'):
+        if hasattr(gvar.gvar(best[0]), '__iter__'):
             for i in best:
                 ret = ret or res_best_comp(
                     res, i, dim, cutstat=cutstat)
+        else:
+            ret = res_best_comp(
+                res, best, dim, cutstat=cutstat)
     return ret
 allow_cut.sel = None
 
@@ -1039,6 +1067,10 @@ def res_best_comp(res, best, dim, cutstat=True):
         ret = ret or best.sdev <= res.sdev
     return ret
 
+def update_effmass(effmass, errterm):
+    """Replace the stat error with the total error in the effmass array"""
+    ret = [gvar.gvar(i.val, errterm) for i in effmass]
+    return ret
 
 @PROFILE
 def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
@@ -1126,6 +1158,8 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
+        #effmass = update_effmass(effmass, errterm)
+
         noprint = False
         if themin is not None:
             if themin[0].sdev > errterm:
