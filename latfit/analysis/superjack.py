@@ -20,17 +20,20 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
     """
     len_total = len(arr)
     len_sloppy = len_total-sjcut
-    mean1 = em.acmean(arr[:sjcut], axis=0)
-    mean1a = em.acmean(arr[sjcut:], axis=0)
+
+    # selection of algo. prec.
+    sumf = em.acsum if acc_sum else np.sum
+    meanf = em.acmean if acc_sum else np.mean
+
+    mean1 = meanf(arr[:sjcut], axis=0)
+    mean1a = meanf(arr[sjcut:], axis=0)
     if arr2 is None:
         mean2 = mean1
         mean2a = mean1a
     else:
-        mean2 = em.acmean(arr2[:sjcut], axis=0)
-        mean2a = em.acmean(arr2[sjcut:], axis=0)
+        mean2 = meanf(arr2[:sjcut], axis=0)
+        mean2a = meanf(arr2[sjcut:], axis=0)
     arr2 = arr if arr2 is None else arr2
-    sumf = em.acsum if acc_sum else np.sum
-    meanf = em.acmean if acc_sum else np.mean
 
     if sjcut == 0:
         assert not sjcut, "sjcut bug"
