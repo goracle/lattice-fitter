@@ -126,7 +126,6 @@ def main(nosave=True):
                 set_tadd_tsub(tadd, tsub)
                 min_en = make_hist(
                     energyfn, nosave=nosave, allowidx=0)
-                sys.exit()
                 if min_en:
                     select_ph_en('phase')
                     min_ph = make_hist(
