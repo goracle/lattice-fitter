@@ -26,10 +26,11 @@ except NameError:
 LENMIN = 3
 assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
-#SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)', '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
+#SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)',
+# '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
-CBEST = [
-    ]
+CBEST = [[['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'],
+          ['0.6147(16)', '-21.7(1.6)'], ['0.7257(50)', '-28.8(9.3)']]]
 
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
@@ -39,8 +40,10 @@ def fill_best(cbest):
         aph = []
         aen = []
         for j in i:
-            aen.append(j[0])
-            aph.append(j[1])
+            energy = gvar.gvar(j[0])
+            phase = gvar.gvar(j[1])
+            aen.append(energy)
+            aph.append(phase)
         rete.append(aen)
         retph.append(aph)
     return rete, retph
@@ -50,10 +53,11 @@ ALLOW_ENERGY, ALLOW_PHASE = fill_best(CBEST)
 REVERSE = False
 @PROFILE
 def geterr(allow):
+    """Process SYS_ALLOWANCE"""
     ret = allow
     if allow is not None:
         ret = []
-        for i, item in enumerate(allow):
+        for _, item in enumerate(allow):
             print(item)
             ret.append([gvar.gvar(item[j]).sdev for j,
                         _ in enumerate(item)])
@@ -62,6 +66,7 @@ def geterr(allow):
 
 SYS_ALLOWANCE = geterr(SYS_ALLOWANCE)
 
+@PROFILE
 def arithseq(fitrange):
     """Check if arithmetic sequence"""
     ret = True
@@ -75,6 +80,7 @@ def arithseq(fitrange):
             ret = False
     return ret
 
+@PROFILE
 def enph_filenames(fname):
     """Get energy and phase shift file names"""
     if 'phase_shift' in fname:
@@ -85,9 +91,10 @@ def enph_filenames(fname):
         energyfn = fname
     return energyfn, phasefn
 
+@PROFILE
 def select_ph_en(sel):
     """Select which quantity we will analyze now"""
-    assert sel == 'phase' or sel == 'energy', sel
+    assert sel in ('phase', 'energy'), sel
     allow_cut.sel = sel
 
 @PROFILE
@@ -116,14 +123,15 @@ def main(nosave=True):
             tsub = 0
             while np.abs(tsub) < TDIS_MAX:
                 select_ph_en('energy')
+                set_tadd_tsub(tadd, tsub)
                 min_en = make_hist(
-                    energyfn, nosave=nosave,
-                    tadd=tadd, tsub=tsub, allowidx=0)
+                    energyfn, nosave=nosave, allowidx=0)
+                sys.exit()
                 if min_en:
                     select_ph_en('phase')
                     min_ph = make_hist(
                         phasefn, nosave=nosave,
-                        tadd=tadd, tsub=tsub, allowidx=1)
+                        allowidx=1)
                 if min_en and min_ph: # check this
                     toapp, test, toapp_pr = print_compiled_res(
                         min_en, min_ph)
@@ -149,6 +157,7 @@ def main(nosave=True):
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
 
+@PROFILE
 def print_sep_errors(tot_pr):
     """Print results with separate errors"""
     for i in tot_pr:
@@ -176,8 +185,8 @@ def print_tot(tot):
                 print('fitwin =', fitwin)
                 if fit_range is not None:
                     print("fit range:", fit_range)
-                for i, item in enumerate(res):
-                    print("dim", i, ":", item)
+                for idx, item in enumerate(res):
+                    print("dim", idx, ":", item)
     tot = tot_new
     for dim, _ in enumerate(tot[0]):
         plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
@@ -185,6 +194,7 @@ def print_tot(tot):
     print(plot_t_dep.coll)
     pr_best_fitwin(plot_t_dep.fitwin_votes)
 
+@PROFILE
 def pr_best_fitwin(fitwin_votes):
     """Print the best fit window
     (most minimum results)"""
@@ -224,7 +234,7 @@ def drop_extra_info(ilist):
             break
     # printable results
     ret = []
-    if fit_range is None: 
+    if fit_range is None:
         # ret is (energy, fit range), (phase, fit range)
         for i in ilist:
             if 'nan' in str(i[0][0]):
@@ -272,7 +282,7 @@ def plot_t_dep(tot, dim, item_num, title, units):
     except AssertionError:
         print("fit windows are not continuous for dim, item:", dim, title)
         raise
-        tot_new = []
+        #tot_new = []
     if list(tot_new):
         plot_t_dep_totnew(tot_new, dim, title, units)
     else:
@@ -311,6 +321,7 @@ def check_fitwin_continuity(tot_new):
             continuous_tmin_singleton(tot_new)
     return tot_new
 
+@PROFILE
 def cut_tmin(tot_new, tocut):
     """Cut tmin"""
     todel = []
@@ -323,7 +334,8 @@ def cut_tmin(tot_new, tocut):
     return ret
 
 
-def continuous_tmax(tot_new, sert=False):
+@PROFILE
+def continuous_tmax(tot_new):
     """Check continuous tmax"""
     maxtmax = max_tmax(tot_new)
     cwin = generate_continuous_windows(maxtmax)
@@ -343,6 +355,7 @@ def continuous_tmax(tot_new, sert=False):
         #assert not check_set-cwin[tmin],\
             #(cwin[tmin], check_set, check_set-cwin[tmin])
 
+@PROFILE
 def continuous_tmin_singleton(tot_new):
     """Check for continous tmin, singleton cut"""
 
@@ -354,6 +367,7 @@ def continuous_tmin_singleton(tot_new):
     # check tmin is continuous
     assert not set(tmin_cont)-set(maxtmax), list(maxtmax)
 
+@PROFILE
 def max_tmax(tot_new):
     """Find the maximum tmax for each tmin"""
     ret = {}
@@ -361,7 +375,7 @@ def max_tmax(tot_new):
         fitwin = fitwin[1]
         if fitwin[0] in ret:
             ret[fitwin[0]] = max(ret[fitwin[0]],
-                                     fitwin[1])
+                                 fitwin[1])
         else:
             ret[fitwin[0]] = fitwin[1]
     return ret
@@ -381,6 +395,7 @@ def generate_continuous_windows(maxtmax, minsep=LENMIN+1):
             ret[tmin].add((tmin, tmin+minsep+i))
     return ret
 
+@PROFILE
 def quick_compare(tot_new):
     """Check final results for consistency"""
     for item, _, fitwin in tot_new:
@@ -390,6 +405,7 @@ def quick_compare(tot_new):
             assert consistency(item, item2), (
                 item, item2, fitwin, fitwin2)
 
+@PROFILE
 def consistency(item1, item2):
     """Check two gvar items for consistency"""
     diff = np.abs(item1.val-item2.val)
@@ -486,6 +502,7 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
 plot_t_dep.fitwin_votes = {}
 plot_t_dep.coll = []
 
+@PROFILE
 def app_itmin(itmin):
     """Append next minimum result"""
     app_itmin.curr.append(str(itmin))
@@ -494,6 +511,7 @@ def app_itmin(itmin):
         app_itmin.curr = []
 app_itmin.curr = []
 
+@PROFILE
 def round_to_n(val, places):
     """Round to two sigfigs"""
     # from
@@ -501,6 +519,7 @@ def round_to_n(val, places):
     ret = round(val, -int(np.floor(np.log10(val))) + (places - 1))
     return ret
 
+@PROFILE
 def round_wrt(err1, err2):
     """Round err2 with respect to err1"""
     err1 = round_to_n(err1, 2)
@@ -510,6 +529,7 @@ def round_wrt(err1, err2):
     return ret
 
 
+@PROFILE
 def other_err_str(val, err1, err2):
     """Get string for other error from a given gvar"""
     if isinstance(val, np.float) and not np.isnan(val) and not np.isnan(err2):
@@ -535,6 +555,7 @@ def other_err_str(val, err1, err2):
         ret = ''
     return ret
 
+@PROFILE
 def place_diff_gvar(gvar1, gvar2):
     """Find difference in places between gvar1 and gvar2"""
     one = str(gvar1)
@@ -547,10 +568,12 @@ def place_diff_gvar(gvar1, gvar2):
     one = len(one)
     return two-one
 
+@PROFILE
 def remove_period(astr):
     """Remove decimal point"""
-    return re.sub('\.', '', astr)
+    return re.sub(r'.', '', astr)
 
+@PROFILE
 def tot_to_stat(res, sys_err):
     """Get result object which has separate stat
     and sys errors"""
@@ -560,6 +583,7 @@ def tot_to_stat(res, sys_err):
     ret = gvar.gvar(res.val, err)
     return ret
 
+@PROFILE
 def errstr(res, sys_err):
     """Print error string"""
     if not np.isnan(res.val):
@@ -575,6 +599,7 @@ def errstr(res, sys_err):
         ret = res
     return ret
 
+@PROFILE
 def swap_err_str(gvar1, errstr1):
     """Swap the gvar error string with the new one"""
     val, errs = str(gvar1).split("(") # sys err
@@ -582,10 +607,11 @@ def swap_err_str(gvar1, errstr1):
     ret = str(val)+errstr1+'('+errs
     return ret
 
+@PROFILE
 def swap_err(gvar1, newerr):
     """Swap the errors in the gvar object"""
     err1 = gvar1.sdev
-    val = gvar1.val
+    #val = gvar1.val
     ret = gvar.gvar(gvar1, newerr)
     return ret, err1
 
@@ -790,7 +816,7 @@ def get_raw_arrays(fname):
     return freqarr, exclarr, pdat_freqarr, errdat, avg
 
 @PROFILE
-def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
+def get_medians_and_plot_syserr(loop, freqarr, freq, medians, dim, nosave=False):
     """Get medians of various quantities (over fit ranges)
     loop:
     (freq, pdat_freqarr, errlooparr, exclarr)
@@ -813,7 +839,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
             median_diff2 = abs(pval-pdat_median)
             half = effmass
         # check jackknife error and superjackknife error are somewhat close
-        sjerr = jkerr(effmass)
+        emean, sjerr = jack_mean_err(effmass)
         efferr = np.array([gvar.gvar(i, err) for i in effmass])
         try:
             if len(drop) == 1:
@@ -826,7 +852,9 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, nosave=False):
             print('jackknife error =', jkerr2(effmass))
             print(drop)
             continue
-        median_err.append([efferr, pval])
+        if allow_cut(gvar.gvar(emean, sjerr), dim, cutstat=False):
+            continue
+        median_err.append([efferr, pval, emean])
         #print(median_err[-1], j)
     if median_diff != 0:
         freq_median = (freq_median+half)/2
@@ -848,7 +876,7 @@ def systematic_err_est(freq, median_err, freq_median, nosave=False):
         sys.exit(1)
     if not nosave:
         plt.annotate("standard dev (est of systematic)="+str(
-            em.acmean(sys_err,axis=0)),
+            em.acmean(sys_err, axis=0)),
                      xy=(0.05, 0.7),
                      xycoords='axes fraction')
     assert list(freq_median.shape) == list(sys_err.shape),\
@@ -870,12 +898,25 @@ def plot_hist(freq, errlooparr):
             xerr=getxerr(freq, center,
                          np.asarray(errlooparr, dtype=float)))
 
+def reset_window():
+    """Reset internal fit window variables"""
+    get_fitwindow.tadd = 0
+    get_fitwindow.tsub = 0
+    get_fitwindow.win = (None, None)
+
+def set_tadd_tsub(tadd, tsub):
+    """Store tadd, tsub to find fit window"""
+    reset_window()
+    get_fitwindow.tadd = tadd
+    get_fitwindow.tsub = tsub
+
 @PROFILE
-def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
+def make_hist(fname, nosave=False, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = {}
-    print("tadd, tsub", tadd, tsub, "fname", fname)
+    print("fname", fname)
+
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(
             freqarr, errdat, dim)
@@ -900,7 +941,7 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
             # loop to obtain medians/printable results
             # plot the systematic error
             median_store, freq_median = get_medians_and_plot_syserr(
-                loop, freqarr, freq, medians, nosave=nosave)
+                loop, freqarr, freq, medians, dim, nosave=nosave)
 
             # plot median fit result (median energy)
             if not nosave:
@@ -909,18 +950,15 @@ def make_hist(fname, nosave=False, tadd=0, tsub=0, allowidx=None):
 
             # prints the sorted results
             try:
-                output_loop.tadd = tadd
-                output_loop.tsub = tsub
-                themin, sys_err, fitwindow = output_loop(
-                    median_store, freqarr, avg[dim],
-                    (dim, allowidx),
+                themin, sys_err, fitr = output_loop(
+                    median_store, avg[dim], (dim, allowidx),
                     build_sliced_fitrange_list(
                         median_store, freq, exclarr))
             except FitRangeInconsistency:
                 continue
 
             if themin is not None:
-                ret[dim] = (themin, sys_err, fitwindow)
+                ret[dim] = (themin, sys_err, fitr)
             else:
                 break
 
@@ -950,7 +988,7 @@ def fill_conv_dict(todict, dimlen):
 def build_sliced_fitrange_list(median_store, freq, exclarr):
     """Get all the fit ranges for a particular dimension"""
     ret = []
-    freq = em.acmean(freq, axis=1) 
+    freq = em.acmean(freq, axis=1)
     for _, i in enumerate(median_store[0]):
         effmass = em.acmean([j.val for j in i[0]])
         index = list(freq).index(effmass)
@@ -1013,14 +1051,16 @@ def avg_gvar(arr):
     ret = np.asarray(ret)
     return ret
 
+@PROFILE
 def lenfitw(fitwin):
     """Length of fit window"""
     return fitwin[1]-fitwin[0]+1
 
+@PROFILE
 def sort_check(median_err, reverse=False):
     """Make sure array is sorted by stat error size"""
     emax = 0
-    for _, (effmass, _) in enumerate(median_err):
+    for _, (effmass, _, _) in enumerate(median_err):
         sdev = effmass[0].sdev
         emax = max(sdev, emax)
         if reverse:
@@ -1028,7 +1068,8 @@ def sort_check(median_err, reverse=False):
         else:
             assert sdev == emax, (sdev, emax)
 
-def allow_cut(res, dim, cutstat=True):
+@PROFILE
+def allow_cut(res, dim, cutstat=True, chk_consis=True):
     """If we already have a minimized error result,
     cut all that are statistically incompatible"""
     assert allow_cut.sel is not None, allow_cut.sel
@@ -1039,17 +1080,23 @@ def allow_cut(res, dim, cutstat=True):
         best = ALLOW_ENERGY
     ret = False
     if best:
-        if hasattr(gvar.gvar(best[0]), '__iter__'):
+        battr = allow_cut.best_attr
+        if battr is None:
+            battr = hasattr(gvar.gvar(best[0]), '__iter__')
+            allow_cut.best_attr = battr
+        if battr:
             for i in best:
                 ret = ret or res_best_comp(
-                    res, i, dim, cutstat=cutstat)
+                    res, i, dim, cutstat=cutstat, chk_consis=chk_consis)
         else:
             ret = res_best_comp(
-                res, best, dim, cutstat=cutstat)
+                res, best, dim, cutstat=cutstat, chk_consis=chk_consis)
     return ret
 allow_cut.sel = None
+allow_cut.best_attr = None
 
-def res_best_comp(res, best, dim, cutstat=True):
+@PROFILE
+def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     """Compare result with best known for consistency"""
     if hasattr(res, '__iter__'):
         sdev = res[0].sdev
@@ -1061,46 +1108,93 @@ def res_best_comp(res, best, dim, cutstat=True):
             print(sdev)
             raise
     best = best[dim]
-    best = gvar.gvar(best)
-    ret = not consistency(best, res)
+    # best = gvar.gvar(best)
+    ret = False
+    if chk_consis:
+        ret = not consistency(best, res)
     if cutstat:
         ret = ret or best.sdev <= res.sdev
     return ret
 
+@PROFILE
 def update_effmass(effmass, errterm):
     """Replace the stat error with the total error in the effmass array"""
     ret = [gvar.gvar(i.val, errterm) for i in effmass]
     return ret
 
+def fitrange_skip_list(fit_range_arr, fitwindow, dim):
+    """List of indices to skip"""
+    # fit window cut
+    ret = set()
+    for idx, item in enumerate(fit_range_arr):
+        if lencut(item):
+            ret.add(idx)
+            continue
+        if fitwincuts(item, fitwindow):
+            ret.add(idx)
+            continue
+        if not arithseq(item):
+            ret.add(idx)
+            continue
+    ret = sorted(list(ret))
+    return ret
+
 @PROFILE
-def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
+def cut_medianerr(median_err, skip_list):
+    """Prune the results array"""
+    return np.delete(median_err, skip_list, axis=0)
+
+@PROFILE
+def get_fitwindow(fit_range_arr):
+    """Get fit window, print result"""
+    if get_fitwindow.win == (None, None):
+        tadd = get_fitwindow.tadd
+        tsub = get_fitwindow.tsub
+        tmin_allowed = global_tmin(fit_range_arr) + tadd
+        tmax_allowed = global_tmax(fit_range_arr) + tsub
+        get_fitwindow.win = (tmin_allowed, tmax_allowed)
+    ret = get_fitwindow.win
+    assert ret[0] is not None, ret
+    print("fit window:", ret)
+    return ret
+get_fitwindow.tadd = 0
+get_fitwindow.tsub = 0
+get_fitwindow.win = (None, None)
+
+
+@PROFILE
+def fitrange_cuts(median_err, fit_range_arr, dim):
+    """Get fit window, apply cuts"""
+    fitwindow = get_fitwindow(fit_range_arr)
+    skip_list = fitrange_skip_list(fit_range_arr, fitwindow, dim)
+    median_err = cut_medianerr(median_err, skip_list)
+    return median_err
+        
+
+@PROFILE
+def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     """The print loop
     """
-    dim, allowidx = dim_idx
+    # dim, allowidx = dim_idx
+    dim, _ = dim_idx
     median_err, median = median_store
     maxsig = 0
-    usegevp = gevpp(freqarr)
-
-    tmin_allowed = global_tmin(fit_range_arr) + output_loop.tadd
-    tmax_allowed = global_tmax(fit_range_arr) + output_loop.tsub
-
-    fitwindow = (tmin_allowed, tmax_allowed)
-    print("fit window:", fitwindow)
+    # usegevp = gevpp(freqarr)
 
     themin = None
-    fitrmin = None
-    pvalmin = None
+    #fitrmin = None
+    # pvalmin = None
+
+    # cut results outside the fit window
+    median_err = fitrange_cuts(median_err, fit_range_arr, dim)
 
     sort_check(median_err, reverse=REVERSE)
 
     don = {}
 
-    for idx, (effmass, pval) in enumerate(median_err):
+    for idx, (effmass, pval, emean) in enumerate(median_err):
 
         midx = None
-
-        if lenfitw(fitwindow) < LENMIN+1:
-            break
 
         sdev = effmass[0].sdev
         try:
@@ -1114,29 +1208,17 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
 
         fit_range = fit_range_arr[idx]
 
-        # best known cut
-        if allow_cut(effmass, dim):
-            continue
-
-        # length cut
-        if lencut(fit_range):
-            continue
-
-        # arithmetic sequence cut
-        if not arithseq(fit_range):
-            continue
-
-        # fit window cut
-        if fitwincut(fit_range, fitwindow, dim):
+        # best known cut (stat comparison only)
+        if allow_cut(gvar.gvar(emean, sdev), dim, chk_consis=False):
             continue
 
         # mostly obsolete params
         pval = trunc(pval)
         assert list(effmass.shape) == list(median.shape), (
             list(effmass.shape), list(median.shape))
-        median_diff = effmass-median
-        median_diff = np.array(
-            [gvar.gvar(i.val, max(sdev, i.sdev)) for i in median])
+        #median_diff = effmass-median
+        #median_diff = np.array(
+        #    [gvar.gvar(i.val, max(sdev, i.sdev)) for i in median])
         avg_diff = effmass-avg_dim
         avg_diff = np.array(
             [gvar.gvar(i.val, max(sdev, avg_dim.sdev)) for i in avg_diff])
@@ -1144,17 +1226,17 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         # compare this result to all other results, up to
         # NOTE:
         # midx is because we only want to do the comparisons once.
-        if len(np.array(median_err)[:, 0]):
+        if list(np.array(median_err)[:, 0]):
             if (idx, midx) not in don and (midx, idx) not in don:
                 ind_diff, sig, errstr1, syserr, midx, maxrange = diff_ind(
-                    effmass, np.array(median_err)[:, 0],
-                    fit_range_arr, fitwindow, dim)
+                    (effmass, emean), np.array(median_err)[:, 0::2],
+                    fit_range_arr, dim)
                 don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx, maxrange)
                 don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx, maxrange)
             else:
                 ind_diff, sig, errstr1, syserr, midx, maxrange = don[(idx, midx)]
         else:
-            ind_diff, sig, errstr1, syserr = (gvar.gvar(0,0), 0, '', 0)
+            ind_diff, sig, errstr1, syserr = (gvar.gvar(0, 0), 0, '', 0)
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
@@ -1164,13 +1246,13 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         if themin is not None:
             if themin[0].sdev > errterm:
                 themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
-                pvalmin = pval
-                fitrmin = fit_range
+                #pvalmin = pval
+                #fitrmin = fit_range
             else:
                 noprint = True
         else:
-            pvalmin = pval
-            fitrmin = fit_range
+            #pvalmin = pval
+            #fitrmin = fit_range
             themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
 
         # if the max difference is not zero
@@ -1190,7 +1272,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
             if maxsig < sig:
                 maxsig = max(maxsig, sig)
                 print("")
-                print(ind_diff, '(', trunc(sig), 'sigma )' )
+                print(ind_diff, '(', trunc(sig), 'sigma )')
                 print("")
 
             # fit range inconsistency found;
@@ -1229,9 +1311,7 @@ def output_loop(median_store, freqarr, avg_dim, dim_idx, fit_range_arr):
         print("p-value weighted mean =", avg_dim)
     else:
         themin = (None, None, None)
-    return themin[0], themin[1], (themin[2], fitwindow)
-output_loop.tadd = 0
-output_loop.tsub = 0
+    return themin[0], themin[1], (themin[2], get_fitwindow(fit_range_arr))
 
 @PROFILE
 def printres(effmass1, pval, syserr, fit_range, maxrange):
@@ -1309,20 +1389,28 @@ def lencut(fit_range):
             ret = len(fit_range) < LENMIN
     return ret
 
-DIMWIN = [(9,13), (7,11), (9,13), (7,11)]
+#DIMWIN = [(9,13), (7,11), (9,13), (7,11)]
 
 @PROFILE
-def fitwincut(fit_range, fitwindow, dim=None):
-    """Cut all fit ranges outside this fit window"""
-    # tmin, tmax cut
+def fitwincuts(fit_range, fitwindow, dim=None):
+    """Cut all fit ranges outside this fit window,
+    also cut out fit windows that are too small
+    """
     ret = False
-    dim = None # appears to help somewhat with errors
-    iterf = hasattr(fit_range[0], '__iter__')
-    if dim is not None:
-        assert iterf, fit_range
-        fit_range = fit_range[dim]
-    ret = False
+
+    # skip fit windows of a small length
+    if lenfitw(fitwindow) < LENMIN+1:
+        ret = True
+    if not ret:
+        # tmin, tmax cut
+        dim = None # appears to help somewhat with errors
+        iterf = hasattr(fit_range[0], '__iter__')
+        if dim is not None:
+            assert iterf, fit_range
+            fit_range = fit_range[dim]
     for i, fitr in enumerate(fit_range):
+        if ret:
+            break
         if i == dim:
             ret = not inside_win(fitr, fitwindow) or ret
         else:
@@ -1331,13 +1419,14 @@ def fitwincut(fit_range, fitwindow, dim=None):
             ret = not inside_win(fitr, dimwin) or ret
     if not ret and lenfitw(fitwindow) == 1:
         print(fitwindow)
-        print(tmin, tmax)
         print(fit_range)
         sys.exit(1)
     return ret
 
+@PROFILE
 def inside_win(fit_range, fitwin):
     """Check if fit range is inside the fit window"""
+    assert hasattr(fit_range, '__iter__'), (fit_range, fitwin)
     iterf = hasattr(fit_range[0], '__iter__')
     if iterf:
         tmax = max([max(j) for j in fit_range])
@@ -1350,13 +1439,14 @@ def inside_win(fit_range, fitwin):
 
 
 @PROFILE
-def discrep(res, gres, maxsys_errcurr):
+def discrep(res, gres, mean_diff=None):
     """Calculate the stat. sig of the disagreement"""
     assert len(res) == len(gres)
     diff = np.fromiter((i.val-j.val for i, j in zip(res, gres)),
                        count=len(res), dtype=np.float)
     # needs super jack
-    mean, err = jack_mean_err(diff, acc_sum=False)
+    mean, err = jack_mean_err(diff, acc_sum=False, mean_arr=mean_diff)
+    mean = np.abs(mean)
     sys_err = np.sqrt(max((mean/1.5)**2-err**2, 0))
     #sys_err = max(0, mean-1.5*err)
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
@@ -1390,7 +1480,7 @@ def maxarr(arr1, arr2):
     return ret
 
 @PROFILE
-def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
+def diff_ind(res, arr, fit_range_arr, dim):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -1400,20 +1490,19 @@ def diff_ind(res, arr, fit_range_arr, fitwindow, dim):
     maxerr = 0
     errstr1 = ''
     midx = None
+    res, emean = res
     for i, gres in enumerate(arr):
 
-        # apply cuts
-        if allow_cut(res, dim, cutstat=False):
-            continue
-        if lencut(fit_range_arr[i]):
-            continue
-        if not arithseq(fit_range_arr[i]):
-            continue
-        if fitwincut(fit_range_arr[i], fitwindow, dim):
-            continue
+        gres, gemean = gres
+        gsdev = gres[0].sdev
 
+        # apply cuts
+        #if allow_cut(gvar.gvar(gemean, gsdev),
+        #             dim, cutstat=False, chk_consis=False):
+        #continue
         # cuts are passed, calculate the discrepancy
-        diff, err, syserr = discrep(res, gres, maxsyserr)
+
+        diff, err, syserr = discrep(res, gres, mean_diff=emean-gemean)
         maxsyserr = max(syserr, maxsyserr)
         #maxdiff = maxarr(diff, maxdiff)
         #if np.all(diff == maxdiff):
@@ -1442,6 +1531,7 @@ def jkerr(arr):
     arr = np.asarray(arr)
     return jack_mean_err(arr)[1]
 
+@PROFILE
 def jkerr2(arr):
     """jackknife error"""
     return em.acstd(arr)*np.sqrt(len(arr)-1)
