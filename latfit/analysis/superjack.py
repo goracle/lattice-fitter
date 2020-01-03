@@ -48,7 +48,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
     sloppy_prefactor = (len_sloppy-1)/len_sloppy
     assert not np.isnan(sloppy_prefactor), "sloppy prefactor is nan"
     overall_prefactor = (len_total-1)/len_total
-    assert not np.isnan(overall_prefactor), "sloppy prefactor is nan"
+    assert not np.isnan(overall_prefactor), "overall prefactor is nan"
     if not sjcut:
         assert overall_prefactor == sloppy_prefactor, "bug"
     assert arr.shape == arr2.shape, "Shape mismatch"
