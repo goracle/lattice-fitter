@@ -1236,7 +1236,8 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
             else:
                 ind_diff, sig, errstr1, syserr, midx, maxrange = don[(idx, midx)]
         else:
-            ind_diff, sig, errstr1, syserr = (gvar.gvar(0, 0), 0, '', 0)
+            ind_diff, sig, errstr1, syserr, midx, maxrange = (
+                gvar.gvar(0, 0), 0, '', 0, None, fit_range)
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
