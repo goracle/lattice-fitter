@@ -33,6 +33,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
     else:
         mean2 = meanf(arr2[:sjcut], axis=0)
         mean2a = meanf(arr2[sjcut:], axis=0)
+    posdef = arr2 is None
     arr2 = arr if arr2 is None else arr2
 
     if sjcut == 0:
@@ -82,6 +83,7 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
         err = err if nosqrt else np.sqrt(err)
         flag = False
     except FloatingPointError:
+        assert not posdef
         flag = True
     assert err.shape == np.array(arr)[0].shape,\
         "Shape is not preserved (bug)."
@@ -92,14 +94,16 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
     else:
         mean = mean_arr
 
-    return flagtonan(mean, err, flag)
+    ret = (mean, err) if posdef else flagtonan(mean, err, flag)
+
+    return ret
 
 @PROFILE
 def flagtonan(mean, err, flag):
     """nan the mean and error if error flag is turned on"""
     # calculate the mean
     if isinstance(mean, numbers.Number):
-        mean = float(mean)
+        mean = np.real(mean)
         assert not np.isnan(mean), "mean is nan"
     else:
         assert not any(np.isnan(mean)), "mean is nan"
