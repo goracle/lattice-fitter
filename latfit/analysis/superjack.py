@@ -13,7 +13,7 @@ except NameError:
 
 
 @PROFILE
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=True):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=True, mean_arr=None):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -86,10 +86,15 @@ def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=
     assert err.shape == np.array(arr)[0].shape,\
         "Shape is not preserved (bug)."
 
-    mean = meanf(arr, axis=0)
+    # take advantage of pre-computed average
+    if mean_arr is None:
+        mean = meanf(arr, axis=0)
+    else:
+        mean = mean_arr
 
     return flagtonan(mean, err, flag)
 
+@PROFILE
 def flagtonan(mean, err, flag):
     """nan the mean and error if error flag is turned on"""
     # calculate the mean
