@@ -693,7 +693,7 @@ def pvalue_arr(spl, fname):
             print("but shape is", pdat.shape)
             print("failing on file", pvalfn)
             sys.exit(1)
-    pdat_freqarr = np.array([em.acmean(i) for i in pdat_freqarr])
+    pdat_freqarr = np.array([np.mean(i, axis=0) for i in pdat_freqarr])
     return pdat_freqarr
 
 @PROFILE
@@ -839,7 +839,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, dim, nosave=False)
             median_diff2 = abs(pval-pdat_median)
             half = effmass
         # check jackknife error and superjackknife error are somewhat close
-        emean, sjerr = jack_mean_err(effmass)
+        emean, sjerr = jack_mean_err(effmass, acc_sum=False)
         efferr = np.array([gvar.gvar(i, err) for i in effmass])
         try:
             if len(drop) == 1:
@@ -988,9 +988,11 @@ def fill_conv_dict(todict, dimlen):
 def build_sliced_fitrange_list(median_store, freq, exclarr):
     """Get all the fit ranges for a particular dimension"""
     ret = []
-    freq = em.acmean(freq, axis=1)
+    freq = np.mean(freq, axis=1)
     for _, i in enumerate(median_store[0]):
-        effmass = em.acmean([j.val for j in i[0]])
+        emean = i[2]
+        effmass = emean
+        #effmass = np.mean([j.val for j in i[0]], axis=0)
         index = list(freq).index(effmass)
         fitrange = exclarr[index]
         # fitrange = np.array(fitrange)
@@ -1122,6 +1124,7 @@ def update_effmass(effmass, errterm):
     ret = [gvar.gvar(i.val, errterm) for i in effmass]
     return ret
 
+@PROFILE
 def fitrange_skip_list(fit_range_arr, fitwindow, dim):
     """List of indices to skip"""
     # fit window cut
@@ -1246,7 +1249,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         noprint = False
         if themin is not None:
             if themin[0].sdev > errterm:
-                themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
+                themin = (gvar.gvar(emean, errterm), syserr, fit_range)
                 #pvalmin = pval
                 #fitrmin = fit_range
             else:
@@ -1254,7 +1257,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         else:
             #pvalmin = pval
             #fitrmin = fit_range
-            themin = (gvar.gvar(avg_gvar(effmass), errterm), syserr, fit_range)
+            themin = (gvar.gvar(emean, errterm), syserr, fit_range)
 
         # if the max difference is not zero
         if ind_diff.val:
