@@ -1107,7 +1107,7 @@ def prune_cbest(cbest=None):
     """Prune the best known so only
     the smallest error params remain.  Print the result."""
     cbest = update_best.cbest if cbest is None else cbest
-    if len(cbest == 1):
+    if len(cbest) == 1:
         cnew = cbest[0]
     else:
         diml = len(cbest[0])
