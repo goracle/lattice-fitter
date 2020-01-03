@@ -95,7 +95,7 @@ def enph_filenames(fname):
 def select_ph_en(sel):
     """Select which quantity we will analyze now"""
     assert sel in ('phase', 'energy'), sel
-    allow_cut.sel = sel
+    find_best.sel = sel
 
 @PROFILE
 def main(nosave=True):
@@ -155,6 +155,7 @@ def main(nosave=True):
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
+        prune_cbest()
 
 @PROFILE
 def print_sep_errors(tot_pr):
@@ -634,6 +635,7 @@ def print_compiled_res(min_en, min_ph):
         list(i) for i in zip(min_en, min_ph) if list(i)]
     min_res_pr = [
         i for i in min_res if 'nan' not in str(i[0])]
+    update_best(min_res_pr)
     test = False
     if min_res_pr:
         print("minimized error results:", min_res_pr)
@@ -1069,17 +1071,99 @@ def sort_check(median_err, reverse=False):
         else:
             assert sdev == emax, (sdev, emax)
 
+def match_arrs(arr, new):
+    """Match array lengths by extending the new array length"""
+    arr = list(arr)
+    new = list(new)
+    dlen = len(arr) - len(new)
+    assert dlen >= 0, (arr, new, dlen)
+    if dlen:
+        ext = arr[-1*dlen:]
+        new.extend(ext)
+    return new
+
+
+def compare_bests(new, curr):
+    """Compare new best to current best to see if an update is needed"""
+    rete = []
+    retph = []
+    ret = False
+    for ibest in curr:
+        new = match_arrs(ibest, new)
+        assert len(new) == len(ibest), (new, ibest)
+        aph = []
+        aen = []
+        for jit, kit in zip(ibest, new):
+            enerr = gvar.gvar(jit[0]).sdev
+            pherr = gvar.gvar(jit[1]).sdev
+            enerr_new = gvar.gvar(kit[0]).sdev
+            pherr_new = gvar.gvar(kit[1]).sdev
+            if enerr > enerr_new or pherr > pherr_new:
+                ret = True
+                break
+    return ret
+
+def prune_cbest(cbest=None):
+    """Prune the best known so only
+    the smallest error params remain.  Print the result."""
+    cbest = update_best.cbest if cbest is None else cbest
+    if len(cbest == 1):
+        cnew = cbest[0]
+    else:
+        diml = len(cbest[0])
+        cnew = None
+        for ibest in cbest:
+            if cnew is None:
+                cnew = ibest
+                continue
+            else:
+                assert len(cnew) == len(ibest)
+            aph = []
+            aen = []
+            for idx, (jit, kit) in enumerate(zip(ibest, cnew)):
+                enerr = gvar.gvar(jit[0]).sdev
+                pherr = gvar.gvar(jit[1]).sdev
+                enerr_new = gvar.gvar(kit[0]).sdev
+                pherr_new = gvar.gvar(kit[1]).sdev
+                if enerr < enerr_new:
+                    cnew[idx][0] = str(jit[0])
+                if pherr < pherr_new:
+                    cnew[idx][1] = str(jit[1])
+    print("pruned cbest list:", cnew)
+    return cnew
+
+def update_best(new_best):
+    """Update best lists"""
+    cbest = update_best.cbest
+    if cbest:
+        if compare_bests(new_best, update_best.cbest):
+            print("adding new best known params:", new_best)
+            update_best.cbest.append(new_best)
+            cbest = update_best.cbest
+            prune_cbest(cbest)
+            print("current best known params list:", cbest)
+    find_best.allow_energy, find_best.allow_phase = fill_best(cbest)
+update_best.cbest = CBEST
+
+def find_best():
+    """Find best known result"""
+    assert find_best.sel is not None, find_best.sel
+    sel = find_best.sel
+    if sel == 'phase':
+        best = find_best.allow_phase
+    if sel == 'energy':
+        best = find_best.allow_energy
+    return best
+find_best.sel = None
+find_best.allow_phase = ALLOW_PHASE
+find_best.allow_energy = ALLOW_ENERGY
+
 @PROFILE
 def allow_cut(res, dim, cutstat=True, chk_consis=True):
     """If we already have a minimized error result,
     cut all that are statistically incompatible"""
-    assert allow_cut.sel is not None, allow_cut.sel
-    sel = allow_cut.sel
-    if sel == 'phase':
-        best = ALLOW_PHASE
-    if sel == 'energy':
-        best = ALLOW_ENERGY
     ret = False
+    best = find_best()
     if best:
         battr = allow_cut.best_attr
         if battr is None:
@@ -1093,7 +1177,6 @@ def allow_cut(res, dim, cutstat=True, chk_consis=True):
             ret = res_best_comp(
                 res, best, dim, cutstat=cutstat, chk_consis=chk_consis)
     return ret
-allow_cut.sel = None
 allow_cut.best_attr = None
 
 @PROFILE
