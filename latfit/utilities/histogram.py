@@ -1262,6 +1262,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     """
     # dim, allowidx = dim_idx
     dim, _ = dim_idx
+    print("dim:", dim)
     median_err, median = median_store
     maxsig = 0
     # usegevp = gevpp(freqarr)
