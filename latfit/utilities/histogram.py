@@ -119,6 +119,7 @@ def main(nosave=True):
         # loop over fit windows
         while tadd < TDIS_MAX:
             if breakadd:
+                print("stopping loop on tadd, tsub:", tadd, tsub)
                 break
             tsub = 0
             while np.abs(tsub) < TDIS_MAX:
@@ -143,6 +144,11 @@ def main(nosave=True):
                     tot_pr.append(toapp_pr)
                 else:
                     breakadd = not tsub
+                    if breakadd:
+                        if not min_en:
+                            print("missing energies")
+                        if not min_ph:
+                            print("missing phases")
                     break
                 tsub -= 1
             tadd += 1
@@ -155,7 +161,6 @@ def main(nosave=True):
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
-        prune_cbest()
 
 @PROFILE
 def print_sep_errors(tot_pr):
@@ -193,6 +198,7 @@ def print_tot(tot):
         plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
     print(plot_t_dep.coll)
     pr_best_fitwin(plot_t_dep.fitwin_votes)
+    prune_cbest()
 
 @PROFILE
 def pr_best_fitwin(fitwin_votes):
@@ -222,15 +228,17 @@ def drop_extra_info(ilist):
     for i in ilist:
         fitr1 = i[0][2][0]
         fitr2 = i[1][2][0]
+        if isinstance(fitr1, int) or isinstance(fitr2, int):
+            break
+        assert hasattr(fitr2, '__iter__'), (
+            fitr1, fitr2, i)
         if fit_range_equality(fitr1, fitr2):
             if fit_range is None:
                 fit_range = fitr1
             else:
                 if not fit_range_equality(fitr1, fit_range):
-                    fit_range = None
                     break
         else:
-            fit_range = None
             break
     # printable results
     ret = []
@@ -242,6 +250,16 @@ def drop_extra_info(ilist):
             else:
                 fitr1 = i[0][2][0]
                 fitr2 = i[1][2][0]
+                if isinstance(fitr1, int):
+                    assert not fitr1
+                    fitr1 = fitr2
+                if isinstance(fitr2, int):
+                    assert not fitr2
+                    fitr2 = fitr1
+                    if isinstance(fitr1, int):
+                        continue
+                assert hasattr(fitr2, '__iter__'), (
+                    fitr1, fitr2, i)
                 # check for sub consistency of fit ranges
                 if fit_range_equality(fitr1, fitr2):
                     toapp = ([i[0][0], i[1][0]], fitr1)
@@ -260,20 +278,47 @@ def drop_extra_info(ilist):
     fitr = [[i[0][2][0], i[1][2][0]] if 'nan' not in str(
         i[0][0]) else [] for i in ilist]
     fitw = None
+    hatt = False
     for i, j in zip(fitwin, fitr):
         i = list(i)
+        i = replace_inf_fitwin(i)
         j = list(j)
         if not i and not j:
             continue
         assert i or j, (i, j)
         if fitw is None:
             fitw = i
+            hatt = hasattr(fitw[0], '__iter__')
         else:
-            assert list(fitw) == list(i), (fitw, i, j)
-    if hasattr(fitw[0], '__iter__'):
-        assert list(fitw[0]) == list(fitw[1]), fitw
-        fitw = fitw[0]
+            if hatt:
+                con1 = list(fitw[0]) == list(i[0])
+                con2 = list(fitw[1]) == list(i[1])
+                con = con1 or con2
+            else:
+                con = list(fitw) == list(i)
+            assert con, (fitw, i, j)
+    if hatt:
+        con1 = list(fitw[0]) == list(fitw[1])
+        con2 = np.inf == fitw[0][1]
+        con3 = np.inf == fitw[1][1]
+        assert con1 or con2 or con3, fitw
+        if con1:
+            fitw = fitw[0]
+        elif con2:
+            fitw = fitw[1]
+        elif con3:
+            fitw = fitw[0]
     return (fitw, fit_range, ret)
+
+def replace_inf_fitwin(fitw):
+    """Replace inf in fit window list"""
+    ret = []
+    for i in fitw:
+        if np.inf == i:
+            ret.append((-1*np.inf, np.inf))
+        else:
+            ret.append(i)
+    return ret
 
 @PROFILE
 def plot_t_dep(tot, dim, item_num, title, units):
@@ -860,6 +905,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq, medians, dim, nosave=False)
             continue
         if allow_cut(gvar.gvar(emean, sjerr), dim, cutstat=False):
             continue
+        # print("appending:", gvar.gvar(emean, err))
         median_err.append([efferr, pval, emean])
         #print(median_err[-1], j)
     if median_diff != 0:
@@ -966,6 +1012,8 @@ def make_hist(fname, nosave=False, allowidx=None):
             if themin != gvar.gvar(0, np.inf):
                 ret[dim] = (themin, sys_err, fitr)
             else:
+                print(find_best.sel,
+                      "min not found for dim:", dim)
                 break
 
             if not nosave:
@@ -1114,6 +1162,8 @@ def prune_cbest(cbest=None):
     cbest = update_best.cbest if cbest is None else cbest
     if len(cbest) == 1:
         cnew = cbest[0]
+    elif not cbest:
+        cnew = cbest
     else:
         diml = len(cbest[0])
         cnew = None
@@ -1203,7 +1253,7 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     if chk_consis:
         ret = not consistency(best, res)
     if cutstat:
-        ret = ret or best.sdev <= res.sdev
+        ret = ret or best.sdev < round(res.sdev, 2)
     return ret
 
 @PROFILE
@@ -1295,6 +1345,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         # skip if the error is already too big
         if themin is not None:
             if sdev >= themin[0].sdev:
+                #print("proceeding stat errors are too large; breaking median loop")
                 break
 
         fit_range = fit_range_arr[idx]
