@@ -1303,7 +1303,7 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     if chk_consis:
         ret = not consistency(best, res)
     if cutstat:
-        ret = ret or best.sdev < round(res.sdev, 2)
+        ret = ret or best.sdev < round_wrt(best.sdev, res.sdev)
     return ret
 
 @PROFILE
