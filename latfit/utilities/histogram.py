@@ -685,6 +685,13 @@ def swap_err(gvar1, newerr):
     ret = gvar.gvar(gvar1, newerr)
     return ret, err1
 
+def win_nan(fitwin):
+    """Test if fit window is nan"""
+    ret = False
+    if 'nan' in str(fitwin):
+        ret = True
+    return ret
+
 @PROFILE
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
@@ -693,13 +700,14 @@ def print_compiled_res(min_en, min_ph):
 
     fitwin = min_en[0][2][1]
     fitwin2 = min_ph[0][2][1]
-    assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
-    if not (ALLOW_ENERGY or ALLOW_PHASE):
-        min_en = [errstr(i, j) for i, j, _ in min_en]
-        min_ph = [errstr(i, j) for i, j, _ in min_ph]
-    else:
-        min_en = [i for i, _, _ in min_en]
-        min_ph = [i for i, _, _ in min_ph]
+    if not win_nan(fitwin) and not win_nan(fitwin2):
+        assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
+    #if not (ALLOW_ENERGY or ALLOW_PHASE):
+    min_en = [errstr(i, j) for i, j, _ in min_en]
+    min_ph = [errstr(i, j) for i, j, _ in min_ph]
+    #else:
+    # min_en = [i for i, _, _ in min_en]
+    #min_ph = [i for i, _, _ in min_ph]
 
     min_res = [
         list(i) for i in zip(min_en, min_ph) if list(i)]
