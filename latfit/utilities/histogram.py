@@ -24,6 +24,7 @@ except NameError:
     PROFILE = profile
 
 LENMIN = 3
+MIN_FITWIN_LEN = LENMIN+1
 assert LENMIN == RANGE_LENGTH_MIN
 SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)',
