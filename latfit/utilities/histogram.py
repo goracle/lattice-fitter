@@ -1138,9 +1138,10 @@ def update_best(new_best):
     if cbest:
         if compare_bests(new_best, update_best.cbest):
             print("adding new best known params:", new_best)
+            new_best = match_arrs(update_best.cbest[0], new_best)
             update_best.cbest.append(new_best)
-            cbest = update_best.cbest
             prune_cbest(cbest)
+            cbest = [update_best.cbest[0]]
             print("current best known params list:", cbest)
     find_best.allow_energy, find_best.allow_phase = fill_best(cbest)
 update_best.cbest = CBEST
@@ -1214,20 +1215,17 @@ def fitrange_skip_list(fit_range_arr, fitwindow, dim):
     for idx, item in enumerate(fit_range_arr):
         if lencut(item):
             ret.add(idx)
-            continue
-        if fitwincuts(item, fitwindow):
+        elif fitwincuts(item, fitwindow):
             ret.add(idx)
-            continue
-        if not arithseq(item):
+        elif not arithseq(item):
             ret.add(idx)
-            continue
     ret = sorted(list(ret))
     return ret
 
 @PROFILE
-def cut_medianerr(median_err, skip_list):
+def cut_arr(arr, skip_list):
     """Prune the results array"""
-    return np.delete(median_err, skip_list, axis=0)
+    return np.delete(arr, skip_list, axis=0)
 
 @PROFILE
 def get_fitwindow(fit_range_arr):
@@ -1252,8 +1250,9 @@ def fitrange_cuts(median_err, fit_range_arr, dim):
     """Get fit window, apply cuts"""
     fitwindow = get_fitwindow(fit_range_arr)
     skip_list = fitrange_skip_list(fit_range_arr, fitwindow, dim)
-    median_err = cut_medianerr(median_err, skip_list)
-    return median_err
+    median_err = cut_arr(median_err, skip_list)
+    fit_range_arr = cut_arr(fit_range_arr, skip_list)
+    return median_err, fit_range_arr
         
 
 @PROFILE
@@ -1272,7 +1271,8 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     # pvalmin = None
 
     # cut results outside the fit window
-    median_err = fitrange_cuts(median_err, fit_range_arr, dim)
+    median_err, fit_range_arr = fitrange_cuts(
+        median_err, fit_range_arr, dim)
 
     sort_check(median_err, reverse=REVERSE)
 
@@ -1293,6 +1293,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
                 break
 
         fit_range = fit_range_arr[idx]
+        assert not lencut(fit_range), (fit_range, idx)
 
         # best known cut (stat comparison only)
         if allow_cut(gvar.gvar(emean, sdev), dim, chk_consis=False):
