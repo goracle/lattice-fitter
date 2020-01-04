@@ -299,8 +299,8 @@ def drop_extra_info(ilist):
             assert con, (fitw, i, j)
     if hatt:
         con1 = list(fitw[0]) == list(fitw[1])
-        con2 = np.inf == fitw[0][1]
-        con3 = np.inf == fitw[1][1]
+        con2 = np.inf == fitw[0][1] or win_nan(fitw[0])
+        con3 = np.inf == fitw[1][1] or win_nan(fitw[1])
         assert con1 or con2 or con3, fitw
         if con1:
             fitw = fitw[0]
@@ -345,10 +345,11 @@ def fit_range_equality(fitr1, fitr2):
     ret = True
     assert hasattr(fitr1, '__iter__'), (fitr1, fitr2)
     assert hasattr(fitr2, '__iter__'), (fitr1, fitr2)
-    assert len(fitr1) == len(fitr2), (fitr1, fitr2)
-    for i, j in zip(fitr1, fitr2):
-        if list(i) != list(j):
-            ret = False
+    if fitr1 != [[]] and fitr2 != [[]]:
+        assert len(fitr1) == len(fitr2), (fitr1, fitr2)
+        for i, j in zip(fitr1, fitr2):
+            if list(i) != list(j):
+                ret = False
     return ret
 
 @PROFILE
@@ -1004,17 +1005,16 @@ def make_hist(fname, nosave=False, allowidx=None):
             try:
                 themin, sys_err, fitr = output_loop(
                     median_store, avg[dim], (dim, allowidx),
-                    build_sliced_fitrange_list(
-                        median_store, freq, exclarr))
+                    fit_range_arr)
             except FitRangeInconsistency:
                 continue
 
-            if themin != gvar.gvar(0, np.inf):
-                ret[dim] = (themin, sys_err, fitr)
-            else:
+            if themin == gvar.gvar(0, np.inf):
                 print(find_best.sel,
                       "min not found for dim:", dim)
-                break
+                continue
+            else:
+                ret[dim] = (themin, sys_err, fitr)
 
             if not nosave:
                 print("saving plot as filename:", save_str)
@@ -1033,7 +1033,7 @@ def fill_conv_dict(todict, dimlen):
     if todict:
         for i in range(dimlen):
             if i not in todict:
-                ret.append((gvar.gvar(np.nan, np.nan), np.nan, (0, np.inf)))
+                ret.append((gvar.gvar(np.nan, np.nan), np.nan, ([[]], (np.nan, np.nan))))
             else:
                 ret.append(todict[i])
     return ret
@@ -1147,6 +1147,8 @@ def compare_bests(new, curr):
         aph = []
         aen = []
         for jit, kit in zip(ibest, new):
+            if 'inf' in str(kit) or 'inf' in str(jit):
+                continue
             enerr = gvar.gvar(jit[0]).sdev
             pherr = gvar.gvar(jit[1]).sdev
             enerr_new = gvar.gvar(kit[0]).sdev
@@ -1453,9 +1455,10 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         print('p-value weighted median =', gvar.gvar(avg_gvar(median),
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
+        ret = (themin[0], themin[1], (themin[2], get_fitwindow(fit_range_arr)))
     else:
-        themin = (gvar.gvar(0,np.inf), 0, [[]])
-    return themin[0], themin[1], (themin[2], get_fitwindow(fit_range_arr))
+        ret = (gvar.gvar(np.nan, np.nan), np.nan, ([[]], (np.nan, np.nan)))
+    return ret
 
 @PROFILE
 def printres(effmass1, pval, syserr, fit_range, maxrange):
