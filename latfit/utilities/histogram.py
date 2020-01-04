@@ -567,16 +567,35 @@ def round_to_n(val, places):
     """Round to two sigfigs"""
     # from
     # https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
-    ret = round(val, -int(np.floor(np.log10(val))) + (places - 1))
+    if np.inf == val:
+        val = np.nan
+        plc = 1
+    else:
+        plc = -int(np.floor(np.log10(val))) + (places - 1)
+    ret = round(val, plc)
     return ret
 
-@PROFILE
+# https://stackoverflow.com/questions/8593355/in-python-how-do-i-count-the-trailing-zeros-in-a-string-or-integer
+def trailing_zeros(longint):
+    manipulandum = str(longint)
+    return len(manipulandum)-len(manipulandum.rstrip('0'))
+
 def round_wrt(err1, err2):
     """Round err2 with respect to err1"""
-    err1 = round_to_n(err1, 2)
-    err1 = str(err1)
-    places = len(err1.split('.')[1])
-    ret = round(err2, places)
+    if err1 != np.inf:
+        err1 = round_to_n(err1, 2)
+        err1 = np.float(err1)
+        if err1 == int(err1):
+            err1 = int(err1)
+        err1 = str(err1)
+        if '.' in err1:
+            assert 'e' not in err1, ("not supported:", err1)
+            places = len(err1.split('.')[1])
+        else:
+            places = -1*trailing_zeros(err1)
+        ret = round(err2, places)
+    else:
+        ret = err2
     return ret
 
 
