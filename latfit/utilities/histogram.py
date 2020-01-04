@@ -261,6 +261,11 @@ def drop_extra_info(ilist):
         i[0][0]) else [] for i in ilist]
     fitw = None
     for i, j in zip(fitwin, fitr):
+        i = list(i)
+        j = list(j)
+        if not i and not j:
+            continue
+        assert i or j, (i, j)
         if fitw is None:
             fitw = i
         else:
@@ -958,7 +963,7 @@ def make_hist(fname, nosave=False, allowidx=None):
             except FitRangeInconsistency:
                 continue
 
-            if themin is not None:
+            if themin != gvar.gvar(0, np.inf):
                 ret[dim] = (themin, sys_err, fitr)
             else:
                 break
@@ -1398,7 +1403,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
     else:
-        themin = (None, None, None)
+        themin = (gvar.gvar(0,np.inf), 0, [[]])
     return themin[0], themin[1], (themin[2], get_fitwindow(fit_range_arr))
 
 @PROFILE
