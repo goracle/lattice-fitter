@@ -728,9 +728,7 @@ def process_res_to_best(min_en, min_ph):
     min_phb = [i for i, _, _ in min_ph]
     min_resb = [
         list(i) for i in zip(min_enb, min_phb) if list(i)]
-    min_res_b = [
-        i for i in min_resb if 'nan' not in str(i[0])]
-    update_best(min_res_b)
+    update_best(min_resb)
 
 
 @PROFILE
@@ -1208,6 +1206,8 @@ def compare_bests(new, curr):
         for jit, kit in zip(ibest, new):
             if 'inf' in str(kit) or 'inf' in str(jit):
                 continue
+            if 'nan' in str(kit) or 'nan' in str(jit):
+                continue
             enerr = gvar.gvar(jit[0]).sdev
             pherr = gvar.gvar(jit[1]).sdev
             enerr_new = gvar.gvar(kit[0]).sdev
@@ -1314,7 +1314,14 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     if chk_consis:
         ret = not consistency(best, res)
     if cutstat:
-        ret = ret or best.sdev < round_wrt(best.sdev, res.sdev)
+        devc = best.sdev if not np.isnan(best.sdev) else np.inf
+        try:
+            ret = ret or devc < round_wrt(devc, res.sdev)
+        except ValueError:
+            print('ret', ret)
+            print('best', best)
+            print('res', res)
+            raise
     return ret
 
 @PROFILE
