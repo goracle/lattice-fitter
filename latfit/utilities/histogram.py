@@ -134,6 +134,7 @@ def main(nosave=True):
                         phasefn, nosave=nosave,
                         allowidx=1)
                 if min_en and min_ph: # check this
+                    process_res_to_best(min_en, min_ph)
                     toapp, test, toapp_pr = print_compiled_res(
                         min_en, min_ph)
                     if test:
@@ -707,20 +708,29 @@ def print_compiled_res(min_en, min_ph):
     min_en = [errstr(i, j) for i, j, _ in min_en]
     min_ph = [errstr(i, j) for i, j, _ in min_ph]
     #else:
-    # min_en = [i for i, _, _ in min_en]
-    #min_ph = [i for i, _, _ in min_ph]
-
     min_res = [
         list(i) for i in zip(min_en, min_ph) if list(i)]
     min_res_pr = [
         i for i in min_res if 'nan' not in str(i[0])]
-    update_best(min_res_pr)
+
+
     test = False
     if min_res_pr:
         print("minimized error results:", min_res_pr)
         test = True
     ret = list(zip(min_enf, min_phf))
     return ret, test, (fitwin, min_res_pr)
+
+def process_res_to_best(min_en, min_ph):
+    """Process results to append to 'best'
+    known list"""
+    min_enb = [i for i, _, _ in min_en]
+    min_phb = [i for i, _, _ in min_ph]
+    min_resb = [
+        list(i) for i in zip(min_enb, min_phb) if list(i)]
+    min_res_b = [
+        i for i in min_resb if 'nan' not in str(i[0])]
+    update_best(min_res_b)
 
 
 @PROFILE
