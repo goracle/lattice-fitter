@@ -1023,6 +1023,11 @@ def make_hist(fname, nosave=False, allowidx=None):
             median_store, freq_median = get_medians_and_plot_syserr(
                 loop, freqarr, freq, medians, dim, nosave=nosave)
 
+            fit_range_arr = build_sliced_fitrange_list(median_store, freq, exclarr)
+            if wintoosmall(fit_range_arr=fit_range_arr):
+                print("fit window too small")
+                break
+
             # plot median fit result (median energy)
             if not nosave:
                 plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
@@ -1052,6 +1057,22 @@ def make_hist(fname, nosave=False, allowidx=None):
             if not nosave:
                 plt.show()
     return fill_conv_dict(ret, freqarr.shape[-1])
+
+@PROFILE
+def wintoosmall(win=None, fit_range_arr=None):
+    """test if fit window is too small"""
+    ret = False
+    if fit_range_arr is not None:
+        if win is None:
+            win = get_fitwindow(fit_range_arr)
+        else:
+            win2 = get_fitwindow(fit_range_arr)
+            assert win == win2, (win, win2)
+    else:
+        assert win is not None
+    if lenfitw(win) < MIN_FITWIN_LEN:
+        ret = True
+    return ret
 
 @PROFILE
 def fill_conv_dict(todict, dimlen):
@@ -1312,7 +1333,7 @@ def cut_arr(arr, skip_list):
     return np.delete(arr, skip_list, axis=0)
 
 @PROFILE
-def get_fitwindow(fit_range_arr):
+def get_fitwindow(fit_range_arr, prin=False):
     """Get fit window, print result"""
     if get_fitwindow.win == (None, None):
         tadd = get_fitwindow.tadd
@@ -1322,7 +1343,8 @@ def get_fitwindow(fit_range_arr):
         get_fitwindow.win = (tmin_allowed, tmax_allowed)
     ret = get_fitwindow.win
     assert ret[0] is not None, ret
-    print("fit window:", ret)
+    if prin:
+        print("fit window:", ret)
     return ret
 get_fitwindow.tadd = 0
 get_fitwindow.tsub = 0
@@ -1332,7 +1354,7 @@ get_fitwindow.win = (None, None)
 @PROFILE
 def fitrange_cuts(median_err, fit_range_arr, dim):
     """Get fit window, apply cuts"""
-    fitwindow = get_fitwindow(fit_range_arr)
+    fitwindow = get_fitwindow(fit_range_arr, prin=True)
     skip_list = fitrange_skip_list(fit_range_arr, fitwindow, dim)
     median_err = cut_arr(median_err, skip_list)
     fit_range_arr = cut_arr(fit_range_arr, skip_list)
@@ -1573,7 +1595,7 @@ def fitwincuts(fit_range, fitwindow, dim=None):
     ret = False
 
     # skip fit windows of a small length
-    if lenfitw(fitwindow) < LENMIN+1:
+    if wintoosmall(win=fitwindow):
         ret = True
     if not ret:
         # tmin, tmax cut
