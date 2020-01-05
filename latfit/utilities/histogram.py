@@ -1051,6 +1051,9 @@ def make_hist(fname, nosave=False, allowidx=None):
             # plot the systematic error
             median_store, freq_median = get_medians_and_plot_syserr(
                 loop, freqarr, freq, medians, dim, nosave=nosave)
+            if not list(median_store[0]):
+                print("no consistent results to compare, dim:", dim)
+                continue
 
             fit_range_arr = build_sliced_fitrange_list(median_store, freq, exclarr)
             if wintoosmall(fit_range_arr=fit_range_arr):
@@ -1416,12 +1419,19 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     # cut results outside the fit window
     median_err, fit_range_arr = fitrange_cuts(
         median_err, fit_range_arr, dim)
+    nores = False
+    if not list(median_err):
+        nores = True
 
     sort_check(median_err, reverse=REVERSE)
 
     don = {}
 
     for idx, (effmass, pval, emean) in enumerate(median_err):
+
+        if nores:
+            print("no results after cuts")
+            break
 
         midx = None
 
