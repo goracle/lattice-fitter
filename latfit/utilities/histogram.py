@@ -150,6 +150,7 @@ def main(nosave=True):
                         breakadd = not tsub
                         break
                     tot.append(toapp)
+                    consis_tot(tot)
                     tot_pr.append(toapp_pr)
                 else:
                     breakadd = not tsub
@@ -170,6 +171,15 @@ def main(nosave=True):
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, nosave=nosave)
         print("minimized error results:", min_res)
+
+def consis_tot(tot):
+    """Check tot for consistency"""
+    tot = np.array(tot)
+    for opa in range(tot.shape[1]):
+        quick_compare(tot[:, opa, 0], prin=False)
+        quick_compare(tot[:, opa, 1], prin=False)
+    tot = list(tot)
+
 
 @PROFILE
 def print_sep_errors(tot_pr):
@@ -343,6 +353,7 @@ def plot_t_dep(tot, dim, item_num, title, units):
         raise
         #tot_new = []
     if list(tot_new):
+        quick_compare(tot_new, prin=True)
         plot_t_dep_totnew(tot_new, dim, title, units)
     else:
         print("not enough consistent results for a complete set of plots")
@@ -483,7 +494,6 @@ def consistency(item1, item2, prin=False):
 @PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
     """Plot something (not nothing)"""
-    quick_compare(tot_new, prin=True)
     yarr = []
     yerr = []
     xticks_min = []
@@ -705,28 +715,30 @@ def win_nan(fitwin):
 @PROFILE
 def print_compiled_res(min_en, min_ph):
     """Print the compiled results"""
+
+    # total error results to plot
     min_enf = [(str(i), j, k) for i, j, k in min_en]
     min_phf = [(str(i), j, k) for i, j, k in min_ph]
+    ret = list(zip(min_enf, min_phf))
 
+    # perform check
     fitwin = min_en[0][2][1]
     fitwin2 = min_ph[0][2][1]
     if not win_nan(fitwin) and not win_nan(fitwin2):
         assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
-    #if not (ALLOW_ENERGY or ALLOW_PHASE):
+
+    # res(stat)(sys) error string to print
     min_en = [errstr(i, j) for i, j, _ in min_en]
     min_ph = [errstr(i, j) for i, j, _ in min_ph]
-    #else:
     min_res = [
         list(i) for i in zip(min_en, min_ph) if list(i)]
     min_res_pr = [
         i for i in min_res if 'nan' not in str(i[0])]
-
-
     test = False
     if min_res_pr:
         print("minimized error results:", min_res_pr)
         test = True
-    ret = list(zip(min_enf, min_phf))
+
     return ret, test, (fitwin, min_res_pr)
 
 def process_res_to_best(min_en, min_ph):
@@ -1543,7 +1555,8 @@ def printres(effmass1, pval, syserr, fit_range, maxrange):
         print("val(err); syserr; pvalue; ind diff; median difference;",
               " avg difference; fit range; disagreeing fit range")
         printres.prt = True
-    print(effmass1, syserr, pval, fit_range, maxrange)
+    syst = trunc(syserr)
+    print(effmass1, syst, pval, fit_range, maxrange)
 printres.prt = False
 
 @PROFILE
