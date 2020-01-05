@@ -41,13 +41,20 @@ def fill_best(cbest):
         aph = []
         aen = []
         for j in i:
-            energy = gvar.gvar(j[0])
-            phase = gvar.gvar(j[1])
+            energy = round_gvar(j[0])
+            phase = round_gvar(j[1])
             aen.append(energy)
             aph.append(phase)
         rete.append(aen)
         retph.append(aph)
     return rete, retph
+
+def round_gvar(item):
+    """do not store extra error digits in a gvar item"""
+    item = gvar.gvar(item)
+    item = str(item)
+    item = gvar.gvar(item)
+    return item
 
 ALLOW_ENERGY, ALLOW_PHASE = fill_best(CBEST)
 
@@ -449,24 +456,25 @@ def generate_continuous_windows(maxtmax, minsep=LENMIN+1):
     return ret
 
 @PROFILE
-def quick_compare(tot_new):
+def quick_compare(tot_new, prin=False):
     """Check final results for consistency"""
     for item, _, fitwin in tot_new:
         item = gvar.gvar(item)
         for item2, _, fitwin2 in tot_new:
             item2 = gvar.gvar(item2)
-            assert consistency(item, item2), (
+            assert consistency(item, item2, prin=prin), (
                 item, item2, fitwin, fitwin2)
 
 @PROFILE
-def consistency(item1, item2):
+def consistency(item1, item2, prin=False):
     """Check two gvar items for consistency"""
     diff = np.abs(item1.val-item2.val)
     dev = max(item1.sdev, item2.sdev)
     sig = statlvl(gvar.gvar(diff, dev))
     ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
     if not ret:
-        print("sig inconsis. =", sig)
+        if prin:
+            print("sig inconsis. =", sig)
         assert sig < 10, (sig, "check the best known list for",
                           "compatibility with current set",
                           "of results being analyzed")
@@ -475,7 +483,7 @@ def consistency(item1, item2):
 @PROFILE
 def plot_t_dep_totnew(tot_new, dim, title, units):
     """Plot something (not nothing)"""
-    quick_compare(tot_new)
+    quick_compare(tot_new, prin=True)
     yarr = []
     yerr = []
     xticks_min = []
@@ -1192,7 +1200,6 @@ def match_arrs(arr, new):
         new.extend(ext)
     return new
 
-
 def compare_bests(new, curr):
     """Compare new best to current best to see if an update is needed"""
     rete = []
@@ -1312,7 +1319,7 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     # best = gvar.gvar(best)
     ret = False
     if chk_consis:
-        ret = not consistency(best, res)
+        ret = not consistency(best, res, prin=False)
     if cutstat:
         devc = best.sdev if not np.isnan(best.sdev) else np.inf
         try:
