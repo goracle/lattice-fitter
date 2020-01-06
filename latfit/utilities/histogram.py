@@ -2,6 +2,7 @@
 """Make histograms from fit results over fit ranges"""
 import sys
 import re
+import subprocess
 import ast
 import pickle
 import numpy as np
@@ -165,6 +166,7 @@ def main(nosave=True):
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
             print(i)
+        subprocess.check_output(['notify-send', '-u', 'critical', '-t', '30', 'hist: tloop complete'])
         print_sep_errors(tot_pr)
         print_tot(tot)
     else:
@@ -755,7 +757,7 @@ def process_res_to_best(min_en, min_ph):
 def trunc(val):
     """Truncate the precision of a number
     using gvar"""
-    if isinstance(val, int):
+    if isinstance(val, int) or 'e' in str(val):
         ret = val
     else:
         ret = float(str(gvar.gvar(val))[:-3])
@@ -1338,7 +1340,9 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     if cutstat:
         devc = best.sdev if not np.isnan(best.sdev) else np.inf
         try:
-            ret = ret or devc < round_wrt(devc, res.sdev)
+            # make cut not aggressive since it's a speed trick
+            devd = min(round_wrt(devc, res.sdev), res.sdev)
+            ret = ret or devc < devd
         except ValueError:
             print('ret', ret)
             print('best', best)
