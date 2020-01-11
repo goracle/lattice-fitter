@@ -12,42 +12,23 @@ from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 
-CBEST = [['0.21092(43)', '-0.27(12)'],
-         ['0.45692(33)', '-13.37(39)'],
-         ['0.61587(63)', '-22.92(65)'],
-         ['0.7266(12)', '-30.6(2.1)']]
-CBEST = [[['0.21080(44)', '-0.26(12)'],
-          ['0.45676(52)', '-13.18(60)'],
-          ['0.6147(16)', '-21.7(1.6)'],
-          ['0.7257(50)', '-28.8(9.3)']]]
+CBEST = []
 
-# 5
-CBEST = [
-    [['0.21080(44)', '-0.26(12)'],
-     ['0.45676(52)', '-13.18(60)'],
-     ['0.6147(16)', '-21.7(1.6)'],
-     ['0.7257(50)', '-28.8(9.3)']],
-    [['0.21088(44)', '-0.30(12)'],
-     ['0.45641(52)', '-13.18(60)'],
-     ['0.6132(15)', '-20.1(1.5)'],
-     ['0.7246(30)', '-26.8(5.7)']],
-    [['0.21088(44)', '-0.30(12)'],
-     ['0.45667(44)', '-13.08(51)'],
-     ['0.61418(98)', '-21.5(1.0)'],
-     ['0.7224(21)', '-23.8(4.1)']]
-]
-
-CBEST = [
-    [['0.33019(35)', '-3.08(36)'], ['0.5341(14)', '-17.1(1.6)'], ['0.6614(76)', '-15(12)']],
-    [['0.33035(34)', '-3.24(35)'], ['0.5333(11)', '-16.1(1.3)'], ['0.6641(58)', '-19.6(9.3)']],
-    [['0.33035(34)', '-3.30(34)'], ['0.53320(81)', '-15.99(97)'], ['0.6648(32)', '-20.7(5.1)']],
-    [['0.33035(34)', '-3.30(35)'], ['0.53352(57)', '-16.37(68)'], ['0.6641(21)', '-19.5(3.4)']],
-    [['0.33055(33)', '-3.45(34)'], ['0.53327(46)', '-16.08(54)'], ['0.6661(15)', '-22.7(2.3)']],
-    [['0.33053(33)', '-3.43(34)'], ['0.53349(45)', '-16.34(54)'], ['0.6654(13)', '-21.6(2.1)']],
-    [['0.33055(32)', '-3.45(33)'], ['0.53338(36)', '-16.20(43)'], ['0.66540(78)', '-22.6(1.3)']],
-    [['0.33055(32)', '-3.45(33)'], ['0.53327(32)', '-16.04(39)'], ['0.66618(57)', '-22.89(91)']],
-]
-
+def fill_best(cbest):
+    """Fill the ALLOW buffers with current best known result"""
+    rete = []
+    retph = []
+    for i in cbest:
+        aph = []
+        aen = []
+        for j in i:
+            energy = round_gvar(j[0])
+            phase = round_gvar(j[1])
+            aen.append(energy)
+            aph.append(phase)
+        rete.append(aen)
+        retph.append(aph)
+    return rete, retph
 
 ALLOW_ENERGY, ALLOW_PHASE = fill_best(CBEST)
 
@@ -451,22 +432,6 @@ def find_best():
 find_best.sel = None
 find_best.allow_phase = ALLOW_PHASE
 find_best.allow_energy = ALLOW_ENERGY
-
-def fill_best(cbest):
-    """Fill the ALLOW buffers with current best known result"""
-    rete = []
-    retph = []
-    for i in cbest:
-        aph = []
-        aen = []
-        for j in i:
-            energy = round_gvar(j[0])
-            phase = round_gvar(j[1])
-            aen.append(energy)
-            aph.append(phase)
-        rete.append(aen)
-        retph.append(aph)
-    return rete, retph
 
 
 @PROFILE

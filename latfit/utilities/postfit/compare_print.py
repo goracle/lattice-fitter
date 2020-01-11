@@ -310,8 +310,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     # pvalmin = None
 
     # cut results outside the fit window
-    median_err, fit_range_arr = fitrange_cuts(
-        median_err, fit_range_arr, dim)
+    median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr)
     nores = False
     if not list(median_err):
         nores = True
