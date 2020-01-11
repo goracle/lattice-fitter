@@ -31,8 +31,41 @@ SYS_ALLOWANCE = None
 #SYS_ALLOWANCE = [['0.44042(28)', '-3.04(21)'], ['0.70945(32)',
 # '-14.57(28)'], ['0.8857(39)', '-19.7(4.7)']]
 
-CBEST = [[['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'],
-          ['0.6147(16)', '-21.7(1.6)'], ['0.7257(50)', '-28.8(9.3)']]]
+CBEST = [['0.21092(43)', '-0.27(12)'],
+         ['0.45692(33)', '-13.37(39)'],
+         ['0.61587(63)', '-22.92(65)'],
+         ['0.7266(12)', '-30.6(2.1)']]
+CBEST = [[['0.21080(44)', '-0.26(12)'],
+          ['0.45676(52)', '-13.18(60)'],
+          ['0.6147(16)', '-21.7(1.6)'],
+          ['0.7257(50)', '-28.8(9.3)']]]
+
+# 5
+CBEST = [
+    [['0.21080(44)', '-0.26(12)'],
+     ['0.45676(52)', '-13.18(60)'],
+     ['0.6147(16)', '-21.7(1.6)'],
+     ['0.7257(50)', '-28.8(9.3)']],
+    [['0.21088(44)', '-0.30(12)'],
+     ['0.45641(52)', '-13.18(60)'],
+     ['0.6132(15)', '-20.1(1.5)'],
+     ['0.7246(30)', '-26.8(5.7)']],
+    [['0.21088(44)', '-0.30(12)'],
+     ['0.45667(44)', '-13.08(51)'],
+     ['0.61418(98)', '-21.5(1.0)'],
+     ['0.7224(21)', '-23.8(4.1)']]
+]
+
+CBEST = [
+    [['0.33019(35)', '-3.08(36)'], ['0.5341(14)', '-17.1(1.6)'], ['0.6614(76)', '-15(12)']],
+    [['0.33035(34)', '-3.24(35)'], ['0.5333(11)', '-16.1(1.3)'], ['0.6641(58)', '-19.6(9.3)']],
+    [['0.33035(34)', '-3.30(34)'], ['0.53320(81)', '-15.99(97)'], ['0.6648(32)', '-20.7(5.1)']],
+    [['0.33035(34)', '-3.30(35)'], ['0.53352(57)', '-16.37(68)'], ['0.6641(21)', '-19.5(3.4)']],
+    [['0.33055(33)', '-3.45(34)'], ['0.53327(46)', '-16.08(54)'], ['0.6661(15)', '-22.7(2.3)']],
+    [['0.33053(33)', '-3.43(34)'], ['0.53349(45)', '-16.34(54)'], ['0.6654(13)', '-21.6(2.1)']],
+    [['0.33055(32)', '-3.45(33)'], ['0.53338(36)', '-16.20(43)'], ['0.66540(78)', '-22.6(1.3)']],
+    [['0.33055(32)', '-3.45(33)'], ['0.53327(32)', '-16.04(39)'], ['0.66618(57)', '-22.89(91)']],
+]
 
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
@@ -127,10 +160,11 @@ def main(nosave=True):
 
         # loop over fit windows
         while tadd < TDIS_MAX:
-            if breakadd:
-                print("stopping loop on tadd, tsub:", tadd, tsub)
-                break
             tsub = 0
+            if breakadd:
+                print("stopping loop on tadd, tsub:",
+                      tadd, tsub)
+                break
             while np.abs(tsub) < TDIS_MAX:
                 select_ph_en('energy')
                 set_tadd_tsub(tadd, tsub)
@@ -166,7 +200,9 @@ def main(nosave=True):
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
             print(i)
-        subprocess.check_output(['notify-send', '-u', 'critical', '-t', '30', 'hist: tloop complete'])
+        subprocess.check_output(['notify-send', '-u',
+                                 'critical', '-t', '30',
+                                 'hist: tloop complete'])
         print_sep_errors(tot_pr)
         print_tot(tot)
     else:
@@ -599,6 +635,7 @@ def round_to_n(val, places):
 
 # https://stackoverflow.com/questions/8593355/in-python-how-do-i-count-the-trailing-zeros-in-a-string-or-integer
 def trailing_zeros(longint):
+    """Get number of trailing zeros in a number"""
     manipulandum = str(longint)
     return len(manipulandum)-len(manipulandum.rstrip('0'))
 
@@ -926,7 +963,8 @@ def get_raw_arrays(fname):
     return freqarr, exclarr, pdat_freqarr, errdat, avg
 
 @PROFILE
-def get_medians_and_plot_syserr(loop, freqarr, freq, medians, dim, nosave=False):
+def get_medians_and_plot_syserr(loop, freqarr, freq,
+                                medians, dim, nosave=False):
     """Get medians of various quantities (over fit ranges)
     loop:
     (freq, pdat_freqarr, errlooparr, exclarr)
@@ -1079,8 +1117,7 @@ def make_hist(fname, nosave=False, allowidx=None):
                 print(find_best.sel,
                       "min not found for dim:", dim)
                 continue
-            else:
-                ret[dim] = (themin, sys_err, fitr)
+            ret[dim] = (themin, sys_err, fitr)
 
             if not nosave:
                 print("saving plot as filename:", save_str)
@@ -1218,15 +1255,12 @@ def match_arrs(arr, new):
     return new
 
 def compare_bests(new, curr):
-    """Compare new best to current best to see if an update is needed"""
-    rete = []
-    retph = []
+    """Compare new best to current best
+    to see if an update is needed"""
     ret = False
     for ibest in curr:
         new = match_arrs(ibest, new)
         assert len(new) == len(ibest), (new, ibest)
-        aph = []
-        aen = []
         for jit, kit in zip(ibest, new):
             if 'inf' in str(kit) or 'inf' in str(jit):
                 continue
@@ -1250,16 +1284,13 @@ def prune_cbest(cbest=None):
     elif not cbest:
         cnew = cbest
     else:
-        diml = len(cbest[0])
+        # diml = len(cbest[0])
         cnew = None
         for ibest in cbest:
             if cnew is None:
                 cnew = ibest
                 continue
-            else:
-                assert len(cnew) == len(ibest)
-            aph = []
-            aen = []
+            assert len(cnew) == len(ibest)
             for idx, (jit, kit) in enumerate(zip(ibest, cnew)):
                 enerr = gvar.gvar(jit[0]).sdev
                 pherr = gvar.gvar(jit[1]).sdev
@@ -1352,12 +1383,13 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
 
 @PROFILE
 def update_effmass(effmass, errterm):
-    """Replace the stat error with the total error in the effmass array"""
+    """Replace the stat error with the
+    total error in the effmass array"""
     ret = [gvar.gvar(i.val, errterm) for i in effmass]
     return ret
 
 @PROFILE
-def fitrange_skip_list(fit_range_arr, fitwindow, dim):
+def fitrange_skip_list(fit_range_arr, fitwindow):
     """List of indices to skip"""
     # fit window cut
     ret = set()
@@ -1396,14 +1428,14 @@ get_fitwindow.win = (None, None)
 
 
 @PROFILE
-def fitrange_cuts(median_err, fit_range_arr, dim):
+def fitrange_cuts(median_err, fit_range_arr):
     """Get fit window, apply cuts"""
     fitwindow = get_fitwindow(fit_range_arr, prin=True)
-    skip_list = fitrange_skip_list(fit_range_arr, fitwindow, dim)
+    skip_list = fitrange_skip_list(fit_range_arr, fitwindow)
     median_err = cut_arr(median_err, skip_list)
     fit_range_arr = cut_arr(fit_range_arr, skip_list)
     return median_err, fit_range_arr
-        
+
 
 @PROFILE
 def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
@@ -1429,15 +1461,11 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
 
     sort_check(median_err, reverse=REVERSE)
 
-    don = {}
-
     for idx, (effmass, pval, emean) in enumerate(median_err):
 
         if nores:
             print("no results after cuts")
             break
-
-        midx = None
 
         sdev = effmass[0].sdev
         try:
@@ -1468,21 +1496,15 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         avg_diff = np.array(
             [gvar.gvar(i.val, max(sdev, avg_dim.sdev)) for i in avg_diff])
 
-        # compare this result to all other results, up to
-        # NOTE:
-        # midx is because we only want to do the comparisons once.
+        # compare this result to all other results
         if list(np.array(median_err)[:, 0]):
-            if (idx, midx) not in don and (midx, idx) not in don:
-                ind_diff, sig, errstr1, syserr, midx, maxrange = diff_ind(
-                    (effmass, emean), np.array(median_err)[:, 0::2],
-                    fit_range_arr, dim)
-                don[(idx, midx)] = (ind_diff, sig, errstr1, syserr, midx, maxrange)
-                don[(midx, idx)] = (ind_diff, sig, errstr1, syserr, idx, maxrange)
-            else:
-                ind_diff, sig, errstr1, syserr, midx, maxrange = don[(idx, midx)]
+            ind_diff, sig, errstr1, syserr, maxrange =\
+                diff_ind((effmass, emean), np.array(
+                    median_err)[:, 0::2], fit_range_arr)
         else:
-            ind_diff, sig, errstr1, syserr, midx, maxrange = (
-                gvar.gvar(0, 0), 0, '', 0, None, fit_range)
+            ind_diff, sig, errstr1, syserr, maxrange = (
+                gvar.gvar(np.nan, np.nan),
+                np.nan, '', np.nan, fit_range)
         assert ind_diff.sdev >= syserr
 
         errterm = np.sqrt(sdev**2+syserr**2)
@@ -1728,7 +1750,7 @@ def maxarr(arr1, arr2):
     return ret
 
 @PROFILE
-def diff_ind(res, arr, fit_range_arr, dim):
+def diff_ind(res, arr, fit_range_arr):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -1737,12 +1759,11 @@ def diff_ind(res, arr, fit_range_arr, dim):
     maxrange = []
     maxerr = 0
     errstr1 = ''
-    midx = None
     res, emean = res
     for i, gres in enumerate(arr):
 
         gres, gemean = gres
-        gsdev = gres[0].sdev
+        # gsdev = gres[0].sdev
 
         # apply cuts
         #if allow_cut(gvar.gvar(gemean, gsdev),
@@ -1761,7 +1782,6 @@ def diff_ind(res, arr, fit_range_arr, dim):
             maxdiff = diff
             maxerr = np.sqrt(syserr**2+err**2)
             maxrange = fit_range_arr[i]
-            midx = i
             #mean = avg_gvar(gres)
             sdev = gres[0].sdev
             if len(fit_range_arr[i]) > 1:
@@ -1771,7 +1791,7 @@ def diff_ind(res, arr, fit_range_arr, dim):
                 errstr1 = float(fit_range_arr[i][0])
     ret = gvar.gvar(maxdiff, maxerr)
     sig = statlvl(ret)
-    return ret, sig, errstr1, maxsyserr, midx, maxrange
+    return ret, sig, errstr1, maxsyserr, maxrange
 
 @PROFILE
 def jkerr(arr):
