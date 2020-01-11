@@ -5,7 +5,7 @@ import sys
 import pickle
 import numpy as np
 import latfit.utilities.read_file as rf
-import latfit.utilities.histogram as hist
+import latfit.utilities.postfit.fitwin as hist
 
 def lenfit(fname):
     """Find length of fit"""
