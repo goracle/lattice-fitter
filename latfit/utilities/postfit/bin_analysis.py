@@ -16,6 +16,8 @@ CBEST = [
 
 ]
 
+print("CBEST =", CBEST)
+
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
     rete = []
