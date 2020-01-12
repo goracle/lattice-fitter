@@ -18,6 +18,13 @@ CBEST = [
 
 print("CBEST =", CBEST)
 
+def round_gvar(item):
+    """do not store extra error digits in a gvar item"""
+    item = gvar.gvar(item)
+    item = str(item)
+    item = gvar.gvar(item)
+    return item
+
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
     rete = []
@@ -457,13 +464,6 @@ def match_arrs(arr, new):
         ext = arr[-1*dlen:]
         new.extend(ext)
     return new
-
-def round_gvar(item):
-    """do not store extra error digits in a gvar item"""
-    item = gvar.gvar(item)
-    item = str(item)
-    item = gvar.gvar(item)
-    return item
 
 @PROFILE
 def select_ph_en(sel):
