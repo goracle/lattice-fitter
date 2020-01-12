@@ -80,10 +80,6 @@ def main(nosave=True):
         # loop over fit windows
         while np.abs(tsub) < TDIS_MAX:
             tadd = 0
-            if breakadd:
-                print("stopping loop on tadd, tsub:",
-                      tadd, tsub)
-                break
             while tadd < TDIS_MAX:
                 select_ph_en('energy')
                 set_tadd_tsub(tadd, tsub)
@@ -115,6 +111,10 @@ def main(nosave=True):
                             print("missing phases")
                     break
                 tadd += 1
+            if breakadd:
+                print("stopping loop on tadd, tsub:",
+                      tadd, tsub)
+                break
             tsub -= 1
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:

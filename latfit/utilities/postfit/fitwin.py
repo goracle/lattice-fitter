@@ -27,6 +27,7 @@ def set_tadd_tsub(tadd, tsub):
     reset_window()
     get_fitwindow.tadd = tadd
     get_fitwindow.tsub = tsub
+    print("tadd tsub:", tadd, tsub)
 
 
 
