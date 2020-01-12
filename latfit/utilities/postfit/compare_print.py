@@ -41,7 +41,7 @@ def round_wrt(err1, err2):
     return ret
 
 @PROFILE
-def diff_ind(res, arr, fit_range_arr):
+def diff_ind(res, fit_range, arr, fit_range_arr):
     """Find the maximum difference between fit range result i
     and all the other fit ranges
     """
@@ -55,6 +55,9 @@ def diff_ind(res, arr, fit_range_arr):
 
         gres, gemean = gres
         # gsdev = gres[0].sdev
+        gfit_range = fit_range_arr[i]
+        key = str(fit_range)+'@'+str(gfit_range)
+        key2 = str(gfit_range)+'@'+str(fit_range)
 
         # apply cuts
         #if allow_cut(gvar.gvar(gemean, gsdev),
@@ -62,7 +65,14 @@ def diff_ind(res, arr, fit_range_arr):
         #continue
         # cuts are passed, calculate the discrepancy
 
-        diff, err, syserr = discrep(res, gres, mean_diff=emean-gemean)
+        # make sure to clear the cache
+        if key not in discrep.cache:
+            diff, err, syserr = discrep(res, gres, mean_diff=emean-gemean)
+            discrep.cache[key] = (diff, err, syserr)
+            discrep.cache[key2] = (diff, err, syserr)
+        else:
+            diff, err, syserr = discrep.cache[key]
+
         maxsyserr = max(syserr, maxsyserr)
         #maxdiff = maxarr(diff, maxdiff)
         #if np.all(diff == maxdiff):
@@ -72,7 +82,7 @@ def diff_ind(res, arr, fit_range_arr):
         if syserr == maxsyserr:
             maxdiff = diff
             maxerr = np.sqrt(syserr**2+err**2)
-            maxrange = fit_range_arr[i]
+            maxrange = gfit_range
             #mean = avg_gvar(gres)
             sdev = gres[0].sdev
             if len(fit_range_arr[i]) > 1:
@@ -112,6 +122,12 @@ def discrep(res, gres, mean_diff=None):
     #sig = statlvl(gvar.gvar(em.acmean(diff), err))
     #maxsig = max(sig, maxsigcurr)
     return mean, err, sys_err
+discrep.cache = {}
+
+def clear_diff_cache():
+    """Clear the diff cache"""
+    print("clearing the pair difference cache")
+    discrep.cache = {}
 
 @PROFILE
 def statlvl(diff):
@@ -311,11 +327,13 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
 
     # cut results outside the fit window
     median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr)
+    print("final cut result len =", len(median_err))
     nores = False
     if not list(median_err):
         nores = True
 
     sort_check(median_err, reverse=REVERSE)
+    clear_diff_cache()
 
     for idx, (effmass, pval, emean) in enumerate(median_err):
 
@@ -357,7 +375,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
         # compare this result to all other results
         if list(np.array(median_err)[:, 0]):
             ind_diff, sig, errstr1, syserr, maxrange =\
-                diff_ind((effmass, emean), np.array(
+                diff_ind((effmass, emean), fit_range, np.array(
                     median_err)[:, 0::2], fit_range_arr)
         else:
             ind_diff, sig, errstr1, syserr, maxrange = (

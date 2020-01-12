@@ -71,20 +71,20 @@ def main(nosave=True):
         tot = []
         tot_pr = []
         success_tadd_tsub = []
-        tadd = 0
+        tsub = 0
         breakadd = False
 
         # get file names
         energyfn, phasefn = enph_filenames(fname)
 
         # loop over fit windows
-        while tadd < TDIS_MAX:
-            tsub = 0
+        while np.abs(tsub) < TDIS_MAX:
+            tadd = 0
             if breakadd:
                 print("stopping loop on tadd, tsub:",
                       tadd, tsub)
                 break
-            while np.abs(tsub) < TDIS_MAX:
+            while tadd < TDIS_MAX:
                 select_ph_en('energy')
                 set_tadd_tsub(tadd, tsub)
                 min_en = make_hist(
@@ -101,21 +101,21 @@ def main(nosave=True):
                     if test:
                         success_tadd_tsub.append((tadd, tsub))
                     else:
-                        breakadd = not tsub
+                        breakadd = not tadd
                         break
                     tot.append(toapp)
                     consis_tot(tot)
                     tot_pr.append(toapp_pr)
                 else:
-                    breakadd = not tsub
+                    breakadd = not tadd
                     if breakadd:
                         if not min_en:
                             print("missing energies")
                         if not min_ph:
                             print("missing phases")
                     break
-                tsub -= 1
-            tadd += 1
+                tadd += 1
+            tsub -= 1
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
             print(i)

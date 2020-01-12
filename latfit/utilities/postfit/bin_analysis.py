@@ -12,7 +12,9 @@ from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 
-CBEST = []
+CBEST = [
+
+]
 
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
