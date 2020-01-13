@@ -427,15 +427,15 @@ DIMSELECT = None
 
 # p0, 32c, I=2
 INCLUDE = [[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]
-DIMSELECT = 0
+DIMSELECT = 0 # t-t0=5 dt3, both
 FIT_EXCL = invinc(INCLUDE, (14, 19))
 
 INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
-DIMSELECT = 2
+DIMSELECT = 2 # t-t0=1 dt1, both
 FIT_EXCL = invinc(INCLUDE, (6, 13))
 
 INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]
-DIMSELECT = 1
+DIMSELECT = 1 # t-t0=1 dt1, both
 FIT_EXCL = invinc(INCLUDE, (6, 11))
 
 INCLUDE = [[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
