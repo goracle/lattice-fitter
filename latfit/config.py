@@ -428,24 +428,28 @@ DIMSELECT = None
 # p0, 32c, I=2
 INCLUDE = [[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]
 DIMSELECT = 0 # t-t0=5 dt3, both
+PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (14, 19))
 
-INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
-DIMSELECT = 2 # t-t0=1 dt1, both
+INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0], [6.0, 8.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
+DIMSELECT = 3 # t-t0=1 dt1, energy
+PARAM_OF_INTEREST = 'energy'
+FIT_EXCL = invinc(INCLUDE, (6, 10))
+
+INCLUDE = [[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
+DIMSELECT = 3 # t-t0=1 dt1, phase
+PARAM_OF_INTEREST = 'phase shift'
 FIT_EXCL = invinc(INCLUDE, (6, 13))
 
 INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]
 DIMSELECT = 1 # t-t0=1 dt1, both
+PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 11))
 
-INCLUDE = [[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
-DIMSELECT = 3 # t-t0=1 dt1, phase
+INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
+DIMSELECT = 2 # t-t0=1 dt1, both
+PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 13))
-
-INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0], [6.0, 8.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
-DIMSELECT = 3 # t-t0=1 dt1, energy
-FIT_EXCL = invinc(INCLUDE, (6, 10))
-
 
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
@@ -585,7 +589,8 @@ PICKLE = None
 # p_cm = 001, no need to modify
 PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+", "
 
-def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION):
+def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION,
+                 dsel=DIMSELECT, pram=PARAM_OF_INTEREST):
     """Get plot title prefix"""
     if GEVP:
         if SIGMA and ISOSPIN == 0:
@@ -627,6 +632,13 @@ def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION):
             str(dtm)+' '
     elif True in ADD_CONST_VEC:
         ret = ret + 'eigdt1 '
+    if dsel is not None:
+        ret = ret + 'dim' + str(dsel) + ' '
+    ret = ret + 'pram '
+    if pram is not None:
+        ret = ret + str(pram) + ' '
+    else:
+        ret = ret + 'all '
     if HALF != 'full':
         ret = ret + HALF + ' '
     return ret
