@@ -431,6 +431,11 @@ DIMSELECT = 0 # t-t0=5 dt3, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (14, 19))
 
+INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
+DIMSELECT = 2 # t-t0=1 dt1, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (6, 13))
+
 INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0], [6.0, 8.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
 DIMSELECT = 3 # t-t0=1 dt1, energy
 PARAM_OF_INTEREST = 'energy'
@@ -445,11 +450,6 @@ INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], 
 DIMSELECT = 1 # t-t0=1 dt1, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 11))
-
-INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
-DIMSELECT = 2 # t-t0=1 dt1, both
-PARAM_OF_INTEREST = None
-FIT_EXCL = invinc(INCLUDE, (6, 13))
 
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
@@ -634,7 +634,6 @@ def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION,
         ret = ret + 'eigdt1 '
     if dsel is not None:
         ret = ret + 'dim' + str(dsel) + ' '
-    ret = ret + 'pram '
     if pram is not None:
         ret = ret + str(pram) + ' '
     else:
