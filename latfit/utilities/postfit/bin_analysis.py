@@ -41,15 +41,16 @@ CBEST = [
     [['0.40458(35)', '-5.12(58)'], ['0.44789(24)', '-7.62(58)'], ['0.58218(46)', '-14.7(2.8)'], ['0.60187(55)', '-18.6(1.1)']]
 
 ]
-LIKELY_OVERFIT = [(9, 13), (10, 14)]
+IGNORABLE_WINDOWS = [(9, 13), (10, 14)]
 
 CBEST = []
-LIKELY_OVERFIT = []
+IGNORABLE_WINDOWS = []
 
 # don't count these fit windows for continuity check
 # they are likely overfit,
+# (in the case of an overfit cut : a demand that chi^2/dof >= 1)
+# or failing for another acceptable/known reason
 # so the data will necessarily be missing
-# in the case of an overfit cut (a demand that chi^2/dof >= 1)
 
 
 def augment_overfit(wins):
@@ -70,9 +71,10 @@ def augment_overfit(wins):
 
 # the assumption here is that all sub-windows in these windows
 # have also been checked and are also (likely) overfit
-LIKELY_OVERFIT = augment_overfit(LIKELY_OVERFIT)
+IGNORABLE_WINDOWS = augment_overfit(IGNORABLE_WINDOWS)
 
 print("CBEST =", CBEST)
+print("IGNORABLE_WINDOWS =", IGNORABLE_WINDOWS)
 
 def round_gvar(item):
     """do not store extra error digits in a gvar item"""
@@ -131,7 +133,7 @@ def continuous_tmax(tot_new):
     print("cwin=", cwin)
     for tmin in maxtmax:
         check_set = set()
-        check_set = check_set.union(set(LIKELY_OVERFIT))
+        check_set = check_set.union(set(IGNORABLE_WINDOWS))
         for _, _, fitwin in tot_new:
             fitwin = fitwin[1]
             if fitwin[0] == tmin:
