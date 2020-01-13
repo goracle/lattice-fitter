@@ -12,6 +12,8 @@ def lenfit(fname):
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
     
+FIT_SELECT = '[[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]'
+
 def main():
     """main"""
     ret = []
@@ -25,6 +27,8 @@ def main():
     earlylist = []
     rescount = 0
     useset = set()
+    found_count = 0
+    found = 0
     for i in sys.argv[1:]:
         if '.cp' in i:
             continue
@@ -60,6 +64,12 @@ def main():
                 res.extend(add[2])
             else:
                 continue
+            if FIT_SELECT in str(newfrs):
+                found = i
+                found_count += 1
+                print("*****")
+                print('file found:', i, "count:", found_count)
+                print("*****")
             excl_arr.extend(newfrs)
             assert len(res) == len(excl_arr)
         else:
@@ -103,6 +113,7 @@ def main():
         print('mv', i, 'tocut/')
     if '.p.p' not in outfn:
         pickle.dump(ret, open(outfn, "wb"))
+    print("found:", found, "found count:", found_count)
 
 def prune_earlylist(earlylist):
     """Find set of file names with the earliest time"""

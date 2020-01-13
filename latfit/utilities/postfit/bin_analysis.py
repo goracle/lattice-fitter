@@ -26,15 +26,6 @@ CBEST = [
 
 ]
 
-# p0 32c
-
-CBEST = [
-    [['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'], ['0.6179(23)', '-25.0(2.4)'], ['0.7285(63)', '-34(11)']],
-    [['0.21080(44)', '-0.30(12)'], ['0.45641(52)', '-13.18(60)'], ['0.6132(15)', '-20.1(1.5)'], ['0.7246(30)', '-26.8(5.7)']],
-    [['0.21080(44)', '-0.30(12)'], ['0.45667(44)', '-13.08(51)'], ['0.61418(98)', '-21.5(1.0)'], ['0.7224(21)', '-23.8(4.1)']]
-
-]
-
 # p11 32c (do not use)
 CBEST = [
    # [['0.40458(35)', '-5.12(58)'], ['0.44803(26)', '-7.95(62)'], ['0.58217(50)', '-14.7(3.0)'], ['0.60224(60)', '-19.7(1.2)']]
@@ -43,8 +34,20 @@ CBEST = [
 ]
 IGNORABLE_WINDOWS = [(9, 13), (10, 14)]
 
+# default
 CBEST = []
 IGNORABLE_WINDOWS = []
+
+# p0 32c
+
+CBEST = [
+    [['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'], ['0.6179(23)', '-25.0(2.4)'], ['0.7285(63)', '-34(11)']],
+    [['0.21080(44)', '-0.30(12)'], ['0.45641(52)', '-13.18(60)'], ['0.6132(15)', '-20.1(1.5)'], ['0.7246(30)', '-26.8(5.7)']],
+    [['0.21080(44)', '-0.30(12)'], ['0.45667(44)', '-13.08(51)'], ['0.61418(98)', '-21.5(1.0)'], ['0.7224(21)', '-23.8(4.1)']]
+
+]
+IGNORABLE_WINDOWS = []
+
 
 # don't count these fit windows for continuity check
 # they are likely overfit,
@@ -177,6 +180,7 @@ def drop_extra_info(ilist):
         fitr1 = i[0][2][0]
         fitr2 = i[1][2][0]
         if isinstance(fitr1, int) or isinstance(fitr2, int):
+            fit_range = None
             break
         assert hasattr(fitr2, '__iter__'), (
             fitr1, fitr2, i)
@@ -185,8 +189,10 @@ def drop_extra_info(ilist):
                 fit_range = fitr1
             else:
                 if not fit_range_equality(fitr1, fit_range):
+                    fit_range = None
                     break
         else:
+            fit_range = None
             break
     # printable results
     ret = []
@@ -543,6 +549,8 @@ def fit_range_equality(fitr1, fitr2):
         for i, j in zip(fitr1, fitr2):
             if list(i) != list(j):
                 ret = False
+    else:
+        ret = fitr1 == [[]] and fitr2 == [[]]
     return ret
 
 def consis_tot(tot):
