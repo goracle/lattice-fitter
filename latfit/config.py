@@ -409,17 +409,46 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 
+def invinc(inc, win):
+    """Get excluded points from included and fit window"""
+    ret = []
+    swin = set(list(np.arange(win[0],win[1]+1)))
+    for i in inc:
+        toapp = swin-set(i)
+        toapp = sorted(list(toapp))
+        ret.append(toapp)
+    return ret
+
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+DIMSELECT = None
+
+# in order to get final effective mass plots
+
+# p0, 32c, I=2
+INCLUDE = [[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]
+DIMSELECT = 0
+FIT_EXCL = invinc(INCLUDE, (14, 19))
+
+INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]
+DIMSELECT = 1
+FIT_EXCL = invinc(INCLUDE, (6, 11))
+
+INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
+DIMSELECT = 2
+FIT_EXCL = invinc(INCLUDE, (6, 13))
+
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
+BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 assert len(FIT_EXCL) == DIM or not GEVP
 
 # if true, do not loop over fit ranges.
-NOLOOP = True
 NOLOOP = False
+NOLOOP = True
+TLOOP = False if NOLOOP else TLOOP
 
 # Verbose mode
-VERBOSE = True
 VERBOSE = False
+VERBOSE = True
 VERBOSE = True if NOLOOP or not FIT else VERBOSE
 errc.PRIN = VERBOSE
 
