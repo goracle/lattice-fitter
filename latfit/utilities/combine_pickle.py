@@ -12,7 +12,14 @@ def lenfit(fname):
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
     
-FIT_SELECT = '[[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]'
+# p0, 32c, I2
+
+
+FIT_SELECT = '[[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]' # 0
+
+FIT_SELECT = '[[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]' # 1
+
+FIT_SELECT = '[[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]' # 2
 
 def main():
     """main"""
@@ -28,7 +35,7 @@ def main():
     rescount = 0
     useset = set()
     found_count = 0
-    found = 0
+    found = []
     for i in sys.argv[1:]:
         if '.cp' in i:
             continue
@@ -65,7 +72,7 @@ def main():
             else:
                 continue
             if FIT_SELECT in str(newfrs):
-                found = i
+                found.append(i)
                 found_count += 1
                 print("*****")
                 print('file found:', i, "count:", found_count)
@@ -113,7 +120,8 @@ def main():
         print('mv', i, 'tocut/')
     if '.p.p' not in outfn:
         pickle.dump(ret, open(outfn, "wb"))
-    print("found:", found, "found count:", found_count)
+    for i, item in enumerate(found):
+        print("found file", i, ":", item)
 
 def prune_earlylist(earlylist):
     """Find set of file names with the earliest time"""
