@@ -9,12 +9,68 @@ import gvar
 import latfit.utilities.read_file as rf
 from latfit.utilities.postfit.fitwin import pr_best_fitwin
 from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
-from latfit.utilities.postfit.fitwin import max_tmax
+from latfit.utilities.postfit.fitwin import max_tmax, LENMIN
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 
+# p1 32c
 CBEST = [
+    [['0.33019(35)', '-3.08(36)'], ['0.5341(14)', '-17.1(1.6)'], ['0.6614(76)', '-15(12)']],
+    [['0.33035(34)', '-3.24(35)'], ['0.5341(11)', '-17.1(1.3)'], ['0.6641(58)', '-19.6(9.3)']],
+    [['0.33035(34)', '-3.30(34)'], ['0.53320(81)', '-15.99(97)'], ['0.6648(32)', '-20.7(5.1)']],
+    [['0.33035(34)', '-3.30(34)'], ['0.53352(57)', '-16.37(68)'], ['0.6641(21)', '-19.5(3.4)']],
+    [['0.33055(33)', '-3.45(34)'], ['0.53327(46)', '-16.08(54)'], ['0.6661(15)', '-22.7(2.3)']],
+    [['0.33053(33)', '-3.43(34)'], ['0.53349(45)', '-16.08(54)'], ['0.6654(13)', '-21.6(2.1)']],
+    [['0.33055(32)', '-3.45(33)'], ['0.53338(36)', '-16.20(43)'], ['0.66540(78)', '-22.6(1.3)']],
+    [['0.33055(32)', '-3.45(33)'], ['0.53327(32)', '-16.04(39)'], ['0.66618(60)', '-22.89(91)']],
+    [['0.33055(32)', '-3.45(33)'], ['0.53327(32)', '-16.04(39)'], ['0.66618(60)', '-22.89(91)']]
 
 ]
+
+# p0 32c
+
+CBEST = [
+    [['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'], ['0.6179(23)', '-25.0(2.4)'], ['0.7285(63)', '-34(11)']],
+    [['0.21080(44)', '-0.30(12)'], ['0.45641(52)', '-13.18(60)'], ['0.6132(15)', '-20.1(1.5)'], ['0.7246(30)', '-26.8(5.7)']],
+    [['0.21080(44)', '-0.30(12)'], ['0.45667(44)', '-13.08(51)'], ['0.61418(98)', '-21.5(1.0)'], ['0.7224(21)', '-23.8(4.1)']]
+
+]
+
+# p11 32c (do not use)
+CBEST = [
+   # [['0.40458(35)', '-5.12(58)'], ['0.44803(26)', '-7.95(62)'], ['0.58217(50)', '-14.7(3.0)'], ['0.60224(60)', '-19.7(1.2)']]
+    [['0.40458(35)', '-5.12(58)'], ['0.44789(24)', '-7.62(58)'], ['0.58218(46)', '-14.7(2.8)'], ['0.60187(55)', '-18.6(1.1)']]
+
+]
+LIKELY_OVERFIT = [(9, 13), (10, 14)]
+
+CBEST = []
+LIKELY_OVERFIT = []
+
+# don't count these fit windows for continuity check
+# they are likely overfit,
+# so the data will necessarily be missing
+# in the case of an overfit cut (a demand that chi^2/dof >= 1)
+
+
+def augment_overfit(wins):
+    """Augment likely overfit fit window
+    list with all subset windows"""
+    wins = set(wins)
+    for win in sorted(list(wins)):
+        tmin = win[0]
+        tmax = win[1]
+        for i in range(tmax-tmin-LENMIN):
+            wins.add((tmin+i+1, tmax))
+    for win in sorted(list(wins)):
+        tmin = win[0]
+        tmax = win[1]
+        for i in range(tmax-tmin-LENMIN):
+            wins.add((tmin, tmax-i-1))
+    return sorted(list(wins))
+
+# the assumption here is that all sub-windows in these windows
+# have also been checked and are also (likely) overfit
+LIKELY_OVERFIT = augment_overfit(LIKELY_OVERFIT)
 
 print("CBEST =", CBEST)
 
@@ -75,14 +131,16 @@ def continuous_tmax(tot_new):
     print("cwin=", cwin)
     for tmin in maxtmax:
         check_set = set()
+        check_set = check_set.union(set(LIKELY_OVERFIT))
         for _, _, fitwin in tot_new:
             fitwin = fitwin[1]
             if fitwin[0] == tmin:
                 check_set.add(fitwin)
+        #print("starting fit windows("+str(tmin)+"):",
+        #      check_set, "vs.", cwin[tmin]) 
 
         # check tmax is continuous
-        assert not cwin[tmin]-check_set,\
-            (cwin[tmin]-check_set)
+        assert not cwin[tmin]-check_set, (cwin[tmin]-check_set)
             #(cwin[tmin], check_set, cwin[tmin]-check_set)
         # sanity check
         #assert not check_set-cwin[tmin],\
@@ -234,6 +292,7 @@ def check_fitwin_continuity(tot_new):
             for i in err:
                 assert len(i) == 2, (i, err)
                 tocut.add(i[0])
+            print("cutting:", tocut)
             tot_new = cut_tmin(tot_new, tocut)
             continuous_tmin_singleton(tot_new)
     return tot_new

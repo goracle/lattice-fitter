@@ -318,6 +318,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     # pvalmin = None
 
     # cut results outside the fit window
+    print("after init cut len =", len(median_err))
     median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr)
     print("final cut result len =", len(median_err))
     nores = False
@@ -490,14 +491,23 @@ def fitrange_skip_list(fit_range_arr, fitwindow):
     """List of indices to skip"""
     # fit window cut
     ret = set()
+    lcut = 0
+    fcut = 0
+    acut = 0
     for idx, item in enumerate(fit_range_arr):
         if lencut(item):
+            lcut += 1
             ret.add(idx)
         elif fitwincuts(item, fitwindow):
+            fcut += 1
             ret.add(idx)
         elif not arithseq(item):
+            acut += 1
             ret.add(idx)
     ret = sorted(list(ret))
+    print("length cut amt:", lcut)
+    print("fit window cut amt:", fcut)
+    print("arith. seq. cut amt:", acut)
     return ret
 
 @PROFILE
