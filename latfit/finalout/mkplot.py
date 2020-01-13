@@ -818,7 +818,6 @@ else:
         """Annotate with resultant chi^2
         """
         pval = gvar.gvar(result_min.pvalue.val, result_min.pvalue.err)
-        print("pvalue HERE", pval)
         pval = anpval(pval)
         rcp = anchisq(redchisq_round_str, dof)
         plt.annotate(rcp, xy=(0.5, 0.05), xycoords='axes fraction')
