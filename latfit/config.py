@@ -115,6 +115,7 @@ if LATTICE_ENSEMBLE == '32c':
     else:
         DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
     DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
+DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
 # do the subtraction at the level of the eigenvalues
 
 # generate random gaussian data after reading in real data
@@ -447,8 +448,8 @@ NOLOOP = True
 TLOOP = False if NOLOOP else TLOOP
 
 # Verbose mode
-VERBOSE = False
 VERBOSE = True
+VERBOSE = False
 VERBOSE = True if NOLOOP or not FIT else VERBOSE
 errc.PRIN = VERBOSE
 
