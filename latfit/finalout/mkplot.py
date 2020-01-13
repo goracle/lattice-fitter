@@ -25,7 +25,7 @@ from latfit.config import UNCORR, UNCORR_OP
 from latfit.config import FIT, PIONRATIO
 from latfit.config import GEVP_DERIV
 from latfit.config import METHOD, DECREASE_VAR
-from latfit.config import BINDS
+from latfit.config import BINDS, DIMSELECT
 from latfit.config import START_PARAMS
 from latfit.config import NOLOOP
 from latfit.config import EFF_MASS
@@ -33,7 +33,7 @@ from latfit.config import BOX_PLOT
 from latfit.config import EFF_MASS_METHOD
 from latfit.config import C
 from latfit.config import NO_PLOT
-from latfit.config import GEVP
+from latfit.config import GEVP, BOOTSTRAP_PVALUES
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import JACKKNIFE
 from latfit.config import PREC_DISP
@@ -718,9 +718,13 @@ if GEVP:
         for i, min_e in enumerate(result_min.energy.val):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             estring = str(gvar.gvar(min_e, param_err[i]))
-            plt.annotate(
-                "Energy["+str(i)+"] = "+estring,
-                xy=(0.05, ystart-i*.05), xycoords='axes fraction')
+            toann =  "Energy["+str(i)+"] = "+estring
+            exy = (0.05, ystart-i*.05)
+            if i == DIMSELECT and NOLOOP and BOOTSTRAP_PVALUES:
+                plt.annotate(toann, weight='bold', 
+                             xy=exy, xycoords='axes fraction')
+            else:
+                plt.annotate(toann, xy=exy, xycoords='axes fraction')
 else:
     if ADD_CONST or not EFF_MASS:
         YSTART = 0.90
@@ -748,6 +752,13 @@ def trunc_prec(num, extra_trunc=0):
     formstr = '%.'+str(int(PREC_DISP-extra_trunc))+'e'
     return str(float(formstr % Decimal(str(num))))
 
+def anpval(pval):
+    if BOOTSTRAP_PVALUES:
+        ret = r"p-value = "+str(pval)
+    else:
+        ret = ""
+    return ret
+
 def anchisq(redchisq_round_str, dof):
     """get the annotation chi^2 string
     """
@@ -766,13 +777,18 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
         else:
             YSTART2 = 0.75
 
-        def annotate_chisq(redchisq_round_str, dof,
-                           result_min, ystart=YSTART2):
+        def annotate_chisq(result_min, redchisq_round_str, dof,
+                           ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
-            rcp = anchisq(redchisq_round_str, dof)
-            plt.annotate(rcp, xy=(0.15, ystart-.05*(len(result_min.energy.val)-2)),
-                         xycoords='axes fraction')
+            pval = gvar.gvar(result_min.pvalue.val, result_min.pvalue.err)
+            pval = anpval(pval)
+            rcp = anchisq(rechisq_round_str, dof)
+            plt.annotate(pval, xy=(0.15, ystart-.05*(len(
+                result_min.energy.val)-2)), xycoords='axes fraction')
+            plt.annotate(rcp, xy=(0.15, ystart-.10*(len(
+                result_min.energy.val)-2)), xycoords='axes fraction')
+
 
     else:
         if ADD_CONST:
@@ -780,24 +796,35 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
         else:
             YSTART2 = 0.10
 
-        def annotate_chisq(redchisq_round_str, dof,
-                           result_min, ystart=YSTART2):
+        def annotate_chisq(result_min, redchisq_round_str, dof,
+                           ystart=YSTART2):
             """Annotate with resultant chi^2 (eff mass, eff mass method 3)
             """
             if result_min:
                 pass
+            pval = gvar.gvar(result_min.pvalue.val, result_min.pvalue.err)
+            pval = anpval(pval)
             rcp = anchisq(redchisq_round_str, dof)
             plt.annotate(rcp, xy=(0.15, ystart),
                          xycoords='axes fraction')
+            plt.annotate(pval, xy=(0.15, ystart+0.05),
+                         xycoords='axes fraction')
+
 
 
 else:
 
-    def annotate_chisq(redchisq_round_str, dof, _=None):
+    def annotate_chisq(result_min, redchisq_round_str, dof, _=None):
         """Annotate with resultant chi^2
         """
+        pval = gvar.gvar(result_min.pvalue.val, result_min.pvalue.err)
+        print("pvalue HERE", pval)
+        pval = anpval(pval)
         rcp = anchisq(redchisq_round_str, dof)
         plt.annotate(rcp, xy=(0.5, 0.05), xycoords='axes fraction')
+        plt.annotate(pval, xy=(0.5, 0.1),
+                     xycoords='axes fraction')
+
 
 
 if JACKKNIFE_FIT:
@@ -888,7 +915,7 @@ def annotate(dimops, result_min, param_err, param_chisq, coords):
     annotate_energy(result_min, param_err)
     # if result_min.misc.status == 0 and param_chisq.redchisq < 2:
     if param_chisq.redchisq < 2:
-        annotate_chisq(param_chisq.redchisq_round_str,
+        annotate_chisq(result_min, param_chisq.redchisq_round_str,
                        result_min.misc.dof, result_min)
     annotate_jack()
     annotate_uncorr(coords, dimops)

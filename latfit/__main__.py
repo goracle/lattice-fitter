@@ -469,7 +469,8 @@ def find_mean_and_err(meta, min_arr):
         # dump the results to file
         # if not (ISOSPIN == 0 and GEVP):
         if len(min_arr) > 1 or (meta.lenprod == 1 and len(min_arr) == 1):
-            dump_fit_range(meta, min_arr, name, res_mean, err_check)
+            if not NOLOOP:
+                dump_fit_range(meta, min_arr, name, res_mean, err_check)
 
         # error propagation check
         result_min = parametrize_entry(result_min, name)
