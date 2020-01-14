@@ -426,14 +426,9 @@ DIMSELECT = None
 # in order to get final effective mass plots
 
 # p0, 32c, I=2
-INCLUDE = [[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]
-DIMSELECT = 0 # t-t0=5 dt3, both
-PARAM_OF_INTEREST = None
-FIT_EXCL = invinc(INCLUDE, (14, 19))
-
-INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
-DIMSELECT = 2 # t-t0=1 dt1, both
-PARAM_OF_INTEREST = None
+INCLUDE = [[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
+DIMSELECT = 3 # t-t0=1 dt1, phase
+PARAM_OF_INTEREST = 'phase shift'
 FIT_EXCL = invinc(INCLUDE, (6, 13))
 
 INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0], [6.0, 8.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
@@ -441,15 +436,71 @@ DIMSELECT = 3 # t-t0=1 dt1, energy
 PARAM_OF_INTEREST = 'energy'
 FIT_EXCL = invinc(INCLUDE, (6, 10))
 
-INCLUDE = [[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]
-DIMSELECT = 3 # t-t0=1 dt1, phase
-PARAM_OF_INTEREST = 'phase shift'
+INCLUDE = [[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]
+DIMSELECT = 2 # t-t0=1 dt1, both
+PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 13))
 
-INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]
+INCLUDE = [[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0],
+           [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]
 DIMSELECT = 1 # t-t0=1 dt1, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 11))
+
+INCLUDE = [[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]
+DIMSELECT = 0 # t-t0=5 dt3, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (14, 19))
+
+# p1, 32c, I=2
+INCLUDE = [[9.0, 10.0, 11.0, 12.0], [10.0, 11.0, 12.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 0 # t-t0=5, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (9, 12))
+
+# p1, 32c, I=2
+INCLUDE = [[5.0, 9.0, 13.0], [5.0, 6.0, 7.0, 8.0, 9.0], [4.0, 5.0, 6.0]]
+DIMSELECT = 1 # t-t0=1, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (4, 13))
+
+# p1, 32c, I=2
+INCLUDE = [[5.0, 7.0, 9.0], [5.0, 6.0, 7.0], [4.0, 5.0, 6.0]]
+DIMSELECT = 2 # t-t0=1, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (4, 11))
+
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+DIMSELECT = None
+PARAM_OF_INTEREST = None
+assert len(FIT_EXCL) == DIM, "Dimension mismatch"
+
+# p11, 32c, I=2
+INCLUDE = [[10.0, 11.0, 12.0, 13.0, 14.0], [11.0, 12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [10.0, 12.0, 14.0]]
+DIMSELECT = 0 # t-t0=4, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (9, 15))
+
+INCLUDE = [[9.0, 10.0, 11.0], [8.0, 9.0, 10.0], [8.0, 9.0, 10.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 1 # t-t0=3, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (8, 11))
+
+INCLUDE = [[13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 2 # t-t0=5, both
+PARAM_OF_INTEREST = 'energy'
+FIT_EXCL = invinc(INCLUDE, (9, 15))
+
+INCLUDE = [[12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [10.0, 11.0, 12.0]]
+DIMSELECT = 2 # t-t0=5, both
+PARAM_OF_INTEREST = 'phase shift'
+FIT_EXCL = invinc(INCLUDE, (9, 15))
+
+INCLUDE = [[10.0, 11.0, 12.0], [11.0, 12.0, 13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 11.0, 13.0]]
+DIMSELECT = 3 # t-t0=5, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (9, 15))
+
 
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
