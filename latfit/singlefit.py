@@ -29,7 +29,7 @@ from latfit.config import FIT, NBOOT, fit_func, ONLY_SMALL_FIT_RANGES
 from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
 from latfit.config import PRINT_CORR, MULT, ERR_CUT, ISOSPIN
-from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE
+from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE, DIMSELECT
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.jackknife_fit as jack_module
@@ -169,7 +169,7 @@ def singlefit(meta, input_f):
             # initial fit
             reset_bootstrap()
             latfit.config.BOOTSTRAP = False
-            if os.path.isfile("result_min.p") and NOLOOP:
+            if os.path.isfile("result_min.p") and NOLOOP and DIMSELECT is None:
                 result_min, param_err = cloudpickle.load(
                     open("result_min.p", "rb"))
             else:
