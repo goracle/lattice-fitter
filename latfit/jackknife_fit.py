@@ -47,6 +47,7 @@ from latfit.analysis.result_min import ResultMin
 import latfit.analysis.hotelling as hotelling
 from latfit.utilities import exactmean as em
 from latfit.utilities.actensordot import actensordot
+from latfit.utilities.postfit.compare_print import trunc
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -270,9 +271,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
             if VERBOSE:
                 print("config", config_num, ":",
                       result_min.energy.arr[config_num],
-                      sys_str,
-                      torchi(), result_min_jack.fun/result_min.misc.dof,
-                      "p-value=", result_min.pvalue.arr[config_num],
+                      sys_str, torchi(),
+                      trunc(result_min_jack.fun/result_min.misc.dof),
+                      "p-value=", trunc(result_min.pvalue.arr[config_num]),
                       'dof=', result_min.misc.dof, "rank=", MPIRANK)
 
             assert not np.isnan(result_min.pvalue.arr[
