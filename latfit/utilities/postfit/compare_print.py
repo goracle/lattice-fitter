@@ -480,9 +480,10 @@ def consistency(item1, item2, prin=False):
     if not ret:
         if prin:
             print("sig inconsis. =", sig)
-        assert sig < 10, (sig, "check the best known list for",
+        # sanity check; relax '15' to a higher number as necessary
+        assert sig < 30, (sig, "check the best known list for",
                           "compatibility with current set",
-                          "of results being analyzed")
+                          "of results being analyzed", item1, item2)
     return ret
 bin_analysis.consistency = consistency
 
