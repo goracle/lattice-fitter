@@ -473,33 +473,60 @@ FIT_EXCL = invinc(INCLUDE, (4, 11))
 FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
 DIMSELECT = None
 PARAM_OF_INTEREST = None
-assert len(FIT_EXCL) == DIM, "Dimension mismatch"
 
 # p11, 32c, I=2
-INCLUDE = [[10.0, 11.0, 12.0, 13.0, 14.0], [11.0, 12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [10.0, 12.0, 14.0]]
-DIMSELECT = 0 # t-t0=4, both
+INCLUDE = [[10.0, 11.0, 12.0], [11.0, 12.0, 13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 11.0, 13.0]]
+DIMSELECT = 3 # t-t0=5, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (9, 15))
 
-INCLUDE = [[9.0, 10.0, 11.0], [8.0, 9.0, 10.0], [8.0, 9.0, 10.0], [9.0, 10.0, 11.0]]
-DIMSELECT = 1 # t-t0=3, both
-PARAM_OF_INTEREST = None
-FIT_EXCL = invinc(INCLUDE, (8, 11))
-
+# p11, 32c, I=2
 INCLUDE = [[13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [9.0, 10.0, 11.0]]
-DIMSELECT = 2 # t-t0=5, both
+DIMSELECT = 2 # t-t0=5, energy
 PARAM_OF_INTEREST = 'energy'
 FIT_EXCL = invinc(INCLUDE, (9, 15))
 
+# p11, 32c, I=2
 INCLUDE = [[12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [10.0, 11.0, 12.0]]
 DIMSELECT = 2 # t-t0=5, both
 PARAM_OF_INTEREST = 'phase shift'
 FIT_EXCL = invinc(INCLUDE, (9, 15))
 
-INCLUDE = [[10.0, 11.0, 12.0], [11.0, 12.0, 13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 11.0, 13.0]]
-DIMSELECT = 3 # t-t0=5, both
+# p11, 32c, I=2
+INCLUDE = [[9.0, 10.0, 11.0], [8.0, 9.0, 10.0], [8.0, 9.0, 10.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 1 # t-t0=3, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (8, 11))
+
+# p11, 32c, I=2
+INCLUDE = [[10.0, 12.0, 14.0], [10.0, 11.0, 12.0], [13.0, 14.0, 15.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 0 # t-t0=5, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (9, 15))
+
+# p111, 32c, I=2
+INCLUDE = [[8.0, 9.0, 10.0, 11.0], [9.0, 10.0, 11.0]]
+DIMSELECT = 0 # t-t0=3, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (8, 12))
+
+# p111, 32c, I=2
+INCLUDE = [[8.0, 9.0, 10.0, 11.0], [6.0, 10.0, 14.0]]
+DIMSELECT = 1 # t-t0=1, both
+PARAM_OF_INTEREST = None
+FIT_EXCL = invinc(INCLUDE, (6, 17))
+
+INCLUDE = []
+FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
+DIMSELECT = None
+PARAM_OF_INTEREST = None
+
+if DIMSELECT is not None and GEVP:
+    print("dimension of GEVP of interest:", DIMSELECT)
+    if PARAM_OF_INTEREST is not None:
+        print("param of GEVP of interest:", PARAM_OF_INTEREST)
+    else:
+        print("param of GEVP of interest: all")
 
 
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
@@ -507,8 +534,8 @@ BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 assert len(FIT_EXCL) == DIM or not GEVP
 
 # if true, do not loop over fit ranges.
-NOLOOP = False
 NOLOOP = True
+NOLOOP = False
 TLOOP = False if NOLOOP else TLOOP
 
 # Verbose mode
