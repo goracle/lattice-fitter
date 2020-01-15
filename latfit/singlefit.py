@@ -423,6 +423,7 @@ def cut_on_growing_exp(meta):
                             print("cutting dimension", k,
                                   "for time slice", excl_add,
                                   "(exp grow cut)")
+                            print("time slices:", coords[i][0], coords[j][0])
                             print("err/coords > diff cut =", sig)
                         latfit.config.FIT_EXCL[k].append(excl_add)
                         latfit.config.FIT_EXCL[k] = list(set(
