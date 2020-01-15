@@ -130,6 +130,10 @@ def main():
         if not rotate:
             ret.extend(add)
     outfn = start_str(sorted(list(useset)))
+    for i, item in enumerate(found):
+        print("found file", i, ":", item)
+    if found:
+        sys.exit()
     if rotate:
         res = np.array(res)
         print('res.shape:', res.shape)
@@ -152,11 +156,9 @@ def main():
     earlylist = prune_earlylist(earlylist)
     print("earliest time:", early, "from:")
     for i in earlylist:
-        print('mv', i, 'tocut/')
+        print('prl.sh', i, 'tocut/')
     if '.p.p' not in outfn:
         pickle.dump(ret, open(outfn, "wb"))
-    for i, item in enumerate(found):
-        print("found file", i, ":", item)
 
 def prune_earlylist(earlylist):
     """Find set of file names with the earliest time"""
