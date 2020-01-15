@@ -1262,22 +1262,22 @@ def tloop():
     # (assumes we never do a second subtraction)
     for i in range(TSEP_VEC[0]+1): # not set up for xstep
         assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
-        if i < TLOOP_START[0]:
-            continue
         if i:
             if MATRIX_SUBTRACTION and TLOOP:
                 incr_dt()
             else:
                 break
+        if i < TLOOP_START[0]:
+            continue
         for j in range(TSEP_VEC[0]+1): # loop over t-t0
             # get rid of all gevp/eff mass processing
-            if j < TLOOP_START[1]:
-                continue
             if j:
                 if TLOOP:
                     incr_t0()
                 else:
                     break
+            if j < TLOOP_START[1]:
+                continue
             ext.reset_extract()
             if i or j:
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
