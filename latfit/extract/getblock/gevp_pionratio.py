@@ -25,8 +25,7 @@ from latfit.config import PIONRATIO, GEVP_DIRS, GEVP_DERIV
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD, VERBOSE
-from latfit.config import DELTA_T_MATRIX_SUBTRACTION, ISOSPIN
-from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+from latfit.config import ISOSPIN
 from latfit.config import GEVP_DIRS_PLUS_ONE, FULLDIM
 from latfit.config import PR_GROUND_ONLY, VERBOSE
 import latfit.config
@@ -56,22 +55,22 @@ def aroundtheworld_pionratio(diag_name, timeij):
         exp = DELTA_E_AROUND_THE_WORLD
         exp2 = DELTA_E2_AROUND_THE_WORLD
         if exp is not None:
-            sub = proc_folder(name, timeij-DELTA_T_MATRIX_SUBTRACTION)
+            sub = proc_folder(name, timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             if hasattr(exp, '__iter__') and np.asarray(exp).shape:
                 for i, _ in enumerate(exp):
                     ret[i] *= math.exp(exp[i]*timeij)
                     sub[i] *= math.exp(exp[i]*(
-                        timeij-DELTA_T_MATRIX_SUBTRACTION))
+                        timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION))
             else:
                 ret *= math.exp(exp*timeij)
-                sub *= math.exp(exp*(timeij-DELTA_T_MATRIX_SUBTRACTION))
+                sub *= math.exp(exp*(timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION))
             ret -= sub
         if exp2 is not None:
             ret *= math.exp(exp2*timeij)
-            time2 = timeij-DELTA_T2_MATRIX_SUBTRACTION
+            time2 = timeij-latfit.config.DELTA_T2_MATRIX_SUBTRACTION
             sub2 = proc_folder(name, time2)
             time3 = timeij-\
-                DELTA_T2_MATRIX_SUBTRACTION-DELTA_T_MATRIX_SUBTRACTION
+                latfit.config.DELTA_T2_MATRIX_SUBTRACTION-latfit.config.DELTA_T_MATRIX_SUBTRACTION
             sub3 = proc_folder(name, time3)
             ret -= sub2*math.exp((
                 exp+exp2)*time2)-sub3*math.exp((exp+exp2)*time3)

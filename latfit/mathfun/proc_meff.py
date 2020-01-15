@@ -23,8 +23,7 @@ from latfit.config import FITS, LOGFORM
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import METHOD
 from latfit.config import ORIGL
-from latfit.config import MATRIX_SUBTRACTION, DELTA_T_MATRIX_SUBTRACTION
-from latfit.config import DELTA_T2_MATRIX_SUBTRACTION
+from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.analysis.test_arg import NegLogArgument
 from latfit.analysis.errorcodes import NegativeEnergy
@@ -148,8 +147,8 @@ elif EFF_MASS_METHOD == 4:
         tstep2 = None
         if MATRIX_SUBTRACTION and GEVP:
             j = 1
-            tstep = -DELTA_T_MATRIX_SUBTRACTION
-            tstep2 = -DELTA_T2_MATRIX_SUBTRACTION if\
+            tstep = -latfit.config.DELTA_T_MATRIX_SUBTRACTION
+            tstep2 = -latfit.config.DELTA_T2_MATRIX_SUBTRACTION if\
                 DELTA_E2_AROUND_THE_WORLD is not None else None
         EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
 
