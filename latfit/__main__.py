@@ -973,7 +973,7 @@ def xmax_err(meta, err):
     """Handle xmax error"""
     if VERBOSE:
         print("Test fit failed; bad xmax. problemx:", err.problemx)
-    meta.decr_xmax(err.problemx)
+    update_fitwin(meta, 0, 1, problemx=err.problemx)
     if VERBOSE:
         print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[1] < meta.options.xmax and FIT:
@@ -993,7 +993,7 @@ def xmin_err(meta, err):
     # error, not an early time error (usually from pion ratio)
     if err.problemx > (meta.options.xmin + meta.options.xmax)/2:
         raise XmaxError(problemx=err.problemx)
-    meta.incr_xmin(err.problemx)
+    update_fitwin(meta, 1, 0, problemx=err.problemx)
     if VERBOSE:
         print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
     if meta.fitwindow[0] > meta.options.xmin and FIT:
@@ -1046,15 +1046,15 @@ def dofit_initial(meta, plotdata):
     # plotdata, meta, test_success, fit_range_init
     return (meta, plotdata, test_success, retsingle_save)
 
-def update_fitwin(meta, tadd, tsub):
+def update_fitwin(meta, tadd, tsub, problemx=None):
     """Update fit window"""
     # tadd tsub cut
     if tadd or tsub:
         #print("tadd =", tadd, "tsub =", tsub)
         for _ in range(tadd):
-            meta.incr_xmin()
+            meta.incr_xmin(problemx=problemx)
         for _ in range(tsub):
-            meta.decr_xmax()
+            meta.decr_xmax(problemx=problemx)
         partial_reset()
 
 
