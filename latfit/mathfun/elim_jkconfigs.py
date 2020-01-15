@@ -9,6 +9,7 @@ from latfit.analysis.errorcodes import BoolThrowErr
 # from latfit.config import ELIM_JKCONF_LIST, HALF
 JACKKNIFE = BoolThrowErr()
 
+ELIM_JKCONF_LIST = []
 
 def elim_jkconfigs(jkblk, elim_list=None):
     """Takes a jackknife block as an argument, eliminates configs

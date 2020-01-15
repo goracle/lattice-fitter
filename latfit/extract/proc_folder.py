@@ -10,10 +10,10 @@ import h5py
 from latfit.config import GEVP
 from latfit.config import STYPE
 from latfit.config import GROUP_LIST
-from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 import latfit
 from latfit.utilities import exactmean as em
 from latfit.extract.binout import binout, halftotal
+import latfit.mathfun.elim_jkconfigs as elimjk
 
 if STYPE == 'hdf5':
     def open_dataset(prefix, hdf5_file, ctime, fn1):
@@ -68,7 +68,7 @@ if STYPE == 'hdf5':
                     print("dataset name:",
                           proc_folder.prefix+'/'+hdf5_file.split('.')[0])
                     sys.exit(1)
-        out = elim_jkconfigs(out)
+        out = elimjk.elim_jkconfigs(out)
         out = halftotal(out)
         #out = halftotal(out, ctime=ctime,override='first half')
         #out = halftotal(out, ctime=ctime,override='second half')

@@ -7,7 +7,7 @@ import numpy as np
 
 from latfit.utilities import exactmean as em
 from latfit.mathfun.proc_meff import proc_meff
-from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
+#from latfit.mathfun.elim_jkconfigs import elim_jkconfigs
 from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.analysis.errorcodes import XmaxError, NegativeEigenvalue
@@ -29,11 +29,12 @@ import latfit.extract.getblock.gevp_linalg as glin
 
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
-from latfit.config import ELIM_JKCONF_LIST
 from latfit.config import GEVP_DEBUG, GEVP_DERIV, STYPE
 from latfit.config import DECREASE_VAR, ISOSPIN
 from latfit.config import HINTS_ELIM
 from latfit.config import REINFLATE_BEFORE_LOG
+
+import latfit.mathfun.elim_jkconfigs as elimjk
 
 #MPIRANK = MPI.COMM_WORLD.rank
 
@@ -538,7 +539,7 @@ def getblock(file_tup, reuse, timeij=None, delta_t=None):
         assert timeij-delta_t >= 0, str((timeij, delta_t))
     retblk = np.array(getblock_plus(file_tup, reuse, timeij,
                                     delta_t=delta_t))
-    if ELIM_JKCONF_LIST and None:
-        retblk = elim_jkconfigs(retblk)
+    if elimjk.ELIM_JKCONF_LIST and None:
+        retblk = elimjk.elim_jkconfigs(retblk)
     retblk = binconf(retblk)
     return retblk
