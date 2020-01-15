@@ -30,9 +30,16 @@ FIT = True
 TLOOP = False
 TLOOP = True
 TLOOP = False if not FIT else TLOOP
+
+# if true, do not loop over fit ranges.
+NOLOOP = True
+NOLOOP = False
+TLOOP = False if NOLOOP else TLOOP
+
 # start indices (in case the fit exits early)
 TLOOP_START = (0, 0)
 TLOOP_START = (0, 0) if not FIT else TLOOP_START
+TLOOP_START = (0, 0) if not TLOOP else TLOOP_START
 
 # solve the generalized eigenvalue problem (GEVP)
 
@@ -532,11 +539,6 @@ if DIMSELECT is not None and GEVP:
 FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
 BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 assert len(FIT_EXCL) == DIM or not GEVP
-
-# if true, do not loop over fit ranges.
-NOLOOP = True
-NOLOOP = False
-TLOOP = False if NOLOOP else TLOOP
 
 # Verbose mode
 VERBOSE = True
