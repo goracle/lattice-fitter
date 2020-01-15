@@ -40,9 +40,9 @@ def inverse_excl(meta, excl):
     """Get the included fit points from excluded points"""
     full = meta.actual_range()
     ret = [np.array(full) for _ in range(len(excl))]
-    for i, excldim in enumerate(excl):
+    for idx, excldim in enumerate(excl):
         try:
-            inds = [full.index(i) for i in excldim]
+            inds = [int(full.index(i)) for i in excldim]
         except ValueError:
             print("excluded point(s) is(are) not in fit range.")
             inds = []
@@ -51,7 +51,7 @@ def inverse_excl(meta, excl):
                     print("point is not in fit range:", j)
                 else:
                     inds.append(int(full.index(j)))
-        ret[i] = list(np.delete(ret[i], inds))
+        ret[idx] = list(np.delete(ret[idx], inds))
     return ret
 
 
