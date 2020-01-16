@@ -36,6 +36,7 @@ TLOOP = False if not FIT else TLOOP
 # if true, do not loop over fit ranges.
 NOLOOP = True
 NOLOOP = False
+NOLOOP = True if INCLUDE else NOLOOP
 TLOOP = False if NOLOOP else TLOOP
 
 # start indices (in case the fit exits early)

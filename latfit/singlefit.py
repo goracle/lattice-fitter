@@ -418,9 +418,6 @@ def cut_on_growing_exp(meta):
                     if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
                     earlier_cut:
                         if VERBOSE:
-                            print('debug:', latfit.config.T0)
-                            print('matdt debug:',
-                                  latfit.config.DELTA_T_MATRIX_SUBTRACTION)
                             print("(max) err =", merr, "coords =",
                                   coords[i][1][k], coords[j][1][k])
                             print("cutting dimension", k,

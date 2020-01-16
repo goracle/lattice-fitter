@@ -108,16 +108,16 @@ DIMSELECT = 1 # t-t0=1, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 17))
 
-# default
-INCLUDE = []
-DIMSELECT = None
-PARAM_OF_INTEREST = None
-
 # p0, 24c, I=2
 INCLUDE = [[9.0, 11.0, 13.0], [9.0, 10.0, 11.0, 12.0], [10.0, 11.0, 12.0], [10.0, 11.0, 12.0]]
 DIMSELECT = 0 # t-t0=4 dt2
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (9, 13))
+
+# default
+INCLUDE = []
+DIMSELECT = None
+PARAM_OF_INTEREST = None
 
 def print_include_messages(gevp):
     """Print messages"""
