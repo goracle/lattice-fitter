@@ -141,16 +141,21 @@ elif EFF_MASS_METHOD == 4:
                 ctime, [energy], LT_VEC[ini], tstep_arr)-sol)**2
         return eff_mass_tomin
 
-    EFF_MASS_TOMIN = []
-    for i, j in enumerate(ADD_CONST_VEC):
-        tstep = None
-        tstep2 = None
-        if MATRIX_SUBTRACTION and GEVP:
-            j = 1
-            tstep = -latfit.config.DELTA_T_MATRIX_SUBTRACTION
-            tstep2 = -latfit.config.DELTA_T2_MATRIX_SUBTRACTION if\
-                DELTA_E2_AROUND_THE_WORLD is not None else None
-        EFF_MASS_TOMIN.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
+    def create_funcs():
+        """Create eff mass functions; return list"""
+        ret = []
+        for i, j in enumerate(ADD_CONST_VEC):
+            tstep = None
+            tstep2 = None
+            if MATRIX_SUBTRACTION and GEVP:
+                j = 1
+                tstep = -latfit.config.DELTA_T_MATRIX_SUBTRACTION
+                tstep2 = -latfit.config.DELTA_T2_MATRIX_SUBTRACTION if\
+                    DELTA_E2_AROUND_THE_WORLD is not None else None
+            ret.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
+        return ret
+
+    EFF_MASS_TOMIN = create_funcs()
 
     def eff_mass_root(energy, ctime, sol):
         """Minimize this

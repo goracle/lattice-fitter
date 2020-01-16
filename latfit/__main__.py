@@ -62,6 +62,7 @@ import latfit.singlefit as sfit
 import latfit.config
 import latfit.fit_funcs
 import latfit.extract.getblock.gevp_linalg as glin
+import latfit.mathfun.proc_meff as effmass
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -1237,6 +1238,7 @@ def incr_dt():
     dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION
     dtee = tsep_based_incr(dtee)
     latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee
+    effmass.EFF_MASS_TOMIN = effmass.create_funcs()
     # check this!!!
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
     latfit.config.FITS.select_and_update(ADD_CONST)
