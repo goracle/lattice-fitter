@@ -555,8 +555,7 @@ PICKLE = None
 # p_cm = 001, no need to modify
 PSTR_TITLE = r"$\vec{p}_{CM}=$"+rf.ptostr(rf.procmom(MOMSTR))+", "
 
-def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION,
-                 dsel=DIMSELECT, pram=PARAM_OF_INTEREST):
+def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION):
     """Get plot title prefix"""
     if GEVP:
         if SIGMA and ISOSPIN == 0:
@@ -598,10 +597,10 @@ def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION,
             str(dtm)+' '
     elif True in ADD_CONST_VEC:
         ret = ret + 'eigdt1 '
-    if dsel is not None:
-        ret = ret + 'dim' + str(dsel) + ' '
-    if pram is not None:
-        ret = ret + str(pram) + ' '
+    if DIMSELECT is not None:
+        ret = ret + 'dim' + str(DIMSELECT) + ' '
+    if PARAM_OF_INTEREST is not None:
+        ret = ret + str(PARAM_OF_INTEREST) + ' '
     else:
         ret = ret + 'all '
     if HALF != 'full':
