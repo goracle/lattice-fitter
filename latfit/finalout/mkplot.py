@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import gvar
 
+from latfit.include import DIMSELECT
 from latfit.utilities import read_file as rf
 from latfit.config import fit_func, MOMSTR, L_BOX
 from latfit.config import FINE
@@ -25,7 +26,7 @@ from latfit.config import UNCORR, UNCORR_OP
 from latfit.config import FIT, PIONRATIO
 from latfit.config import GEVP_DERIV
 from latfit.config import METHOD, DECREASE_VAR
-from latfit.config import BINDS, DIMSELECT
+from latfit.config import BINDS
 from latfit.config import START_PARAMS
 from latfit.config import NOLOOP
 from latfit.config import EFF_MASS
