@@ -5,8 +5,8 @@ import subprocess
 import pickle
 import numpy as np
 import gvar
-from latfit.config import ISOSPIN
-from latfit.utilities.postprod.h5jack import TDIS_MAX
+from latfit.config import ISOSPIN, LATTICE_ENSEMBLE
+from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
 from latfit.utilities.postfit.bin_analysis import process_res_to_best
 from latfit.utilities.postfit.bin_analysis import print_tot
 from latfit.utilities.postfit.bin_analysis import select_ph_en
@@ -16,6 +16,8 @@ from latfit.utilities.postfit.gather_data import make_hist
 from latfit.utilities.postfit.fitwin import set_tadd_tsub, LENMIN
 from latfit.utilities.postfit.compare_print import print_sep_errors
 from latfit.utilities.postfit.compare_print import print_compiled_res
+
+TDIS_MAX = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
