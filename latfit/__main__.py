@@ -31,7 +31,7 @@ from latfit.config import GEVP, SUPERJACK_CUTOFF, EFF_MASS, VERBOSE
 from latfit.config import MAX_RESULTS, GEVP_DERIV, TLOOP_START
 from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
-from latfit.utilities.postprod.h5jack import TDIS_MAX
+from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
 from latfit.analysis.superjack import jack_mean_err
 from latfit.makemin.mkmin import convert_to_namedtuple
 
@@ -87,6 +87,7 @@ ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
                      OverflowError, EnergySortError, TooManyBadFitsError,
                      BadJackknifeDist, BadChisq, ZetaError)
 
+TDIS_MAX = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
 assert int(TDIS_MAX) == TDIS_MAX, TDIS_MAX
 
 try:

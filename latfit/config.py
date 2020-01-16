@@ -16,7 +16,7 @@ import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
 import latfit.analysis.errorcodes as errc
-from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE
+from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE, FIT_EXCL
 from latfit.include import print_include_messages
 
 # PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
