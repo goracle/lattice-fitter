@@ -180,7 +180,7 @@ def check_ids(ensemble):
     assert ENSEMBLE_DICT, "ensemble params not set"
     ens = ENSEMBLE_DICT[ensemble]
     tsep = ens['tsep']
-    tdis_max = ens['tstep']
+    tdis_max = ens['tdis_max']
     tstep = ens['tstep']
     ids_check = [tsep, tdis_max, tstep, DOAMA, SKIP_VEC]
     ids_check = np.asarray(ids_check)

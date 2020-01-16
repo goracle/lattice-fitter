@@ -46,23 +46,23 @@ DOAMA = True
 LT = 64 if not TEST44 else 4
 LT = LT if not TEST24C else 64
 LT = 32 if FREEFIELD else LT
-TSEP = 3 if not TEST44 else 1
-TSEP = TSEP if not TEST24C else 3
-TSEP = 4 if not TEST44 else 1
-TSEP = 4 if FREEFIELD else TSEP
+#TSEP = 3 if not TEST44 else 1
+#TSEP = TSEP if not TEST24C else 3
+#TSEP = 4 if not TEST44 else 1
+#TSEP = 4 if FREEFIELD else TSEP
 
 # other config options
 THERMNUM = 0  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST44 else 4539  # eliminate configs below this number to thermalize
 THERMNUM = THERMNUM if not TEST24C else 0
-TSTEP = 64/6 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
-TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
-TSTEP = TSTEP if not TEST24C else 8
+#TSTEP = 64/6 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
+#TSTEP = 8 if not TEST44 else 1  # we only measure every TSTEP time slices to save on time
+#TSTEP = TSTEP if not TEST24C else 8
 
 # max time distance between (inner) particles
-TDIS_MAX = 64
-TDIS_MAX = 22
-TDIS_MAX = 16
+#TDIS_MAX = 64
+#TDIS_MAX = 22
+#TDIS_MAX = 16
 
 LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
@@ -77,7 +77,7 @@ def tdismax():
     if WRITE_INDIVIDUAL:
         ret = LT-1
     else:
-        ret = TDIS_MAX
+        ret = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
     return ret
 mostb.tdismax = tdismax
 
@@ -157,28 +157,28 @@ else:
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 
 # set aux variables
-auxb.TSEP = TSEP
+auxb.TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
 auxb.LT = LT
-auxb.TSTEP = TSTEP
+auxb.TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
 
 # dynamically set bub variables
-bubb.TSEP = TSEP
+bubb.TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
 bubb.LT = LT
-bubb.TSTEP = TSTEP
+bubb.TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
 bubb.ROWS = ROWS
 bubb.COLS = COLS
 
 # dynamically set mostblks variables
-mostb.TSEP = TSEP
+mostb.TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
 mostb.LT = LT
-mostb.TSTEP = TSTEP
+mostb.TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
 mostb.ROWS = ROWS
 mostb.COLS = COLS
 mostb.ROWST = ROWST
 mostb.PREFIX = PREFIX
 mostb.EXTENSION = EXTENSION
 mostb.WRITE_INDIVIDUAL = WRITE_INDIVIDUAL
-mostb.TDIS_MAX = TDIS_MAX
+mostb.TDIS_MAX = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
 mostb.AVGTSRC = AVGTSRC
 
 # check blks dynamic
@@ -191,9 +191,9 @@ checkb.DOAMA = DOAMA
 checkb.SKIP_VEC = SKIP_VEC
 checkb.WRITE_INDIVIDUAL = WRITE_INDIVIDUAL
 
-def check_ids():
+def check_ids(ensemble):
     """Import hack"""
-    return checkb.check_ids()
+    return checkb.check_ids(ensemble)
 
 # Individual diagram's jackknife block to write
 
@@ -603,7 +603,7 @@ def fold_time(outblk, base=''):
         if not tsep:
             tsep = 0
     else:
-        tsep = TSEP
+        tsep = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
     if FOLD and AVGTSRC:
         if ANTIPERIODIC:
             retblk = [1/2 * (outblk[:, t] - outblk[:, (LT-t-2 * tsep) % LT])
@@ -798,7 +798,7 @@ def main(fixn=False):
     """Run this when making jackknife diagrams from raw hdf5 files"""
     print('start of main.')
     check_diag = "FigureCv3_sep"+str(
-        TSEP)+"_momsrc_100_momsnk000" # sanity check
+        ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep'])+"_momsrc_100_momsnk000" # sanity check
     check_diag = WRITEBLOCK[0] if WRITE_INDIVIDUAL else check_diag
     if not DOAMA:
         allblks, numt, auxblks = get_data()
@@ -878,7 +878,9 @@ if __name__ == '__main__':
         print("edit h5jack.py to remove the hold then rerun")
         # the hold
         sys.exit(1)
-        IDS = [TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC]
+        IDS = [ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep'],
+               ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max'],
+               ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep'], DOAMA, SKIP_VEC]
         IDS = np.asarray(IDS)
         pickle.dump(IDS, open('ids.p', "wb"))
 
