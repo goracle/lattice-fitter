@@ -51,12 +51,10 @@ LT = np.nan
 SKIP_VEC = None
 EXACT_CONFIGS = []
 AVGTSRC = None
-TSEP = np.nan
-TDIS_MAX = np.nan
-TSTEP = np.nan
 DOAMA = None
 SKIP_VEC = None
 WRITE_INDIVIDUAL = None
+ENSEMBLE_DICT = {}
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -176,10 +174,15 @@ def debugprint(blk, base=None, pstr=None):
     return printt
 
 @PROFILE
-def check_ids():
+def check_ids(ensemble):
     """Check the ensemble id file to be sure
     not to run processing parameters from a different ensemble"""
-    ids_check = [TSEP, TDIS_MAX, TSTEP, DOAMA, SKIP_VEC]
+    assert ENSEMBLE_DICT, "ensemble params not set"
+    ens = ENSEMBLE_DICT[ensemble]
+    tsep = ens['tsep']
+    tdis_max = ens['tstep']
+    tstep = ens['tstep']
+    ids_check = [tsep, tdis_max, tstep, DOAMA, SKIP_VEC]
     ids_check = np.asarray(ids_check)
     ids = pickle.load(open('ids.p', "rb"))
     assert np.all(ids == ids_check),\

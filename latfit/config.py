@@ -215,8 +215,8 @@ elif LATTICE_ENSEMBLE == '16c':
     PION_MASS = 0.3*AINVERSE
     LT = 32
     SUPERJACK_CUTOFF = 0
-SUPERJACK_CUTOFF = sands.mod_superjack(SUPERJACK_CUTOFF,
-                                       JACKKNIFE_BLOCK_SIZE, check_ids()[-2])
+SUPERJACK_CUTOFF = sands.mod_superjack(
+    SUPERJACK_CUTOFF, JACKKNIFE_BLOCK_SIZE, check_ids(LATTICE_ENSEMBLE)[-2])
 binout.SUPERJACK_CUTOFF = SUPERJACK_CUTOFF
 # If the first SUPERJACK_CUTOFF configs are exact, this simple switch
 # skips reading them in
@@ -299,7 +299,7 @@ if LATTICE_ENSEMBLE == '24c':
 if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 if GEVP:
-    assert check_ids()[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids()[0])
+    assert check_ids(LATTICE_ENSEMBLE)[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids(LATTICE_ENSEMBLE)[0])
 
 # Bootstrap params
 NBOOT = 2000 # until it saturates (should be infinity)
@@ -1088,7 +1088,8 @@ DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST, PIONRATIO,
                                                DELTA_E2_AROUND_THE_WORLD,
                                                DELTA_E_AROUND_THE_WORLD)
 sands.matsub_statements(MATRIX_SUBTRACTION, IRREP, ISOSPIN, GEVP, NOATWSUB)
-sands.superjackknife_statements(check_ids()[-2], SUPERJACK_CUTOFF)
+sands.superjackknife_statements(check_ids(LATTICE_ENSEMBLE)[-2],
+                                SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
 if FIT:

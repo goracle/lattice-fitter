@@ -20,6 +20,7 @@ from scipy.optimize import minimize_scalar
 import h5py
 from mpi4py import MPI
 
+from latfit.config import LATTICE_ENSEMBLE
 from latfit.utilities.postprod.h5jack import getwork, gatherdicts
 from latfit.utilities.postprod.checkblks import check_ids
 from latfit.utilities.postprod.h5jack import TSEP, LT, overall_coeffs
@@ -1026,7 +1027,7 @@ def divide_multiply(_=10):
 
 if __name__ == '__main__':
     print("start")
-    check_ids()
+    check_ids(LATTICE_ENSEMBLE)
     h5jack.AVGTSRC = True # hack to get file names right (and fold time!)
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect(atw=True)

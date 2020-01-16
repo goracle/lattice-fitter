@@ -30,7 +30,6 @@ import latfit.utilities.postprod.mostblks as mostb
 import latfit.utilities.postprod.checkblks as checkb
 import latfit.utilities.avg_hdf5 as avg_hdf5
 
-
 # when writing pion correlators, average over tsrc or leave un-averagd
 AVGTSRC = False
 AVGTSRC = True
@@ -65,15 +64,11 @@ TDIS_MAX = 64
 TDIS_MAX = 22
 TDIS_MAX = 16
 
-# 32c
-TSEP = 4
-TDIS_MAX = 22
-TSTEP = 64/6
-
-# 24c
-TSEP = 3
-TDIS_MAX = 16
-TSTEP = 8
+LATTICE_ENSEMBLE = '32c'
+LATTICE_ENSEMBLE = '24c'
+ENSEMBLE_DICT = {}
+ENSEMBLE_DICT['24c'] = {'tsep' : 3, 'tdis_max' : 16, 'tstep' : 8}
+ENSEMBLE_DICT['32c'] = {'tsep' : 4, 'tdis_max' : 22, 'tstep' : 64/6}
 
 #### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
 
@@ -191,9 +186,7 @@ checkb.LT = LT
 checkb.SKIP_VEC = SKIP_VEC
 checkb.EXACT_CONFIGS = EXACT_CONFIGS
 checkb.AVGTSRC = AVGTSRC
-checkb.TSEP = TSEP
-checkb.TDIS_MAX = TDIS_MAX
-checkb.TSTEP = TSTEP
+checkb.ENSEMBLE_DICT = ENSEMBLE_DICT
 checkb.DOAMA = DOAMA
 checkb.SKIP_VEC = SKIP_VEC
 checkb.WRITE_INDIVIDUAL = WRITE_INDIVIDUAL
@@ -889,7 +882,7 @@ if __name__ == '__main__':
         IDS = np.asarray(IDS)
         pickle.dump(IDS, open('ids.p', "wb"))
 
-    checkb.check_ids()
+    checkb.check_ids(LATTICE_ENSEMBLE)
 
     FNDEF, GNDEF, HNDEF = fill_fndefs()
     # dynamically set
@@ -917,4 +910,4 @@ if __name__ == '__main__':
     if MPIRANK == 0:
         print("Total elapsed time =", END-START, "seconds")
 else:
-    checkb.check_ids()
+    checkb.check_ids(LATTICE_ENSEMBLE)
