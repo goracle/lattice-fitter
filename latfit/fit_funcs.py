@@ -40,6 +40,8 @@ class FitFunctions:
         index = 1 if add_const else 0
         self._fitfuncadd.update()
         self._fitfunc.update()
+        self._fitfuncadd.emit_state()
+        self._fitfunc.emit_state()
         self._update_f()
         for func in self.fid:
             self._select[func] = self.fid[func][index]
@@ -115,6 +117,10 @@ class FitFuncAdd:
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
+
+    def emit_state(self):
+        """For debug purposes, print various internal quantities"""
+        print('tsteps', self._tsteps)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -303,6 +309,10 @@ class FitFunc:
         self._pionmass = PION_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
+
+    def emit_state(self):
+        """For debug purposes, print various internal quantities"""
+        print('tsteps', self._tsteps)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
