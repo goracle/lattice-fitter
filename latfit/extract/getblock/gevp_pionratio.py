@@ -40,8 +40,8 @@ def aroundworld_energies():
     """Add around the delta world energies"""
     assert None, "this is not needed."
     if MATRIX_SUBTRACTION and not NOATWSUB:
-        exp = list(DELTA_E_AROUND_THE_WORLD)
-        exp2 = list(DELTA_E2_AROUND_THE_WORLD)
+        exp = np.asarray(DELTA_E_AROUND_THE_WORLD)
+        exp2 = np.asarray(DELTA_E2_AROUND_THE_WORLD)
         ret = exp2-exp if exp2 is not None else exp
     else:
         ret = 0
@@ -53,11 +53,7 @@ def aroundtheworld_pionratio(diag_name, timeij):
     ret = proc_folder(name, timeij)
     if MATRIX_SUBTRACTION and not NOATWSUB:
         exp = DELTA_E_AROUND_THE_WORLD
-        if hasattr(exp, '__iter__'):
-            exp = list(DELTA_E_AROUND_THE_WORLD)
         exp2 = DELTA_E2_AROUND_THE_WORLD
-        if hasattr(exp2, '__iter__'):
-            exp2 = list(DELTA_E2_AROUND_THE_WORLD)
         if exp is not None:
             sub = proc_folder(name, timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             if hasattr(exp, '__iter__') and np.asarray(exp).shape:
