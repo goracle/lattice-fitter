@@ -125,7 +125,7 @@ class FitFuncAdd:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        print('tsteps', self._tsteps)
+        #print('tsteps', self._tsteps)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -317,7 +317,7 @@ class FitFunc:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        print('tsteps', self._tsteps)
+        #print('tsteps', self._tsteps)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
