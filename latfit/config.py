@@ -262,7 +262,8 @@ binout.HALF = HALF
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
 ELIM_JKCONF_LIST = []
-elimjk.ELIM_JKCONF_LIST = sorted(list(ELIM_JKCONF_LIST))
+ELIM_JKCONF_LIST = sorted(list(ELIM_JKCONF_LIST))
+elimjk.ELIM_JKCONF_LIST = tuple(ELIM_JKCONF_LIST)
 
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
@@ -270,7 +271,7 @@ misc.MASS = PION_MASS/AINVERSE
 misc.IRREP = IRREP
 misc.PIONRATIO = PIONRATIO
 DISP_ENERGIES = opc.free_energies(
-    IRREP, misc.massfunc(), L_BOX) if GEVP else []
+    IRREP, misc.massfunc(), L_BOX) if GEVP else ()
 
 # switch to include the sigma in the gevp fits
 SIGMA = ISOSPIN == 0
@@ -289,6 +290,7 @@ if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
     FULLDIM = False
     DIM = 3
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
+DISP_ENERGIES = tuple(DISP_ENERGIES)
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 TSEP_VEC = [0]
@@ -300,6 +302,7 @@ if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 if GEVP:
     assert check_ids(LATTICE_ENSEMBLE)[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids(LATTICE_ENSEMBLE)[0])
+TSEP_VEC = tuple(TSEP_VEC)
 
 # Bootstrap params
 NBOOT = 2000 # until it saturates (should be infinity)
@@ -344,6 +347,7 @@ MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
+ADD_CONST_VEC = tuple(ADD_CONST_VEC)
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
@@ -368,16 +372,17 @@ if IRREP == 'A1_mom1' and GEVP:
     E21 = misc.massfunc()
     E22 = misc.dispersive(rf.procmom(MOMSTR),
                           continuum=FIT_SPACING_CORRECTION)
+    E22 = tuple(E22-E21)
 elif GEVP:
     # the general E2
     E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0],
                           continuum=FIT_SPACING_CORRECTION)
     E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1],
                           continuum=FIT_SPACING_CORRECTION)
-assert E21 is None or (np.all(E21 > 0) and np.all(E22 > 0))
-assert E21 is None or (np.all(E22-E21) >= 0)
-DELTA_E2_AROUND_THE_WORLD = E22-E21 if E21 is not None and E22 is not None\
-    else None
+    E22 = E22-E21
+assert E21 is None or (np.all(E21 > 0) and np.all(E22+E21 > 0))
+assert E21 is None or (np.all(E22) >= 0)
+DELTA_E2_AROUND_THE_WORLD = E22
 #MINE2 = min(E21, E22)
 MINE2 = None # second order around the world fit no longer supported
 print("2nd order momenta for around the world:",
@@ -410,9 +415,9 @@ if np.any(np.isnan(DELTA_E_AROUND_THE_WORLD)):
 
 ## final delta e processing
 if DELTA_E_AROUND_THE_WORLD is not None:
-    DELTA_E_AROUND_THE_WORLD = misc.select_subset(DELTA_E_AROUND_THE_WORLD)
+    DELTA_E_AROUND_THE_WORLD = tuple(misc.select_subset(DELTA_E_AROUND_THE_WORLD))
 if DELTA_E2_AROUND_THE_WORLD is not None:
-    DELTA_E2_AROUND_THE_WORLD = misc.select_subset(DELTA_E2_AROUND_THE_WORLD)
+    DELTA_E2_AROUND_THE_WORLD = tuple(misc.select_subset(DELTA_E2_AROUND_THE_WORLD))
 
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
@@ -498,6 +503,7 @@ print("start params:", START_PARAMS)
 
 START_PARAMS = [0.5] if SYS_ENERGY_GUESS is None and EFF_MASS else\
     START_PARAMS
+START_PARAMS = tuple(START_PARAMS)
 
 # how many loop iterations until we start using random samples
 MAX_ITER = 1000 if not ONLY_SMALL_FIT_RANGES else np.inf
@@ -687,7 +693,7 @@ STYPE = 'hdf5'
 
 # prefix for hdf5 dataset location;
 # ALTS will be tried if HDF5_PREFIX doesn't work
-GROUP_LIST = ['I1', 'I0', 'I2']
+GROUP_LIST = tuple(['I1', 'I0', 'I2'])
 
 # optional, scale parameter to set binds
 SCALE = 1e13
@@ -851,6 +857,7 @@ MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if MATRIX_SUBTRACTION:
     for i, _ in enumerate(ADD_CONST_VEC):
         ADD_CONST_VEC[i] = MATRIX_SUBTRACTION
+LT_VEC = tuple(LT_VEC)
 
 ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
 

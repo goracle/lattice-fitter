@@ -30,7 +30,7 @@ from latfit.analysis.errorcodes import NegativeEnergy, PrecisionLossError
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
-
+ADD_CONST_VEC = list(ADD_CONST_VEC)
 if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
 

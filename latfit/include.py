@@ -119,6 +119,9 @@ INCLUDE = []
 DIMSELECT = None
 PARAM_OF_INTEREST = None
 
+INCLUDE = tuple(INCLUDE)
+FIT_EXCL = tuple(FIT_EXCL)
+
 def print_include_messages(gevp):
     """Print messages"""
     if DIMSELECT is not None and gevp:

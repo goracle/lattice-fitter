@@ -35,6 +35,11 @@ class FitFunctions:
         func = str(func)
         return self._select[func]
 
+    def emit_state(self):
+        """Emit subclass states"""
+        self._fitfuncadd.emit_state()
+        self._fitfunc.emit_state()
+
     def select_and_update(self, add_const):
         """Select which set of functions to use"""
         index = 1 if add_const else 0
