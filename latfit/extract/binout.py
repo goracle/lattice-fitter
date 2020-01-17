@@ -70,7 +70,7 @@ def binout(out):
     """
     lout = len(out)
 
-    while len(out)%BINNUM != 0:
+    while len(out) % BINNUM != 0:
         out = elim_jkconfigs(out, [len(out)-1])
         lout = len(out)
         assert lout > SUPERJACK_CUTOFF,\

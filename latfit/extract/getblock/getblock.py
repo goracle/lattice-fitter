@@ -539,7 +539,5 @@ def getblock(file_tup, reuse, timeij=None, delta_t=None):
         assert timeij-delta_t >= 0, str((timeij, delta_t))
     retblk = np.array(getblock_plus(file_tup, reuse, timeij,
                                     delta_t=delta_t))
-    if elimjk.ELIM_JKCONF_LIST and None:
-        retblk = elimjk.elim_jkconfigs(retblk)
     retblk = binconf(retblk)
     return retblk

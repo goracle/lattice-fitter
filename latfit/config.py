@@ -261,11 +261,8 @@ binout.HALF = HALF
 # Simply set this to a list of ints indexing the configs,
 # e.g. ELIM_JKCONF_LIST = [0, 1] will eliminate the first two configs
 
-#ELIM_JKCONF_LIST = [7, 8, 9, 10, 11, 12, 13, 14, 15, 186, 187, 188, 189, 190]
-
 ELIM_JKCONF_LIST = []
 elimjk.ELIM_JKCONF_LIST = sorted(list(ELIM_JKCONF_LIST))
-misc.ELIM_JKCONF_LIST = sorted(list(ELIM_JKCONF_LIST))
 
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX

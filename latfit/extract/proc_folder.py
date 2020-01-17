@@ -53,7 +53,6 @@ if STYPE == 'hdf5':
                 out = np.array(fn1[hdf5_file.split('.')[0]][:, ctime])
             except KeyError:
                 if proc_folder.sent:
-                    proc_folder.sent2 = 0
                     proc_folder.prefix = test_prefix(
                         hdf5_file, ctime, fn1, GROUP_LIST)
                     latfit.config.TITLE_PREFIX = proc_folder.prefix + \

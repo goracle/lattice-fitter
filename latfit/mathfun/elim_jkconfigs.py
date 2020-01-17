@@ -10,8 +10,19 @@ from latfit.analysis.errorcodes import BoolThrowErr
 JACKKNIFE = BoolThrowErr()
 
 ELIM_JKCONF_LIST = []
+HALF = ''
 
 def elim_jkconfigs(jkblk, elim_list=None):
+    """Eliminate configs from a jackknife block
+    unless the elimination list is empty"""
+    assert isinstance(ELIM_JKCONF_LIST, list), ELIM_JKCONF_LIST
+    if elim_list is None and not ELIM_JKCONF_LIST:
+        ret = jkblk
+    else:
+        ret = doelim(jkblk, elim_list=None)
+    return ret
+
+def doelim(jkblk, elim_list=None):
     """Takes a jackknife block as an argument, eliminates configs
     corresponding to ELIM_JKCONF_LIST, then returns the new jackknife block.
     """
@@ -78,5 +89,6 @@ def elim_jkconfigs(jkblk, elim_list=None):
         new_jkblk = final_diff/(num_configs-1-k_elim)
 
     return new_jkblk
+
 misc.elim_jkconfigs = elim_jkconfigs
 binout.elim_jkconfigs = elim_jkconfigs

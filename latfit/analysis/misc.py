@@ -22,7 +22,6 @@ def dummy(*x):
     return x
 BINOUT = dummy
 HALFTOTAL = dummy
-ELIM_JKCONF_LIST = [np.nan]
 
 def elim_jkconfigs(ret, elimlist):
     """dummy version"""
@@ -47,11 +46,6 @@ def massfunc():
             raise
     return massfunc.MASS
 massfunc.MASS = None
-
-def update_binhalf():
-    """after we set these functions update (the mass)"""
-    massfunc.MASS = select_subset(massfunc.MASS, elimlist=[])
-
 
 def p1f():
     """E_pi(|p|=1)"""
@@ -134,15 +128,13 @@ def fitepi(norm):
         assert ret is not None, ""
     return ret
 
-def select_subset(arr, elimlist=None):
+def select_subset(arr):
     """Apply binning and subsetting of data as needed (duplication of code in proc_folder)"""
     ret = arr
-    elimlist = ELIM_JKCONF_LIST if elimlist is None else elimlist
     if hasattr(ret, '__iter__'):
         ret = BINOUT(ret)
         ret = HALFTOTAL(ret)
-        if ELIM_JKCONF_LIST:
-            ret = elim_jkconfigs(ret, elimlist)
+        ret = elim_jkconfigs(ret)
     ret = np.asarray(ret)
     for i in ret.shape:
         assert i == max(ret.shape) or i == 1
