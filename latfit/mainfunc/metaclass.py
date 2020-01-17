@@ -236,7 +236,7 @@ class FitRangeMetaData:
         ret = np.arange(self.fitwindow[0],
                         self.fitwindow[1]+self.options.xstep,
                         self.options.xstep)
-        ret = list(ret)
+        ret = tuple(ret)
         latfit.analysis.result_min.WINDOW = ret
         return ret
 

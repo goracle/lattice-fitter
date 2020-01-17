@@ -18,6 +18,7 @@ except NameError:
         return arg2
     PROFILE = profile
 
+# misnomer, is actually just the actual fit range
 WINDOW = []
 
 NULL_CHISQ_ARRS = {}
