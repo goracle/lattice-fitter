@@ -129,6 +129,17 @@ ROWST = np.tile(np.arange(LT), (LT, 1))
 ROWS = np.tile(np.arange(LT), (LT, 1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
+def tuplize_mat(mat):
+    """Make matrix immutable"""
+    mat = np.asarray(mat)
+    assert len(mat.shape) == 2, mat
+    ret = tuple(tuple(i) for i in mat)
+    return ret
+
+ROWS = tuplize_mat(ROWS)
+COLS = tuplize_mat(COLS)
+ROWST = tuplize_mat(ROWST)
+
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
