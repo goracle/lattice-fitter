@@ -15,7 +15,7 @@ HALF = ''
 def elim_jkconfigs(jkblk, elim_list=None):
     """Eliminate configs from a jackknife block
     unless the elimination list is empty"""
-    assert isinstance(ELIM_JKCONF_LIST, list), ELIM_JKCONF_LIST
+    assert isinstance(ELIM_JKCONF_LIST, tuple), ELIM_JKCONF_LIST
     if elim_list is None and not ELIM_JKCONF_LIST:
         ret = jkblk
     else:
