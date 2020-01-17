@@ -471,8 +471,6 @@ def correction_en(result_min, config_num):
     delta_e2_around_the_world = DELTA_E2_AROUND_THE_WORLD
     if hasattr(delta_e_around_the_world, '__iter__') and\
        np.asarray(delta_e_around_the_world).shape:
-        delta_e_around_the_world = list(delta_e_around_the_world)
-        delta_e2_around_the_world = list(delta_e2_around_the_world)
         latw = len(delta_e_around_the_world)
 
         # block the ensemble if needed
