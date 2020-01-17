@@ -1,4 +1,4 @@
-"""Misc. Functions"""
+"""Single particle energies/dispersive energies"""
 import sys
 from math import sqrt, pi
 import pickle
