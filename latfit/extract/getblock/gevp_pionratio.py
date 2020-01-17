@@ -4,7 +4,7 @@ Technique is called 'pion ratio', and is due primarily
 to X. Feng, C. Lehner.
 
 Also, use non-interacting pi-pi correlators to subtract non-interacting
-around the world terms (technique due to D. Hoying).
+around the world terms
 """
 import sys
 import re
@@ -109,7 +109,8 @@ def evals_pionratio(timeij, delta_t, switch=False):
 
 def energies_pionratio(timeij, delta_t):
     """Find non-interacting energies"""
-    assert (timeij, delta_t) not in energies_pionratio.store
+    key = getkey(timeij, delta_t)
+    assert key not in energies_pionratio.store
     lhs = evals_pionratio(timeij, delta_t)
     lhs_p1 = np.zeros(lhs.shape)*np.nan
     try:
@@ -134,11 +135,11 @@ def energies_pionratio(timeij, delta_t):
         sys.exit(1)
     avg_energies = gdisp.callprocmeff([
         (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t, sort=True)
-    energies_pionratio.store[(timeij, delta_t)] = proc_meff_pionratio(
+    energies_pionratio.store[key] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
     # so we don't lose operators due to rho/sigma nan's
     latfit.config.FIT_EXCL = exclsave
-    return energies_pionratio.store[(timeij, delta_t)]
+    return energies_pionratio.store[key]
 energies_pionratio.store = {}
 
 def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
@@ -277,16 +278,22 @@ def check_map(mapi, timeij):
                 print(str(mapi)+" "+str(i)+" "+str(j))
             raise XminError(problemx=timeij)
 
+def getkey(timeij, delta_t):
+    """Get cache key"""
+    dt1 = latfit.config.DELTA_T_MATRIX_SUBTRACTION
+    dt2 = latfit.config.DELTA_T2_MATRIX_SUBTRACTION
+    ret = (timeij, delta_t, dt1, dt2)
+    return ret
 
 if PIONRATIO:
     def modenergies(energies_interacting, timeij, delta_t):
         """modify energies for pion ratio
         noise cancellation"""
-        if (timeij, delta_t) not in energies_pionratio.store:
+        key = getkey(timeij, delta_t)
+        if key not in energies_pionratio.store:
             energies_noninteracting = energies_pionratio(timeij, delta_t)
         else:
-            energies_noninteracting = energies_pionratio.store[
-                (timeij, delta_t)]
+            energies_noninteracting = energies_pionratio.store[key]
         enint = np.asarray(energies_interacting)
         ennon = np.asarray(energies_noninteracting)
         for i, _ in enumerate(ennon[:, 0]):
