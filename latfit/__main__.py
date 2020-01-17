@@ -1279,7 +1279,7 @@ def tloop():
                     incr_t0()
                 else:
                     break
-            if j < TLOOP_START[1]:
+            if j < TLOOP_START[1] and i <= TLOOP_START[0]:
                 continue
             ext.reset_extract()
             if i or j:
