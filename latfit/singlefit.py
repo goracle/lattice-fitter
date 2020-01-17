@@ -117,7 +117,6 @@ def singlefit(meta, input_f):
             try:
                 raise PrecisionLossError
             except PrecisionLossError:
-                singlefit_reset()
                 raise XmaxError(problemx=xmax)
 
 
@@ -169,7 +168,6 @@ def singlefit(meta, input_f):
 
             # initial fit
             reset_bootstrap()
-            latfit.config.BOOTSTRAP = False
             if os.path.isfile("result_min.p") and NOLOOP and DIMSELECT is None:
                 result_min, param_err = cloudpickle.load(
                     open("result_min.p", "rb"))
@@ -318,6 +316,9 @@ def reset_bootstrap():
     """
     jack_module.CONST_SHIFT = 0
     blke.build_choices_set.choices = None
+    bootstrap_pvalue.result_minq = {}
+    resmin.NULL_CHISQ_ARRS = {}
+    latfit.config.BOOTSTRAP = False
 
 def debug_print(coords_full, cov_full):
     """Debug print
