@@ -26,7 +26,7 @@ from latfit.config import ORIGL
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.analysis.test_arg import NegLogArgument
-from latfit.analysis.errorcodes import NegativeEnergy
+from latfit.analysis.errorcodes import NegativeEnergy, PrecisionLossError
 # from latfit.analysis.profile import PROFILE
 import latfit.config
 
@@ -191,6 +191,8 @@ elif EFF_MASS_METHOD == 4:
             sol = corrs[0]
             sol = np.nan if sol < 0 else sol
         if np.isnan(sol):
+            assert None, "check this"
+            raise PrecisionLossError
             errstr = "bad time/op combination in fit range."+\
                 " (time, op index)=("+str(times[0])+","+str(index)+")"
             if FIT:
