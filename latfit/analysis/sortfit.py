@@ -3,8 +3,6 @@ import numpy as np
 from latfit.config import DISP_ENERGIES, ORIGL
 from latfit.utilities import exactmean as em
 
-DISP_ENERGIES = np.asarray(DISP_ENERGIES)
-
 def best_times(coord, cov, index, times):
     """minimize distance to dispersive (no interactions) line
     index is the operator index of the GEVP
