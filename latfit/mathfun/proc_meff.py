@@ -277,7 +277,6 @@ else:
         """Do nothing"""
         if args:
             pass
-proc_meff.sent = object()
 
 if STYPE == 'hdf5':
     def pre_proc_meff(lines, files=None, times=None):
