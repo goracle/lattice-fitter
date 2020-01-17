@@ -19,7 +19,7 @@ from latfit.config import FIT
 from latfit.config import START_PARAMS
 from latfit.config import ADD_CONST
 from latfit.config import STYPE
-from latfit.config import FITS, LOGFORM
+from latfit.config import LOGFORM
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import METHOD
 from latfit.config import ORIGL
@@ -44,8 +44,10 @@ if EFF_MASS_METHOD == 1:
         (See config)
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = FITS['acosh_ratio'](corrs, times) if index is None else\
-            FITS.fid['acosh_ratio'][ADD_CONST_VEC[index]](corrs, times)
+        sol = latfit.config.FITS['acosh_ratio'](
+            corrs, times) if index is None else\
+            latfit.config.FITS.fid['acosh_ratio'][
+                ADD_CONST_VEC[index]](corrs, times)
         if sol < 1:
             print("***ERROR***")
             print("argument to acosh in effective mass" +
@@ -90,18 +92,20 @@ elif EFF_MASS_METHOD == 2:
     if ADD_CONST:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 3 equations numerically."""
-            return nsolve((FITS['fit_func_sym'](times[0],
+            return nsolve((latfit.config.FITS['fit_func_sym'](times[0],
                                                 [x, y, z])-corrs[0],
-                           FITS['fit_func_sym'](times[1],
+                           latfit.config.FITS['fit_func_sym'](times[1],
                                                 [x, y, z])-corrs[1],
-                           FITS['fit_func_sym'](times[2],
+                           latfit.config.FITS['fit_func_sym'](times[2],
                                                 [x, y, z])-corrs[2]),
                           (x, y, z), START_PARAMS)
     else:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 2 equations numerically."""
-            return nsolve((FITS['fit_func_sym'](times[0], [x, y])-corrs[0],
-                           FITS['fit_func_sym'](times[1], [x, y])-corrs[1]),
+            return nsolve((latfit.config.FITS['fit_func_sym'](
+                times[0], [x, y])-corrs[0],
+                           latfit.config.FITS['fit_func_sym'](
+                               times[1], [x, y])-corrs[1]),
                           (x, y), START_PARAMS)
 
 # one parameter fit, optional additive constant (determined in config)
@@ -111,8 +115,8 @@ elif EFF_MASS_METHOD == 3:
         [ C(t+1)-C(t) ]/[ C(t+2)-C(t+1) ]
         """
         corrs, times = pre_proc_meff(lines, files, time_arr)
-        sol = FITS['ratio'](corrs, times) if index is None else\
-            FITS.fid['ratio'][ADD_CONST_VEC[index]](corrs, times)
+        sol = latfit.config.FITS['ratio'](corrs, times) if index is None else\
+            latfit.config.FITS.fid['ratio'][ADD_CONST_VEC[index]](corrs, times)
         return sol
 
 # sliding window, solved by minimizing a one parameter cost function
@@ -137,7 +141,7 @@ elif EFF_MASS_METHOD == 4:
         def eff_mass_tomin(energy, ctime, sol):
             """Minimize this
             (quadratic) to solve a sliding window problem."""
-            return (FITS.fid['fit_func_1p'][add_const_bool](
+            return (latfit.config.FITS.fid['fit_func_1p'][add_const_bool](
                 ctime, [energy], LT_VEC[ini], tstep_arr)-sol)**2
         return eff_mass_tomin
 
@@ -161,7 +165,7 @@ elif EFF_MASS_METHOD == 4:
         """Minimize this
         (find a root) to solve a sliding window problem."""
         assert None, 'not supported.'
-        return FITS.fid['fit_func_1p'](ctime, [energy])-sol
+        return latfit.config.FITS.fid['fit_func_1p'](ctime, [energy])-sol
 
     def proc_meff4(corrs, index, _, times=(None)):
         """numerically solve a function with one free parameter
@@ -173,8 +177,8 @@ elif EFF_MASS_METHOD == 4:
         #else:
         if not LOGFORM:
             try:
-                sol = FITS['ratio'](
-                    corrs, times) if index is None else FITS.fid[
+                sol = latfit.config.FITS['ratio'](
+                    corrs, times) if index is None else latfit.config.FITS.fid[
                         'ratio'][ADD_CONST_VEC[
                             index]](corrs, times)
                 assert not np.isnan(sol) or any(np.isnan(np.array(
@@ -242,7 +246,8 @@ elif EFF_MASS_METHOD == 4:
         else:
             test = sol < 0
         if test:
-            ratioval = FITS.fid['ratio'] if index is None else FITS.fid[
+            ratioval = latfit.config.FITS.fid[
+                'ratio'] if index is None else latfit.config.FITS.fid[
                 'ratio'][ADD_CONST_VEC[index]](corrs, times)
             ratioval = corrs[0] if LOGFORM else ratioval
             sol = np.array(sol)
