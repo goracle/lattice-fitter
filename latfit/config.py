@@ -347,7 +347,6 @@ MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
-ADD_CONST_VEC = tuple(ADD_CONST_VEC)
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
@@ -860,6 +859,7 @@ if MATRIX_SUBTRACTION:
 LT_VEC = tuple(LT_VEC)
 
 ADD_CONST_VEC = list(map(int, ADD_CONST_VEC))
+ADD_CONST_VEC = tuple(ADD_CONST_VEC)
 
 # library of functions to fit.  define them in the usual way
 
