@@ -175,7 +175,7 @@ def singlefit(meta, input_f):
             else:
                 try:
                     result_min, param_err = jackknife_fit(
-                        params, reuse, singlefit.reuse_blocked, coords)
+                        meta, params, reuse, singlefit.reuse_blocked, coords)
                 except PrecisionLossError:
                     singlefit_reset()
                     raise XmaxError(problemx=xmax)

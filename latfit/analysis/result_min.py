@@ -93,7 +93,7 @@ class Param:
 
 class ResultMin:
     """Store fit results for an individual fit range in this class"""
-    def __init__(self, params, coords):
+    def __init__(self, meta, params, coords):
         self.energy = Param()
         self.systematics = Param()
         self.pvalue = Param()
@@ -108,6 +108,7 @@ class ResultMin:
         self.misc.dof = None
         self.misc.num_configs = None
         self.misc.status = 0
+        meta.actual_range() # to set WINDOW
         self.compute_dof(params, coords)
 
     @PROFILE

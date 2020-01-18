@@ -55,7 +55,8 @@ def aroundtheworld_pionratio(diag_name, timeij):
         exp = DELTA_E_AROUND_THE_WORLD
         exp2 = DELTA_E2_AROUND_THE_WORLD
         if exp is not None:
-            sub = proc_folder(name, timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+            sub = proc_folder(
+                name, timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             if hasattr(exp, '__iter__') and np.asarray(exp).shape:
                 for i, _ in enumerate(exp):
                     ret[i] *= math.exp(exp[i]*timeij)
@@ -63,7 +64,8 @@ def aroundtheworld_pionratio(diag_name, timeij):
                         timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION))
             else:
                 ret *= math.exp(exp*timeij)
-                sub *= math.exp(exp*(timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION))
+                sub *= math.exp(exp*(
+                    timeij-latfit.config.DELTA_T_MATRIX_SUBTRACTION))
             ret -= sub
         if exp2 is not None:
             ret *= math.exp(exp2*timeij)

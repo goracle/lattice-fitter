@@ -147,7 +147,7 @@ if JACKKNIFE_FIT == 'FROZEN':
 
 elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
     @PROFILE
-    def jackknife_fit(params, reuse, reuse_blocked, coords, _=None):
+    def jackknife_fit(meta, params, reuse, reuse_blocked, coords):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -156,7 +156,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         (N.B. substitute t^2 for chi^2 if doing a correlated fit)
         """
         # storage for results
-        result_min = ResultMin(params, coords)
+        result_min = ResultMin(meta, params, coords)
         result_min.pvalue.zero(params.num_configs)
         result_min.phase_shift.arr = alloc_phase_shift(params)
         result_min.alloc_sys_arr(params)
