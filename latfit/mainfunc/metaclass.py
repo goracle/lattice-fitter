@@ -40,8 +40,7 @@ def filter_sparse(sampler, fitwindow, xstep=1):
     frange = np.arange(fitwindow[0], fitwindow[1]+xstep, xstep)
     retsampler = []
     for excl in sampler:
-        excl = list(excl)
-        fdel = list(filter(lambda a, sk=excl: a not in sk, frange))
+        fdel = tuple(filter(lambda a, sk=excl: a not in sk, frange))
         if len(fdel) < RANGE_LENGTH_MIN and not ONLY_SMALL_FIT_RANGES:
             continue
         if len(fdel) >= RANGE_LENGTH_MIN and ONLY_SMALL_FIT_RANGES:
@@ -57,6 +56,7 @@ def filter_sparse(sampler, fitwindow, xstep=1):
         if skip:
             continue
         retsampler.append(excl)
+    retsampler = tuple(retsampler)
     return retsampler
 
 @PROFILE
@@ -171,8 +171,8 @@ class FitRangeMetaData:
         """Generate all possible fit ranges"""
         posexcl = powerset(self.actual_range())
         sampler = filter_sparse(posexcl, self.fitwindow, self.options.xstep)
-        sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
-        posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
+        sampler = tuple(tuple(EXCL_ORIG)) if NOLOOP else sampler
+        posexcl = tuple(sampler for _ in latfit.config.FIT_EXCL)
         prod = product(*posexcl)
         return prod, sampler
 

@@ -22,6 +22,7 @@ from latfit.utilities.sum_blks import isoproj
 from latfit.utilities.postprod.checkblks import strip_op
 from latfit.utilities.postprod.checkblks import TESTKEY, TESTKEY2
 from latfit.utilities.postprod.checkblks import FREEFIELD, TEST44, TEST24C
+from latfit.utilities.tuplize import tupl_mat
 
 # dynamic
 import latfit.utilities.postprod.auxblks as auxb
@@ -129,16 +130,9 @@ ROWST = np.tile(np.arange(LT), (LT, 1))
 ROWS = np.tile(np.arange(LT), (LT, 1)).T
 COLS = np.array([np.roll(np.arange(LT), -i, axis=0) for i in range(LT)])
 
-def tuplize_mat(mat):
-    """Make matrix immutable"""
-    mat = np.asarray(mat)
-    assert len(mat.shape) == 2, mat
-    ret = tuple(tuple(i) for i in mat)
-    return ret
-
-ROWS = tuplize_mat(ROWS)
-COLS = tuplize_mat(COLS)
-ROWST = tuplize_mat(ROWST)
+ROWS = tupl_mat(ROWS)
+COLS = tupl_mat(COLS)
+ROWST = tupl_mat(ROWST)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined

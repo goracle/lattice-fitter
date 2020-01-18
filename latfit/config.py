@@ -421,8 +421,8 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 
 # exclude from fit range these time slices.  shape = (GEVP dim, tslice elim)
 if not INCLUDE:
-    FIT_EXCL = [[] for _ in range(DIM)] if GEVP else [[]]
-FIT_EXCL = [FIT_EXCL[i] for i in range(DIM)]
+    FIT_EXCL = tuple(tuple(() for _ in range(DIM)) if GEVP else ())
+FIT_EXCL = tuple(tuple(FIT_EXCL[i]) for i in range(DIM))
 BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 assert len(FIT_EXCL) == DIM or not GEVP
 print_include_messages(GEVP)

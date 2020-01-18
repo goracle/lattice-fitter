@@ -66,7 +66,7 @@ def sortcombinations(combinations, tsorted, lenfit):
 def sample_norms(sampler, tsorted, lenfit):
     """Score the powerset and find the corresponding
     normalized probabilities"""
-    samp = sorted(list(sampler))
+    samp = tuple(sorted(list(sampler)))
     total = 0
     probs = []
     assert samp, "no fit ranges"

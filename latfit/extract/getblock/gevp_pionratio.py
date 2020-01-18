@@ -124,7 +124,7 @@ def energies_pionratio(timeij, delta_t):
     avglhs = np.asarray(em.acmean(lhs, axis=0))
     avglhs_p1 = np.asarray(em.acmean(lhs_p1, axis=0))
     avgrhs = np.asarray(em.acmean(rhs, axis=0))
-    exclsave = [list(i) for i in latfit.config.FIT_EXCL]
+    exclsave = tuple(tuple(i) for i in latfit.config.FIT_EXCL)
     try:
         pass
         #assert all(abs(rhs[0]/rhs[0]) > 1)

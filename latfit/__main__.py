@@ -1107,8 +1107,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
             print_res.print_phaseshift(result_min)
         if not cutresult(result_min, min_arr,
                          overfit_arr, param_err):
-            result = [result_min, list(param_err),
-                      list(latfit.config.FIT_EXCL)]
+            result = (result_min, list(param_err),
+                      latfit.config.FIT_EXCL)
             # don't overfit
             if result_min.chisq.val/result_min.misc.dof >= 1 and\
                SKIP_OVERFIT:
@@ -1330,7 +1330,7 @@ def reset_main(mintol):
     """Reset all dynamic variables"""
     latfit.config.MINTOL = mintol
     latfit.config.FIT_EXCL = np.copy(EXCL_ORIG)
-    latfit.config.FIT_EXCL = [list(i) for i in latfit.config.FIT_EXCL]
+    latfit.config.FIT_EXCL = tuple(tuple(i) for i in latfit.config.FIT_EXCL)
     partial_reset()
 
 def partial_reset():
