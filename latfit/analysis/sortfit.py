@@ -9,7 +9,8 @@ def best_times(coord, cov, index, times):
     (todo:make more general?)
     chisq (t^2) = num/denom
     """
-    if hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) > 1:
+    disp = np.asarray(DISP_ENERGIES)
+    if hasattr(DISP_ENERGIES, '__iter__') and len(disp.shape) > 1:
         dispmean = em.acmean(DISP_ENERGIES, axis=1) if\
             np.asarray(DISP_ENERGIES).shape else 0
     elif hasattr(DISP_ENERGIES, '__iter__') and len(DISP_ENERGIES.shape) == 1:

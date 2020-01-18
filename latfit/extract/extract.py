@@ -39,6 +39,7 @@ def extract(input_f, xmin, xmax, xstep):
 
         # reuse results
         reuse = extract.reuse
+        #query(reuse)
         if not reuse:
             reuse = {xmin: 0}
 
@@ -69,8 +70,7 @@ def extract(input_f, xmin, xmax, xstep):
 
                 # get the cov entry and the block
                 resret_proc = proc_ijfile(ifile_tup, jfile_tup,
-                                          reuse=reuse, timeij=tij,
-                                          delta_t=delta_t)
+                    reuse=reuse, timeij=tij, delta_t=delta_t)
 
                 # fill in the covariance matrix
                 resret.cov[i][j] = resret_proc.covar
@@ -87,8 +87,15 @@ def extract(input_f, xmin, xmax, xstep):
                     # only store coordinates once.
                     resret.coords[i][0] = timei
                     resret.coords[i][1] = resret_proc.coord
+    #query(reuse)
+    #print("end extract")
     return resret.coords, resret.cov, reuse
 extract.reuse = {}
+
+def query(reuse):
+    """Print a list of the keys"""
+    if VERBOSE:
+        print("stored times:", tuple(reuse.keys()))
 
 def reset_extract():
     """zero out reuse dict"""

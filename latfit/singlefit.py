@@ -446,8 +446,9 @@ def cut_on_growing_exp(meta):
                     excl[0].append(excl_add)
                     excl[0] = list(set(excl[0]))
                     already_cut.add(j)
-    latfit.config.FIT_EXCL = tupl_mat(excl)
-    ret = start == str(latfit.config.FIT_EXCL)
+    excl = tupl_mat(excl)
+    ret = start == str(excl)
+    latfit.config.FIT_EXCL = excl
     return ret
 
 @PROFILE
@@ -484,8 +485,9 @@ def cut_on_errsize(meta):
                     print("err/coords > ERR_CUT =", ERR_CUT)
                 excl[0].append(excl_add)
                 excl[0] = list(set(excl[0]))
-    ret = start == str(latfit.config.FIT_EXCL)
-    latfit.config.FIT_EXCL = tupl_mat(excl)
+    excl = tupl_mat(excl)
+    ret = start == str(excl)
+    latfit.config.FIT_EXCL = excl
     return ret
 
 @PROFILE
