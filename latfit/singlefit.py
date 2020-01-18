@@ -446,7 +446,6 @@ def cut_on_growing_exp(meta):
                     excl[0].append(excl_add)
                     excl[0] = list(set(excl[0]))
                     already_cut.add(j)
-    print("excl", excl)
     latfit.config.FIT_EXCL = tupl_mat(excl)
     ret = start == str(latfit.config.FIT_EXCL)
     return ret
@@ -460,7 +459,7 @@ def cut_on_errsize(meta):
     #assert GEVP, "other versions not supported yet"+str(
     # err.shape)+" "+str(coords.shape)
     start = str(latfit.config.FIT_EXCL)
-    latfit.config.FIT_EXCL = list_mat(latfit.config.FIT_EXCL)
+    excl = list_mat(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
         actual_range = meta.actual_range()
@@ -475,20 +474,18 @@ def cut_on_errsize(meta):
                         print("cutting dimension", j,
                               "for time slice", excl_add)
                         print("err/coords > ERR_CUT =", ERR_CUT)
-                    latfit.config.FIT_EXCL[j].append(excl_add)
-                    latfit.config.FIT_EXCL[j] = list(set(
-                        latfit.config.FIT_EXCL[j]))
+                    excl[j].append(excl_add)
+                    excl[j] = list(set(excl[j]))
         else:
             if err[i]/coords[i][1] > ERR_CUT:
                 if VERBOSE:
                     print("err =", err[i], "coords =", coords[i][1])
                     print("cutting dimension", 0, "for time slice", excl_add)
                     print("err/coords > ERR_CUT =", ERR_CUT)
-                latfit.config.FIT_EXCL[0].append(excl_add)
-                latfit.config.FIT_EXCL[0] = list(set(
-                    latfit.config.FIT_EXCL[0]))
+                excl[0].append(excl_add)
+                excl[0] = list(set(excl[0]))
     ret = start == str(latfit.config.FIT_EXCL)
-    latfit.config.FIT_EXCL = tupl_mat(latfit.config.FIT_EXCL)
+    latfit.config.FIT_EXCL = tupl_mat(excl)
     return ret
 
 @PROFILE
