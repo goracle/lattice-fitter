@@ -42,7 +42,10 @@ DISP_ENERGIES = mod_disp(DISP_ENERGIES)
 
 def disp():
     """Return the dispersion relation energies = Sqrt(m^2+p^2)"""
-    if not disp.binned:
+    assert not disp.binned or disp.origl != len(DISP_ENERGIES),\
+        ("remove this check after a runtime encounter. ",
+         DISP_ENERGIES, disp.origl)
+    if not disp.binned and disp.origl == len(DISP_ENERGIES):
         #disp.energies = latfit.config.update_disp()
         #disp.energies = mod_disp(disp.energies)
         disp.energies = binhalf_e(disp.energies)
@@ -50,6 +53,7 @@ def disp():
     return disp.energies
 disp.energies = np.asarray(DISP_ENERGIES)
 disp.binned = False
+disp.origl = len(DISP_ENERGIES)
 
 def binhalf_e(ear):
     """Update energies for binning and elimination
