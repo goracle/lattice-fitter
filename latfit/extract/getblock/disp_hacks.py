@@ -42,10 +42,9 @@ DISP_ENERGIES = mod_disp(DISP_ENERGIES)
 
 def disp():
     """Return the dispersion relation energies = Sqrt(m^2+p^2)"""
-    assert not disp.binned or disp.origl != len(DISP_ENERGIES),\
-        ("remove this check after a runtime encounter. ",
-         DISP_ENERGIES, disp.origl)
-    if not disp.binned and disp.origl == len(DISP_ENERGIES):
+    assert disp.binned or disp.origl == len(DISP_ENERGIES),\
+        (DISP_ENERGIES.shape, disp.origl)
+    if not disp.binned:
         #disp.energies = latfit.config.update_disp()
         #disp.energies = mod_disp(disp.energies)
         disp.energies = binhalf_e(disp.energies)
