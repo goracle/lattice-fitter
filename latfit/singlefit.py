@@ -163,7 +163,8 @@ def singlefit(meta, input_f):
             params, reuse, singlefit.reuse_blocked, coords)
 
     fiduc_point_cuts(meta)
-    print("new excl:", latfit.config.FIT_EXCL)
+    if VERBOSE:
+        print("new excl:", latfit.config.FIT_EXCL)
     if not toosmallp(meta, latfit.config.FIT_EXCL) and FIT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
