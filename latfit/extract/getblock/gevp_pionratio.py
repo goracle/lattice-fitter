@@ -144,6 +144,12 @@ def energies_pionratio(timeij, delta_t):
     return energies_pionratio.store[key]
 energies_pionratio.store = {}
 
+def reset():
+    """Clear cache in gevp_pionratio"""
+    if VERBOSE:
+        print("clearing pion ratio energy cache")
+    energies_pionratio.store = {}
+
 def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
     """wrapper for callprocmeff
     (non avg version)

@@ -62,6 +62,7 @@ import latfit.singlefit as sfit
 import latfit.config
 import latfit.fit_funcs
 import latfit.extract.getblock.gevp_linalg as glin
+import latfit.extract.getblock.gevp_pionratio as grat
 import latfit.mathfun.proc_meff as effmass
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -1251,6 +1252,13 @@ def main():
     except KeyboardInterrupt:
         signal_handler(signal.SIGINT, "")
 
+def reset_cache():
+    """Until the globals in the loop are removed,
+    caches must be manually cleared"""
+    ext.reset_extract()
+    grat.reset()
+    partial_reset()
+
 def signal_handler(sig, frame):
         print('Ctrl+C pressed; raising.')
         raise
@@ -1281,7 +1289,7 @@ def tloop():
                     break
             if j < TLOOP_START[1] and i <= TLOOP_START[0]:
                 continue
-            ext.reset_extract()
+            reset_cache()
             if i or j:
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
@@ -1334,8 +1342,9 @@ def reset_main(mintol):
     partial_reset()
 
 def partial_reset():
-    """Partial reset during tloop"""
-    glin.reset_sortevals()
+    """Partial reset during tloop. Only partially clear some caches.
+    """
+    glin.reset_sortevals() # this deserves some scrutiny #todo
     sfit.singlefit_reset()
 
 if __name__ == "__main__":

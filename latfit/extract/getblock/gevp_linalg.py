@@ -656,6 +656,7 @@ def reset_sortevals():
     """Reset function variables"""
     sortevals.sorted_evecs = {}
     sortevals.last_time = None
+    sortevals.config = None
 
 def update_sorted_evecs(newe, timeij, config_num):
     """Update sortevals.sorted_evecs; perform stability check
