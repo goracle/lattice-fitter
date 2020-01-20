@@ -66,8 +66,17 @@ IGNORABLE_WINDOWS = ()
 
 # p0 24c
 CBEST = [
+    [['0.28139(34)', '-0.263(70)'], ['0.60791(36)', '-12.10(31)'], ['0.8180(24)', '-20.4(1.9)'], ['0.9646(73)', '-25(10)']]
 ]
 IGNORABLE_WINDOWS = ()
+
+# p1 24c
+CBEST = [
+#[['0.44075(26)', '-3.29(20)'], ['0.70935(32)', '-14.48(29)'], ['0.88630(74)', '-20.45(89)']]
+
+]
+IGNORABLE_WINDOWS = ()
+
 
 # don't count these fit windows for continuity check
 # they are likely overfit,

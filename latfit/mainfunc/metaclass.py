@@ -165,6 +165,7 @@ class FitRangeMetaData:
                     #assert None
                     #self.skiploop = True
                     self.__skiploop = False
+        return self.__skiploop
 
     @PROFILE
     def generate_combinations(self):

@@ -120,8 +120,23 @@ INCLUDE = [[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0], [10.0, 12.0, 14.0], [10
 PARAM_OF_INTEREST = None
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = 3
-DIMSELECT = 0 # t-t0=3, both
+DIMSELECT = 0 # and 1 and 3
 FIT_EXCL = invinc(INCLUDE, (10, 14))
+
+# p0, 24c, I=2
+INCLUDE = [[10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0], [10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0]]
+PARAM_OF_INTEREST = None
+T0 = 'TMINUS3'
+DELTA_T_MATRIX_SUBTRACTION = 3
+DIMSELECT = 2
+FIT_EXCL = invinc(INCLUDE, (10, 13))
+
+# p1 24c I=2
+INCLUDE = [[5.0, 6.0, 7.0], [5.0, 6.0, 7.0], [5.0, 6.0, 7.0]]
+PARAM_OF_INTEREST = None
+T0 = 'TMINUS1'
+DIMSELECT = 0
+FIT_EXCL = invinc(INCLUDE, (5, 7))
 
 # tuplize
 INCLUDE = tupl_mat(INCLUDE)
