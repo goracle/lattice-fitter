@@ -183,7 +183,7 @@ def singlefit(meta, input_f):
                 cloudpickle.dump((result_min, param_err),
                                  open("result_min.p", "wb"))
                 if BOOTSTRAP_PVALUES:
-                    result_min = bootstrap_pvalue(params, reuse,
+                    result_min = bootstrap_pvalue(meta, params, reuse,
                                                   coords, result_min)
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
@@ -243,7 +243,7 @@ def error_bar_scheme(result_min, fitwindow, xmin, xmax):
             pass
     return result_min
 
-def bootstrap_pvalue(params, reuse, coords, result_min):
+def bootstrap_pvalue(meta, params, reuse, coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
     if result_min.misc.dof not in bootstrap_pvalue.result_minq:
@@ -256,7 +256,7 @@ def bootstrap_pvalue(params, reuse, coords, result_min):
         print("NBOOT =", NBOOT)
         try:
             result_minq, _ = jackknife_fit(
-                params, reuse, singlefit.reuse_blocked, coords)
+                meta, params, reuse, singlefit.reuse_blocked, coords)
         except NoConvergence:
             print("minimizer failed to converge during bootstrap")
             assert None

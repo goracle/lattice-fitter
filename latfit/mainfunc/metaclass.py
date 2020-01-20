@@ -171,8 +171,8 @@ class FitRangeMetaData:
         """Generate all possible fit ranges"""
         posexcl = powerset(self.actual_range())
         sampler = filter_sparse(posexcl, self.fitwindow, self.options.xstep)
-        sampler = tuple(tuple(EXCL_ORIG)) if NOLOOP else sampler
-        posexcl = tuple(sampler for _ in latfit.config.FIT_EXCL)
+        sampler = [list(EXCL_ORIG)] if NOLOOP else sampler
+        posexcl = [sampler for i in range(len(latfit.config.FIT_EXCL))]
         prod = product(*posexcl)
         return prod, sampler
 
@@ -206,7 +206,7 @@ class FitRangeMetaData:
         self.lenprod = len(sampler)**(MULT)
         if NOLOOP:
             assert self.lenprod == 1,\
-                "Number of fit ranges is too large."
+                "Number of fit ranges is too large:"+str(self.lenprod)
         latfit.config.MINTOL = True if self.lenprod == 0 else\
             latfit.config.MINTOL
         #latfit.config.BOOTSTRAP = True if self.lenprod == 0 else\

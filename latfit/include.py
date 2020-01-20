@@ -1,5 +1,6 @@
 """Make fit selections for final effective mass fits"""
 import numpy as np
+from latfit.utilities.tuplize import tupl_mat
 
 def invinc(inc, win):
     """Get excluded points from included and fit window"""
@@ -109,16 +110,21 @@ DIMSELECT = 1 # t-t0=1, both
 PARAM_OF_INTEREST = None
 FIT_EXCL = invinc(INCLUDE, (6, 17))
 
-# p0, 24c, I=2
-INCLUDE = ((9.0, 11.0, 13.0), (9.0, 10.0, 11.0, 12.0), (10.0, 11.0, 12.0), (10.0, 11.0, 12.0))
-DIMSELECT = 0 # t-t0=4 dt2
-PARAM_OF_INTEREST = None
-FIT_EXCL = invinc(INCLUDE, (9, 13))
-
 # default
 INCLUDE = ()
 DIMSELECT = None
 PARAM_OF_INTEREST = None
+
+# p0, 24c, I=2
+INCLUDE = [[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0], [10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0]]
+PARAM_OF_INTEREST = None
+T0 = 'TMINUS3'
+DELTA_T_MATRIX_SUBTRACTION = 3
+DIMSELECT = 0 # t-t0=3, both
+FIT_EXCL = invinc(INCLUDE, (10, 14))
+
+# tuplize
+INCLUDE = tupl_mat(INCLUDE)
 
 def print_include_messages(gevp):
     """Print messages"""

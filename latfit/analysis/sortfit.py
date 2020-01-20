@@ -85,5 +85,4 @@ def sample_norms(sampler, tsorted, lenfit):
         "Probabilities chosen do not sum to 1:"+str(em.acsum(probs, axis=0))
     #for i, j in zip(samp, probs):
     #    print(i, j)
-    #sys.exit(0)
     return probs, samp

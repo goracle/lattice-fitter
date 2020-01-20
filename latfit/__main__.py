@@ -1331,7 +1331,8 @@ def tloop():
     if TLOOP:
         print("End of t loop.  latfit exiting, rank:", MPIRANK)
     else:
-        print("End of selected parameter fit.  latfit exiting, rank:", MPIRANK)
+        print("End of selected parameter fit.  latfit exiting, rank:",
+              MPIRANK)
 tloop.ijstr = ""
 
 def reset_main(mintol):

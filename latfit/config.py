@@ -18,6 +18,7 @@ import latfit.extract.binout as binout
 import latfit.analysis.errorcodes as errc
 from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE, FIT_EXCL
 from latfit.include import print_include_messages
+from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION
 
 # PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
 
@@ -105,28 +106,37 @@ GEVP_DEBUG = True
 GEVP_DEBUG = False
 TLOOP = False if GEVP_DEBUG else TLOOP
 
-T0 = 'ROUND' # ceil(t/2)
-T0 = 'LOOP' # ceil(t/2)
-T0 = 'TMINUS3' # t-1
-if LATTICE_ENSEMBLE == '24c':
-    T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS1'
-    T0 = 'TMINUS1' if IRREP == 'A_1PLUS_mom000' else T0
-elif LATTICE_ENSEMBLE == '32c':
-    T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
-#T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
-T0 = 'TMINUS1' # t-1 # 10 t-2
+if T0 is None:
+    T0 = 'ROUND' # ceil(t/2)
+    T0 = 'LOOP' # ceil(t/2)
+    T0 = 'TMINUS3' # t-1
+    if LATTICE_ENSEMBLE == '24c':
+        T0 = 'TMINUS1' if ISOSPIN != 1 else 'TMINUS1'
+        T0 = 'TMINUS1' if IRREP == 'A_1PLUS_mom000' else T0
+    elif LATTICE_ENSEMBLE == '32c':
+        T0 = 'TMINUS1' if ISOSPIN != 2 else 'TMINUS3'
+    #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
+    T0 = 'TMINUS1' # t-1 # 10 t-2
 
-if LATTICE_ENSEMBLE == '24c':
-    DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-    DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-if LATTICE_ENSEMBLE == '32c':
-    if IRREP == 'A_1PLUS_mom000':
-        DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-    else:
-        DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-    DELTA_T2_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-DELTA_T_MATRIX_SUBTRACTION = 1 if not GEVP_DEBUG else 0
-# do the subtraction at the level of the eigenvalues
+
+def get_dts(dt1, ens, irr):
+    """Get GEVP matrix subtraction delta ts"""
+    dt2 = 1 if not GEVP_DEBUG else 0
+    if dt1 is None:
+        if ens == '24c':
+            dt1 = 1 if not GEVP_DEBUG else 0
+            dt2 = 1 if not GEVP_DEBUG else 0
+        if ens == '32c':
+            if irr == 'A_1PLUS_mom000':
+                dt1 = 1 if not GEVP_DEBUG else 0
+            else:
+                dt1 = 1 if not GEVP_DEBUG else 0
+            dt2 = 1 if not GEVP_DEBUG else 0
+        dt1 = 1 if not GEVP_DEBUG else 0
+    return dt1, dt2
+(DELTA_T_MATRIX_SUBTRACTION,
+ DELTA_T2_MATRIX_SUBTRACTION) = get_dts(
+     DELTA_T_MATRIX_SUBTRACTION, LATTICE_ENSEMBLE, IRREP)
 
 # generate random gaussian data after reading in real data
 # noise is added to the average to simulate a constant + noise data set
@@ -314,6 +324,7 @@ BOOTSTRAP = False # don't modify; internal global
 # Turn on for final fits, if you need fully rigorous p-values...
 BOOTSTRAP_PVALUES = True
 BOOTSTRAP_PVALUES = False
+BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
