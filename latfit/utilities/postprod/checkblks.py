@@ -187,7 +187,8 @@ def check_ids(ensemble):
     ids = pickle.load(open('ids.p', "rb"))
     assert np.all(ids == ids_check),\
         "wrong ensemble. [TSEP, TDIS_MAX, TSTEP,  DOAMA, SKIP_VEC]"+\
-        " should be:"+str(ids)+" instead of:"+str(ids_check)
+        " should be:"+str(ids)+" instead of:"+str(ids_check)+" ens:"+str(
+            ensemble)
     return ids
 
 

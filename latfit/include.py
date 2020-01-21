@@ -141,6 +141,15 @@ FIT_EXCL = invinc(INCLUDE, (5, 7))
 # tuplize
 INCLUDE = tupl_mat(INCLUDE)
 
+# default
+INCLUDE = tuple()
+DIMSELECT = None
+PARAM_OF_INTEREST = None
+T0 = None
+DELTA_T_MATRIX_SUBTRACTION = None
+
+
+
 def print_include_messages(gevp):
     """Print messages"""
     if DIMSELECT is not None and gevp:
