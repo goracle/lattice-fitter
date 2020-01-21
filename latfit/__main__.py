@@ -109,14 +109,18 @@ def winsize_check(meta, tadd, tsub):
     ret = new_fitwin_len > 0 and RANGE_LENGTH_MIN <= new_fitwin_len
     return ret
 
-def finished_win_check(meta):
+def finished_win_check(meta, tsub=None):
     """Skip if we've already got results for this window"""
     fwin = finished_windows()
     ret = False
     for i in fwin:
         if i[0] == meta.fitwindow[0] and i[1] == meta.fitwindow[1]:
             #if VERBOSE:
-            print("fit window", i, "already finished.  Skipping.")
+            prs = "fit window "+str(
+                i)+" already finished.  Skipping.  rank: "+str(MPIRANK)
+            if tsub is not None:
+                prs += " tsub: "+str(tsub)
+            print(prs)
             ret = True
     return ret
     
@@ -1057,7 +1061,7 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         for _ in range(tsub):
             meta.decr_xmax(problemx=problemx)
         partial_reset()
-    if finished_win_check(meta):
+    if finished_win_check(meta, tsub=tsub):
         raise FinishedSkip
 
 
