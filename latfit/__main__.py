@@ -1271,23 +1271,23 @@ def tloop():
         mkplot.NOSHOW = True
     # outer loop is over matrix subtraction delta_t
     # (assumes we never do a second subtraction)
-    for i in range(TSEP_VEC[0]+1): # not set up for xstep
+    loop_len = TSEP_VEC[0] + 1
+    start_count = loop_len*TLOOP_START[0]+ TLOOP_START[1]
+    for i in range(loop_len): # not set up for xstep
         assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
         if i:
             if MATRIX_SUBTRACTION and TLOOP:
                 incr_dt()
             else:
                 break
-        if i < TLOOP_START[0]:
-            continue
-        for j in range(TSEP_VEC[0]+1): # loop over t-t0
+        for j in range(loop_len): # loop over t-t0
             # get rid of all gevp/eff mass processing
             if j:
                 if TLOOP:
                     incr_t0()
                 else:
                     break
-            if j < TLOOP_START[1] and i <= TLOOP_START[0]:
+            if j+i*loop_len < start_count:
                 continue
             reset_cache()
             if i or j:
