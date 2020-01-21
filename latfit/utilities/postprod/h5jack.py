@@ -911,5 +911,3 @@ if __name__ == '__main__':
     END = time.perf_counter()
     if MPIRANK == 0:
         print("Total elapsed time =", END-START, "seconds")
-else:
-    checkb.check_ids(LATTICE_ENSEMBLE)
