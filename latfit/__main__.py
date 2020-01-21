@@ -158,8 +158,6 @@ def fit(tadd=0, tsub=0):
         # fit loop at all; thus parallelize
         if list(meta.generate_combinations()[0]) and not meta.skip_loop():
             fit.count += 1
-            if fit.count % MPISIZE != MPIRANK and MPISIZE > 1:
-                raise MpiSkip
             if VERBOSE:
                 print("fit.count =", fit.count)
 
@@ -1297,12 +1295,17 @@ def tloop():
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             for tsub in range(int(TDIS_MAX)): # this is the tmax loop
-                tadd = 0
-                flag = 1
+
+                if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
+                    continue
                 if not TLOOP and tsub:
                     break
 
-                while flag and tadd <= int(TDIS_MAX): # this is the tmin/tadd loop
+                tadd = 0
+                flag = 1
+
+                while flag and tadd <= int(
+                        TDIS_MAX): # this is the tmin/tadd loop
                     if not TLOOP and tadd:
                         break
 
