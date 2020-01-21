@@ -227,8 +227,11 @@ class FitRangeMetaData:
         return prod
 
     def window_str(self):
-        """Get a file string for the fit window"""
-        ret = "_"+str(self.fitwindow[0])+"_"+str(self.fitwindow[1])
+        """Get a file string for the fit window
+        the int float convention is for historical reasons.
+        """
+        ret = "_"+str(int(self.fitwindow[0]))+"_"+str(
+            float(self.fitwindow[1]))
         return ret
 
     @PROFILE
