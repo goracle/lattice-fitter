@@ -13,6 +13,8 @@ def invinc(inc, win):
     ret = tuple(ret)
     return ret
 
+### DO NOT MODIFY ABOVE THIS LINE
+
 # in order to get final effective mass plots
 
 # p0, 32c, I=2
@@ -138,9 +140,6 @@ T0 = 'TMINUS1'
 DIMSELECT = 0
 FIT_EXCL = invinc(INCLUDE, (5, 7))
 
-# tuplize
-INCLUDE = tupl_mat(INCLUDE)
-
 # default
 INCLUDE = tuple()
 DIMSELECT = None
@@ -148,6 +147,20 @@ PARAM_OF_INTEREST = None
 T0 = None
 DELTA_T_MATRIX_SUBTRACTION = None
 
+# p1 24c I=2
+INCLUDE =  [[7.0, 8.0, 9.0, 10.0], [7.0, 8.0, 9.0], [8.0, 9.0, 10.0]]
+PARAM_OF_INTEREST = None
+T0 = 'TMINUS3'
+DELTA_T_MATRIX_SUBTRACTION = None
+DIMSELECT = 1
+FIT_EXCL = invinc(INCLUDE, (7, 10))
+
+
+
+### DO NOT MODIFY BELOW THIS LINE
+
+# tuplize, do not modify
+INCLUDE = tupl_mat(INCLUDE)
 
 
 def print_include_messages(gevp):
