@@ -295,8 +295,13 @@ def post_loop(meta, loop_store, plotdata,
             result_min['energy'].val, min_arr)
         # do the best fit again, with good stopping condition
         # latfit.config.FIT_EXCL = min_excl(min_arr)
-        print("fit excluded points (indices):",
-              latfit.config.FIT_EXCL)
+    else:
+        result_min = min_arr[0]
+        param_err = result_min.energy.err
+        dump_single_fit(meta, min_arr)
+
+    print("fit excluded points (indices):",
+          latfit.config.FIT_EXCL)
 
     if (not (meta.skip_loop() and latfit.config.MINTOL)\
         and METHOD == 'NaN') or not test_success\
@@ -427,6 +432,12 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                 ret = True
     return ret
 
+def get_first_res(name, min_arr):
+    """Get the first mean for name"""
+    mean = min_arr[0][0].__dict__[name].val
+    err = min_arr[0][0].__dict__[name].err
+    return mean, err
+
 def mean_and_err_loop_continue(name, min_arr):
     """should we continue in the loop
     """
@@ -435,7 +446,7 @@ def mean_and_err_loop_continue(name, min_arr):
         ret = True
     else:
         try:
-            val = min_arr[0][0].__dict__[name].val
+            val, _ = get_first_res(name, min_arr)
         except AttributeError:
             print("a Param got overwritten.  name:", name)
             raise
@@ -462,6 +473,23 @@ def parametrize_entry(result_min, name):
     if name not in result_min:
         result_min[name] = Param()
     return result_min
+
+def dump_single_fit(meta, min_arr):
+    """Dump result if there's only one"""
+    # dump the results to file
+    # if not (ISOSPIN == 0 and GEVP):
+    for name in min_arr[0][0].__dict__:
+
+        if mean_and_err_loop_continue(name, min_arr):
+            continue
+
+        res_mean, err_check = get_first_res(name, min_arr)
+
+        if len(min_arr) > 1 or (meta.lenprod == 1 and len(min_arr) == 1):
+            if not NOLOOP:
+                dump_fit_range(meta, min_arr, name, res_mean, err_check)
+
+
 
 @PROFILE
 def find_mean_and_err(meta, min_arr):
