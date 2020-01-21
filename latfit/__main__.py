@@ -33,6 +33,8 @@ from latfit.config import CALC_PHASE_SHIFT, LATTICE_ENSEMBLE
 from latfit.config import SKIP_OVERFIT, NOLOOP, MATRIX_SUBTRACTION
 from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
 from latfit.analysis.superjack import jack_mean_err
+from latfit.analysis.filename_windows import finished_windows
+from latfit.analysis.filename_windows import filename_plus_config_info
 from latfit.makemin.mkmin import convert_to_namedtuple
 
 from latfit.extract.errcheck.xlim_err import fitrange_err
@@ -107,6 +109,17 @@ def winsize_check(meta, tadd, tsub):
     ret = new_fitwin_len > 0 and RANGE_LENGTH_MIN <= new_fitwin_len
     return ret
 
+def finished_win_check(meta):
+    """Skip if we've already got results for this window"""
+    fwin = finished_windows()
+    ret = False
+    for i in fwin:
+        if i[0] == meta.fitwindow[0] and i[1] == meta.fitwindow[1]:
+            #if VERBOSE:
+            print("fit window", i, "already finished.  Skipping.")
+            ret = True
+    return ret
+    
 @PROFILE
 def fit(tadd=0, tsub=0):
     """Main for latfit"""
@@ -827,19 +840,6 @@ def write_pickle_file_verb(filename, arr):
     print("writing pickle file", filename)
     pickle.dump(arr, open(filename+'.p', "wb"))
 
-def filename_plus_config_info(meta, filename):
-    """Add config info to file name"""
-    if GEVP:
-        filename += "_"+MOMSTR+'_I'+str(ISOSPIN)
-    if meta.random_fit:
-        filename += '_randfit'
-    if SYS_ENERGY_GUESS:
-        filename += "_sys"
-    if MATRIX_SUBTRACTION:
-        filename += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-    filename += meta.window_str()+"_"+latfit.config.T0
-    return filename
-
 @PROFILE
 def divbychisq(param_arr, pvalue_arr):
     """Divide a parameter by chisq (t^2)"""
@@ -1059,6 +1059,8 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         for _ in range(tsub):
             meta.decr_xmax(problemx=problemx)
         partial_reset()
+    if finished_win_check(meta):
+        raise MpiSkip
 
 
 def dofit_second_initial(meta, retsingle_save, test_success):
