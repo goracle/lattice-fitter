@@ -45,7 +45,7 @@ from latfit.makemin.mkmin import NegChisq
 from latfit.analysis.errorcodes import XmaxError, RelGammaError, ZetaError
 from latfit.analysis.errorcodes import XminError, FitRangeInconsistency
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq, FitFail
-from latfit.analysis.errorcodes import DOFNonPosFit, MpiSkip
+from latfit.analysis.errorcodes import DOFNonPosFit, MpiSkip, FinishedSkip
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
 from latfit.analysis.errorcodes import EnergySortError, TooManyBadFitsError
 from latfit.analysis.result_min import Param
@@ -1060,7 +1060,7 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
             meta.decr_xmax(problemx=problemx)
         partial_reset()
     if finished_win_check(meta):
-        raise MpiSkip
+        raise FinishedSkip
 
 
 def dofit_second_initial(meta, retsingle_save, test_success):
@@ -1323,10 +1323,17 @@ def tloop():
                     except (FitRangeInconsistency, FitFail, MpiSkip):
                         if VERBOSE:
                             print("starting a new main()",
-                                  "(inconsistent/fitfail/mpi skip).  rank:", MPIRANK)
+                                  "(inconsistent/fitfail/mpi skip).  rank:",
+                                  MPIRANK)
                         flag = 1
                         tadd += 1 # add this to tmin
 
+                    except FinishedSkip:
+                        if VERBOSE:
+                            print("starting a new main() with new tsub rank:",
+                                  MPIRANK)
+                        flag = 0 # flag stays 0 if fit succeeds
+                        break
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break

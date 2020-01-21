@@ -237,3 +237,10 @@ class RelGammaError(Exception):
         self.gamma = gamma
         self.epipi = epipi
         self.message = message
+
+class FinishedSkip(Exception):
+    """Exception if the results are already finished"""
+    def __init__(self, message='', prin=PRIN):
+        if prin:
+            print("Results finished")
+        super(FinishedSkip, self).__init__(message)
