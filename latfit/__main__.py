@@ -115,12 +115,12 @@ def finished_win_check(meta, tsub=None):
     ret = False
     for i in fwin:
         if i[0] == meta.fitwindow[0] and i[1] == meta.fitwindow[1]:
-            #if VERBOSE:
-            prs = "fit window "+str(
-                i)+" already finished.  Skipping.  rank: "+str(MPIRANK)
-            if tsub is not None:
-                prs += " tsub: "+str(tsub)
-            print(prs)
+            if VERBOSE:
+                prs = "fit window "+str(
+                    i)+" already finished.  Skipping.  rank: "+str(MPIRANK)
+                if tsub is not None and int(tsub) != 1:
+                    prs += " tsub: "+str(tsub)
+                print(prs)
             ret = True
     return ret
     
@@ -1302,6 +1302,8 @@ def tloop():
 
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
                     continue
+                if VERBOSE:
+                    print("starting tsub:", tsub, "rank:", MPIRANK)
                 if not TLOOP and tsub:
                     break
 
