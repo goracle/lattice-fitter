@@ -158,13 +158,6 @@ def fit(tadd=0, tsub=0):
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
 
-        # a significant level of work is needed if we are entering the
-        # fit loop at all; thus parallelize
-        if list(meta.generate_combinations()[0]) and not meta.skip_loop():
-            fit.count += 1
-            if VERBOSE:
-                print("fit.count =", fit.count)
-
         if FIT:
 
             test = True
@@ -251,7 +244,6 @@ def fit(tadd=0, tsub=0):
         old_fit_style(meta, trials, plotdata)
     print("END FIT, rank:", MPIRANK)
     return test
-fit.count = -1
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style
