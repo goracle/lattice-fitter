@@ -1,4 +1,5 @@
 """Check consistency of fit results"""
+import os
 import numpy as np
 from gvar import gvar
 from latfit.config import GEVP
