@@ -4,7 +4,25 @@ from gvar import gvar
 from latfit.config import GEVP
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.analysis.errorcodes import FitRangeInconsistency
+from latfit.analysis.filename_windows import file_name_plust_config_info
 import latfit.config
+
+# https://stackoverflow.com/questions/1158076/implement-touch-using-python
+@PROFILE
+def touch(fname, mode=0o666, dir_fd=None, **kwargs):
+    """unix touch"""
+    flags = os.O_CREAT | os.O_APPEND
+    with os.fdopen(os.open(fname, flags=flags,
+                           mode=mode, dir_fd=dir_fd)) as fn1:
+        os.utime(fn1.fileno() if os.utime in os.supports_fd else fname,
+                 dir_fd=None if os.supports_fd else dir_fd, **kwargs)
+
+def create_dummy_skip(meta):
+    """If we find an inconsistent fit,
+    create a dummy file so that we skip that in any repeat run"""
+    fname = filename_plus_config_info(meta, 'pvalue')+'.p'
+    print("creating skip file:", fname)
+    touch(fname+'.p')
 
 def fit_range_consistency_check(meta, min_arr, name):
     """Check consistency of energies and phase shifts so far"""
@@ -26,6 +44,7 @@ def err_handle(meta, consis, lparam, name):
             print("dt matsub:", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
         for i in sort_by_val(lparam):
             print(gvar(i.val, i.err))
+        create_dummy_skip(meta)
         raise FitRangeInconsistency
 
 def sort_by_val(lparam):
