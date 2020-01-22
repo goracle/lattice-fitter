@@ -297,7 +297,7 @@ def post_loop(meta, loop_store, plotdata,
         # latfit.config.FIT_EXCL = min_excl(min_arr)
     else:
         result_min = min_arr[0]
-        param_err = result_min.energy.err
+        param_err = result_min[1]
         dump_single_fit(meta, min_arr)
 
     print("fit excluded points (indices):",
