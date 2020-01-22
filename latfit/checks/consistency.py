@@ -4,8 +4,16 @@ from gvar import gvar
 from latfit.config import GEVP
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.analysis.errorcodes import FitRangeInconsistency
-from latfit.analysis.filename_windows import file_name_plust_config_info
+from latfit.analysis.filename_windows import filename_plus_config_info
 import latfit.config
+
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
 
 # https://stackoverflow.com/questions/1158076/implement-touch-using-python
 @PROFILE

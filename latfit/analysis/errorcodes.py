@@ -15,6 +15,17 @@ except NameError:
         return arg2
     PROFILE = profile
 
+class NegChisq(Exception):
+    """Exception for imaginary GEVP eigenvalue"""
+    @PROFILE
+    def __init__(self, problemx=None, message=''):
+        print("***ERROR***")
+        print("Chi^2 (t^2) minimizer failed.",
+              "Chi^2 (t^2) found to be less than zero.")
+        super(NegChisq, self).__init__(message)
+        self.problemx = problemx
+        self.message = message
+
 class BoolThrowErr:
     """object which throws an error if it's 'boolness' is examined"""
     def __bool__(self):

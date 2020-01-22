@@ -17,6 +17,7 @@ from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
 from latfit.config import GRAD, EFF_MASS
+from latfit.analysis.errorcodes import NegChisq
 from latfit.analysis.errorcodes import EnergySortError, PrecisionLossError
 import latfit.config
 import latfit.mathfun.chi_sq as chi
@@ -298,13 +299,3 @@ else:
         """pass"""
         return res_min
 
-class NegChisq(Exception):
-    """Exception for imaginary GEVP eigenvalue"""
-    @PROFILE
-    def __init__(self, problemx=None, message=''):
-        print("***ERROR***")
-        print("Chi^2 (t^2) minimizer failed.",
-              "Chi^2 (t^2) found to be less than zero.")
-        super(NegChisq, self).__init__(message)
-        self.problemx = problemx
-        self.message = message

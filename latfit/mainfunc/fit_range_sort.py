@@ -3,12 +3,11 @@ import mpi4py
 from mpi4py import MPI
 import numpy as np
 import latfit.analysis.sortfit as sortfit
-from latfit.config import ISOSPIN, GEVP, MAX_RESULTS
-from latfit.config import SKIP_LARGE_ERRORS, ERR_CUT
-from latfit.config import ONLY_SMALL_FIT_RANGES, VERBOSE
+from latfit.config import GEVP, MAX_RESULTS
+from latfit.config import SKIP_LARGE_ERRORS
+from latfit.config import VERBOSE
 from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
-from latfit.singlefit import singlefit
 import latfit.singlefit
 
 assert not BIASED_SPEEDUP
@@ -150,7 +149,7 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
         else:
             excl = tuple(np.random.choice(
                 samp_mult[i][1], p=samp_mult[i][0])
-                    for i in range(MULT))
+                         for i in range(MULT))
     # add user info
     excl = augment_excl([list(j) for j in excl])
 

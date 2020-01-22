@@ -157,7 +157,7 @@ class FitRangeMetaData:
     @PROFILE
     def skip_loop(self):
         """Set the loop condition"""
-        self.__skiploop = not self.lenprod > 1
+        self.__skiploop = self.lenprod <= 1
         self.__skiploop = True if NOLOOP else self.__skiploop
         if not self.random_fit and not self.__skiploop:
             for excl in EXCL_ORIG:
