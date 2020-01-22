@@ -648,6 +648,7 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     fname = filename_plus_config_info(meta, fname)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
+    assert not os.path.exists(fname+'.p'), fname+'.p'
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 def time_slice_list():
@@ -868,6 +869,7 @@ dump_fit_range.fn1 = None
 def write_pickle_file_verb(filename, arr):
     """Write pickle file; print info"""
     print("writing pickle file", filename)
+    assert not os.path.exists(filename+'.p'), filename+'.p'
     pickle.dump(arr, open(filename+'.p', "wb"))
 
 @PROFILE
@@ -991,16 +993,6 @@ def get_fitparams_loc(list_fit_params, trials):
             len(list_fit_params[i]))])*prefactor) for i in range(
                 len(list_fit_params))]
     return avg_fit_params, err_fit_params
-
-# https://stackoverflow.com/questions/1158076/implement-touch-using-python
-@PROFILE
-def touch(fname, mode=0o666, dir_fd=None, **kwargs):
-    """unix touch"""
-    flags = os.O_CREAT | os.O_APPEND
-    with os.fdopen(os.open(fname, flags=flags,
-                           mode=mode, dir_fd=dir_fd)) as fn1:
-        os.utime(fn1.fileno() if os.utime in os.supports_fd else fname,
-                 dir_fd=None if os.supports_fd else dir_fd, **kwargs)
 
 def xmax_err(meta, err):
     """Handle xmax error"""
