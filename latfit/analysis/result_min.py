@@ -108,8 +108,35 @@ class ResultMin:
         self.misc.dof = None
         self.misc.num_configs = None
         self.misc.status = 0
+        self.alloc_phase_shift(params)
+        self.alloc_sys_arr(params)
         meta.actual_range() # to set WINDOW
         self.compute_dof(params, coords)
+        self.alloc_errbar_arr(params, len(coords))
+        self.pvalue.zero(params.num_configs)
+        self.min_params.arr = np.zeros((params.num_configs,
+                                        len(START_PARAMS)))
+        self.energy.arr = np.zeros((params.num_configs,
+                                    len(START_PARAMS)
+                                    if not GEVP else params.dimops))
+
+    @PROFILE
+    def alloc_errbar_arr(self, params, time_length):
+        """Allocate an array. Each config gives us a jackknife fit,
+        and a set of error bars.
+        We store the error bars in this array, indexed
+        by config.
+        """
+        if params.dimops > 1 or GEVP:
+            errbar_arr = np.zeros((params.num_configs, time_length,
+                                params.dimops),
+                                dtype=np.float)
+        else:
+            errbar_arr = np.zeros((params.num_configs, time_length),
+                                dtype=np.float)
+        self.misc.error_bars = errbar_arr
+
+
 
     @PROFILE
     def alloc_sys_arr(self, params):
@@ -144,6 +171,21 @@ class ResultMin:
                                           nar[self.misc.dof],
                                           np.asarray([chisq]))[0]
         return ret
+
+    @PROFILE
+    def alloc_phase_shift(self, params):
+        """Get an empty array for Nconfig phase shifts"""
+        nphase = 1 if not GEVP else params.dimops
+        if hasattr(phase_shift.arr, '__iter__'):
+            assert not np.asarray(phase_shift.arr).shape
+        if GEVP:
+            self.phase_shift.arr = np.zeros((params.num_configs,
+                                             nphase), dtype=np.complex)
+        else:
+            self.phase_shift.arr = np.zeros((params.num_configs),
+                                            dtype=np.complex)
+
+
 
     @PROFILE
     def compute_dof(self, params, coords):

@@ -2,4 +2,4 @@
 
 __all__ = ["get_fit_params", "test_arg", "profile",
            "misc", "sortfit", "hotelling", "superjack",
-           "errorcodes", "result_min"]
+           "errorcodes", "result_min", "covops"]

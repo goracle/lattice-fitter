@@ -33,7 +33,7 @@ from latfit.config import PRINT_CORR, MULT, ERR_CUT, ISOSPIN
 from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE, DIMSELECT
 import latfit.config
 import latfit.analysis.result_min as resmin
-import latfit.jackknife_fit as jack_module
+import latfit.analysis.covops as covops
 import latfit.mathfun.block_ensemble as blke
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -308,7 +308,7 @@ def set_bootstrap_shift(result_min):
             print("part2 =", part2)
             raise
     print("setting bootstrap shift to fit function with value:", shift)
-    jack_module.CONST_SHIFT = shift
+    covops.CONST_SHIFT = shift
 set_bootstrap_shift.printed = False
 
 def reset_bootstrap():
@@ -316,7 +316,7 @@ def reset_bootstrap():
     (for initial fit)
     and reset the index list for the bootstrap ensembles
     """
-    jack_module.CONST_SHIFT = 0
+    covops.CONST_SHIFT = 0
     blke.build_choices_set.choices = None
     bootstrap_pvalue.result_minq = {}
     resmin.NULL_CHISQ_ARRS = {}
