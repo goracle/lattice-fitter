@@ -6,12 +6,17 @@ import pickle
 import numpy as np
 import latfit.utilities.read_file as rf
 import latfit.utilities.postfit.fitwin as hist
+from latfit.include import INCLUDE
+from latfit.utilities.tuplize import list_mat
+
 
 def lenfit(fname):
     """Find length of fit"""
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
     
+### old configs
+
 # p0, 32c, I2
 
 FIT_SELECT = '[[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]' # 2
@@ -56,7 +61,33 @@ FIT_SELECT = '[[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0], [10.0, 12.0, 14.0],
 
 FIT_SELECT = '[[10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0], [10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0]]' # 2
 
-FIT_SELECT = ''
+# p1 24c I2
+
+FIT_SELECT = '[[5.0, 6.0, 7.0], [5.0, 6.0, 7.0], [5.0, 6.0, 7.0]]' # 0
+
+### end old
+
+FIT_SELECT = str(list_mat(INCLUDE))
+
+
+# FIT_SELECT = ''
+
+def singleton_cut(add, res, newfrs, tochk):
+    """Obsolete cut for single results
+    (new way is fit window min length)
+    """
+    ret = False
+    if len(add[2]) > 1 or lenfit(tochk) == hist.LENMIN:
+        count = 0
+        for j in newfrs:
+            if len(j) > 1:
+                count += 1
+        if count <= 1 and lenfit(tochk) != hist.LENMIN:
+            ret = True
+        res.extend(add[2])
+    else:
+        ret = True
+    return res, ret
 
 def main():
     """main"""
@@ -98,16 +129,7 @@ def main():
             err_check = add[1]
             assert len(res) == len(excl_arr)
             newfrs = add[3][:len(add[2])]
-            if len(add[2]) > 1 or lenfit(i) == hist.LENMIN:
-                count = 0
-                for j in newfrs:
-                    if len(j) > 1:
-                        count += 1
-                if count <= 1 and lenfit(i) != hist.LENMIN:
-                    continue
-                res.extend(add[2])
-            else:
-                continue
+            res, _ = singleton_cut(add, res, newfrs, i)
             if FIT_SELECT in str(newfrs) and FIT_SELECT:
                 found.append(i)
                 found_count += 1
