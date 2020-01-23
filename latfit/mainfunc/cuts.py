@@ -4,6 +4,7 @@ from mpi4py import MPI
 
 from latfit.config import VERBOSE, PVALUE_MIN, CALC_PHASE_SHIFT, MULT, NOLOOP
 from latfit.config import PHASE_SHIFT_ERR_CUT, ISOSPIN, GEVP
+from latfit.config import LAST_STATE_PHASE_ERR_CUT
 
 import latfit.mainfunc.fit_range_sort as frsort
 
@@ -52,7 +53,8 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
                 if VERBOSE:
                     print("warning: phase shift errors on "+\
                           "last state very large")
-                ret = True if ISOSPIN == 2 and GEVP else ret
+                ret = True if ISOSPIN == 2 and GEVP and\
+                    LAST_STATE_PHASE_ERR_CUT else ret
             else:
                 if VERBOSE:
                     print("phase shift errors too large")
