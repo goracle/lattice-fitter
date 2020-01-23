@@ -6,7 +6,7 @@ import numpy as np
 from latfit.extract.getblock.getblock import getblock
 from latfit.extract.get_coventry import get_coventry
 
-from latfit.config import BINNUM
+from latfit.config import BINNUM, VERBOSE
 from latfit.utilities import exactmean as em
 
 
@@ -30,7 +30,8 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=N
 
     # print num of configs
     if proc_ijfile.CONFIGSENT != 0:
-        print("Number of configurations to average over:", num_configs)
+        if VERBOSE:
+            print("Number of configurations to average over:", num_configs)
         if BINNUM != 1:
             print("Configs per bin:", BINNUM)
         proc_ijfile.CONFIGSENT = 0
