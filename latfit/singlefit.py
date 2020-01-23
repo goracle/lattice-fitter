@@ -575,6 +575,6 @@ def onlynpts(meta, excl, npts):
         for j in i:
             if j in win:
                 check.append(j)
-        if len(check) + 1 == len(win):
+        if len(check) + npts == len(win):
             ret = True
     return ret
