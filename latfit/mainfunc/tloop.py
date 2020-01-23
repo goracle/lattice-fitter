@@ -234,7 +234,7 @@ def fit(tadd=0, tsub=0):
 
             test = True
             # print loop info
-            if tadd or tsub:
+            if (tadd or tsub) and VERBOSE:
                 print("tadd =", tadd, "tsub =",
                       tsub, "rank =", MPIRANK)
 
@@ -322,9 +322,9 @@ def dofit_initial(meta, plotdata):
 
     # acceptable errors for initial fit
     accept_errors = (NegChisq, RelGammaError, NoConvergence,
-                          OverflowError, EnergySortError, TooManyBadFitsError,
-                          np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                          DOFNonPosFit, BadChisq, ZetaError)
+                     OverflowError, EnergySortError, TooManyBadFitsError,
+                     np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                     DOFNonPosFit, BadChisq, ZetaError)
 
     test_success = False
     retsingle_save = None

@@ -349,8 +349,9 @@ if PIONRATIO:
                 print(addzero[i])
                 sys.exit(1)
         ret = np.asarray(ret)
-        print(timeij, "before - after (diff):",
-              em.acstd(enint[:, 0])-em.acstd(ret[:, 0]))
+        if VERBOSE:
+            print(timeij, "before - after (diff):",
+                  em.acstd(enint[:, 0])-em.acstd(ret[:, 0]))
         return ret
 else:
     def modenergies(energies, *unused):

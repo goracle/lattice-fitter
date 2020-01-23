@@ -2,10 +2,10 @@
 import sys
 import copy
 import os
-import mpi4py
-from mpi4py import MPI
 from collections import namedtuple
 import pickle
+import mpi4py
+from mpi4py import MPI
 import numpy as np
 from numpy import ma
 from numpy import swapaxes as swap
@@ -18,8 +18,23 @@ from latfit.extract.inverse_jk import inverse_jk
 from latfit.makemin.mkmin import mkmin
 from latfit.mathfun.block_ensemble import delblock, block_ensemble
 from latfit.mathfun.block_ensemble import bootstrap_ensemble
-
 from latfit.analysis.superjack import jack_mean_err
+
+# error
+from latfit.analysis.errorcodes import NoConvergence, TooManyBadFitsError
+from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
+from latfit.analysis.errorcodes import EnergySortError, ZetaError
+from latfit.analysis.errorcodes import PrecisionLossError
+
+from latfit.analysis.result_min import ResultMin
+
+# util
+from latfit.utilities.actensordot import actensordot
+from latfit.utilities.postfit.compare_print import trunc
+from latfit.utilities import exactmean as em
+from latfit.utilities.zeta.zeta import zeta
+
+# config
 from latfit.config import START_PARAMS, RANDOMIZE_ENERGIES
 from latfit.config import JACKKNIFE_FIT
 from latfit.config import CORRMATRIX, EFF_MASS
@@ -34,20 +49,14 @@ from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import ISOSPIN, VERBOSE
 from latfit.config import SKIP_OVERFIT
-from latfit.utilities.zeta.zeta import zeta
+
+# dynamic
+import latfit.analysis.hotelling as hotelling
 import latfit.finalout.mkplot
 import latfit.config
 import latfit.analysis.misc as misc
 import latfit.makemin.mkmin as mkmin
-from latfit.analysis.errorcodes import NoConvergence, TooManyBadFitsError
-from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
-from latfit.analysis.errorcodes import EnergySortError, ZetaError
-from latfit.analysis.errorcodes import PrecisionLossError
-from latfit.analysis.result_min import ResultMin
-import latfit.analysis.hotelling as hotelling
-from latfit.utilities import exactmean as em
-from latfit.utilities.actensordot import actensordot
-from latfit.utilities.postfit.compare_print import trunc
+
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()

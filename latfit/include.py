@@ -118,7 +118,8 @@ DIMSELECT = None
 PARAM_OF_INTEREST = None
 
 # p0, 24c, I=2
-INCLUDE = [[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0], [10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0]]
+INCLUDE = [[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0],
+           [10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0]]
 PARAM_OF_INTEREST = None
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = 3
@@ -126,7 +127,8 @@ DIMSELECT = 0 # and 1 and 3
 FIT_EXCL = invinc(INCLUDE, (10, 14))
 
 # p0, 24c, I=2
-INCLUDE = [[10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0], [10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0]]
+INCLUDE = [[10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0],
+           [10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0]]
 PARAM_OF_INTEREST = None
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = 3
@@ -141,7 +143,7 @@ DIMSELECT = 0
 FIT_EXCL = invinc(INCLUDE, (5, 7))
 
 # p1 24c I=2
-INCLUDE =  [[7.0, 8.0, 9.0, 10.0], [7.0, 8.0, 9.0], [8.0, 9.0, 10.0]]
+INCLUDE = [[7.0, 8.0, 9.0, 10.0], [7.0, 8.0, 9.0], [8.0, 9.0, 10.0]]
 PARAM_OF_INTEREST = None
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = None
@@ -149,8 +151,8 @@ DIMSELECT = 1
 FIT_EXCL = invinc(INCLUDE, (7, 10))
 
 # p1 24c I=2
-INCLUDE = [[8.0, 10.0, 12.0], [7.0, 8.0, 9.0], [5.0, 6.0, 7.0, 8.0, 9.0
-, 10.0, 11.0, 12.0]]
+INCLUDE = [[8.0, 10.0, 12.0], [7.0, 8.0, 9.0],
+           [5.0, 6.0, 7.0, 8.0, 9.0 , 10.0, 11.0, 12.0]]
 PARAM_OF_INTEREST = 'energy'
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = None

@@ -92,12 +92,12 @@ elif EFF_MASS_METHOD == 2:
     if ADD_CONST:
         def proc_meff_systemofeqns(corrs, times):
             """solve system of 3 equations numerically."""
-            return nsolve((latfit.config.FITS['fit_func_sym'](times[0],
-                                                [x, y, z])-corrs[0],
-                           latfit.config.FITS['fit_func_sym'](times[1],
-                                                [x, y, z])-corrs[1],
-                           latfit.config.FITS['fit_func_sym'](times[2],
-                                                [x, y, z])-corrs[2]),
+            return nsolve((latfit.config.FITS['fit_func_sym'](
+                times[0], [x, y, z])-corrs[0],
+                           latfit.config.FITS['fit_func_sym'](
+                               times[1], [x, y, z])-corrs[1],
+                           latfit.config.FITS['fit_func_sym'](
+                               times[2], [x, y, z])-corrs[2]),
                           (x, y, z), START_PARAMS)
     else:
         def proc_meff_systemofeqns(corrs, times):
@@ -153,8 +153,8 @@ elif EFF_MASS_METHOD == 4:
             tstep2 = None
             if MATRIX_SUBTRACTION and GEVP:
                 j = 1
-                tstep = -latfit.config.DELTA_T_MATRIX_SUBTRACTION
-                tstep2 = -latfit.config.DELTA_T2_MATRIX_SUBTRACTION if\
+                tstep = -1*latfit.config.DELTA_T_MATRIX_SUBTRACTION
+                tstep2 = -1*latfit.config.DELTA_T2_MATRIX_SUBTRACTION if\
                     DELTA_E2_AROUND_THE_WORLD is not None else None
             ret.append(make_eff_mass_tomin(i, j, (tstep, tstep2)))
         return ret

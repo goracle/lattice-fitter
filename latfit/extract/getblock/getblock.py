@@ -204,14 +204,14 @@ if EFF_MASS:
                 len(ret)-1)/em.acmean(ret, axis=0))
             if VERBOSE:
                 print('dt1', delta_t, 'timeij', timeij, 'elim hint',
-                    gsolve.HINT,
-                    "operator eliminations", allowedeliminations(),
-                    'sample', ret[0])
+                      gsolve.HINT,
+                      "operator eliminations", allowedeliminations(),
+                      'sample', ret[0])
                 print("final tlhs, trhs =", timeij,
-                    timeij-delta_t, "next hint:(",
-                    np.count_nonzero(~np.isnan(ret[0])), ", ",
-                    np.nanargmax(relerr) if not all(np.isnan(relerr)) else 0,
-                    ")")
+                      timeij-delta_t, "next hint:(",
+                      np.count_nonzero(~np.isnan(ret[0])), ", ",
+                      np.nanargmax(relerr) if not all(np.isnan(relerr)) else 0,
+                      ")")
         return ret
 
 
