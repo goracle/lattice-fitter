@@ -128,7 +128,9 @@ def tloop():
                     #   and MPISIZE > 1:
                         #tadd += 1
                         #continue
-                    print("t indices, mpi rank:", i, j, MPIRANK)
+                    print("t indices, matdt, t-t0, mpi rank:",
+                          i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
+                          latfit.config.T0, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
@@ -175,9 +177,10 @@ def incr_t0():
     sands.bin_time_statements(BINNUM, USE_LATE_TIMES, latfit.config.T0,
                               BIASED_SPEEDUP)
     latfit.config.FITS.select_and_update(ADD_CONST)
-    print("current delta t matsub =",
-          latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-    print("new GEVP t-t0 =", latfit.config.T0)
+    if VERBOSE:
+        print("current delta t matsub =",
+              latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+        print("new GEVP t-t0 =", latfit.config.T0)
 
 def incr_dt():
     """Increment the matrix subtraction time separation in
@@ -189,8 +192,9 @@ def incr_dt():
     # check this!!!
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
     latfit.config.FITS.select_and_update(ADD_CONST)
-    print("new delta t matsub =", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-    print("current GEVP t-t0 =", latfit.config.T0)
+    if VERBOSE:
+        print("new delta t matsub =", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+        print("current GEVP t-t0 =", latfit.config.T0)
 
 @PROFILE
 def fit(tadd=0, tsub=0):
@@ -309,7 +313,8 @@ def fit(tadd=0, tsub=0):
             nofit_plot(meta, plotdata, retsingle_save)
     else:
         old_fit_style(meta, trials, plotdata)
-    print("END FIT, rank:", MPIRANK)
+    if VERBOSE:
+        print("END FIT, rank:", MPIRANK)
     return test
 
 def dofit_initial(meta, plotdata):

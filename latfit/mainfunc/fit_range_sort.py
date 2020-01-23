@@ -71,7 +71,8 @@ def exitp(meta, min_arr, overfit_arr, idx):
     """Test to exit the fit range loop"""
     ret = False
     if meta.skip_loop():
-        print("skipping loop")
+        if VERBOSE:
+            print("skipping loop")
         ret = True
 
     if not ret and meta.random_fit:

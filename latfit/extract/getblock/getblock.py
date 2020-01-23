@@ -31,7 +31,7 @@ from latfit.config import EFF_MASS
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import GEVP_DEBUG, GEVP_DERIV, STYPE
 from latfit.config import DECREASE_VAR, ISOSPIN
-from latfit.config import HINTS_ELIM
+from latfit.config import HINTS_ELIM, VERBOSE
 from latfit.config import REINFLATE_BEFORE_LOG
 
 import latfit.mathfun.elim_jkconfigs as elimjk
@@ -181,10 +181,11 @@ if EFF_MASS:
                 blkdict[dt1] = blkdict_dt1((i, dt1), file_tup,
                                            (delta_t, timeij),
                                            decrease_var)
-                print('dt1', dt1, 'timeij', timeij, 'elim hint',
-                      gsolve.HINT,
-                      "operator eliminations", allowedeliminations(),
-                      'sample', blkdict[dt1][0])
+                if VERBOSE:
+                    print('dt1', dt1, 'timeij', timeij, 'elim hint',
+                          gsolve.HINT,
+                          "operator eliminations", allowedeliminations(),
+                          'sample', blkdict[dt1][0])
                 errdict, countdict, check_length = gevp_block_checks(
                     dt1, blkdict, errdict, countdict)
             keymax = countdict[max(countdict)]
@@ -201,15 +202,16 @@ if EFF_MASS:
                 file_tup, delta_t, timeij=timeij, decrease_var=decrease_var)
             relerr = np.abs(em.acstd(ret, ddof=1, axis=0)*(
                 len(ret)-1)/em.acmean(ret, axis=0))
-            print('dt1', delta_t, 'timeij', timeij, 'elim hint',
-                  gsolve.HINT,
-                  "operator eliminations", allowedeliminations(),
-                  'sample', ret[0])
-            print("final tlhs, trhs =", timeij,
-                  timeij-delta_t, "next hint:(",
-                  np.count_nonzero(~np.isnan(ret[0])), ", ",
-                  np.nanargmax(relerr) if not all(np.isnan(relerr)) else 0,
-                  ")")
+            if VERBOSE:
+                print('dt1', delta_t, 'timeij', timeij, 'elim hint',
+                    gsolve.HINT,
+                    "operator eliminations", allowedeliminations(),
+                    'sample', ret[0])
+                print("final tlhs, trhs =", timeij,
+                    timeij-delta_t, "next hint:(",
+                    np.count_nonzero(~np.isnan(ret[0])), ", ",
+                    np.nanargmax(relerr) if not all(np.isnan(relerr)) else 0,
+                    ")")
         return ret
 
 

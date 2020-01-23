@@ -91,9 +91,10 @@ def asserts_three(momstr, delta_e_around_the_world,
     if gevp:
         print("GEVP derivative being taken:", gevp_deriv)
 
-def bin_time_statements(binnum, use_late_times, t0f, biased_speedup):
+def bin_time_statements(binnum, use_late_times, t0f, biased_speedup, verb=False):
     """more statements"""
-    print("Binning configs.  Bin size =", binnum)
+    if verb:
+        print("Binning configs.  Bin size =", binnum)
     assert not use_late_times, "method is based on flawed assumptions."
     assert t0f != "ROUND", "bad systematic errors result from this option"
     assert not biased_speedup, "it is biased.  do not use."
