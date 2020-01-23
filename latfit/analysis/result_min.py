@@ -129,11 +129,11 @@ class ResultMin:
         """
         if params.dimops > 1 or GEVP:
             errbar_arr = np.zeros((params.num_configs, time_length,
-                                params.dimops),
-                                dtype=np.float)
+                                   params.dimops),
+                                  dtype=np.float)
         else:
             errbar_arr = np.zeros((params.num_configs, time_length),
-                                dtype=np.float)
+                                  dtype=np.float)
         self.misc.error_bars = errbar_arr
 
 
@@ -176,8 +176,8 @@ class ResultMin:
     def alloc_phase_shift(self, params):
         """Get an empty array for Nconfig phase shifts"""
         nphase = 1 if not GEVP else params.dimops
-        if hasattr(phase_shift.arr, '__iter__'):
-            assert not np.asarray(phase_shift.arr).shape
+        if hasattr(self.phase_shift.arr, '__iter__'):
+            assert not np.asarray(self.phase_shift.arr).shape
         if GEVP:
             self.phase_shift.arr = np.zeros((params.num_configs,
                                              nphase), dtype=np.complex)

@@ -1,6 +1,7 @@
 """Print error"""
 import gvar
-from latfit.config import VERBOSE:
+from latfit.config import VERBOSE
+
 def printerr(result_min, param_err):
     """Print the param error"""
     for i, err in enumerate(param_err):
