@@ -5,7 +5,9 @@ from mpi4py import MPI
 
 from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
+from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import finished_windows
+from latfit.analysis.filename_windows import inconsistent_windows
 from latfit.mainfunc.cache import partial_reset
 
 MPIRANK = MPI.COMM_WORLD.rank
@@ -24,7 +26,8 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         partial_reset()
     if finished_win_check(meta, tsub=tsub):
         raise FinishedSkip
-
+    if inconsistent_win_check(meta, tsub=tsub):
+        raise FitRangeInconsistency
 
 def xmin_err(meta, err):
     """Handle xmax error"""
@@ -76,6 +79,23 @@ def finished_win_check(meta, tsub=None):
                 print(prs)
             ret = True
     return ret
+
+def inconsistent_win_check(meta, tsub=None):
+    """Check if the window has already given an inconsistent result"""
+    fwin = inconsistent_windows()
+    ret = False
+    for i in fwin:
+        if i[0] == meta.fitwindow[0] and i[1] == meta.fitwindow[1]:
+            if VERBOSE:
+                prs = "fit window "+str(
+                    i)+" already found to be inconsistent."+\
+                    "  Skipping.  rank: "+str(MPIRANK)
+                if tsub is not None and int(tsub) != 1:
+                    prs += " tsub: "+str(tsub)
+                print(prs)
+            ret = True
+    return ret
+
 
 def winsize_check(meta, tadd, tsub):
     """Check proposed new fit window size to be sure

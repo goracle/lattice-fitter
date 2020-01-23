@@ -33,12 +33,12 @@ def list_p_files():
         ret.append(i)
     return ret
 
-def filter_pfiles():
+def filter_pfiles(name='pvalue'):
     """Filter out filenames that do not match the current config"""
     lfn = list_p_files()
     ret = []
-    test1 = filename_info(True, 'pvalue')
-    test2 = filename_info(False, 'pvalue')
+    test1 = filename_info(True, name)
+    test2 = filename_info(False, name)
     for i in lfn:
         if test1 not in i and test2 not in i:
             continue
@@ -47,10 +47,20 @@ def filter_pfiles():
 
 def finished_windows():
     """Find the list of windows we already have results for"""
-    lpn = filter_pfiles()
+    name = 'pvalue'
+    return checked_windows(name)
+
+def inconsistent_windows():
+    """Find the inconsistent windows"""
+    name = 'badfit'
+    return checked_windows(name)
+
+def checked_windows(name):
+    """Find finished windows with key = name"""
+    lpn = filter_pfiles(name=name)
     ret = set()
-    test1 = filename_info(True, 'pvalue')
-    test2 = filename_info(False, 'pvalue')
+    test1 = filename_info(True, name)
+    test2 = filename_info(False, name)
     for i in lpn:
         if test1 in i:
             fin = i.split(test1)[1].split('_')[1:3]
@@ -61,4 +71,3 @@ def finished_windows():
         ret.add(win)
     ret = sorted(list(ret))
     return ret
-

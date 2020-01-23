@@ -29,7 +29,7 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
 def create_dummy_skip(meta):
     """If we find an inconsistent fit,
     create a dummy file so that we skip that in any repeat run"""
-    fname = filename_plus_config_info(meta, 'pvalue')+'.p'
+    fname = filename_plus_config_info(meta, 'badfit')+'.p'
     print("creating skip file:", fname)
     touch(fname+'.p')
 
