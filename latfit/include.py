@@ -152,7 +152,7 @@ FIT_EXCL = invinc(INCLUDE, (7, 10))
 
 # p1 24c I=2
 INCLUDE = [[8.0, 10.0, 12.0], [7.0, 8.0, 9.0],
-           [5.0, 6.0, 7.0, 8.0, 9.0 , 10.0, 11.0, 12.0]]
+           [5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]]
 PARAM_OF_INTEREST = 'energy'
 T0 = 'TMINUS3'
 DELTA_T_MATRIX_SUBTRACTION = None
