@@ -84,10 +84,10 @@ def singleton_cut(add, res, newfrs, tochk):
                 count += 1
         if count <= 1 and lenfit(tochk) != hist.LENMIN:
             ret = True
-        res.extend(add[2])
+        # res.extend(add[2])
     else:
         ret = True
-    return res, ret
+    return ret
 
 def main():
     """main"""
@@ -122,22 +122,26 @@ def main():
         add = pickle.load(open(str(i), "rb"))
         print(i, "add.shape", add.shape)
         if add.shape == (4,) and ('pvalue' not in i or 'err' not in i):
-            rescount += len(add[3])
+            rescount += len(add[3]) 
             rotate = True # top index is not fit ranges
             print(i, "shape:", add.shape)
             res_mean = add[0]
             err_check = add[1]
             assert len(res) == len(excl_arr)
             newfrs = add[3][:len(add[2])]
-            res, _ = singleton_cut(add, res, newfrs, i)
+            if singleton_cut(add, res, newfrs, i):
+                pass
+                #continue
             if FIT_SELECT in str(newfrs) and FIT_SELECT:
                 found.append(i)
                 found_count += 1
                 print("*****")
                 print('file found:', i, "count:", found_count)
                 print("*****")
+            res.extend(add[2])
             excl_arr.extend(newfrs)
-            assert len(res) == len(excl_arr)
+            assert len(res) == len(excl_arr), \
+                (i, len(res), len(excl_arr))
         else:
             rescount += len(add)
             print(i, "shape:", add.shape)
