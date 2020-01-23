@@ -14,7 +14,7 @@ def lenfit(fname):
     """Find length of fit"""
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
-    
+
 ### old configs
 
 # p0, 32c, I2
@@ -122,7 +122,7 @@ def main():
         add = pickle.load(open(str(i), "rb"))
         print(i, "add.shape", add.shape)
         if add.shape == (4,) and ('pvalue' not in i or 'err' not in i):
-            rescount += len(add[3]) 
+            rescount += len(add[3])
             rotate = True # top index is not fit ranges
             print(i, "shape:", add.shape)
             res_mean = add[0]

@@ -14,26 +14,37 @@ import copy
 import numpy as np
 from scipy.stats import pearsonr
 
+from latfit.extract.proc_folder import proc_folder
+
+# extract
 from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
 from latfit.extract.getblock.gevp_linalg import make_avg_zero
 from latfit.extract.getblock.gevp_linalg import variance_reduction
 
-from latfit.extract.proc_folder import proc_folder
+# util
 from latfit.utilities import exactmean as em
+
+# error
 from latfit.analysis.errorcodes import XminError, XmaxError
+
+# config
 from latfit.config import PIONRATIO, GEVP_DIRS, GEVP_DERIV
 from latfit.config import DECREASE_VAR, NOATWSUB, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E_AROUND_THE_WORLD
-from latfit.config import DELTA_E2_AROUND_THE_WORLD, VERBOSE
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import ISOSPIN
 from latfit.config import GEVP_DIRS_PLUS_ONE, FULLDIM
 from latfit.config import PR_GROUND_ONLY, VERBOSE
+
+# dynamic
 import latfit.config
 import latfit.extract.getblock.disp_hacks as gdisp
+
 if PIONRATIO:
     from latfit.config import MINIMIZE_STAT_ERROR_PR
 else:
     MINIMIZE_STAT_ERROR_PR = False
+
 
 ### Pion ratio
 def aroundworld_energies():

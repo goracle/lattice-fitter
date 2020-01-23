@@ -20,18 +20,26 @@ from scipy.optimize import minimize_scalar
 import h5py
 from mpi4py import MPI
 
-from latfit.utilities.postprod.h5jack import getwork, gatherdicts
 from latfit.utilities.postprod.checkblks import check_ids
-from latfit.utilities.postprod.h5jack import TSEP, LT, overall_coeffs
+
+from latfit.utilities.postprod.h5jack import getwork, gatherdicts
+from latfit.utilities.postprod.h5jack import LT, overall_coeffs
 from latfit.utilities.postprod.h5jack import h5sum_blks
-from latfit.utilities.postprod.h5jack import avg_irreps, TSTEP
+from latfit.utilities.postprod.h5jack import avg_irreps
 from latfit.utilities.postprod.h5jack import tdismax
-import latfit.utilities.postprod.h5jack as h5jack
-import latfit.utilities.postprod.checkblks as checkblks
+from latfit.utilities.postprod.h5jack import LATTICE_ENSEMBLE
+from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
+
 from latfit.utilities import exactmean as em
 from latfit.utilities import read_file as rf
 from latfit.utilities import op_compose as opc
 from latfit.utilities.sum_blks import isoproj
+
+import latfit.utilities.postprod.h5jack as h5jack
+import latfit.utilities.postprod.checkblks as checkblks
+
+TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
+TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
 
 TSTEP = int(TSTEP)
 
@@ -1026,7 +1034,7 @@ def divide_multiply(_=10):
 
 if __name__ == '__main__':
     print("start")
-    check_ids()
+    check_ids(LATTICE_ENSEMBLE)
     h5jack.AVGTSRC = True # hack to get file names right (and fold time!)
     h5jack.WRITE_INDIVIDUAL = False # hack to get file names right.
     piondirect(atw=True)

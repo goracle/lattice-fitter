@@ -719,10 +719,10 @@ if GEVP:
         for i, min_e in enumerate(result_min.energy.val):
             estring = trunc_prec(min_e)+"+/-"+trunc_prec(param_err[i], 2)
             estring = str(gvar.gvar(min_e, param_err[i]))
-            toann =  "Energy["+str(i)+"] = "+estring
+            toann = "Energy[" + str(i) + "] = " + estring
             exy = (0.05, ystart-i*.05)
             if i == DIMSELECT and NOLOOP and BOOTSTRAP_PVALUES:
-                plt.annotate(toann, weight='bold', 
+                plt.annotate(toann, weight='bold',
                              xy=exy, xycoords='axes fraction')
             else:
                 plt.annotate(toann, xy=exy, xycoords='axes fraction')
@@ -754,6 +754,7 @@ def trunc_prec(num, extra_trunc=0):
     return str(float(formstr % Decimal(str(num))))
 
 def anpval(pval):
+    """Get a pvalue string"""
     if BOOTSTRAP_PVALUES:
         ret = r"p-value = "+str(pval)
     else:
@@ -784,7 +785,7 @@ if EFF_MASS and EFF_MASS_METHOD == 3:
             """
             pval = gvar.gvar(result_min.pvalue.val, result_min.pvalue.err)
             pval = anpval(pval)
-            rcp = anchisq(rechisq_round_str, dof)
+            rcp = anchisq(redchisq_round_str, dof)
             plt.annotate(pval, xy=(0.15, ystart-.05*(len(
                 result_min.energy.val)-2)), xycoords='axes fraction')
             plt.annotate(rcp, xy=(0.15, ystart-.10*(len(

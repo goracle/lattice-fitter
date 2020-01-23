@@ -4,8 +4,8 @@ import numpy as np
 import gvar
 import latfit.utilities.exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
+from latfit.analysis.superjack import jack_mean_err
 from latfit.config import ISOSPIN
-from latfit.jackknife_fit import jack_mean_err
 from latfit.utilities.postfit.fitwin import fitwincuts
 from latfit.utilities.postfit.fitwin import get_fitwindow, win_nan, LENMIN
 import latfit.utilities.postfit.bin_analysis as bin_analysis

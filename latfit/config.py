@@ -981,7 +981,8 @@ sands.asserts_one(EFF_MASS_METHOD, MATRIX_SUBTRACTION,
 sands.asserts_two(IRREP, FIT_SPACING_CORRECTION, ISOSPIN, PIONRATIO)
 sands.asserts_three(MOMSTR, DELTA_E_AROUND_THE_WORLD,
                     DELTA_E2_AROUND_THE_WORLD, GEVP, GEVP_DERIV)
-sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0, BIASED_SPEEDUP)
+sands.bin_time_statements(BINNUM, USE_LATE_TIMES, T0, BIASED_SPEEDUP,
+                          verb=VERBOSE)
 sands.bin_statements(BINNUM, ELIM_JKCONF_LIST, HALF,
                      ONLY_SMALL_FIT_RANGES, RANGE_LENGTH_MIN)
 DELTA_E2_AROUND_THE_WORLD = sands.delta_e2_mod(SYSTEMATIC_EST, PIONRATIO,

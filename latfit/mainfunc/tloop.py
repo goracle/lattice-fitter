@@ -213,7 +213,6 @@ def fit(tadd=0, tsub=0):
     if not tadd and not tsub:
         assert not ext.extract.reuse, list(ext.extract.reuse)
 
-    # todo:  get rid of "trials" param
     if trials == -1 and winsize_check(meta, tadd, tsub):
         # try an initial plot, shrink the xmax if it's too big
         update_fitwin(meta, tadd, tsub)
@@ -407,7 +406,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     if test_success:
         result_min, param_err, _, _ = retsingle_save
         printerr(result_min.energy.val, param_err)
-        if CALC_PHASE_SHIFT:
+        if CALC_PHASE_SHIFT and VERBOSE:
             print_res.print_phaseshift(result_min)
         if not cutresult(result_min, min_arr,
                          overfit_arr, param_err):

@@ -193,17 +193,17 @@ elif EFF_MASS_METHOD == 4:
         if np.isnan(sol):
             assert None, "check this"
             raise PrecisionLossError
-            errstr = "bad time/op combination in fit range."+\
-                " (time, op index)=("+str(times[0])+","+str(index)+")"
-            if FIT:
-                if not(times and times[0] in latfit.config.FIT_EXCL[index]):
-                    latfit.config.FIT_EXCL[index].append(times[0])
-            else:
-                if not times[0] in proc_meff4.badtimes:
-                    print(errstr)
-                    print('operator index=', index)
-                    print("times=", times)
-                    proc_meff4.badtimes.append(times[0])
+            #errstr = "bad time/op combination in fit range."+\
+                #" (time, op index)=("+str(times[0])+","+str(index)+")"
+            #if FIT:
+                #if not(times and times[0] in latfit.config.FIT_EXCL[index]):
+                    #latfit.config.FIT_EXCL[index].append(times[0])
+            #else:
+            #    if not times[0] in proc_meff4.badtimes:
+                    #print(errstr)
+                    #print('operator index=', index)
+                    #print("times=", times)
+                    #proc_meff4.badtimes.append(times[0])
 
         index = 0 if index is None else index
         try:
@@ -250,7 +250,7 @@ elif EFF_MASS_METHOD == 4:
         if test:
             ratioval = latfit.config.FITS.fid[
                 'ratio'] if index is None else latfit.config.FITS.fid[
-                'ratio'][ADD_CONST_VEC[index]](corrs, times)
+                    'ratio'][ADD_CONST_VEC[index]](corrs, times)
             ratioval = corrs[0] if LOGFORM else ratioval
             sol = np.array(sol)
             tryfun = (EFF_MASS_TOMIN[index](

@@ -23,7 +23,7 @@ def earliest_time(fname):
 def pickle_fitwin(fname):
     """Find the earliest time in the pickle file name"""
     _, tmin, tmax = pickle_times(fname)
-    return (tmin, tmax) 
+    return (tmin, tmax)
 
 def pickle_times(fname):
     """Find the fitwin info in the pickle file name"""

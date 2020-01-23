@@ -1,5 +1,4 @@
 """Make mutable containers immutable"""
-import numpy as np
 
 def tupl_mat(mat):
     """Make matrix immutable"""
@@ -10,4 +9,3 @@ def list_mat(mat):
     """Make immutable matrix mutable"""
     ret = list(list(i) for i in mat)
     return ret
-

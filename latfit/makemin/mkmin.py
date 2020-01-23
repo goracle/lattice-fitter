@@ -298,4 +298,3 @@ else:
     def prune_res_min(res_min):
         """pass"""
         return res_min
-

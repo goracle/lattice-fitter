@@ -34,8 +34,6 @@ from latfit.config import DECREASE_VAR, ISOSPIN
 from latfit.config import HINTS_ELIM, VERBOSE
 from latfit.config import REINFLATE_BEFORE_LOG
 
-import latfit.mathfun.elim_jkconfigs as elimjk
-
 #MPIRANK = MPI.COMM_WORLD.rank
 
 #if STYPE == 'hdf5':

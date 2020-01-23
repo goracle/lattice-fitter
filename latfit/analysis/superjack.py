@@ -1,3 +1,4 @@
+"""Super jackknife functions"""
 import numbers
 import numpy as np
 import latfit.utilities.exactmean as em
@@ -13,7 +14,8 @@ except NameError:
 
 
 @PROFILE
-def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF, nosqrt=False, acc_sum=True, mean_arr=None):
+def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF,
+                  nosqrt=False, acc_sum=True, mean_arr=None):
     """Calculate error in arr over axis=0 via jackknife factor
     first n configs up to and including sjcut are exact
     the rest are sloppy.
@@ -117,4 +119,3 @@ def flagtonan(mean, err, flag):
         mean = np.nan
         err = np.nan
     return mean, err
-
