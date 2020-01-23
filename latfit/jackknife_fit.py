@@ -309,8 +309,8 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         result_min = pickl(result_min)
 
         # compute p-value jackknife uncertainty
-        result_min.pvalue.val, result_min.pvalue.err = jack_mean_err(
-            result_min.pvalue.arr)
+        result_min.pvalue.val, result_min.pvalue.err =\
+            jack_mean_err(result_min.pvalue.arr)
 
         # get the optimal params
         result_min.min_params.val, result_min.min_params.err = jack_mean_err(
@@ -1063,10 +1063,13 @@ def invertmasked(params, len_time, excl, covjack):
                              fill_value=0, copy=True, mask=mask)
     matrix = np.delete(matrix, excl, axis=0)
     matrix = np.delete(matrix, excl, axis=1)
-    if invertmasked.params2 is None:
-        params2 = namedtuple('temp', ['dimops', 'num_configs'])
-        params2.dimops = 1
-        params2.num_configs = params.num_configs
+
+    # hack
+    #if invertmasked.params2 is None:
+    params2 = namedtuple('temp', ['dimops', 'num_configs'])
+    params2.dimops = 1
+    params2.num_configs = params.num_configs
+
     try:
         matrix_inv = invert_cov(matrix, params2)
         invp(matrix_inv, matrix)
@@ -1089,7 +1092,6 @@ def invertmasked(params, len_time, excl, covjack):
         raise
     marray[marray.mask] = marray.fill_value
     return marray, flag
-invertmasked.params2 = None
 
 @PROFILE
 def jack_errorbars(covjack, params):
