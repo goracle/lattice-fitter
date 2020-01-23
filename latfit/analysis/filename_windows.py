@@ -23,9 +23,9 @@ def filename_info(randfit, filename):
         filename += '_dt'+str(latfit.config.DELTA_T_MATRIX_SUBTRACTION)
     return filename
 
-def list_p_files():
+def list_p_files(name='pvalue'):
     """List of all pickle files in current directory"""
-    start = glob.glob('*pvalue*.p')
+    start = glob.glob('*'+str(name)+'*.p')
     ret = []
     for i in start:
         if 'err' in i:
@@ -35,7 +35,7 @@ def list_p_files():
 
 def filter_pfiles(name='pvalue'):
     """Filter out filenames that do not match the current config"""
-    lfn = list_p_files()
+    lfn = list_p_files(name=name)
     ret = []
     test1 = filename_info(True, name)
     test2 = filename_info(False, name)
@@ -47,13 +47,11 @@ def filter_pfiles(name='pvalue'):
 
 def finished_windows():
     """Find the list of windows we already have results for"""
-    name = 'pvalue'
-    return checked_windows(name)
+    return checked_windows('pvalue')
 
 def inconsistent_windows():
     """Find the inconsistent windows"""
-    name = 'badfit'
-    return checked_windows(name)
+    return checked_windows('badfit')
 
 def checked_windows(name):
     """Find finished windows with key = name"""
