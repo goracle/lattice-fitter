@@ -131,6 +131,7 @@ def tloop():
                     print("t indices, matdt, t-t0, mpi rank:",
                           i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
                           latfit.config.T0, MPIRANK)
+                    print("tadd, tsub, mpi rank:", tadd, tsub, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
