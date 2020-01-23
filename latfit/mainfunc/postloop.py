@@ -400,11 +400,10 @@ def dump_single_fit(meta, min_arr):
 
         res_mean, err_check = get_first_res(name, min_arr)
 
-        if len(min_arr) > 1 or (meta.lenprod == 1 and len(min_arr) == 1):
-            if not NOLOOP:
-                dump_fit_range(meta, min_arr, name, res_mean, err_check)
-
-
+        # presumably we don't want to save files in this situation
+        # probably there should be a separate switch
+        if not NOLOOP:
+            dump_fit_range(meta, min_arr, name, res_mean, err_check)
 
 @PROFILE
 def find_mean_and_err(meta, min_arr):
