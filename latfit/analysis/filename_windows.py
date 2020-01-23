@@ -1,5 +1,4 @@
 """Look at files in directory to find which fit windows still need to be fit."""
-
 import glob
 from latfit.config import GEVP, MOMSTR, SYS_ENERGY_GUESS, MATRIX_SUBTRACTION
 from latfit.config import ISOSPIN
