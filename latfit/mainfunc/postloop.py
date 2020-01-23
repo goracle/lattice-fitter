@@ -503,7 +503,7 @@ def combine_results(result_min, result_min_close,
                     meta, param_err, param_err_close):
     """use the representative fit's goodness of fit in final print
     """
-    if meta.skip_loop():
+    if meta.skip_loop() or not isinstance(result_min, dict):
         result_min, param_err = result_min_close, param_err_close
     else:
         result_min['chisq'].val = result_min_close.chisq.val
@@ -572,7 +572,7 @@ def post_loop(meta, loop_store, plotdata,
     # did anything succeed?
     # test = False if not list(min_arr) and not meta.random_fit else True
     test = list(min_arr) or meta.random_fit
-    if not meta.skip_loop():
+    if len(min_arr) > 1:
 
         result_min = find_mean_and_err(meta, min_arr)
         param_err = result_min['energy'].err
@@ -581,7 +581,7 @@ def post_loop(meta, loop_store, plotdata,
             result_min['energy'].val, min_arr)
         # do the best fit again, with good stopping condition
         # latfit.config.FIT_EXCL = min_excl(min_arr)
-    else:
+    elif len(min_arr) == 1:
         result_min = min_arr[0]
         param_err = result_min[1]
         dump_single_fit(meta, min_arr)

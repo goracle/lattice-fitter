@@ -65,15 +65,6 @@ MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
-TDIS_MAX = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
-assert int(TDIS_MAX) == TDIS_MAX, TDIS_MAX
-
-# acceptable errors for initial fit
-ACCEPT_ERRORS_INIT = (NegChisq, RelGammaError, NoConvergence,
-                      OverflowError, EnergySortError, TooManyBadFitsError,
-                      np.linalg.linalg.LinAlgError, BadJackknifeDist,
-                      DOFNonPosFit, BadChisq, ZetaError)
-
 
 # for subsequent fits
 ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
@@ -89,6 +80,9 @@ def tloop():
     # (assumes we never do a second subtraction)
     loop_len = TSEP_VEC[0] + 1
     start_count = loop_len*TLOOP_START[0]+ TLOOP_START[1]
+    tdis_max = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
+    assert int(tdis_max) == tdis_max, tdis_max
+
     for i in range(loop_len): # not set up for xstep
         assert np.all(TSEP_VEC[0] == np.asarray(TSEP_VEC)), str(TSEP_VEC)
         if i:
@@ -110,7 +104,7 @@ def tloop():
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-            for tsub in range(int(TDIS_MAX)): # this is the tmax loop
+            for tsub in range(int(tdis_max)): # this is the tmax loop
 
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
                     continue
@@ -123,7 +117,7 @@ def tloop():
                 flag = 1
 
                 while flag and tadd <= int(
-                        TDIS_MAX): # this is the tmin/tadd loop
+                        tdis_max): # this is the tmin/tadd loop
                     if not TLOOP and tadd:
                         break
 
@@ -134,8 +128,7 @@ def tloop():
                     #   and MPISIZE > 1:
                         #tadd += 1
                         #continue
-                    tloop.ijstr = "t indices, mpi rank: "+str(
-                        i)+" "+str(j)+" "+str(MPIRANK)
+                    print("t indices, mpi rank:", i, j, MPIRANK)
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
@@ -163,7 +156,6 @@ def tloop():
     else:
         print("End of selected parameter fit.  latfit exiting, rank:",
               MPIRANK)
-tloop.ijstr = ""
 
 def tsep_based_incr(dtee):
     """Increment dt modulo TSEP+2 (+2 is arbitrary, but seems to work)"""
@@ -238,7 +230,6 @@ def fit(tadd=0, tsub=0):
 
             test = True
             # print loop info
-            print(tloop.ijstr)
             if tadd or tsub:
                 print("tadd =", tadd, "tsub =",
                       tsub, "rank =", MPIRANK)
@@ -324,6 +315,12 @@ def fit(tadd=0, tsub=0):
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
 
+    # acceptable errors for initial fit
+    accept_errors = (NegChisq, RelGammaError, NoConvergence,
+                          OverflowError, EnergySortError, TooManyBadFitsError,
+                          np.linalg.linalg.LinAlgError, BadJackknifeDist,
+                          DOFNonPosFit, BadChisq, ZetaError)
+
     test_success = False
     retsingle_save = None
     flag = True
@@ -352,7 +349,7 @@ def dofit_initial(meta, plotdata):
             except XmaxError as err2:
                 meta = xmax_err(meta, err2)
             plotdata.fitcoord = meta.fit_coord()
-        except ACCEPT_ERRORS_INIT as err:
+        except accept_errors as err:
             flag = False
             if VERBOSE:
                 print("fit failed (acceptably) with error:",
