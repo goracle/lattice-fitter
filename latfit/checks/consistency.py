@@ -31,7 +31,7 @@ def create_dummy_skip(meta):
     create a dummy file so that we skip that in any repeat run"""
     fname = filename_plus_config_info(meta, 'badfit')+'.p'
     print("creating skip file:", fname)
-    touch(fname+'.p')
+    touch(fname)
 
 def fit_range_consistency_check(meta, min_arr, name):
     """Check consistency of energies and phase shifts so far"""
