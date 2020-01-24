@@ -77,16 +77,17 @@ def singleton_cut(add, res, newfrs, tochk):
     (new way is fit window min length)
     """
     ret = False
+    # check to see if we have expected result amount
     if len(add[2]) > 1 or lenfit(tochk) == hist.LENMIN:
         count = 0
         for j in newfrs:
-            if len(j) > 1:
+            if len(j) > 1: # not an eff mass pt
                 count += 1
         if count <= 1 and lenfit(tochk) != hist.LENMIN:
             ret = True
         # res.extend(add[2])
     else:
-        ret = True
+        ret = True # cut on singletons from large windows
     return ret
 
 def main():
@@ -121,14 +122,33 @@ def main():
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
         print(i, "add.shape", add.shape)
-        if add.shape == (4,) and ('pvalue' not in i or 'err' not in i):
-            rescount += len(add[3]) 
+        cond = add.shape == (4,) and ('pvalue' not in i or 'err' not in i)
+        if rotate:
+            assert cond
+        if cond:
+            rescount += len(add[3]) # number of fit ranges gives number of results
             rotate = True # top index is not fit ranges
             print(i, "shape:", add.shape)
             res_mean = add[0]
             err_check = add[1]
-            assert len(res) == len(excl_arr)
-            newfrs = add[3][:len(add[2])]
+            try:
+                assert len(add[2]) == len(add[3]),\
+                    (len(add[2]), len(add[3]))
+                newfrs = add[3]
+            except AssertionError:
+                #print(add[2])
+                #print(add[3])
+                newfrs = add[3][:len(add[2])]
+
+            # check fit range length
+            #assert np.all([len(j) >= hist.LENMIN for j in newfrs]),\
+                #([len(j) >= hist.LENMIN for j in newfrs])
+
+
+            # perform check before throwing away effective mass points
+            #effmasspts = add[3][len(add[2]):]
+            #assert np.all([len(j) == 1 for j in effmasspts])
+
             if singleton_cut(add, res, newfrs, i):
                 pass
                 #continue

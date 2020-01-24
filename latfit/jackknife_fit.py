@@ -143,7 +143,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
             # store results for this fit
             result_min.chisq.arr[config_num] = result_min_jack.fun
-            toomanybadfitsp(result_min)
+            toomanybadfitsp(result_min, config_num)
 
             # store the result
             result_min.systematics.arr[config_num], _ = \
@@ -257,15 +257,19 @@ else:
     sys.exit(1)
 
 @PROFILE
-def toomanybadfitsp(result_min):
+def toomanybadfitsp(result_min, config_num):
     """If there have already been too many fits with large chi^2 (t^2),
-    the average chi^2 (t^2) is not going to be good so abort the fit
-    (test)
+    the average chi^2 (t^2) is probably not going to be good
+    so abort the fit.
     """
     avg = em.acmean(result_min.chisq.arr)
     pvalue = result_min.funpvalue(avg)
-    if pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP and not NOLOOP:
-        raise TooManyBadFitsError(chisq=avg, pvalue=pvalue, uncorr=UNCORR)
+    cond = pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP and not NOLOOP
+    # check 10% of the configs
+    cond2 = config_num + 1 >= result_min.misc.num_configs*0.1
+    if cond1 and cond2:
+        raise TooManyBadFitsError(chisq=avg/result_min.misc.dof,
+                                  pvalue=pvalue, uncorr=UNCORR)
 
 
 def skip_range(params, result_min, skip_votes,

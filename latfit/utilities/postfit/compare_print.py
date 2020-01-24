@@ -516,6 +516,7 @@ def cut_arr(arr, skip_list):
     """Prune the results array"""
     return np.delete(arr, skip_list, axis=0)
 
+import sys
 @PROFILE
 def lencut(fit_range):
     """Length cut; we require each fit range to have
@@ -535,6 +536,8 @@ def lencut(fit_range):
             ret = any([len(i) < LENMIN for i in fit_range])
         else:
             ret = len(fit_range) < LENMIN
+    if ret:
+        assert effmasspt, fit_range
     return ret
 
 @PROFILE

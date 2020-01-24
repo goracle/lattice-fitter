@@ -49,7 +49,7 @@ ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
 def write_pickle_file_verb(filename, arr):
     """Write pickle file; print info"""
     print("writing pickle file", filename)
-    assert not os.path.exists(filename+'.p'), filename+'.p'
+    # assert not os.path.exists(filename+'.p'), filename+'.p'
     pickle.dump(arr, open(filename+'.p', "wb"))
 
 @PROFILE
@@ -245,7 +245,7 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     fname = filename_plus_config_info(meta, fname)
     print("dumping jackknife energies with error:", errmin,
           "into file:", fname+'.p')
-    assert not os.path.exists(fname+'.p'), fname+'.p'
+    # assert not os.path.exists(fname+'.p'), fname+'.p'
     pickle.dump(arr, open(fname+'.p', "wb"))
 
 @PROFILE

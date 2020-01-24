@@ -73,15 +73,16 @@ class TooManyBadFitsError(Exception):
     """Error if too many jackknifed fits have a large chi^2 (t^2)"""
     @PROFILE
     def __init__(self, chisq=None, pvalue=None, uncorr=BoolThrowErr(),
-                 message=''):
-        print("***ERROR***")
-        if uncorr:
-            print("Too many fits have bad chi^2")
-            print("chi^2 average up to this point:", chisq)
-        else:
-            print("Too many fits have bad t^2")
-            print("t^2 average up to this point:", chisq)
-        print("pvalue up to this point:", pvalue)
+                 message='', prin=PRIN):
+        if prin or True:
+            print("***ERROR***")
+            if uncorr:
+                print("Too many fits have bad chi^2")
+                print("chi^2/dof average up to this point:", chisq)
+            else:
+                print("Too many fits have bad t^2")
+                print("t^2/dof average up to this point:", chisq)
+            print("pvalue up to this point:", pvalue)
         super(TooManyBadFitsError, self).__init__(message)
         self.message = message
 
