@@ -12,6 +12,7 @@ from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
+from latfit.utilities.combine_pickle import main as getdts
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -249,7 +250,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     fitwinprev = None
     itmin = [gvar.gvar(np.nan, np.inf), []]
     for item, _, fitwin in tot_new:
-        fitwin = fitwin[1]
+        fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
         trfitwin = (fitwin[0], fitwin[1] + 1)
         if item == itemprev and trfitwin == fitwinprev and len(
@@ -266,14 +267,14 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
         yarr.append(item.val)
         yerr.append(item.sdev)
         if item.sdev <= itmin[0].sdev:
-            itmin = (item, fitwin)
+            itmin = (item, fitrange, fitwin)
         xticks_min.append(str(fitwin[0]))
         xticks_max.append(str(fitwin[1]))
         fitwinprev = fitwin
         itemprev = item
-    if itmin[1] not in fitwin_votes:
-        fitwin_votes[itmin[1]] = 0
-    fitwin_votes[itmin[1]] += 1
+    if itmin[2] not in fitwin_votes:
+        fitwin_votes[itmin[2]] = 0
+    fitwin_votes[itmin[2]] += 1
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
@@ -312,12 +313,24 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
         ax2.set_title(title+' vs. '+'fit window; state '+str(
             dim)+","+r' $t_{min,param}=$'+str(tmin), y=1.12)
         plt.subplots_adjust(top=0.85)
-        print("minimum error:", itmin[0], "fit window:", itmin[1])
+        print("minimum error:", itmin[0], "fit range:", itmin[1], "fit window:", itmin[2])
         toapp.append(str(itmin[0]))
         print("saving fig:", save_str)
         pdf.savefig()
     plt.show()
     return fitwin_votes, toapp
+
+def to_include(itmin):
+    """Show the include.py settings just learned"""
+    print("INCLUDE =", itmin[1])
+    print("PARAM_OF_INTEREST =", itmin[1])
+    print("DIMSELECT =", dim)
+    print("FIT_EXCL = invinc(INCLUDE,", itmin[2]+")")
+    print("FIT_EXCL = invinc(INCLUDE,", itmin[2]+")")
+    tminus, dt2 = getdts(itmin[1])
+    print("T0 =", tminus)
+    if dt2 is not None:
+        print("DELTA_T_MATRIX_SUBTRACTION =", dt2)
 
 @PROFILE
 def print_tot(tot, cbest, ignorable_windows):

@@ -15,63 +15,6 @@ def lenfit(fname):
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
 
-### old configs
-
-# p0, 32c, I2
-
-FIT_SELECT = '[[6.0, 7.0, 8.0], [10.0, 11.0, 12.0], [6.0, 7.0, 8.0, 9.0, 10.0], [8.0, 9.0, 10.0]]' # 2
-
-FIT_SELECT = '[[6.0, 7.0, 8.0], [6.0, 7.0, 8.0], [6.0, 8.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]' # 3-e
-
-FIT_SELECT = '[[6.0, 7.0, 8.0], [7.0, 9.0, 11.0], [8.0, 9.0, 10.0], [6.0, 7.0, 8.0, 9.0, 10.0]]' # 3-p
-
-FIT_SELECT = '[[15.0, 16.0, 17.0], [16.0, 17.0, 18.0], [17.0, 18.0, 19.0], [14.0, 15.0, 16.0]]' # 0
-
-FIT_SELECT = '[[6.0, 7.0, 8.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0], [6.0, 8.0, 10.0], [8.0, 9.0, 10.0]]' # 1
-
-# p1, 32c, I2
-FIT_SELECT = '[[9.0, 10.0, 11.0, 12.0], [10.0, 11.0, 12.0], [9.0, 10.0, 11.0]]' # 0
-
-FIT_SELECT = '[[5.0, 9.0, 13.0], [5.0, 6.0, 7.0, 8.0, 9.0], [4.0, 5.0, 6.0]]' # 1
-
-FIT_SELECT = '[[5.0, 7.0, 9.0], [5.0, 6.0, 7.0], [4.0, 5.0, 6.0]]' # 2
-
-# p11, 32c, I2
-FIT_SELECT = '[[10.0, 11.0, 12.0, 13.0, 14.0], [11.0, 12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [10.0, 12.0, 14.0]]' # 0
-
-FIT_SELECT = '[[9.0, 10.0, 11.0], [8.0, 9.0, 10.0], [8.0, 9.0, 10.0], [9.0, 10.0, 11.0]]' # 1
-
-FIT_SELECT = '[[13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [9.0, 10.0, 11.0]]' # 2e
-
-FIT_SELECT = '[[12.0, 13.0, 14.0, 15.0], [13.0, 14.0, 15.0], [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0], [10.0, 11.0, 12.0]]' # 2p
-
-FIT_SELECT = '[[10.0, 11.0, 12.0], [11.0, 12.0, 13.0, 14.0, 15.0], [11.0, 13.0, 15.0], [9.0, 11.0, 13.0]]' # 3
-
-FIT_SELECT = '[[10.0, 12.0, 14.0], [10.0, 11.0, 12.0], [13.0, 14.0, 15.0], [9.0, 10.0, 11.0]]' # 0'
-
-# p111, 32c, I2
-
-FIT_SELECT = '[[8.0, 9.0, 10.0, 11.0], [9.0, 10.0, 11.0]]' # 0
-
-FIT_SELECT = '[[8.0, 9.0, 10.0, 11.0], [6.0, 10.0, 14.0]]' # 1
-
-# p0, 24c, I2
-
-FIT_SELECT = '[[10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0], [10.0, 12.0, 14.0], [10.0, 11.0, 12.0, 13.0]]' # 0, 1, 3
-
-FIT_SELECT = '[[10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0], [10.0, 11.0, 12.0, 13.0], [10.0, 11.0, 12.0]]' # 2
-
-# p1 24c I2
-
-FIT_SELECT = '[[5.0, 6.0, 7.0], [5.0, 6.0, 7.0], [5.0, 6.0, 7.0]]' # 0
-
-### end old
-
-FIT_SELECT = str(list_mat(INCLUDE))
-
-
-# FIT_SELECT = ''
-
 def singleton_cut(add, res, newfrs, tochk):
     """Obsolete cut for single results
     (new way is fit window min length)
@@ -90,7 +33,18 @@ def singleton_cut(add, res, newfrs, tochk):
         ret = True # cut on singletons from large windows
     return ret
 
-def main():
+def dummy_glob():
+    """Get list of files to use to find results
+    for a selected fit range"""
+    start = glob.glob('energy*.p')
+    ret = []
+    for i in start:
+        if 'err' in i:
+            continue
+        ret.append(i)
+    return ret
+
+def main(fit_select=''):
     """main"""
     ret = []
     shape = ()
@@ -105,10 +59,13 @@ def main():
     useset = set()
     found_count = 0
     found = []
-    for i in sys.argv[1:]:
+    file_list = sys.argv[1:] if fit_select else dummy_glob()
+    for i in file_list:
         if '.cp' in i:
             continue
         if 'energy_min' in i:
+            continue
+        if 'mindim' in i:
             continue
         try:
             new_early = rf.earliest_time(i)
@@ -152,7 +109,7 @@ def main():
             if singleton_cut(add, res, newfrs, i):
                 pass
                 #continue
-            if FIT_SELECT in str(newfrs) and FIT_SELECT:
+            if fit_select in str(newfrs) and fit_select:
                 found.append(i)
                 found_count += 1
                 print("*****")
@@ -180,33 +137,50 @@ def main():
     outfn = start_str(sorted(list(useset)))
     for i, item in enumerate(found):
         print("found file", i, ":", item)
+    ret = parse_found_for_dts(found)
+    if not ret:
+        if rotate:
+            res = np.array(res)
+            print('res.shape:', res.shape)
+            excl_arr = np.array(excl_arr)
+            assert len(res) == len(excl_arr)
+            ret = [res_mean, err_check, res, excl_arr]
+        try:
+            ret = np.array(ret)
+            print("final shape:", ret.shape)
+            print("final rescount:", rescount)
+        except ValueError:
+            pass
+        #print("final shape:", ret.shape)
+        print("finished combining:", sorted(list(useset)))
+        if outfn[-1] != '_':
+            outfn = outfn + '_tmin' + str(int(early)) + '.cp'
+        else:
+            outfn = outfn + 'tmin' + str(int(early)) + '.cp'
+        print("writing results into file:", outfn)
+        earlylist = prune_earlylist(earlylist)
+        print("earliest time:", early, "from:")
+        for i in earlylist:
+            print('prl.sh', i, 'tocut/')
+        if '.p.p' not in outfn:
+            pickle.dump(ret, open(outfn, "wb"))
+    return ret
+
+def parse_found_for_dts(found):
+    """Find t-t0 and mat dt from found"""
+    ret = ()
     if found:
-        sys.exit()
-    if rotate:
-        res = np.array(res)
-        print('res.shape:', res.shape)
-        excl_arr = np.array(excl_arr)
-        assert len(res) == len(excl_arr)
-        ret = [res_mean, err_check, res, excl_arr]
-    try:
-        ret = np.array(ret)
-        print("final shape:", ret.shape)
-        print("final rescount:", rescount)
-    except ValueError:
-        pass
-    #print("final shape:", ret.shape)
-    print("finished combining:", sorted(list(useset)))
-    if outfn[-1] != '_':
-        outfn = outfn + '_tmin' + str(int(early)) + '.cp'
-    else:
-        outfn = outfn + 'tmin' + str(int(early)) + '.cp'
-    print("writing results into file:", outfn)
-    earlylist = prune_earlylist(earlylist)
-    print("earliest time:", early, "from:")
-    for i in earlylist:
-        print('prl.sh', i, 'tocut/')
-    if '.p.p' not in outfn:
-        pickle.dump(ret, open(outfn, "wb"))
+        for i, item in enumerate(found):
+            # assumes tminus is 1 digit long
+            tminus = item.split('TMINUS')[1][0]
+            tminus = 'TMINUS'+tminus
+            dt2 = None
+            if 'dt' in item:
+                dt2 = item.split('dt')[1][0]
+        print('T0 =', T0)
+        print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
+        ret = (tminus, dt2)
+    return ret
 
 def prune_earlylist(earlylist):
     """Find set of file names with the earliest time"""
@@ -257,4 +231,5 @@ def common_start(stra, strb):
 
 
 if __name__ == '__main__':
-    main()
+    FIT_SELECT = str(list_mat(INCLUDE))
+    main(fit_select=FIT_SELECT)
