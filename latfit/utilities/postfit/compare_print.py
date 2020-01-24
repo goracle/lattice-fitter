@@ -1,15 +1,14 @@
 """Compare fit range results; also print results to screen for inspection"""
-import re
 import numpy as np
 import gvar
 import latfit.utilities.exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.superjack import jack_mean_err
 from latfit.config import ISOSPIN
-from latfit.utilities.postfit.fitwin import fitwincuts
-from latfit.utilities.postfit.fitwin import get_fitwindow, win_nan, LENMIN
-import latfit.utilities.postfit.bin_analysis as bin_analysis
-
+from latfit.utilities.postfit.fitwin import win_nan
+from latfit.utilities.postfit.cuts import lencut, allow_cut
+from latfit.utilities.postfit.cuts import statlvl
+from latfit.utilities.postfit.strproc import errstr
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -18,27 +17,6 @@ except NameError:
         """Line profiler default."""
         return arg2
     PROFILE = profile
-
-REVERSE = False
-
-
-def round_wrt(err1, err2):
-    """Round err2 with respect to err1"""
-    if err1 != np.inf:
-        err1 = round_to_n(err1, 2)
-        err1 = np.float(err1)
-        if err1 == int(err1):
-            err1 = int(err1)
-        err1 = str(err1)
-        if '.' in err1:
-            assert 'e' not in err1, ("not supported:", err1)
-            places = len(err1.split('.')[1])
-        else:
-            places = -1*trailing_zeros(err1)
-        ret = round(err2, places)
-    else:
-        ret = err2
-    return ret
 
 @PROFILE
 def diff_ind(res, arr, fit_range_arr):
@@ -122,19 +100,6 @@ def clear_diff_cache():
     discrep.cache = {}
 
 @PROFILE
-def statlvl(diff):
-    """Calculate the statistical significance of a gvar diff"""
-    if diff.val:
-        if diff.sdev:
-            sig = diff.val/diff.sdev
-        else:
-            sig = np.inf
-    else:
-        sig = 0
-    return sig
-
-
-@PROFILE
 def errfake(frdim, errstr1):
     """Is the disagreement with an effective mass point outside of this
     dimension's fit window?  Then regard this error as spurious"""
@@ -143,74 +108,6 @@ def errfake(frdim, errstr1):
     ret = errstr1 < tmin or errstr1 > tmax
     if not ret:
         print(tmin, tmax, errstr1, frdim)
-    return ret
-
-@PROFILE
-def other_err_str(val, err1, err2):
-    """Get string for other error from a given gvar"""
-    if isinstance(val, np.float) and not np.isnan(val) and not np.isnan(err2):
-        err2 = round_wrt(err1, err2)
-        err = gvar.gvar(val, err2)
-        if not err2:
-            places = np.inf
-        else:
-            places = place_diff_gvar(gvar.gvar(val, err1),
-                                     gvar.gvar(val, err2))
-        assert places >= 0, (val, err1, err2, places)
-        try:
-            ret = str(err).split('(')[1][:-1]
-        except IndexError:
-            print('va', val)
-            print('er', err2)
-            raise
-        if places and err2:
-            assert places == 1, (val, err1, err2)
-            ret = '0'+ret[0]
-        ret = '(' + ret + ')'
-    else:
-        ret = ''
-    return ret
-
-@PROFILE
-def place_diff_gvar(gvar1, gvar2):
-    """Find difference in places between gvar1 and gvar2"""
-    one = str(gvar1)
-    two = str(gvar2)
-    one = one.split('(')[0]
-    two = two.split('(')[0]
-    one = remove_period(one)
-    two = remove_period(two)
-    two = len(two)
-    one = len(one)
-    return two-one
-
-@PROFILE
-def remove_period(astr):
-    """Remove decimal point"""
-    return re.sub(r'.', '', astr)
-
-@PROFILE
-def errstr(res, sys_err):
-    """Print error string"""
-    if not np.isnan(res.val):
-        assert res.sdev >= sys_err, (res.sdev, sys_err)
-        newr = bin_analysis.tot_to_stat(res, sys_err)
-        if newr.sdev >= sys_err:
-            ret = other_err_str(newr.val, newr.sdev, sys_err)
-            ret = str(newr)+ret
-        else:
-            ret = other_err_str(newr.val, sys_err, newr.sdev)
-            ret = swap_err_str(gvar.gvar(newr.val, sys_err), ret)
-    else:
-        ret = res
-    return ret
-
-@PROFILE
-def swap_err_str(gvar1, errstr1):
-    """Swap the gvar error string with the new one"""
-    val, errs = str(gvar1).split("(") # sys err
-    assert np.float(errs[:-1]) >= gvar.gvar('0'+errstr1).val, (gvar1, errstr1)
-    ret = str(val)+errstr1+'('+errs
     return ret
 
 @PROFILE
@@ -302,8 +199,9 @@ def sort_check(median_err, reverse=False):
             assert sdev <= emax, (sdev, emax)
         else:
             assert sdev == emax, (sdev, emax)
+
 @PROFILE
-def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
+def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
     """The print loop
     """
     # dim, allowidx = dim_idx
@@ -317,15 +215,11 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
     #fitrmin = None
     # pvalmin = None
 
-    # cut results outside the fit window
-    print("after init cut len =", len(median_err))
-    median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr)
-    print("final cut result len =", len(median_err))
     nores = False
     if not list(median_err):
         nores = True
 
-    sort_check(median_err, reverse=REVERSE)
+    sort_check(median_err, reverse=False)
 
     for idx, (effmass, pval, emean) in enumerate(median_err):
 
@@ -349,7 +243,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
 
         # best known cut (stat comparison only)
         if allow_cut(gvar.gvar(emean, sdev),
-                     dim, chk_consis=False):
+                     dim, best, chk_consis=False):
             continue
 
         # mostly obsolete params
@@ -446,173 +340,9 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr):
                                                      median[0].sdev))
         print("p-value weighted mean =", avg_dim)
         ret = (
-            themin[0], themin[1], (themin[2], get_fitwindow(fit_range_arr)))
+            themin[0], themin[1], [themin[2]])
     else:
-        ret = (gvar.gvar(np.nan, np.nan), np.nan, ([[]], (np.nan, np.nan)))
-    return ret
-
-# https://stackoverflow.com/questions/8593355/in-python-how-do-i-count-the-trailing-zeros-in-a-string-or-integer
-def trailing_zeros(longint):
-    """Get number of trailing zeros in a number"""
-    manipulandum = str(longint)
-    return len(manipulandum)-len(manipulandum.rstrip('0'))
-
-@PROFILE
-def round_to_n(val, places):
-    """Round to two sigfigs"""
-    # from
-    # https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
-    if np.inf == val:
-        val = np.nan
-        plc = 1
-    else:
-        plc = -int(np.floor(np.log10(val))) + (places - 1)
-    ret = round(val, plc)
-    return ret
-
-@PROFILE
-def consistency(item1, item2, prin=False):
-    """Check two gvar items for consistency"""
-    diff = np.abs(item1.val-item2.val)
-    dev = max(item1.sdev, item2.sdev)
-    sig = statlvl(gvar.gvar(diff, dev))
-    ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
-    if not ret:
-        if prin:
-            print("sig inconsis. =", sig)
-        # sanity check; relax '15' to a higher number as necessary
-        assert sig < 15, (sig, "check the best known list for",
-                          "compatibility with current set",
-                          "of results being analyzed", item1, item2)
-    return ret
-bin_analysis.consistency = consistency
-
-@PROFILE
-def fitrange_skip_list(fit_range_arr, fitwindow):
-    """List of indices to skip"""
-    # fit window cut
-    ret = set()
-    lcut = 0
-    fcut = 0
-    acut = 0
-    for idx, item in enumerate(fit_range_arr):
-        if lencut(item):
-            lcut += 1
-            ret.add(idx)
-        elif fitwincuts(item, fitwindow):
-            fcut += 1
-            ret.add(idx)
-        elif not arithseq(item):
-            acut += 1
-            ret.add(idx)
-    ret = sorted(list(ret))
-    print("length cut amt:", lcut)
-    print("fit window cut amt:", fcut)
-    print("arith. seq. cut amt:", acut)
-    return ret
-
-@PROFILE
-def cut_arr(arr, skip_list):
-    """Prune the results array"""
-    return np.delete(arr, skip_list, axis=0)
-
-import sys
-@PROFILE
-def lencut(fit_range):
-    """Length cut; we require each fit range to have
-    a minimum number of time slices
-    length cut for safety (better systematic error control
-    to include more data in a given fit range;
-    trade stat for system.)
-    only apply if the data is plentiful (I=2)
-    """
-    ret = False
-    iterf = hasattr(fit_range[0], '__iter__')
-    effmasspt = not iterf and len(fit_range) == 1
-    if effmasspt:
-        ret = True
-    if not ret:
-        if iterf:
-            ret = any([len(i) < LENMIN for i in fit_range])
-        else:
-            ret = len(fit_range) < LENMIN
-    if ret:
-        assert effmasspt, fit_range
-    return ret
-
-@PROFILE
-def arithseq(fitrange):
-    """Check if arithmetic sequence"""
-    ret = True
-    for fitr in fitrange:
-        minp = fitr[0]
-        nextp = fitr[1]
-        step = nextp-minp
-        maxp = fitr[-1]
-        rchk = np.arange(minp, maxp+step, step)
-        if list(rchk) != list(fitr):
-            ret = False
-    return ret
-
-@PROFILE
-def allow_cut(res, dim, cutstat=True, chk_consis=True):
-    """If we already have a minimized error result,
-    cut all that are statistically incompatible"""
-    ret = False
-    best = bin_analysis.find_best()
-    if best:
-        battr = allow_cut.best_attr
-        if battr is None:
-            battr = hasattr(gvar.gvar(best[0]), '__iter__')
-            allow_cut.best_attr = battr
-        if battr:
-            for i in best:
-                ret = ret or res_best_comp(
-                    res, i, dim, cutstat=cutstat, chk_consis=chk_consis)
-        else:
-            ret = res_best_comp(
-                res, best, dim, cutstat=cutstat, chk_consis=chk_consis)
-    return ret
-allow_cut.best_attr = None
-
-
-@PROFILE
-def fitrange_cuts(median_err, fit_range_arr):
-    """Get fit window, apply cuts"""
-    fitwindow = get_fitwindow(fit_range_arr, prin=True)
-    skip_list = fitrange_skip_list(fit_range_arr, fitwindow)
-    median_err = cut_arr(median_err, skip_list)
-    fit_range_arr = cut_arr(fit_range_arr, skip_list)
-    return median_err, fit_range_arr
-
-@PROFILE
-def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
-    """Compare result with best known for consistency"""
-    if hasattr(res, '__iter__'):
-        sdev = res[0].sdev
-        res = np.mean([i.val for i in res], axis=0)
-        try:
-            res = gvar.gvar(res, sdev)
-        except TypeError:
-            print(res)
-            print(sdev)
-            raise
-    best = best[dim]
-    # best = gvar.gvar(best)
-    ret = False
-    if chk_consis:
-        ret = not consistency(best, res, prin=False)
-    if cutstat:
-        devc = best.sdev if not np.isnan(best.sdev) else np.inf
-        try:
-            # make cut not aggressive since it's a speed trick
-            devd = min(round_wrt(devc, res.sdev), res.sdev)
-            ret = ret or devc < devd
-        except ValueError:
-            print('ret', ret)
-            print('best', best)
-            print('res', res)
-            raise
+        ret = (gvar.gvar(np.nan, np.nan), np.nan, [[[]]])
     return ret
 
 @PROFILE

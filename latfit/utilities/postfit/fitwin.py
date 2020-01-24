@@ -1,5 +1,4 @@
 """Fit window module"""
-import sys
 import numpy as np
 from latfit.config import RANGE_LENGTH_MIN
 
@@ -16,34 +15,12 @@ except NameError:
     PROFILE = profile
 
 
-def reset_window():
-    """Reset internal fit window variables"""
-    get_fitwindow.tadd = 0
-    get_fitwindow.tsub = 0
-    get_fitwindow.win = (None, None)
-
-def set_tadd_tsub(tadd, tsub):
-    """Store tadd, tsub to find fit window"""
-    reset_window()
-    get_fitwindow.tadd = tadd
-    get_fitwindow.tsub = tsub
-    print("tadd tsub:", tadd, tsub)
-
-
 
 
 @PROFILE
-def wintoosmall(win=None, fit_range_arr=None):
+def wintoosmall(win):
     """test if fit window is too small"""
     ret = False
-    if fit_range_arr is not None:
-        if win is None:
-            win = get_fitwindow(fit_range_arr)
-        else:
-            win2 = get_fitwindow(fit_range_arr)
-            assert win == win2, (win, win2)
-    else:
-        assert win is not None
     if lenfitw(win) < MIN_FITWIN_LEN:
         ret = True
     return ret
@@ -86,38 +63,6 @@ def inside_win(fit_range, fitwin):
     ret = tmax <= fitwin[1] and tmin >= fitwin[0]
     return ret
 
-
-@PROFILE
-def fitwincuts(fit_range, fitwindow, dim=None):
-    """Cut all fit ranges outside this fit window,
-    also cut out fit windows that are too small
-    """
-    ret = False
-
-    # skip fit windows of a small length
-    if wintoosmall(win=fitwindow):
-        ret = True
-    if not ret:
-        # tmin, tmax cut
-        dim = None # appears to help somewhat with errors
-        iterf = hasattr(fit_range[0], '__iter__')
-        if dim is not None:
-            assert iterf, fit_range
-            fit_range = fit_range[dim]
-    for i, fitr in enumerate(fit_range):
-        if ret:
-            break
-        if i == dim:
-            ret = not inside_win(fitr, fitwindow) or ret
-        else:
-            #dimwin = DIMWIN[i] if iterf else fitwindow
-            dimwin = fitwindow
-            ret = not inside_win(fitr, dimwin) or ret
-    if not ret and lenfitw(fitwindow) == 1:
-        print(fitwindow)
-        print(fit_range)
-        sys.exit(1)
-    return ret
 
 @PROFILE
 def pr_best_fitwin(fitwin_votes):
@@ -164,22 +109,16 @@ def win_nan(fitwin):
 
 
 @PROFILE
-def get_fitwindow(fit_range_arr, prin=False):
+def get_fitwindow(fit_range_arr, twin, prin=False):
     """Get fit window, print result"""
-    if get_fitwindow.win == (None, None):
-        tadd = get_fitwindow.tadd
-        tsub = get_fitwindow.tsub
-        tmin_allowed = global_tmin(fit_range_arr) + tadd
-        tmax_allowed = global_tmax(fit_range_arr) + tsub
-        get_fitwindow.win = (tmin_allowed, tmax_allowed)
-    ret = get_fitwindow.win
+    tadd, tsub = twin
+    tmin_allowed = global_tmin(fit_range_arr) + tadd
+    tmax_allowed = global_tmax(fit_range_arr) + tsub
+    ret = (tmin_allowed, tmax_allowed)
     assert ret[0] is not None, ret
     if prin:
         print("fit window:", ret)
     return ret
-get_fitwindow.tadd = 0
-get_fitwindow.tsub = 0
-get_fitwindow.win = (None, None)
 
 #def generate_continuous_windows(maxtmax, minsep=LENMIN-1):
 @PROFILE

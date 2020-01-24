@@ -9,115 +9,17 @@ import gvar
 import latfit.utilities.read_file as rf
 from latfit.utilities.postfit.fitwin import pr_best_fitwin
 from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
-from latfit.utilities.postfit.fitwin import max_tmax, LENMIN
+from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
+from latfit.utilities.postfit.cuts import consistency
 
-
-# p11 32c (do not use)
-CBEST = [
-    # [['0.40458(35)', '-5.12(58)'], ['0.44803(26)', '-7.95(62)'],
-    #['0.58217(50)', '-14.7(3.0)'], ['0.60224(60)', '-19.7(1.2)']]
-    [['0.40458(35)', '-5.12(58)'], ['0.44789(24)', '-7.62(58)'],
-     ['0.58218(46)', '-14.7(2.8)'], ['0.60187(55)', '-18.6(1.1)']]
-
-]
-IGNORABLE_WINDOWS = ((9, 13), (10, 14))
-
-# default
-CBEST = []
-IGNORABLE_WINDOWS = ()
-
-# p0 32c
-
-CBEST = [
-    [['0.21080(44)', '-0.26(12)'], ['0.45676(52)', '-13.18(60)'],
-     ['0.6179(23)', '-25.0(2.4)'], ['0.7285(63)', '-34(11)']],
-    [['0.21080(44)', '-0.30(12)'], ['0.45641(52)', '-13.18(60)'],
-     ['0.6132(15)', '-20.1(1.5)'], ['0.7246(30)', '-26.8(5.7)']],
-    [['0.21080(44)', '-0.30(12)'], ['0.45667(44)', '-13.08(51)'],
-     ['0.61418(98)', '-21.5(1.0)'], ['0.7224(21)', '-23.8(4.1)']]
-
-]
-IGNORABLE_WINDOWS = ()
-
-# p1 32c
-CBEST = [
-    [['0.33019(35)', '-3.08(36)'], ['0.5341(14)', '-17.1(1.6)'], ['0.6614(76)', '-15(12)']],
-    [['0.33035(34)', '-3.24(35)'], ['0.5341(11)', '-17.1(1.3)'], ['0.6641(58)', '-19.6(9.3)']],
-    [['0.33035(34)', '-3.30(34)'], ['0.53320(81)', '-15.99(97)'], ['0.6648(32)', '-20.7(5.1)']],
-    [['0.33035(34)', '-3.30(34)'], ['0.53352(57)', '-16.37(68)'], ['0.6641(21)', '-19.5(3.4)']],
-    [['0.33055(33)', '-3.45(34)'], ['0.53327(46)', '-16.08(54)'], ['0.6661(15)', '-22.7(2.3)']],
-    [['0.33053(33)', '-3.43(34)'], ['0.53349(45)', '-16.08(54)'], ['0.6654(13)', '-21.6(2.1)']],
-    [['0.33055(32)', '-3.45(33)'], ['0.53338(36)', '-16.20(43)'], ['0.66540(78)', '-22.6(1.3)']],
-    [['0.33055(32)', '-3.45(33)'], ['0.53327(32)', '-16.04(39)'], ['0.66618(60)', '-22.89(91)']],
-
-]
-IGNORABLE_WINDOWS = ()
-
-# p11 32c
-CBEST = [
-]
-IGNORABLE_WINDOWS = [(9, 13), (10, 14)]
-
-# p111 32c
-CBEST = [
-    [['0.46222(64)', '-3.8(1.4)'], ['0.52657(58)', '-9.41(70)']],
-    [['0.46298(52)', '-5.2(1.1)'], ['0.52697(55)', '-9.90(66)']],
-    [['0.46309(52)', '-5.2(1.1)'], ['0.52756(52)', '-10.61(61)']],
-    [['0.46351(38)', '-6.38(86)'], ['0.52745(45)', '-10.47(54)']]
-
-]
-IGNORABLE_WINDOWS = ()
-
-# p0 24c
-CBEST = [
-    [['0.28139(34)', '-0.263(70)'], ['0.60791(36)', '-12.10(31)'],
-     ['0.8180(24)', '-20.4(1.9)'], ['0.9646(73)', '-25(10)']]
-]
-IGNORABLE_WINDOWS = ()
-
-# p1 24c
-CBEST = [
-    #[['0.44075(26)', '-3.29(20)'], ['0.70935(32)', '-14.48(29)'], ['0.88630(74)', '-20.45(89)']]
-    [['0.21092(43)', '-0.29(12)'], ['0.45676(52)', '-13.18(60)'], ['0.6146(20)', '-21.6(2.1)'], ['0.7286(45)', '-34.0(8.0)']],
-    [['0.21091(42)', '-0.29(12)'], ['0.45678(47)', '-13.21(54)'], ['0.6132(15)', '-20.2(1.6)'], ['0.7240(33)', '-26.5(6.2)']],
-    [['0.21091(42)', '-0.25(12)'], ['0.45696(37)', '-13.42(43)'], ['0.61493(68)', '-21.94(70)'], ['0.7251(15)', '-27.8(2.8)']]
-
-
-
-]
-IGNORABLE_WINDOWS = ()
-
-
-# don't count these fit windows for continuity check
-# they are likely overfit,
-# (in the case of an overfit cut : a demand that chi^2/dof >= 1)
-# or failing for another acceptable/known reason
-# so the data will necessarily be missing
-
-
-def augment_overfit(wins):
-    """Augment likely overfit fit window
-    list with all subset windows"""
-    wins = set(wins)
-    for win in sorted(list(wins)):
-        tmin = win[0]
-        tmax = win[1]
-        for i in range(tmax-tmin-LENMIN):
-            wins.add((tmin+i+1, tmax))
-    for win in sorted(list(wins)):
-        tmin = win[0]
-        tmax = win[1]
-        for i in range(tmax-tmin-LENMIN):
-            wins.add((tmin, tmax-i-1))
-    return sorted(list(wins))
-
-# the assumption here is that all sub-windows in these windows
-# have also been checked and are also (likely) overfit
-IGNORABLE_WINDOWS = augment_overfit(IGNORABLE_WINDOWS)
-
-print("CBEST =", CBEST)
-print("IGNORABLE_WINDOWS =", IGNORABLE_WINDOWS)
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
 
 def round_gvar(item):
     """do not store extra error digits in a gvar item"""
@@ -142,20 +44,6 @@ def fill_best(cbest):
         retph.append(aph)
     return rete, retph
 
-ALLOW_ENERGY, ALLOW_PHASE = fill_best(CBEST)
-
-def consistency(_):
-    """dummy function, to be filled in later"""
-
-
-try:
-    PROFILE = profile  # throws an exception when PROFILE isn't defined
-except NameError:
-    def profile(arg2):
-        """Line profiler default."""
-        return arg2
-    PROFILE = profile
-
 @PROFILE
 def cut_tmin(tot_new, tocut):
     """Cut tmin"""
@@ -169,14 +57,14 @@ def cut_tmin(tot_new, tocut):
     return ret
 
 @PROFILE
-def continuous_tmax(tot_new):
+def continuous_tmax(tot_new, ignorable_windows):
     """Check continuous tmax"""
     maxtmax = max_tmax(tot_new)
     cwin = generate_continuous_windows(maxtmax)
     print("cwin=", cwin)
     for tmin in maxtmax:
         check_set = set()
-        check_set = check_set.union(set(IGNORABLE_WINDOWS))
+        check_set = check_set.union(set(ignorable_windows))
         for _, _, fitwin in tot_new:
             fitwin = fitwin[1]
             if fitwin[0] == tmin:
@@ -305,34 +193,38 @@ def drop_extra_info(ilist):
     return (fitw, fit_range, ret)
 
 @PROFILE
-def plot_t_dep(tot, dim, item_num, title, units):
+def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
     """Plot the tmin dependence of an item"""
+    dim, item_num, title, units = plot_info
+    cond, ignorable_windows = best_info
     print("plotting t dependence of dim", dim, "item:", title)
     tot_new = [i[dim][item_num] for i in tot if not np.isnan(
         gvar.gvar(i[dim][item_num][0]).val)]
     try:
-        if not ALLOW_ENERGY and not ALLOW_PHASE:
-            tot_new = check_fitwin_continuity(tot_new)
+        if cond:
+            tot_new = check_fitwin_continuity(tot_new, ignorable_windows)
     except AssertionError:
         print("fit windows are not continuous for dim, item:", dim, title)
         raise
         #tot_new = []
     if list(tot_new):
         quick_compare(tot_new, prin=True)
-        plot_t_dep_totnew(tot_new, dim, title, units)
+        plot_info = dim, title, units
+        fitwin_votes, toapp = plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp)
     else:
         print("not enough consistent results for a complete set of plots")
         sys.exit(1)
+    return fitwin_votes, toapp
 
 @PROFILE
-def check_fitwin_continuity(tot_new):
+def check_fitwin_continuity(tot_new, ignorable_windows):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
     continuous_tmin_singleton(tot_new)
     flag = 1
     while flag:
         try:
-            continuous_tmax(tot_new)
+            continuous_tmax(tot_new, ignorable_windows)
             flag = 0
         except AssertionError as err:
             tocut = set()
@@ -346,8 +238,9 @@ def check_fitwin_continuity(tot_new):
     return tot_new
 
 @PROFILE
-def plot_t_dep_totnew(tot_new, dim, title, units):
+def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     """Plot something (not nothing)"""
+    dim, title, units = plot_info
     yarr = []
     yerr = []
     xticks_min = []
@@ -378,9 +271,9 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
         xticks_max.append(str(fitwin[1]))
         fitwinprev = fitwin
         itemprev = item
-    if itmin[1] not in plot_t_dep.fitwin_votes:
-        plot_t_dep.fitwin_votes[itmin[1]] = 0
-    plot_t_dep.fitwin_votes[itmin[1]] += 1
+    if itmin[1] not in fitwin_votes:
+        fitwin_votes[itmin[1]] = 0
+    fitwin_votes[itmin[1]] += 1
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
@@ -420,15 +313,14 @@ def plot_t_dep_totnew(tot_new, dim, title, units):
             dim)+","+r' $t_{min,param}=$'+str(tmin), y=1.12)
         plt.subplots_adjust(top=0.85)
         print("minimum error:", itmin[0], "fit window:", itmin[1])
-        app_itmin(itmin[0])
+        toapp.append(str(itmin[0]))
         print("saving fig:", save_str)
         pdf.savefig()
     plt.show()
-plot_t_dep.fitwin_votes = {}
-plot_t_dep.coll = []
+    return fitwin_votes, toapp
 
 @PROFILE
-def print_tot(tot):
+def print_tot(tot, cbest, ignorable_windows):
     """Print results vs. tmin"""
     tot_new = []
     lenmax = 0
@@ -448,32 +340,21 @@ def print_tot(tot):
                 for idx, item in enumerate(res):
                     print("dim", idx, ":", item)
     tot = tot_new
+    fitwin_votes = {}
+    coll = []
+    toapp = []
     for dim, _ in enumerate(tot[0]):
-        plot_t_dep(tot, dim, 0, 'Energy', 'lattice units')
-        plot_t_dep(tot, dim, 1, 'Phase shift', 'degrees')
-    print(plot_t_dep.coll)
-    pr_best_fitwin(plot_t_dep.fitwin_votes)
-    prune_cbest()
-
-@PROFILE
-def tot_to_stat(res, sys_err):
-    """Get result object which has separate stat
-    and sys errors"""
-    err = res.sdev
-    assert err > sys_err, (err, sys_err)
-    err = np.sqrt(err**2-sys_err**2)
-    ret = gvar.gvar(res.val, err)
-    return ret
-
-def process_res_to_best(min_en, min_ph):
-    """Process results to append to 'best'
-    known list"""
-    min_enb = [i for i, _, _ in min_en]
-    min_phb = [i for i, _, _ in min_ph]
-    min_resb = [
-        list(i) for i in zip(min_enb, min_phb) if list(i)]
-    update_best(min_resb)
-
+        best_info = (not cbest, ignorable_windows)
+        plot_info = (dim, 0, 'Energy', 'lattice units')
+        fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
+        plot_info = (dim, 1, 'Phase Shift', 'degrees')
+        fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
+        coll.append(toapp)
+        toapp = []
+    pr_best_fitwin(fitwin_votes)
+    cbest.append(coll)
+    prune_cbest(cbest)
+    return coll
 
 def compare_bests(new, curr):
     """Compare new best to current best
@@ -496,10 +377,9 @@ def compare_bests(new, curr):
                 break
     return ret
 
-def prune_cbest(cbest=None):
+def prune_cbest(cbest):
     """Prune the best known so only
     the smallest error params remain.  Print the result."""
-    cbest = update_best.cbest if cbest is None else cbest
     if len(cbest) == 1:
         cnew = cbest[0]
     elif not cbest:
@@ -524,42 +404,6 @@ def prune_cbest(cbest=None):
     print("pruned cbest list:", cnew)
     return cnew
 
-def update_best(new_best):
-    """Update best lists"""
-    cbest = update_best.cbest
-    if cbest:
-        if compare_bests(new_best, update_best.cbest):
-            print("adding new best known params:", new_best)
-            new_best = match_arrs(update_best.cbest[0], new_best)
-            update_best.cbest.append(new_best)
-            prune_cbest(cbest)
-            cbest = [update_best.cbest[0]]
-            print("current best known params list:", cbest)
-    find_best.allow_energy, find_best.allow_phase = fill_best(cbest)
-update_best.cbest = CBEST
-
-def find_best():
-    """Find best known result"""
-    assert find_best.sel is not None, find_best.sel
-    sel = find_best.sel
-    if sel == 'phase':
-        best = find_best.allow_phase
-    if sel == 'energy':
-        best = find_best.allow_energy
-    return best
-find_best.sel = None
-find_best.allow_phase = ALLOW_PHASE
-find_best.allow_energy = ALLOW_ENERGY
-
-
-@PROFILE
-def app_itmin(itmin):
-    """Append next minimum result"""
-    app_itmin.curr.append(str(itmin))
-    if len(app_itmin.curr) == 2:
-        plot_t_dep.coll.append(app_itmin.curr)
-        app_itmin.curr = []
-app_itmin.curr = []
 
 def match_arrs(arr, new):
     """Match array lengths by extending the new array length"""
@@ -571,12 +415,6 @@ def match_arrs(arr, new):
         ext = arr[-1*dlen:]
         new.extend(ext)
     return new
-
-@PROFILE
-def select_ph_en(sel):
-    """Select which quantity we will analyze now"""
-    assert sel in ('phase', 'energy'), sel
-    find_best.sel = sel
 
 @PROFILE
 def fit_range_equality(fitr1, fitr2):

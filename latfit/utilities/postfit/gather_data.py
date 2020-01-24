@@ -8,10 +8,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 import gvar
 from latfit.jackknife_fit import jack_mean_err
 import latfit.utilities.exactmean as em
-from latfit.utilities.postfit.bin_analysis import find_best
-from latfit.utilities.postfit.fitwin import wintoosmall
-from latfit.utilities.postfit.compare_print import allow_cut, output_loop
-from latfit.utilities.postfit.compare_print import printres, REVERSE
+from latfit.utilities.postfit.fitwin import wintoosmall, get_fitwindow
+from latfit.utilities.postfit.compare_print import output_loop
+from latfit.utilities.postfit.compare_print import printres
+from latfit.utilities.postfit.cuts import allow_cut, fitrange_cuts
 from latfit.analysis.errorcodes import FitRangeInconsistency
 
 try:
@@ -70,7 +70,7 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
     # prelim_loop = zip(freq, errlooparr, exclarr)
     assert len(freq) == len(errlooparr)
     loop = sorted(zip(freq, pdat_freqarr, errlooparr, exclarr),
-                  key=lambda elem: elem[2], reverse=REVERSE)
+                  key=lambda elem: elem[2], reverse=False)
     medians = (median_diff, median_diff2, pdat_median)
 
     return loop, medians
@@ -78,7 +78,7 @@ def setup_medians_loop(freq, pdat_freqarr, errlooparr, exclarr):
 
 @PROFILE
 def get_medians_and_plot_syserr(loop, freqarr, freq,
-                                medians, dim, nosave=False):
+                                medians, dim, best, nosave=False):
     """Get medians of various quantities (over fit ranges)
     loop:
     (freq, pdat_freqarr, errlooparr, exclarr)
@@ -114,7 +114,7 @@ def get_medians_and_plot_syserr(loop, freqarr, freq,
             print('jackknife error =', jkerr2(effmass))
             print(drop)
             continue
-        if allow_cut(gvar.gvar(emean, sjerr), dim, cutstat=False):
+        if allow_cut(gvar.gvar(emean, sjerr), dim, best, cutstat=False):
             continue
         # print("appending:", gvar.gvar(emean, err))
         median_err.append([efferr, pval, emean])
@@ -124,8 +124,9 @@ def get_medians_and_plot_syserr(loop, freqarr, freq,
     median = systematic_err_est(freq, median_err, freq_median, nosave=nosave)
     return (median_err, median), freq_median
 
+
 @PROFILE
-def make_hist(fname, nosave=False, allowidx=None):
+def make_hist(fname, best, twin, nosave=False, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = {}
@@ -155,13 +156,14 @@ def make_hist(fname, nosave=False, allowidx=None):
             # loop to obtain medians/printable results
             # plot the systematic error
             median_store, freq_median = get_medians_and_plot_syserr(
-                loop, freqarr, freq, medians, dim, nosave=nosave)
+                loop, freqarr, freq, medians, dim, best, nosave=nosave)
             if not list(median_store[0]):
                 print("no consistent results to compare, dim:", dim)
                 continue
 
             fit_range_arr = build_sliced_fitrange_list(median_store, freq, exclarr)
-            if wintoosmall(fit_range_arr=fit_range_arr):
+            fitwin = get_fitwindow(fit_range_arr, twin)
+            if wintoosmall(fitwin):
                 print("fit window too small")
                 break
 
@@ -170,17 +172,23 @@ def make_hist(fname, nosave=False, allowidx=None):
                 plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
                              xycoords='axes fraction')
 
+            # apply cuts
+            # cut results outside the fit window
+            print("after init cut len =", len(median_err))
+            median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr, twin)
+            print("final cut result len =", len(median_err))
+
             # prints the sorted results
             try:
                 themin, sys_err, fitr = output_loop(
                     median_store, avg[dim], (dim, allowidx),
-                    fit_range_arr)
+                    fit_range_arr, best)
+                fitr = augment_fitr(fitr, fitwin)
             except FitRangeInconsistency:
                 continue
 
             if themin == gvar.gvar(0, np.inf):
-                print(find_best.sel,
-                      "min not found for dim:", dim)
+                print(best, "min not found for dim:", dim)
                 continue
             ret[dim] = (themin, sys_err, fitr)
 
@@ -193,6 +201,14 @@ def make_hist(fname, nosave=False, allowidx=None):
             if not nosave:
                 plt.show()
     return fill_conv_dict(ret, freqarr.shape[-1])
+
+def augment_fitr(fitr, fitwindow):
+    """Add fit window info"""
+    if fitr == [[[]]]:
+        fitr.append((np.nan, np.nan))
+    else:
+        fitr.append(fitwindow)
+    return fitr
 
 @PROFILE
 def build_sliced_fitrange_list(median_store, freq, exclarr):
