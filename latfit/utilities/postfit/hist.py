@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 import gvar
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE
-from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
+from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT, check_ids
 from latfit.utilities.postfit.bin_analysis import process_res_to_best
 from latfit.utilities.postfit.bin_analysis import print_tot
 from latfit.utilities.postfit.bin_analysis import select_ph_en
@@ -144,4 +144,5 @@ if __name__ == '__main__':
         IDS_HIST = np.asarray(IDS_HIST)
         pickle.dump(IDS_HIST, open('ids_hist.p', "wb"))
     check_ids_hist()
+    check_ids(LATTICE_ENSEMBLE)
     main()

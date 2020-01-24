@@ -481,7 +481,7 @@ def consistency(item1, item2, prin=False):
         if prin:
             print("sig inconsis. =", sig)
         # sanity check; relax '15' to a higher number as necessary
-        assert sig < 30, (sig, "check the best known list for",
+        assert sig < 15, (sig, "check the best known list for",
                           "compatibility with current set",
                           "of results being analyzed", item1, item2)
     return ret
