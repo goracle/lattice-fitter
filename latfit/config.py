@@ -60,13 +60,14 @@ IRREP = 'T_1_2MINUS'
 IRREP = 'T_1_MINUS'
 IRREP = 'T_1_3MINUS'
 IRREP = 'A1x_mom011'
-IRREP = 'A1_mom11'
 IRREP = 'A1_avg_mom111'
+IRREP = 'A1_mom11'
+IRREP = 'A1_mom1'
 IRREP = 'A_1PLUS_mom000'
 
 # last state phase error cut
-LAST_STATE_PHASE_ERR_CUT = True
 LAST_STATE_PHASE_ERR_CUT = False
+LAST_STATE_PHASE_ERR_CUT = True
 
 if ISOSPIN == 1:
     # control
