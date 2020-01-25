@@ -252,29 +252,26 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     for item, _, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
-        try:
-            trfitwin = (fitwin[0], fitwin[1] + 1)
-        except TypeError:
-            print(fitwin)
-            raise
+        trfitwin = (fitwindow[0] + 1, fitwindow[1])
         if item == itemprev and trfitwin == fitwinprev and len(
                 tot_new) > 10:
-            # decreasing tmax while holding tmin fixed will usually
-            # not change the min, so don't plot these
-            fitwinprev = fitwin
+            # decreasing tmax while holding tmin fixed
+            # will usually not change the min,
+            # so don't plot these
+            fitwinprev = fitwindow
             itemprev = item
             print("omitting (item, dim, val(err), fitwindow):",
-                  title, dim, item, fitwin)
+                  title, dim, item, fitwindow)
             continue
         if np.isnan(item.val):
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
         if item.sdev < itmin[0].sdev:
-            itmin = (item, fitrange, fitwin)
-        xticks_min.append(str(fitwin[0]))
-        xticks_max.append(str(fitwin[1]))
-        fitwinprev = fitwin
+            itmin = (item, fitrange, fitwindow)
+        xticks_min.append(str(fitwindow[0]))
+        xticks_max.append(str(fitwindow[1]))
+        fitwinprev = fitwindow
         itemprev = item
     if itmin[2] not in fitwin_votes:
         fitwin_votes[itmin[2]] = 0
@@ -368,10 +365,11 @@ def print_tot(tot, cbest, ignorable_windows):
         fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
         coll.append(toapp)
         toapp = []
+    print(coll)
     pr_best_fitwin(fitwin_votes)
     cbest.append(coll)
     prune_cbest(cbest)
-    return coll
+    return cbest
 
 def compare_bests(new, curr):
     """Compare new best to current best

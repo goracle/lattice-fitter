@@ -181,7 +181,9 @@ def next_filename(fnames, success=False, curr=None):
         if direc == 'forward':
             fnames = fnames[cidx+1:]
         else:
-            fnames = fnames[:cidx]
+            #print('backward', success)
+            #print('curr', curr, 'fnames', fnames, 'cidx', cidx)
+            fnames = [fnames[:cidx][-1]]
     lfnam = len(fnames)
     if lfnam == 1:
         ret = fnames[0]
