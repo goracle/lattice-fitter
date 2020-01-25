@@ -59,19 +59,19 @@ def get_mins(bests, files, twin, nosave):
     return ret
 
 @PROFILE
-def tloop(cbest, ignorable_windows, nosave=True):
+def tloop(cbest, ignorable_windows, fnames, nosave=True):
     """Make the histograms."""
-    if len(sys.argv[1:]) == 1 and (
-            'phase_shift' in sys.argv[1] or\
-            'energy' in sys.argv[1]) and nosave:
+    if len(fnames) == 1 and (
+            'phase_shift' in fnames[0] or\
+            'energy' in fnames[1]) and nosave:
         # init variables
         allow_energy, allow_phase = fill_best(cbest)
-        fname = sys.argv[1]
         tot = []
         tot_pr = []
         success_tadd_tsub = []
         tsub = 0
         breakadd = False
+        fname = fnames[0]
 
         # get file names
         energyfn, phasefn = enph_filenames(fname)
@@ -82,8 +82,8 @@ def tloop(cbest, ignorable_windows, nosave=True):
             tadd = 0
             while tadd < tdis_max:
                 min_en, min_ph = get_mins(
-                    (allow_energy, energyfn),
-                    (allow_phase, phasefn),
+                    (allow_energy, allow_phase),
+                    (energyfn, phasefn),
                     (tadd, tsub), nosave)
                 if min_en and min_ph: # check this
                     #binl.process_res_to_best(min_en, min_ph)
@@ -150,6 +150,52 @@ def augment_overfit(wins):
     return sorted(list(wins))
 
 
+def nextchar(base, after):
+    """Find the next character in the base string
+    after the after string
+    """
+    base = str(base)
+    after = str(after)
+    if after not in base:
+        ret = ""
+    else:
+        ret = base.split(after)[1:][0]
+    return ret
+
+def next_filename(fnames, success=False, curr=None):
+    """Find the next file name, binary search style"""
+    direc = 'forward' if not success else 'backward'
+    if curr is not None:
+        cidx = fnames.index(curr)
+        if direc == 'forward':
+            fnames = fnames[cidx:]
+        else:
+            fnames = fnames[:cidx]
+    lfnam = len(fnames)
+    if lfnam == 1:
+        ret = fnames[0]
+    else:
+        idx = np.ceil(lfnam/2)
+        if idx == lfnam/2:
+            idx +=1
+        idx -= 1
+        assert idx < lfnam
+        idx = int(idx)
+        ret = fnames[idx]
+    return ret
+
+def sort_filenames(fnames):
+    """Sort file names by tmin_param"""
+    sdict = {}
+    ret = []
+    for i in fnames:
+        tmin_param = nextchar(i, 'tmin')
+        sdict[tmin_param] = i
+        keys = sorted(list(sdict))
+    for i in keys:
+        ret.append(sdict[i])
+    return ret
+
 def wallback():
     """At late times, walk the plateau backwards to find optimal tmin"""
     # p11 32c, hard coded
@@ -158,6 +204,9 @@ def wallback():
     else:
         ignorable_windows = []
 
+    fnames = sys.argv[1:]
+    fnames = sort_filenames(fnames)
+
     # the assumption here is that all sub-windows in these windows
     # have also been checked and are also (likely) overfit
     ignorable_windows = augment_overfit(ignorable_windows)
@@ -165,9 +214,25 @@ def wallback():
 
     cbest = []
     flag = 1
+    fname = next_filename(fnames)
     while flag:
-        newcbest = tloop(cbest, ignorable_windows)
-        cbest.append(newcbest)
+        try:
+            newcbest = tloop(cbest, ignorable_windows, [fname])
+            success = True
+            if flag == 1: # now start the walk back
+                flag = 2
+            cbest.append(newcbest)
+        except AssertionError:
+            raise
+            success = False
+            if flag == 2: # walk back ends
+                break
+        curr = fname
+        fname = next_filename(fnames, curr=curr, success=success)
+        if curr == fname:
+            print("fixed point found:", fname)
+            break
+
 
 if __name__ == '__main__':
     try:

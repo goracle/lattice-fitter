@@ -3,6 +3,7 @@
 Essentially list extend + i/o"""
 import sys
 import pickle
+import glob
 import numpy as np
 import latfit.utilities.read_file as rf
 import latfit.utilities.postfit.fitwin as hist
@@ -59,13 +60,15 @@ def main(fit_select=''):
     useset = set()
     found_count = 0
     found = []
-    file_list = sys.argv[1:] if fit_select else dummy_glob()
+    file_list = sys.argv[1:] if not fit_select else dummy_glob()
     for i in file_list:
         if '.cp' in i:
             continue
         if 'energy_min' in i:
             continue
         if 'mindim' in i:
+            continue
+        if 'badfit' in i:
             continue
         try:
             new_early = rf.earliest_time(i)
@@ -137,8 +140,9 @@ def main(fit_select=''):
     outfn = start_str(sorted(list(useset)))
     for i, item in enumerate(found):
         print("found file", i, ":", item)
-    ret = parse_found_for_dts(found)
-    if not ret:
+    if fit_select:
+        ret = parse_found_for_dts(found)
+    else:
         if rotate:
             res = np.array(res)
             print('res.shape:', res.shape)
@@ -147,6 +151,7 @@ def main(fit_select=''):
             ret = [res_mean, err_check, res, excl_arr]
         try:
             ret = np.array(ret)
+            assert ret.shape[0], ret.shape
             print("final shape:", ret.shape)
             print("final rescount:", rescount)
         except ValueError:
@@ -231,5 +236,8 @@ def common_start(stra, strb):
 
 
 if __name__ == '__main__':
-    FIT_SELECT = str(list_mat(INCLUDE))
+    if INCLUDE:
+        FIT_SELECT = str(list_mat(INCLUDE))
+    else:
+        FIT_SELECT = ''
     main(fit_select=FIT_SELECT)

@@ -124,13 +124,25 @@ def get_medians_and_plot_syserr(loop, freqarr, freq,
     median = systematic_err_est(freq, median_err, freq_median, nosave=nosave)
     return (median_err, median), freq_median
 
+def apply_cuts(median_store, fit_range_arr, twin):
+    """Apply cuts"""
+    # apply cuts
+    # cut results outside the fit window
+    median_err, median = median_store
+    print("after init cut len =", len(median_err))
+    median_err, fit_range_arr = fitrange_cuts(
+        median_err, fit_range_arr, twin)
+    print("final cut result len =", len(median_err))
+    median_store = (median_err, median)
+    return median_store, fit_range_arr
+
+
 
 @PROFILE
 def make_hist(fname, best, twin, nosave=False, allowidx=None):
     """Make histograms"""
     freqarr, exclarr, pdat_freqarr, errdat, avg = get_raw_arrays(fname)
     ret = {}
-    print("fname", fname)
 
     for dim in range(freqarr.shape[-1]):
         freq, errlooparr = slice_energy_and_err(
@@ -171,12 +183,9 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
             if not nosave:
                 plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
                              xycoords='axes fraction')
-
-            # apply cuts
-            # cut results outside the fit window
-            print("after init cut len =", len(median_err))
-            median_err, fit_range_arr = fitrange_cuts(median_err, fit_range_arr, twin)
-            print("final cut result len =", len(median_err))
+          
+            median_store, fit_range_arr = apply_cuts(
+                median_store, fit_range_arr, twin)
 
             # prints the sorted results
             try:
