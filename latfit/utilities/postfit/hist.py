@@ -51,11 +51,16 @@ def check_ids_hist():
 def get_mins(bests, files, twin, nosave):
     """Get the minimum error results for this bin"""
     ret = []
+    sbreak = False
     for idx, (best, fil) in enumerate(zip(bests, files)):
         toapp = make_hist(fil, best, twin, nosave=nosave, allowidx=idx)
-        ret.append(toapp)
         if not toapp:
-            break
+            toapp = []
+            sbreak = True
+        ret.append(toapp)
+    assert len(ret) == 2
+    if sbreak:
+        assert not ret[0] or not ret[1]
     return ret
 
 @PROFILE
