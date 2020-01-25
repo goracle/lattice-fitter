@@ -266,7 +266,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        if item.sdev <= itmin[0].sdev:
+        if item.sdev < itmin[0].sdev:
             itmin = (item, fitrange, fitwin)
         xticks_min.append(str(fitwin[0]))
         xticks_max.append(str(fitwin[1]))
