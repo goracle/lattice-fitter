@@ -216,16 +216,14 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
     # pvalmin = None
 
     nores = False
-    if not list(median_err):
-        nores = True
+    if not len(median_err):
+        print("no results after cuts")
+    else:
+        print("number of results:", len(median_err))
 
     sort_check(median_err, reverse=False)
 
     for idx, (effmass, pval, emean) in enumerate(median_err):
-
-        if nores:
-            print("no results after cuts")
-            break
 
         sdev = effmass[0].sdev
         try:

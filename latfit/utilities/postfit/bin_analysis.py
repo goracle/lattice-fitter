@@ -252,7 +252,11 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     for item, _, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
-        trfitwin = (fitwin[0], fitwin[1] + 1)
+        try:
+            trfitwin = (fitwin[0], fitwin[1] + 1)
+        except TypeError:
+            print(fitwin)
+            raise
         if item == itemprev and trfitwin == fitwinprev and len(
                 tot_new) > 10:
             # decreasing tmax while holding tmin fixed will usually
@@ -452,6 +456,16 @@ def consis_tot(tot):
         quick_compare(tot[:, opa, 1], prin=False)
     tot = list(tot)
 
+class BinInconsistency(Exception):
+    """Error if bins are inconsistent"""
+    @PROFILE
+    def __init__(self, message='', prin=True):
+        if prin:
+            print("***ERROR***")
+            print("bins give inconsistent results")
+        super(BinInconsistency, self).__init__(message)
+        self.message = message
+
 @PROFILE
 def quick_compare(tot_new, prin=False):
     """Check final results for consistency"""
@@ -459,5 +473,6 @@ def quick_compare(tot_new, prin=False):
         item = gvar.gvar(item)
         for item2, _, fitwin2 in tot_new:
             item2 = gvar.gvar(item2)
-            assert consistency(item, item2, prin=prin), (
-                item, item2, fitwin, fitwin2)
+            if not consistency(item, item2, prin=prin):
+                print(item, item2, fitwin, fitwin2)
+                raise BinInconsistency

@@ -13,7 +13,7 @@ from latfit.utilities.postfit.fitwin import LENMIN
 from latfit.utilities.postfit.compare_print import print_sep_errors
 from latfit.utilities.postfit.compare_print import print_compiled_res
 from latfit.utilities.postfit.bin_analysis import print_tot, fill_best
-from latfit.utilities.postfit.bin_analysis import consis_tot
+from latfit.utilities.postfit.bin_analysis import consis_tot, BinInconsistency
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -155,17 +155,23 @@ def augment_overfit(wins):
     return sorted(list(wins))
 
 
-def nextchar(base, after):
+def nextchars_nums(base, after):
     """Find the next character in the base string
-    after the after string
+    after the after string if they are numbers
     """
+    nums = [str(i) for i in range(10)]
     base = str(base)
     after = str(after)
     if after not in base:
         ret = ""
     else:
         ret = base.split(after)[1:][0]
-    return ret
+        ret2 = ''
+        for i in str(ret):
+            if i not in nums:
+                break
+            ret2 += i
+    return ret2
 
 def next_filename(fnames, success=False, curr=None):
     """Find the next file name, binary search style"""
@@ -173,7 +179,7 @@ def next_filename(fnames, success=False, curr=None):
     if curr is not None:
         cidx = fnames.index(curr)
         if direc == 'forward':
-            fnames = fnames[cidx:]
+            fnames = fnames[cidx+1:]
         else:
             fnames = fnames[:cidx]
     lfnam = len(fnames)
@@ -194,7 +200,8 @@ def sort_filenames(fnames):
     sdict = {}
     ret = []
     for i in fnames:
-        tmin_param = nextchar(i, 'tmin')
+        tmin_param = nextchars_nums(i, 'tmin')
+        tmin_param = int(tmin_param)
         sdict[tmin_param] = i
         keys = sorted(list(sdict))
     for i in keys:
@@ -211,6 +218,8 @@ def wallback():
 
     fnames = sys.argv[1:]
     fnames = sort_filenames(fnames)
+    assert len(fnames) == len(sys.argv[1:]), (fnames, sys.argv[1:])
+    print("files used:", fnames)
 
     # the assumption here is that all sub-windows in these windows
     # have also been checked and are also (likely) overfit
@@ -227,8 +236,7 @@ def wallback():
             if flag == 1: # now start the walk back
                 flag = 2
             cbest.append(newcbest)
-        except AssertionError:
-            raise
+        except BinInconsistency:
             success = False
             if flag == 2: # walk back ends
                 break
