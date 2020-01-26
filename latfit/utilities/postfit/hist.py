@@ -215,7 +215,9 @@ def wallback():
     flag = 1
     fname = next_filename(fnames)
     useable = ()
+    route = []
     while flag:
+        route.append(tmin_param(fname))
         try:
             cbest = tloop(cbest, ignorable_windows, [fname])
             success = True
@@ -234,6 +236,7 @@ def wallback():
     print("CBEST, final =", cbest)
     if useable: # to get final plot info, rerun
         tloop(*useable)
+    print("time route taken:", route)
 
 
 if __name__ == '__main__':
