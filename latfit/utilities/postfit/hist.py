@@ -174,7 +174,7 @@ def next_filename(fnames, success=False, curr=None):
     else:
         idx = np.ceil(lfnam/2)
         if idx == lfnam/2:
-            idx +=1
+            idx += 1
         idx -= 1
         assert idx < lfnam
         idx = int(idx)

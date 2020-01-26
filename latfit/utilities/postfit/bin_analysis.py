@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import gvar
-import latfit.utilities.read_file as rf
 from latfit.utilities.postfit.fitwin import pr_best_fitwin
 from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
@@ -340,10 +339,10 @@ def to_include(itmin, dim, title):
     print("FIT_EXCL = invinc(INCLUDE,", str(fitwin)+")")
     tminus, dt2 = getdts(sel)
     tosave.append(tminus)
+    tosave.append(dt2)
     print("T0 =", tminus)
     if dt2 is not None:
         print("DELTA_T_MATRIX_SUBTRACTION =", dt2)
-        tosave.append(dt2)
     saven = min_fit_file(dim, rest)
     fn1 = open(saven+'.p', 'wb')
     pickle.dump(tosave, fn1)

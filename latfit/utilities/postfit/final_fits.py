@@ -1,27 +1,27 @@
 #!/usr/bin/python3
 """Perform final fits"""
-
 import sys
 import glob
 import pickle
 import subprocess
+import os
 
 def main():
     """main"""
+    link = 'final_fit.p'
     for fil in glob.glob('fit_*'):
         if 'log' in fil:
             continue
-        os.symlink(fil, 'final_fit.p')
+        if os.path.exists(link):
+            os.unlink(link)
+        os.symlink(fil, link)
+        assert os.path.exists(link), link
         arr = pickle.load(open(fil, 'rb'))
-        xmin, xmax = arr[-1]
+        xmin, xmax = arr[-2]
         xmin = str(xmin)
         xmax = str(xmax)
-        subprocess.check_output(['latfit', '-f',
-                                 '.', '--xmin', xmin,
-                                 '--xmax', xmax])
-
-
-
+        call = 'latfit -f . --xmin='+xmin+' --xmax='+xmax
+        subprocess.call(call, shell=True)
 
 if __name__ == '__main__':
     main()

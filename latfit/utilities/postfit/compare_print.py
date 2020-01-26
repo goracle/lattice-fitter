@@ -215,7 +215,6 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
     #fitrmin = None
     # pvalmin = None
 
-    nores = False
     if not len(median_err):
         print("no results after cuts")
     else:

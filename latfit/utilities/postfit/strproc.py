@@ -159,6 +159,6 @@ def min_fit_file(dim, rest):
     dump optimal fit params"""
     saven = 'fit_'+str(LATTICE_ENSEMBLE)+'_I'+str(
         ISOSPIN)+'_'+str(IRREP)+'_dim'+str(
-            dim)+'param_'+str(rest)
+            dim)+'_param_'+str(rest)
     saven = re.sub(' ', '_', saven)
     return saven
