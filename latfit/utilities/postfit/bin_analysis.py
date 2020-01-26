@@ -281,8 +281,6 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
-    fname = sys.argv[1]
-
     tmin = tmin_param(fname)
 
     # print info related to final fits

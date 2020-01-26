@@ -167,10 +167,15 @@ def next_filename(fnames, success=False, curr=None):
         else:
             #print('backward', success)
             #print('curr', curr, 'fnames', fnames, 'cidx', cidx)
-            fnames = [fnames[:cidx][-1]]
+            if cidx:
+                fnames = [fnames[:cidx][-1]]
+            else:
+                fnames = []
     lfnam = len(fnames)
     if lfnam == 1:
         ret = fnames[0]
+    elif not lfnam:
+        ret = ""
     else:
         idx = np.ceil(lfnam/2)
         if idx == lfnam/2:
@@ -229,9 +234,13 @@ def wallback():
             if flag == 2: # walk back ends
                 break
         curr = fname
+        print("route so far:", route)
         fname = next_filename(fnames, curr=curr, success=success)
         if curr == fname:
             print("fixed point found:", fname)
+            break
+        if not fname:
+            print("no more data to examine")
             break
     print("CBEST, final =", cbest)
     if useable: # to get final plot info, rerun
