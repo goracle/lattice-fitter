@@ -14,6 +14,7 @@ from latfit.utilities.postfit.compare_print import print_sep_errors
 from latfit.utilities.postfit.compare_print import print_compiled_res
 from latfit.utilities.postfit.bin_analysis import print_tot, fill_best
 from latfit.utilities.postfit.bin_analysis import consis_tot, BinInconsistency
+from latfit.utilities.postfit.strproc import tmin_param
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -77,6 +78,7 @@ def tloop(cbest, ignorable_windows, fnames, nosave=True):
         tsub = 0
         breakadd = False
         fname = fnames[0]
+        print("CBEST =", cbest)
 
         # get file names
         energyfn, phasefn = enph_filenames(fname)
@@ -123,7 +125,7 @@ def tloop(cbest, ignorable_windows, fnames, nosave=True):
                                  'critical', '-t', '30',
                                  'hist: tloop complete'])
         print_sep_errors(tot_pr)
-        newcbest = print_tot(tot, cbest, ignorable_windows)
+        newcbest = print_tot(fname, tot, cbest, ignorable_windows)
     else:
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, '', (np.nan, np.nan), nosave=nosave)
@@ -155,24 +157,6 @@ def augment_overfit(wins):
     return sorted(list(wins))
 
 
-def nextchars_nums(base, after):
-    """Find the next character in the base string
-    after the after string if they are numbers
-    """
-    nums = [str(i) for i in range(10)]
-    base = str(base)
-    after = str(after)
-    if after not in base:
-        ret = ""
-    else:
-        ret = base.split(after)[1:][0]
-        ret2 = ''
-        for i in str(ret):
-            if i not in nums:
-                break
-            ret2 += i
-    return ret2
-
 def next_filename(fnames, success=False, curr=None):
     """Find the next file name, binary search style"""
     direc = 'forward' if not success else 'backward'
@@ -202,9 +186,8 @@ def sort_filenames(fnames):
     sdict = {}
     ret = []
     for i in fnames:
-        tmin_param = nextchars_nums(i, 'tmin')
-        tmin_param = int(tmin_param)
-        sdict[tmin_param] = i
+        tmin_p = tmin_param(i)
+        sdict[tmin_p] = i
         keys = sorted(list(sdict))
     for i in keys:
         ret.append(sdict[i])
@@ -231,13 +214,14 @@ def wallback():
     cbest = []
     flag = 1
     fname = next_filename(fnames)
+    useable = ()
     while flag:
         try:
-            newcbest = tloop(cbest, ignorable_windows, [fname])
+            cbest = tloop(cbest, ignorable_windows, [fname])
             success = True
+            useable = (cbest, ignorable_windows, [fname])
             if flag == 1: # now start the walk back
                 flag = 2
-            cbest.append(newcbest)
         except BinInconsistency:
             success = False
             if flag == 2: # walk back ends
@@ -247,6 +231,9 @@ def wallback():
         if curr == fname:
             print("fixed point found:", fname)
             break
+    print("CBEST, final =", cbest)
+    if useable: # to get final plot info, rerun
+        tloop(*useable)
 
 
 if __name__ == '__main__':

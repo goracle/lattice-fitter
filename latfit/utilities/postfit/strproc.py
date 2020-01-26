@@ -128,3 +128,27 @@ def round_to_n(val, places):
         plc = -int(np.floor(np.log10(val))) + (places - 1)
     ret = round(val, plc)
     return ret
+
+def nextchars_nums(base, after):
+    """Find the next character in the base string
+    after the after string if they are numbers
+    """
+    nums = [str(i) for i in range(10)]
+    base = str(base)
+    after = str(after)
+    if after not in base:
+        ret = ""
+    else:
+        ret = base.split(after)[1:][0]
+        ret2 = ''
+        for i in str(ret):
+            if i not in nums:
+                break
+            ret2 += i
+    return ret2
+
+def tmin_param(fname):
+    """Find tmin param from filename: fname"""
+    ret = nextchars_nums(fname, 'tmin')
+    ret = int(ret)
+    return ret

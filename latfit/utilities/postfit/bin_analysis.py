@@ -12,6 +12,7 @@ from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
+from latfit.utilities.postfit.strproc import tmin_param
 from latfit.utilities.combine_pickle import main as getdts
 
 try:
@@ -196,7 +197,7 @@ def drop_extra_info(ilist):
 @PROFILE
 def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
     """Plot the tmin dependence of an item"""
-    dim, item_num, title, units = plot_info
+    dim, item_num, title, units, fname = plot_info
     cond, ignorable_windows = best_info
     print("plotting t dependence of dim", dim, "item:", title)
     tot_new = [i[dim][item_num] for i in tot if not np.isnan(
@@ -210,7 +211,7 @@ def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
         #tot_new = []
     if list(tot_new):
         quick_compare(tot_new, prin=True)
-        plot_info = dim, title, units
+        plot_info = dim, title, units, fname
         fitwin_votes, toapp = plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp)
     else:
         print("not enough consistent results for a complete set of plots")
@@ -241,7 +242,7 @@ def check_fitwin_continuity(tot_new, ignorable_windows):
 @PROFILE
 def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     """Plot something (not nothing)"""
-    dim, title, units = plot_info
+    dim, title, units, fname = plot_info
     yarr = []
     yerr = []
     xticks_min = []
@@ -281,10 +282,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
 
     fname = sys.argv[1]
 
-    try:
-        tmin = int(fname.split('tmin')[1].split('.')[0])
-    except IndexError:
-        tmin = rf.earliest_time(fname)
+    tmin = tmin_param(fname)
 
     save_str = re.sub('phase_shift_', '', fname)
     save_str = re.sub('energy_', '', save_str)
@@ -334,7 +332,7 @@ def to_include(itmin):
         print("DELTA_T_MATRIX_SUBTRACTION =", dt2)
 
 @PROFILE
-def print_tot(tot, cbest, ignorable_windows):
+def print_tot(fname, tot, cbest, ignorable_windows):
     """Print results vs. tmin"""
     tot_new = []
     lenmax = 0
@@ -359,9 +357,9 @@ def print_tot(tot, cbest, ignorable_windows):
     toapp = []
     for dim, _ in enumerate(tot[0]):
         best_info = (not cbest, ignorable_windows)
-        plot_info = (dim, 0, 'Energy', 'lattice units')
+        plot_info = (dim, 0, 'Energy', 'lattice units', fname)
         fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
-        plot_info = (dim, 1, 'Phase Shift', 'degrees')
+        plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
         coll.append(toapp)
         toapp = []
