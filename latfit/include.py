@@ -1,4 +1,6 @@
 """Make fit selections for final effective mass fits"""
+import os
+import pickle
 import numpy as np
 from latfit.utilities.tuplize import tupl_mat
 
@@ -165,9 +167,26 @@ DIMSELECT = None
 PARAM_OF_INTEREST = None
 T0 = None
 DELTA_T_MATRIX_SUBTRACTION = None
-
+IRREP = None
+LATTICE_ENSEMBLE = None
+ISOSPIN = None
 
 ### DO NOT MODIFY BELOW THIS LINE
+
+def load_final_fit():
+    """Final fit load"""
+    savestr = 'final_fit.p'
+    ret = [INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP,
+           LATTICE_ENSEMBLE, ISOSPIN, ()]
+    if os.path.exists(savestr):
+        fn1 = open(savestr, 'rb')
+        ret = pickle.load(fn1)
+    return ret
+
+INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP, LATTICE_ENSEMBLE, ISOSPIN,\
+    FITWIN = load_final_fit()
+if FITWIN:
+    FIT_EXCL = invinc(INCLUDE, FITWIN)
 
 # tuplize, do not modify
 INCLUDE = tupl_mat(INCLUDE)

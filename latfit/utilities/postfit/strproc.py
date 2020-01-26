@@ -2,6 +2,7 @@
 import re
 import gvar
 import numpy as np
+from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -152,3 +153,12 @@ def tmin_param(fname):
     ret = nextchars_nums(fname, 'tmin')
     ret = int(ret)
     return ret
+
+def min_fit_file(dim, rest):
+    """Get file name of file to
+    dump optimal fit params"""
+    saven = 'fit_'+str(LATTICE_ENSEMBLE)+'_I'+str(
+        ISOSPIN)+'_'+str(IRREP)+'_dim'+str(
+            dim)+'param_'+str(rest)
+    saven = re.sub(' ', '_', saven)
+    return saven

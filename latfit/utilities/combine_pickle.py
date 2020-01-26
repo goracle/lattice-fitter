@@ -47,6 +47,8 @@ def dummy_glob():
 
 def main(fit_select=''):
     """main"""
+    fit_select = str(fit_select)
+    verb = False if fit_select else True
     ret = []
     shape = ()
     res_mean = None
@@ -61,6 +63,8 @@ def main(fit_select=''):
     found_count = 0
     found = []
     file_list = sys.argv[1:] if not fit_select else dummy_glob()
+    if fit_select and verb:
+        print("fit select:", fit_select)
     for i in file_list:
         if '.cp' in i:
             continue
@@ -81,14 +85,16 @@ def main(fit_select=''):
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
         add = pickle.load(open(str(i), "rb"))
-        print(i, "add.shape", add.shape)
+        if verb:
+            print(i, "add.shape", add.shape)
         cond = add.shape == (4,) and ('pvalue' not in i or 'err' not in i)
         if rotate:
             assert cond
         if cond:
             rescount += len(add[3]) # number of fit ranges gives number of results
             rotate = True # top index is not fit ranges
-            print(i, "shape:", add.shape)
+            if verb:
+                print(i, "shape:", add.shape)
             res_mean = add[0]
             err_check = add[1]
             try:
@@ -115,16 +121,19 @@ def main(fit_select=''):
             if fit_select in str(newfrs) and fit_select:
                 found.append(i)
                 found_count += 1
-                print("*****")
-                print('file found:', i, "count:", found_count)
-                print("*****")
+                if verb:
+                    print("*****")
+                    print('file found:', i, "count:",
+                          found_count)
+                    print("*****")
             res.extend(add[2])
             excl_arr.extend(newfrs)
             assert len(res) == len(excl_arr), \
                 (i, len(res), len(excl_arr))
         else:
             rescount += len(add)
-            print(i, "shape:", add.shape)
+            if verb:
+                print(i, "shape:", add.shape)
         if not shape:
             shape = np.asarray(add[0]).shape
         else:
@@ -139,7 +148,8 @@ def main(fit_select=''):
             ret.extend(add)
     outfn = start_str(sorted(list(useset)))
     for i, item in enumerate(found):
-        print("found file", i, ":", item)
+        if verb:
+            print("found file", i, ":", item)
     if fit_select:
         ret = parse_found_for_dts(found)
     else:
@@ -175,6 +185,7 @@ def parse_found_for_dts(found):
     """Find t-t0 and mat dt from found"""
     ret = ()
     if found:
+        #print("found fit range")
         for i, item in enumerate(found):
             # assumes tminus is 1 digit long
             tminus = item.split('TMINUS')[1][0]
@@ -182,8 +193,8 @@ def parse_found_for_dts(found):
             dt2 = None
             if 'dt' in item:
                 dt2 = item.split('dt')[1][0]
-        print('T0 =', T0)
-        print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
+        #print('T0 =', tminus)
+        #print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
         ret = (tminus, dt2)
     return ret
 

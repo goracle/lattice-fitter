@@ -17,8 +17,8 @@ import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
 import latfit.analysis.errorcodes as errc
 from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE, FIT_EXCL
-from latfit.include import print_include_messages
-from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION
+from latfit.include import print_include_messages, LATTICE_ENSEMBLE
+from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION, ISOSPIN, IRREP
 
 # PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
 
@@ -53,34 +53,36 @@ GEVP = True
 # METHODS/PARAMS
 
 # isospin value, (0, 1, 2 supported)
-ISOSPIN = 2
-
-# group irrep
-IRREP = 'T_1_2MINUS'
-IRREP = 'T_1_MINUS'
-IRREP = 'T_1_3MINUS'
-IRREP = 'A1x_mom011'
-IRREP = 'A1_avg_mom111'
-IRREP = 'A1_mom11'
-IRREP = 'A1_mom1'
-IRREP = 'A_1PLUS_mom000'
+if ISOSPIN is None:
+    ISOSPIN = 2
 
 # last state phase error cut
 LAST_STATE_PHASE_ERR_CUT = False
 LAST_STATE_PHASE_ERR_CUT = True
 
-if ISOSPIN == 1:
-    # control
-    IRREP = 'T_1_3MINUS_mom000'
+# group irrep
+if IRREP is None:
+    IRREP = 'T_1_2MINUS'
     IRREP = 'T_1_MINUS'
-    # working
-    IRREP = 'A_2MINUS_mom11'
-    IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
-    IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
-    IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
-    IRREP = 'A_1PLUS_mom1' # t-t0=3 has decent t=8-10 plateau
-    IRREP = 'A_1PLUS_mom11' # very noisy, no go
-    IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
+    IRREP = 'T_1_3MINUS'
+    IRREP = 'A1x_mom011'
+    IRREP = 'A1_avg_mom111'
+    IRREP = 'A1_mom11'
+    IRREP = 'A_1PLUS_mom000'
+    IRREP = 'A1_mom1'
+
+    if ISOSPIN == 1:
+        # control
+        IRREP = 'T_1_3MINUS_mom000'
+        IRREP = 'T_1_MINUS'
+        # working
+        IRREP = 'A_2MINUS_mom11'
+        IRREP = 'B_mom1' # strong 2nd and 3rd state overlap
+        IRREP = 'A_2PLUS_mom11' # third state dies early, but otherwise decent
+        IRREP = 'B_mom111' # decent plateau, bottom state very well resolved
+        IRREP = 'A_1PLUS_mom1' # t-t0=3 has decent t=8-10 plateau
+        IRREP = 'A_1PLUS_mom11' # very noisy, no go
+        IRREP = 'A_1PLUS_avg_mom111' # very noisy, no go
 
 # END PRE-LOG, PRINT STATEMENTS BELOW HERE ARE LOGGED
 
@@ -94,8 +96,9 @@ MOMSTR = opc.get_comp_str(IRREP)
 
 # lattice ensemble to take gauge config average over
 
-LATTICE_ENSEMBLE = '32c'
-LATTICE_ENSEMBLE = '24c'
+if LATTICE_ENSEMBLE is None:
+    LATTICE_ENSEMBLE = '24c'
+    LATTICE_ENSEMBLE = '32c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 

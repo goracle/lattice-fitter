@@ -1,6 +1,7 @@
 """Analyze fit window bins"""
 import sys
 import re
+import pickle
 import ast
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,8 +13,9 @@ from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
 from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
-from latfit.utilities.postfit.strproc import tmin_param
+from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
 from latfit.utilities.combine_pickle import main as getdts
+from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -284,6 +286,9 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
 
     tmin = tmin_param(fname)
 
+    # print info related to final fits
+    to_include(itmin, dim, title)
+
     save_str = re.sub('phase_shift_', '', fname)
     save_str = re.sub('energy_', '', save_str)
     save_str = re.sub(' ', '_', save_str)
@@ -319,17 +324,29 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     plt.show()
     return fitwin_votes, toapp
 
-def to_include(itmin):
+def to_include(itmin, dim, title):
     """Show the include.py settings just learned"""
-    print("INCLUDE =", itmin[1])
-    print("PARAM_OF_INTEREST =", itmin[1])
+    sel = [[j for j in i] for i in itmin[1]]
+    fitwin = itmin[2]
+    rest = title.lower()
+    tosave = [sel, rest, dim, IRREP,
+              LATTICE_ENSEMBLE, ISOSPIN, fitwin]
+    print("INCLUDE =", sel)
+    print("PARAM_OF_INTEREST = '"+rest+"'")
     print("DIMSELECT =", dim)
-    print("FIT_EXCL = invinc(INCLUDE,", itmin[2]+")")
-    print("FIT_EXCL = invinc(INCLUDE,", itmin[2]+")")
-    tminus, dt2 = getdts(itmin[1])
+    print("IRREP =", IRREP)
+    print("LATTICE_ENSEMBLE =", LATTICE_ENSEMBLE)
+    print("ISOSPIN =", ISOSPIN)
+    print("FIT_EXCL = invinc(INCLUDE,", str(fitwin)+")")
+    tminus, dt2 = getdts(sel)
+    tosave.append(tminus)
     print("T0 =", tminus)
     if dt2 is not None:
         print("DELTA_T_MATRIX_SUBTRACTION =", dt2)
+        tosave.append(dt2)
+    saven = min_fit_file(dim, rest)
+    fn1 = open(saven+'.p', 'wb')
+    pickle.dump(tosave, fn1)
 
 @PROFILE
 def print_tot(fname, tot, cbest, ignorable_windows):

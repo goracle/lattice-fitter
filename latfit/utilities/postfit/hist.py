@@ -41,7 +41,7 @@ def geterr(allow):
 def check_ids_hist():
     """Check the ensemble id file to be sure
     not to run processing parameters from a different ensemble"""
-    ids_check = [ISOSPIN, LENMIN]
+    ids_check = [ISOSPIN, LENMIN, IRREP]
     ids_check = np.asarray(ids_check)
     ids = pickle.load(open('ids_hist.p', "rb"))
     assert np.all(ids == ids_check),\
@@ -245,7 +245,7 @@ if __name__ == '__main__':
         print("edit histogram.py to remove the hold then rerun")
         # the hold
         # sys.exit(1)
-        IDS_HIST = [ISOSPIN, LENMIN]
+        IDS_HIST = [ISOSPIN, LENMIN, IRREP]
         IDS_HIST = np.asarray(IDS_HIST)
         pickle.dump(IDS_HIST, open('ids_hist.p', "wb"))
     check_ids_hist()
