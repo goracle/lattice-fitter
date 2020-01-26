@@ -14,10 +14,11 @@ def main():
             continue
         if os.path.exists(link):
             os.unlink(link)
+        assert not os.path.exists(link), link
         os.symlink(fil, link)
         assert os.path.exists(link), link
         arr = pickle.load(open(fil, 'rb'))
-        xmin, xmax = arr[-2]
+        xmin, xmax = arr[-3]
         xmin = str(xmin)
         xmax = str(xmax)
         call = 'latfit -f . --xmin='+xmin+' --xmax='+xmax

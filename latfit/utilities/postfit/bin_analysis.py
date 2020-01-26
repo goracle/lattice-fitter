@@ -320,7 +320,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
         toapp.append(str(itmin[0]))
         print("saving fig:", save_str)
         pdf.savefig()
-    plt.show()
+    #plt.show()
     return fitwin_votes, toapp
 
 def to_include(itmin, dim, title):

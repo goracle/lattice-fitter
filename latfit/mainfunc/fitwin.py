@@ -3,7 +3,7 @@ import sys
 import mpi4py
 from mpi4py import MPI
 
-from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT
+from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import finished_windows
@@ -24,9 +24,9 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         for _ in range(tsub):
             meta.decr_xmax(problemx=problemx)
         partial_reset()
-    if finished_win_check(meta, tsub=tsub):
+    if finished_win_check(meta, tsub=tsub) and not NOLOOP:
         raise FinishedSkip
-    if inconsistent_win_check(meta, tsub=tsub):
+    if inconsistent_win_check(meta, tsub=tsub) and not NOLOOP:
         raise FitRangeInconsistency
 
 def xmin_err(meta, err):
