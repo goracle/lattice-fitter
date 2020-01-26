@@ -180,14 +180,14 @@ def drop_extra_info(ilist):
                 fitw[1] = comprehend_mat(fitw[1])
                 i[0] = comprehend_mat(i[0])
                 i[1] = comprehend_mat(i[1])
-                con1 = list(fitw[0]) == list(i[0])
-                con2 = list(fitw[1]) == list(i[1])
-                con = con1 or con2
+                con1 = fit_win_equal(fitw[0], i[0])
+                con2 = fit_win_equal(fitw[1], i[1])
+                con = con1 and con2
             else:
                 fitw = [i for i in fitw]
                 i = [i for i in i]
                 con = list(fitw) == list(i)
-            assert con, (fitw, i, j)
+            assert con, (fitw, i, j, hatt)
     if hatt:
         con1 = list(fitw[0]) == list(fitw[1])
         con2 = np.inf == fitw[0][1] or win_nan(fitw[0])
@@ -201,9 +201,25 @@ def drop_extra_info(ilist):
             fitw = fitw[0]
     return (fitw, fit_range, ret)
 
+def fit_win_equal(win1, win2):
+    """Check for fit window equality; skip NaN windows"""
+    if nan_win(win1) or nan_win(win2):
+        ret = True
+    else:
+        ret = win1 == win2
+    return ret
+
+def nan_win(win):
+    """Check if np.nan is either end of the window"""
+    return np.any(np.isnan(win))
+
 def comprehend_mat(badlist):
     """Use list comprehension to remove extra array, list calls in matrix"""
-    return [[j for j in i] for i in badlist]
+    ret = badlist
+    if hasattr(ret, '__iter__'):
+        if hasattr(ret[0], '__iter__'):
+            ret = [[j for j in i] for i in ret]
+    return ret
 
 @PROFILE
 def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
