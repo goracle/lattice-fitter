@@ -176,10 +176,16 @@ def drop_extra_info(ilist):
             hatt = hasattr(fitw[0], '__iter__')
         else:
             if hatt:
+                fitw[0] = comprehend_mat(fitw[0])
+                fitw[1] = comprehend_mat(fitw[1])
+                i[0] = comprehend_mat(i[0])
+                i[1] = comprehend_mat(i[1])
                 con1 = list(fitw[0]) == list(i[0])
                 con2 = list(fitw[1]) == list(i[1])
                 con = con1 or con2
             else:
+                fitw = [i for i in fitw]
+                i = [i for i in i]
                 con = list(fitw) == list(i)
             assert con, (fitw, i, j)
     if hatt:
@@ -194,6 +200,10 @@ def drop_extra_info(ilist):
         elif con3:
             fitw = fitw[0]
     return (fitw, fit_range, ret)
+
+def comprehend_mat(badlist):
+    """Use list comprehension to remove extra array, list calls in matrix"""
+    return [[j for j in i] for i in badlist]
 
 @PROFILE
 def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
