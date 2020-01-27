@@ -93,9 +93,8 @@ def tloop(cbest, ignorable_windows, fnames, nosave=True):
                     (energyfn, phasefn),
                     (tadd, tsub), nosave)
                 if min_en and min_ph: # check this
-                    #binl.process_res_to_best(min_en, min_ph)
                     toapp, test, toapp_pr = print_compiled_res(
-                        min_en, min_ph)
+                        cbest, min_en, min_ph)
                     if test:
                         success_tadd_tsub.append((tadd, tsub))
                     else:

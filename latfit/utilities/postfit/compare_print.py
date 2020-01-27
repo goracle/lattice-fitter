@@ -110,8 +110,36 @@ def errfake(frdim, errstr1):
         print(tmin, tmax, errstr1, frdim)
     return ret
 
+def fit_wins_equality(wins1, wins2):
+    """Compare two lists of fit windows for equality"""
+    win = None
+    for i, j in zip(wins1, wins2):
+        i = list(i)
+        j = list(j)
+        inew = list(np.nan_to_num(i))
+        jnew = list(np.nan_to_num(j))
+        if i != inew or j != jnew:
+            continue
+        if win == None:
+            win = i
+        try:
+            assert j[0] == win[0]
+            assert j[1] == win[1]
+            assert len(i) == len(j)
+            assert len(i) == 2
+        except (AssertionError, ValueError):
+            print(i, j, win, wins1, wins2)
+            raise
+
+def slice_min_for_windows(mins):
+    """Slice for minimum lists for the fit windows"""
+    ret = []
+    for i in mins:
+        ret.append(i[2][1])
+    return ret
+
 @PROFILE
-def print_compiled_res(min_en, min_ph):
+def print_compiled_res(cbest, min_en, min_ph):
     """Print the compiled results"""
 
     # total error results to plot
@@ -120,10 +148,13 @@ def print_compiled_res(min_en, min_ph):
     ret = list(zip(min_enf, min_phf))
 
     # perform check
-    fitwin = min_en[0][2][1]
-    fitwin2 = min_ph[0][2][1]
-    if not win_nan(fitwin) and not win_nan(fitwin2):
-        assert list(fitwin) == list(fitwin2), (fitwin, fitwin2)
+    fitwins = slice_min_for_windows(min_en)
+    fitwins2 = slice_min_for_windows(min_ph)
+    if not cbest:
+        fit_wins_equality(fitwins, fitwins2)
+        if not win_nan(fitwins[0]) and not win_nan(fitwins2[0]):
+            assert list(fitwins[0]) == list(fitwins2[0]), (
+                fitwins[0], fitwins2[0])
 
     # res(stat)(sys) error string to print
     min_en = [errstr(i, j) for i, j, _ in min_en]
@@ -137,7 +168,7 @@ def print_compiled_res(min_en, min_ph):
         print("minimized error results:", min_res_pr)
         test = True
 
-    return ret, test, (fitwin, min_res_pr)
+    return ret, test, (fitwins[0], min_res_pr)
 
 @PROFILE
 def printres(effmass1, pval, syserr, fit_range, maxrange):

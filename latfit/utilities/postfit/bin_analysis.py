@@ -180,14 +180,15 @@ def drop_extra_info(ilist):
                 fitw[1] = comprehend_mat(fitw[1])
                 i[0] = comprehend_mat(i[0])
                 i[1] = comprehend_mat(i[1])
-                con1 = fit_win_equal(fitw[0], i[0])
-                con2 = fit_win_equal(fitw[1], i[1])
+                con1 = fit_win_equality(fitw[0], i[0])
+                con2 = fit_win_equality(fitw[1], i[1])
                 con = con1 and con2
             else:
                 fitw = [i for i in fitw]
                 i = [i for i in i]
                 con = list(fitw) == list(i)
-            assert con, (fitw, i, j, hatt)
+            # this is handled in an earlier function
+            #assert con, (fitw, i, j, hatt)
     if hatt:
         con1 = list(fitw[0]) == list(fitw[1])
         con2 = np.inf == fitw[0][1] or win_nan(fitw[0])
@@ -201,7 +202,7 @@ def drop_extra_info(ilist):
             fitw = fitw[0]
     return (fitw, fit_range, ret)
 
-def fit_win_equal(win1, win2):
+def fit_win_equality(win1, win2):
     """Check for fit window equality; skip NaN windows"""
     if nan_win(win1) or nan_win(win2):
         ret = True
