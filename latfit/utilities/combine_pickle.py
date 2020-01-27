@@ -190,8 +190,8 @@ def parse_found_for_dts(found):
         for i, item in enumerate(found):
             # assumes tminus is 1 digit long
             if earliest is None:
-                item = earliest
-            if rf.earliest_time(item) < rf.earliest_time(earliest):
+                earliest = item
+            elif rf.earliest_time(item) < rf.earliest_time(earliest):
                 earliest = item
             tminus = earliest.split('TMINUS')[1][0]
             tminus = 'TMINUS'+tminus
@@ -201,6 +201,7 @@ def parse_found_for_dts(found):
         #print('T0 =', tminus)
         #print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
         ret = (tminus, dt2)
+        print("file found:", ret, earliest, found)
     return ret
 
 def prune_earlylist(earlylist):

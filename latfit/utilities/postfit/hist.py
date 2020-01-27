@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Make histograms from fit results over fit ranges"""
 import sys
+import os
 import subprocess
 import pickle
 import numpy as np
@@ -125,6 +126,7 @@ def tloop(cbest, ignorable_windows, fnames, nosave=True):
                                  'hist: tloop complete'])
         print_sep_errors(tot_pr)
         newcbest = print_tot(fname, tot, cbest, ignorable_windows)
+        print("end of tloop")
     else:
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, '', (np.nan, np.nan), nosave=nosave)
@@ -220,16 +222,23 @@ def wallback():
     fname = next_filename(fnames)
     useable = ()
     route = []
+    print("files used:", fnames)
     while flag:
         route.append(tmin_param(fname))
         try:
+            if flag != 2:
+                check_bad_bin(tmin_param(fname))
+            print("starting analysis on file:", fname)
             cbest = tloop(cbest, ignorable_windows, [fname])
             success = True
+            print("success found for file:", fname)
             useable = (cbest, ignorable_windows, [fname])
             if flag == 1: # now start the walk back
                 print("starting walk-back")
                 flag = 2
         except BinInconsistency:
+            if flag != 2:
+                create_skip_file(tmin_param(fname))
             success = False
             if flag == 2: # walk back ends
                 print("bin inconsistency in wall-back found; exiting")
@@ -248,6 +257,22 @@ def wallback():
         tloop(*useable)
     print("time route taken:", route)
 
+def check_bad_bin(tmin):
+    """Check to make sure this tmin_param
+    is not already known to be inconsistent"""
+    tochk = 'badbin_tmin'+str(tmin)+'.cp'
+    if os.path.exists(tochk):
+        raise BinInconsistency
+
+def create_skip_file(tmin):
+    """Create a dummy file so we skip bin analysis on this
+    tmin_param in subsequent runs"""
+    tosave = 'badbin_tmin'+str(tmin)+'.cp'
+    dummy = []
+    fn1 = open(tosave, 'wb')
+    print("saving skip file:", tosave)
+    pickle.dump(dummy, fn1)
+    
 
 if __name__ == '__main__':
     try:

@@ -141,6 +141,7 @@ def get_dts(dt1, ens, irr):
                 dt1 = 1 if not GEVP_DEBUG else 0
             dt2 = 1 if not GEVP_DEBUG else 0
         dt1 = 1 if not GEVP_DEBUG else 0
+    dt1, dt2 = int(dt1), int(dt2)
     return dt1, dt2
 (DELTA_T_MATRIX_SUBTRACTION,
  DELTA_T2_MATRIX_SUBTRACTION) = get_dts(

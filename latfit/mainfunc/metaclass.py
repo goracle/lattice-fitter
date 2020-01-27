@@ -187,7 +187,13 @@ class FitRangeMetaData:
             delta += latfit.config.DELTA_T2_MATRIX_SUBTRACTION
         delta = 0 if not MATRIX_SUBTRACTION else delta
         if GEVP:
-            xmin_req = delta + int(latfit.config.T0[6:])
+            try:
+                toadd = latfit.config.T0[6:]
+                toadd = int(toadd)
+                xmin_req = delta + toadd
+            except TypeError:
+                print(delta, latfit.config.T0)
+                raise
             #print("xmin_req", xmin_req)
             if self.options.xmin < xmin_req:
                 self.incr_xmin(problemx=xmin_req, inx=True)

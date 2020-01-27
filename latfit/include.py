@@ -171,6 +171,15 @@ IRREP = None
 LATTICE_ENSEMBLE = None
 ISOSPIN = None
 
+INCLUDE = tuple()
+DIMSELECT = None
+PARAM_OF_INTEREST = None
+T0 = None
+DELTA_T_MATRIX_SUBTRACTION = None
+IRREP = None
+LATTICE_ENSEMBLE = None
+ISOSPIN = None
+
 ### DO NOT MODIFY BELOW THIS LINE
 
 def load_final_fit():
@@ -183,10 +192,12 @@ def load_final_fit():
         fn1 = open(savestr, 'rb')
         ret = pickle.load(fn1)
         print("Loaded:", ret)
+        assert ret[1] is not None, ret # param of interest should be selected
     return ret
 
-INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP, LATTICE_ENSEMBLE, ISOSPIN,\
-    FITWIN, T0, DELTA_T_MATRIX_SUBTRACTION = load_final_fit()
+if not INCLUDE:
+    INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP, LATTICE_ENSEMBLE, ISOSPIN,\
+        FITWIN, T0, DELTA_T_MATRIX_SUBTRACTION = load_final_fit()
 if FITWIN:
     FIT_EXCL = invinc(INCLUDE, FITWIN)
 
