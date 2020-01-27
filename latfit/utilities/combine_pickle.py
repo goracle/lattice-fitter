@@ -186,13 +186,18 @@ def parse_found_for_dts(found):
     ret = ()
     if found:
         #print("found fit range")
+        earliest = None
         for i, item in enumerate(found):
             # assumes tminus is 1 digit long
-            tminus = item.split('TMINUS')[1][0]
+            if earliest is None:
+                item = earliest
+            if rf.earliest_time(item) < rf.earliest_time(earliest):
+                earliest = item
+            tminus = earliest.split('TMINUS')[1][0]
             tminus = 'TMINUS'+tminus
             dt2 = None
             if 'dt' in item:
-                dt2 = item.split('dt')[1][0]
+                dt2 = earliest.split('dt')[1][0]
         #print('T0 =', tminus)
         #print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
         ret = (tminus, dt2)
@@ -249,6 +254,8 @@ def common_start(stra, strb):
 if __name__ == '__main__':
     if INCLUDE:
         FIT_SELECT = str(list_mat(INCLUDE))
+    elif FIT_SELECT:
+        pass
     else:
         FIT_SELECT = ''
     main(fit_select=FIT_SELECT)

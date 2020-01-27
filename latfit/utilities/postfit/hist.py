@@ -227,10 +227,12 @@ def wallback():
             success = True
             useable = (cbest, ignorable_windows, [fname])
             if flag == 1: # now start the walk back
+                print("starting walk-back")
                 flag = 2
         except BinInconsistency:
             success = False
             if flag == 2: # walk back ends
+                print("bin inconsistency in wall-back found; exiting")
                 break
         curr = fname
         print("route so far:", route)
