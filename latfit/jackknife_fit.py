@@ -426,7 +426,8 @@ def getenergies(params, arr):
         ret = arr
     for i, j in zip(sorted(list(ret)), ret):
         if i != j:
-            print("mis-sorted energies:", ret)
+            if VERBOSE:
+                print("miss-sorted energies:", ret)
             if not latfit.config.BOOTSTRAP:
                 raise EnergySortError
     return ret

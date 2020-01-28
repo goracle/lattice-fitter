@@ -12,7 +12,7 @@ import numpy as np
 from latfit.config import METHOD
 # from latfit.mathfun.chi_sq import chi_sq
 from latfit.config import START_PARAMS, KICK_DELTA
-from latfit.config import BINDS
+from latfit.config import BINDS, VERBOSE
 from latfit.config import JACKKNIFE_FIT
 # from latfit.config import MINTOL
 from latfit.config import SYSTEMATIC_EST
@@ -143,7 +143,8 @@ def getenergies(result_min):
         ret = arr
     for i, j in zip(sorted(list(ret)), ret):
         if i != j:
-            print("mis-sorted energies:", ret)
+            if VERBOSE:
+                print("mis-sorted energies:", ret)
             if not latfit.config.BOOTSTRAP:
                 raise EnergySortError
     return ret

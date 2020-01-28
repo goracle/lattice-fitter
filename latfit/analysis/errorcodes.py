@@ -75,14 +75,18 @@ class TooManyBadFitsError(Exception):
     def __init__(self, chisq=None, pvalue=None, uncorr=BoolThrowErr(),
                  message='', prin=PRIN):
         if prin or True:
-            print("***ERROR***")
+            if prin:
+                print("***ERROR***")
             if uncorr:
-                print("Too many fits have bad chi^2")
-                print("chi^2/dof average up to this point:", chisq)
+                if prin:
+                    print("Too many fits have bad chi^2")
+                    print("chi^2/dof average up to this point:", chisq)
             else:
-                print("Too many fits have bad t^2")
-                print("t^2/dof average up to this point:", chisq)
-            print("pvalue up to this point:", pvalue)
+                if prin:
+                    print("Too many fits have bad t^2")
+                    print("t^2/dof average up to this point:", chisq)
+            if prin:
+                print("pvalue up to this point:", pvalue)
         super(TooManyBadFitsError, self).__init__(message)
         self.message = message
 

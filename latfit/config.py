@@ -54,7 +54,7 @@ GEVP = True
 
 # isospin value, (0, 1, 2 supported)
 if ISOSPIN is None:
-    ISOSPIN = 2
+    ISOSPIN = 0
 
 # last state phase error cut
 LAST_STATE_PHASE_ERR_CUT = False
@@ -68,8 +68,8 @@ if IRREP is None:
     IRREP = 'A1x_mom011'
     IRREP = 'A1_avg_mom111'
     IRREP = 'A1_mom11'
-    IRREP = 'A_1PLUS_mom000'
     IRREP = 'A1_mom1'
+    IRREP = 'A_1PLUS_mom000'
 
     if ISOSPIN == 1:
         # control
@@ -97,8 +97,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 # lattice ensemble to take gauge config average over
 
 if LATTICE_ENSEMBLE is None:
-    LATTICE_ENSEMBLE = '24c'
     LATTICE_ENSEMBLE = '32c'
+    LATTICE_ENSEMBLE = '24c'
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
 
