@@ -5,7 +5,7 @@ from random import randint
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
-from latfit.config import GEVP, NBOOT
+from latfit.config import GEVP, NBOOT, VERBOSE
 from latfit.analysis.errorcodes import DOFNonPosFit
 import latfit.config
 import latfit.analysis.hotelling as hotelling
@@ -194,8 +194,9 @@ class ResultMin:
         try:
             assert len(coords) == len(WINDOW)
         except AssertionError:
-            print("dof from WINDOW", WINDOW)
-            print("dof from coords", coords)
+            if VERBOSE:
+                print("dof from WINDOW", WINDOW)
+                print("dof from coords", coords)
             raise
         self.misc.dof = len(coords)*params.dimops-len(START_PARAMS)
         for i in coords[:, 0]:
@@ -203,8 +204,9 @@ class ResultMin:
                 if i in j and i in WINDOW:
                     self.misc.dof -= 1
         if self.misc.dof < 1:
-            print("dof < 1. dof =", self.misc.dof)
-            print("fit window:", WINDOW)
-            print("excl:", latfit.config.FIT_EXCL)
+            if VERBOSE:
+                print("dof < 1. dof =", self.misc.dof)
+                print("fit window:", WINDOW)
+                print("excl:", latfit.config.FIT_EXCL)
             raise DOFNonPosFit(dof=self.misc.dof,
                                excl=latfit.config.FIT_EXCL)
