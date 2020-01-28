@@ -223,10 +223,13 @@ def comprehend_mat(badlist):
     return ret
 
 @PROFILE
-def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
+def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
     """Plot the tmin dependence of an item"""
+    # unpack
+    best_info, plot_info = info
     dim, item_num, title, units, fname = plot_info
     cond, ignorable_windows = best_info
+
     print("plotting t dependence of dim", dim, "item:", title)
     tot_new = [i[dim][item_num] for i in tot if not np.isnan(
         gvar.gvar(i[dim][item_num][0]).val)]
@@ -240,7 +243,8 @@ def plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info):
     if list(tot_new):
         quick_compare(tot_new, prin=True)
         plot_info = dim, title, units, fname
-        fitwin_votes, toapp = plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp)
+        fitwin_votes, toapp = plot_t_dep_totnew(
+            tot_new, plot_info, fitwin_votes, toapp, dump_min)
     else:
         print("not enough consistent results for a complete set of plots")
         sys.exit(1)
@@ -268,7 +272,8 @@ def check_fitwin_continuity(tot_new, ignorable_windows):
     return tot_new
 
 @PROFILE
-def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
+def plot_t_dep_totnew(tot_new, plot_info,
+                      fitwin_votes, toapp, dump_min):
     """Plot something (not nothing)"""
     dim, title, units, fname = plot_info
     yarr = []
@@ -311,7 +316,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     tmin = tmin_param(fname)
 
     # print info related to final fits
-    to_include(itmin, dim, title)
+    to_include(itmin, dim, title, dump_min)
 
     save_str = re.sub('phase_shift_', '', fname)
     save_str = re.sub('energy_', '', save_str)
@@ -348,7 +353,7 @@ def plot_t_dep_totnew(tot_new, plot_info, fitwin_votes, toapp):
     #plt.show()
     return fitwin_votes, toapp
 
-def to_include(itmin, dim, title):
+def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
     sel = [[j for j in i] for i in itmin[1]]
     fitwin = itmin[2]
@@ -362,18 +367,23 @@ def to_include(itmin, dim, title):
     print("LATTICE_ENSEMBLE =", LATTICE_ENSEMBLE)
     print("ISOSPIN =", ISOSPIN)
     print("FIT_EXCL = invinc(INCLUDE,", str(fitwin)+")")
-    tminus, dt2 = getdts(sel)
-    tosave.append(tminus)
-    tosave.append(dt2)
-    print("T0 =", tminus)
-    if dt2 is not None:
-        print("DELTA_T_MATRIX_SUBTRACTION =", dt2)
+    tminuses, dt2s = getdts(sel)
     saven = min_fit_file(dim, rest)
-    fn1 = open(saven+'.p', 'wb')
-    pickle.dump(tosave, fn1)
+    for i, j in zip(tminuses, dt2s):
+        ts_loop = list(tosave)
+        ts_loop.append(i)
+        ts_loop.append(j)
+        ts_loop.append(str(itmin[0]))
+        print("T0 =", i)
+        if j is not None:
+            print("DELTA_T_MATRIX_SUBTRACTION =", j)
+        savel = saven+'_'+str(i)+'_'+str(j)
+        if dump_min:
+            fn1 = open(savel+'.p', 'wb')
+            pickle.dump(ts_loop, fn1)
 
 @PROFILE
-def print_tot(fname, tot, cbest, ignorable_windows):
+def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     """Print results vs. tmin"""
     tot_new = []
     lenmax = 0
@@ -399,9 +409,13 @@ def print_tot(fname, tot, cbest, ignorable_windows):
     for dim, _ in enumerate(tot[0]):
         best_info = (not cbest, ignorable_windows)
         plot_info = (dim, 0, 'Energy', 'lattice units', fname)
-        fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
+        info = (best_info, plot_info)
+        fitwin_votes, toapp = plot_t_dep(
+            tot, info, fitwin_votes, toapp, dump_min)
         plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
-        fitwin_votes, toapp = plot_t_dep(tot, plot_info, fitwin_votes, toapp, best_info)
+        info = (best_info, plot_info)
+        fitwin_votes, toapp = plot_t_dep(
+            tot, info, fitwin_votes, toapp, dump_min)
         coll.append(toapp)
         toapp = []
     print(coll)

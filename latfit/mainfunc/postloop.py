@@ -10,6 +10,7 @@ from latfit.config import EFF_MASS, MULT, GEVP, SUPERJACK_CUTOFF
 from latfit.config import TLOOP, METHOD
 from latfit.config import NOLOOP, UNCORR, LATTICE_ENSEMBLE
 from latfit.config import SYS_ENERGY_GUESS
+from latfit.include import VALUE_STR, PARAM_OF_INTEREST
 
 from latfit.makemin.mkmin import convert_to_namedtuple
 from latfit.analysis.result_min import Param
@@ -615,10 +616,23 @@ def post_loop(meta, loop_store, plotdata,
 
     print("fit window = ", meta.fitwindow)
     # plot the result
-    mkplot.mkplot(plotdata, meta.input_f, result_min,
-                  param_err, meta.fitwindow)
+    if check_include(result_min):
+        mkplot.mkplot(plotdata, meta.input_f, result_min,
+                      param_err, meta.fitwindow)
 
     return test
+
+def check_include(result_min):
+    """Check that we've obtained the result we're after"""
+    ret = not NOLOOP or not VALUE_STR
+    if not ret:
+        if 'phase shift' == PARAM_OF_INTEREST:
+            chk = str(result_min.phase_shift.val)
+        elif 'energy' == PARAM_OF_INTEREST:
+            chk = str(result_min.phase_shift.val)
+        if chk == VALUE_STR:
+            ret = True
+    return ret
 
 def fill_err_array(min_arr, name, weight_sum):
     """Fill the error array"""

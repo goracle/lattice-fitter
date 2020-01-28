@@ -18,7 +18,13 @@ def main():
         os.symlink(fil, link)
         assert os.path.exists(link), link
         arr = pickle.load(open(fil, 'rb'))
-        xmin, xmax = arr[-3]
+        print("using:", fil)
+        print(arr)
+        try:
+            xmin, xmax = arr[-4]
+        except ValueError:
+            print(arr)
+            raise
         xmin = str(xmin)
         xmax = str(xmax)
         call = 'latfit -f . --xmin='+xmin+' --xmax='+xmax

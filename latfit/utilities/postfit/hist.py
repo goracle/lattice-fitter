@@ -66,7 +66,7 @@ def get_mins(bests, files, twin, nosave):
     return ret
 
 @PROFILE
-def tloop(cbest, ignorable_windows, fnames, nosave=True):
+def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
     """Make the histograms."""
     if len(fnames) == 1 and (
             'phase_shift' in fnames[0] or\
@@ -125,7 +125,7 @@ def tloop(cbest, ignorable_windows, fnames, nosave=True):
                                  'critical', '-t', '30',
                                  'hist: tloop complete'])
         print_sep_errors(tot_pr)
-        newcbest = print_tot(fname, tot, cbest, ignorable_windows)
+        newcbest = print_tot(fname, tot, cbest, ignorable_windows, dump_min)
         print("end of tloop")
     else:
         for fname in sys.argv[1:]:
@@ -229,7 +229,7 @@ def wallback():
             if flag != 2:
                 check_bad_bin(tmin_param(fname))
             print("starting analysis on file:", fname)
-            cbest = tloop(cbest, ignorable_windows, [fname])
+            cbest = tloop(cbest, ignorable_windows, [fname], dump_min=False)
             success = True
             print("success found for file:", fname)
             useable = (cbest, ignorable_windows, [fname])
@@ -254,7 +254,7 @@ def wallback():
             break
     print("CBEST, final =", cbest)
     if useable: # to get final plot info, rerun
-        tloop(*useable)
+        tloop(*useable, dump_min=True)
     print("time route taken:", route)
 
 def check_bad_bin(tmin):

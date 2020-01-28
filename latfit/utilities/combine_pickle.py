@@ -183,7 +183,8 @@ def main(fit_select=''):
 
 def parse_found_for_dts(found):
     """Find t-t0 and mat dt from found"""
-    ret = ()
+    tminuses = []
+    dt2s = []
     if found:
         #print("found fit range")
         earliest = None
@@ -198,11 +199,12 @@ def parse_found_for_dts(found):
             dt2 = None
             if 'dt' in item:
                 dt2 = earliest.split('dt')[1][0]
+            tminuses.append(tminus)
+            dt2s.append(dt2)
         #print('T0 =', tminus)
         #print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
-        ret = (tminus, dt2)
-        print("file found:", ret, earliest, found)
-    return ret
+        print("file found:", tminuses, dt2s, earliest, found)
+    return tminuses, dt2s
 
 def prune_earlylist(earlylist):
     """Find set of file names with the earliest time"""

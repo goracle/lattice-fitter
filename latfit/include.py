@@ -179,6 +179,7 @@ DELTA_T_MATRIX_SUBTRACTION = None
 IRREP = None
 LATTICE_ENSEMBLE = None
 ISOSPIN = None
+VALUE_STR = ''
 
 ### DO NOT MODIFY BELOW THIS LINE
 
@@ -187,7 +188,7 @@ def load_final_fit():
     savestr = 'final_fit.p'
     ret = [INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP,
            LATTICE_ENSEMBLE, ISOSPIN, (),
-           T0, DELTA_T_MATRIX_SUBTRACTION]
+           T0, DELTA_T_MATRIX_SUBTRACTION, VALUE_STR]
     if os.path.exists(savestr):
         fn1 = open(savestr, 'rb')
         ret = pickle.load(fn1)
@@ -197,7 +198,7 @@ def load_final_fit():
 
 if not INCLUDE:
     INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP, LATTICE_ENSEMBLE, ISOSPIN,\
-        FITWIN, T0, DELTA_T_MATRIX_SUBTRACTION = load_final_fit()
+        FITWIN, T0, DELTA_T_MATRIX_SUBTRACTION, VALUE_STR = load_final_fit()
 if FITWIN:
     FIT_EXCL = invinc(INCLUDE, FITWIN)
 
