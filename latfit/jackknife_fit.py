@@ -280,6 +280,10 @@ def skip_range(params, result_min, skip_votes,
     dof = result_min.misc.dof
     # don't skip the fit range until we confirm
     # on 2nd config
+    var = np.sqrt(hotelling.var(result_min.misc.dof, nconf))
+    var_approx = np.sqrt(2*dof)
+    div = 1/np.sqrt(nconf-1)
+    diff = abs(result_min_jack.fun-result_min.chisq.arr[zero])
     if len(skip_votes) == 2:
         skiprange = True
     elif len(skip_votes) == 1:
@@ -290,10 +294,6 @@ def skip_range(params, result_min, skip_votes,
         # if we have one bad fit and another which is within
         # 5 sigma of the bad chi^2 (t^2),
         # skip, else throw an error
-        var_approx = np.sqrt(2*dof)
-        var = np.sqrt(hotelling.var(result_min.misc.dof, nconf))
-        div = 1/np.sqrt(nconf-1)
-        diff = abs(result_min_jack.fun-result_min.chisq.arr[zero])
         skiprange = diff < 5*var*div
     if skiprange and not latfit.config.BOOTSTRAP and not NOLOOP:
         raise BadChisq(
