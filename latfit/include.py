@@ -183,6 +183,15 @@ VALUE_STR = ''
 
 ### DO NOT MODIFY BELOW THIS LINE
 
+def fitwin_from_include(include):
+    """Find the necessary fit window"""
+    tmin = np.inf
+    tmax = 0
+    for i in include:
+        tmin = min(min(i), tmin)
+        tmax = max(max(i), tmax)
+    return (tmin, tmax)
+
 def load_final_fit():
     """Final fit load"""
     savestr = 'final_fit.p'
@@ -199,8 +208,8 @@ def load_final_fit():
 if not INCLUDE:
     INCLUDE, PARAM_OF_INTEREST, DIMSELECT, IRREP, LATTICE_ENSEMBLE, ISOSPIN,\
         FITWIN, T0, DELTA_T_MATRIX_SUBTRACTION, VALUE_STR = load_final_fit()
-if FITWIN:
-    FIT_EXCL = invinc(INCLUDE, FITWIN)
+if INCLUDE:
+    FIT_EXCL = invinc(INCLUDE, fitwin_from_include(INCLUDE))
 
 # tuplize, do not modify
 INCLUDE = tupl_mat(INCLUDE)

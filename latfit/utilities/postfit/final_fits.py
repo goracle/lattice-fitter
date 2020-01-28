@@ -5,6 +5,17 @@ import glob
 import pickle
 import subprocess
 import os
+import numpy as np
+
+def fitwin_from_include(include):
+    """Find the necessary fit window"""
+    tmin = np.inf
+    tmax = 0
+    for i in include:
+        tmin = min(min(i), tmin)
+        tmax = max(max(i), tmax)
+    return (tmin, tmax)
+
 
 def main():
     """main"""
@@ -25,6 +36,7 @@ def main():
         except ValueError:
             print(arr)
             raise
+        xmin, xmax = fitwin_from_include(arr[0])
         xmin = str(xmin)
         xmax = str(xmax)
         call = 'latfit -f . --xmin='+xmin+' --xmax='+xmax
