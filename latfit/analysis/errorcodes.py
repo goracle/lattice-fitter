@@ -111,9 +111,10 @@ class BadJackknifeDist(Exception):
 
 class NoConvergence(Exception):
     """Exception for bad jackknife distribution"""
-    def __init__(self, message=''):
-        print("***ERROR***")
-        print("Minimizer failed to converge")
+    def __init__(self, message='', prin=PRIN):
+        if prin:
+            print("***ERROR***")
+            print("Minimizer failed to converge")
         super(NoConvergence, self).__init__(message)
         self.message = message
 

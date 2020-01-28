@@ -512,7 +512,8 @@ def toosmallp(meta, excl):
                 print("skip: only one data point in fit curve")
             ret = True
         else:
-            print("warning: only one data point in fit curve")
+            if VERBOSE:
+                print("warning: only one data point in fit curve")
 
     if not ret and onlynpts(meta, excl, 2) and not ONLY_SMALL_FIT_RANGES:
         # allow for very noisy excited states in I=0
@@ -521,7 +522,8 @@ def toosmallp(meta, excl):
                 print("skip: only two data points in fit curve")
             ret = True
         else:
-            print("warning: only two data points in fit curve")
+            if VERBOSE:
+                print("warning: only two data points in fit curve")
 
     #cut on arithmetic sequence
     if not ret and len(filter_sparse(

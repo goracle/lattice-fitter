@@ -155,7 +155,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                 params, result_min.min_params.arr[config_num])
 
             if result_min_jack.fun/result_min.misc.dof < 10 and\
-               list(result_min.systematics.arr[config_num][:-1]):
+               list(result_min.systematics.arr[config_num][:-1]) and VERBOSE:
                 print('systematics:',
                       result_min.systematics.arr[config_num][:-1])
 
