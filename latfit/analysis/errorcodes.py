@@ -91,9 +91,10 @@ class EnergySortError(Exception):
     (if the systematic errors are large)
     """
     @PROFILE
-    def __init__(self, message=''):
-        print("***ERROR***")
-        print("Energies are not sorted in ascending order")
+    def __init__(self, message='', prin=PRIN):
+        if prin:
+            print("***ERROR***")
+            print("Energies are not sorted in ascending order")
         super(EnergySortError, self).__init__(message)
         self.message = message
 
