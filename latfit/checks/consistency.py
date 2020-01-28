@@ -2,8 +2,9 @@
 import os
 import numpy as np
 from gvar import gvar
-from latfit.config import GEVP
-from latfit.config import MATRIX_SUBTRACTION
+from latfit.config import GEVP, VERBOSE
+from latfit.config import MATRIX_SUBTRACTION, NOLOOP, DIMSELECT
+from latfit.include import VALUE_STR, PARAM_OF_INTEREST
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import filename_plus_config_info
 import latfit.config
@@ -104,4 +105,21 @@ def consistent_params(item1, item2):
     if not ret:
         print("problematic diff:", gvar(item1.val[idx], item1.err[idx]),
               gvar(item2.val[idx], item2.err[idx]))
+    return ret
+
+def check_include(result_min):
+    """Check that we've obtained the result we're after"""
+    ret = not NOLOOP or not VALUE_STR
+    if not ret:
+        if 'phase shift' == PARAM_OF_INTEREST:
+            param = result_min.phase_shift
+        elif 'energy' == PARAM_OF_INTEREST:
+            param = result_min.energy
+        dim = DIMSELECT
+        chk = gvar(param.val[dim], param.err[dim])
+        chk = str(chk)
+        if VERBOSE:
+            print("chk, VALUE_STR:", chk, VALUE_STR)
+        if chk == VALUE_STR:
+            ret = True
     return ret

@@ -24,6 +24,7 @@ from latfit.utilities.tuplize import list_mat, tupl_mat
 from latfit.analysis.errorcodes import NoConvergence, PrecisionLossError
 from latfit.analysis.errorcodes import XmaxError, FitFail
 from latfit.mainfunc.metaclass import filter_sparse
+from latfit.checks.consistency import check_include
 
 # import global variables
 from latfit.config import FIT, NBOOT, fit_func, ONLY_SMALL_FIT_RANGES
@@ -183,8 +184,9 @@ def singlefit(meta, input_f):
                 cloudpickle.dump((result_min, param_err),
                                  open("result_min.p", "wb"))
                 if BOOTSTRAP_PVALUES:
-                    result_min = bootstrap_pvalue(meta, params, reuse,
-                                                  coords, result_min)
+                    if check_include(result_min):
+                        result_min = bootstrap_pvalue(meta, params, reuse,
+                                                      coords, result_min)
         else:
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
