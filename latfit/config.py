@@ -333,7 +333,7 @@ BOOTSTRAP = False # don't modify; internal global
 # Turn on for final fits, if you need fully rigorous p-values...
 BOOTSTRAP_PVALUES = True
 BOOTSTRAP_PVALUES = False
-BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
+BOOTSTRAP_PVALUES = True if INCLUDE and ISOSPIN else BOOTSTRAP_PVALUES
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True
@@ -443,7 +443,6 @@ if DELTA_E2_AROUND_THE_WORLD is not None:
 if not INCLUDE:
     FIT_EXCL = tuple(tuple(() for _ in range(DIM)) if GEVP else ())
 FIT_EXCL = tuple(tuple(FIT_EXCL[i]) for i in range(DIM))
-BOOTSTRAP_PVALUES = True if INCLUDE else BOOTSTRAP_PVALUES
 assert len(FIT_EXCL) == DIM or not GEVP
 print_include_messages(GEVP)
 
