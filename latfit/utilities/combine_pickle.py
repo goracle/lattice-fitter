@@ -252,7 +252,7 @@ def common_start(stra, strb):
     return ''.join(_iter())
 
 
-
+FIT_SELECT = ''
 
 if __name__ == '__main__':
     if INCLUDE:
