@@ -267,7 +267,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
                 break
 
         fit_range = fit_range_arr[idx]
-        assert not lencut(fit_range), (fit_range, idx)
+        assert not lencut(fit_range) or ISOSPIN == 0, (fit_range, idx)
 
         # best known cut (stat comparison only)
         if allow_cut(gvar.gvar(emean, sdev),

@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 import gvar
+from latfit.config import ISOSPIN
 from latfit.utilities.postfit.fitwin import LENMIN
 from latfit.utilities.postfit.fitwin import lenfitw, inside_win
 from latfit.utilities.postfit.fitwin import wintoosmall, get_fitwindow
@@ -34,6 +35,8 @@ def statlvl(diff):
             sig = np.inf
     else:
         sig = 0
+    if np.isnan(diff.val) or np.isnan(diff.sdev):
+        sig = np.nan
     return sig
 
 
@@ -47,15 +50,16 @@ def fitrange_skip_list(fit_range_arr, fitwindow):
     fcut = 0
     acut = 0
     for idx, item in enumerate(fit_range_arr):
-        if lencut(item):
+        if lencut(item) and ISOSPIN != 0:
             lcut += 1
             ret.add(idx)
         elif fitwincuts(item, fitwindow):
             fcut += 1
             ret.add(idx)
-        elif not arithseq(item):
-            acut += 1
-            ret.add(idx)
+        if ISOSPIN != 0:
+            if not arithseq(item):
+                acut += 1
+                ret.add(idx)
     ret = sorted(list(ret))
     print("length cut amt:", lcut)
     print("fit window cut amt:", fcut)
@@ -87,7 +91,7 @@ def lencut(fit_range):
         else:
             ret = len(fit_range) < LENMIN
     if ret:
-        assert effmasspt, fit_range
+        assert effmasspt or ISOSPIN == 0, fit_range
     return ret
 
 @PROFILE
@@ -174,6 +178,9 @@ def fitwincuts(fit_range, fitwindow, dim=None):
     for i, fitr in enumerate(fit_range):
         if ret:
             break
+        if not hasattr(fitr, '__iter__'):
+            ret = True
+            break
         if i == dim:
             ret = not inside_win(fitr, fitwindow) or ret
         else:
@@ -197,7 +204,8 @@ def consistency(item1, item2, prin=False):
         if prin:
             print("sig inconsis. =", sig)
         # sanity check; relax '15' to a higher number as necessary
-        assert sig < 15, (sig, "check the best known list for",
-                          "compatibility with current set",
-                          "of results being analyzed", item1, item2)
+        assert sig < 15 or ISOSPIN == 0,\
+            (sig, "check the best known list for",
+             "compatibility with current set",
+             "of results being analyzed", item1, item2)
     return ret

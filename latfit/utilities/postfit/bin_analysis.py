@@ -87,7 +87,7 @@ def continuous_tmin_singleton(tot_new):
     """Check for continous tmin, singleton cut"""
 
     # singleton cut
-    assert len(tot_new) > 1, tot_new
+    assert len(tot_new) > 1 or ISOSPIN == 0, tot_new
     maxtmax = max_tmax(tot_new)
     tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
 
@@ -193,7 +193,8 @@ def drop_extra_info(ilist):
         con1 = list(fitw[0]) == list(fitw[1])
         con2 = np.inf == fitw[0][1] or win_nan(fitw[0])
         con3 = np.inf == fitw[1][1] or win_nan(fitw[1])
-        assert con1 or con2 or con3, fitw
+        if ISOSPIN != 0:
+            assert con1 or con2 or con3, fitw
         if con1:
             fitw = fitw[0]
         elif con2:
@@ -240,7 +241,7 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
         print("fit windows are not continuous for dim, item:", dim, title)
         raise
         #tot_new = []
-    if list(tot_new):
+    if list(tot_new) or ISOSPIN == 0:
         quick_compare(tot_new, prin=True)
         plot_info = dim, title, units, fname
         fitwin_votes, toapp = plot_t_dep_totnew(
@@ -254,7 +255,8 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
 def check_fitwin_continuity(tot_new, ignorable_windows):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
-    continuous_tmin_singleton(tot_new)
+    if ISOSPIN != 0:
+        continuous_tmin_singleton(tot_new)
     flag = 1
     while flag:
         try:
@@ -268,7 +270,8 @@ def check_fitwin_continuity(tot_new, ignorable_windows):
                 tocut.add(i[0])
             print("cutting:", tocut)
             tot_new = cut_tmin(tot_new, tocut)
-            continuous_tmin_singleton(tot_new)
+            if ISOSPIN != 0:
+                continuous_tmin_singleton(tot_new)
     return tot_new
 
 @PROFILE
@@ -282,7 +285,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    itmin = [gvar.gvar(np.nan, np.inf), []]
+    itmin = [gvar.gvar(np.nan, np.inf), [], (np.nan, np.nan)]
     for item, _, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
@@ -298,6 +301,8 @@ def plot_t_dep_totnew(tot_new, plot_info,
                   title, dim, item, fitwindow)
             continue
         if np.isnan(item.val):
+            if ISOSPIN == 0:
+                itmin = (item, np.nan, (np.nan, np.nan))
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
@@ -310,6 +315,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     if itmin[2] not in fitwin_votes:
         fitwin_votes[itmin[2]] = 0
     fitwin_votes[itmin[2]] += 1
+    assert len(itmin) == 3, itmin
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
@@ -356,7 +362,10 @@ def plot_t_dep_totnew(tot_new, plot_info,
 def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
     sel = [[j for j in i] for i in itmin[1]]
-    fitwin = itmin[2]
+    if not np.isnan(itmin[0].val):
+        fitwin = itmin[2]
+    else:
+        fitwin = (np.nan, np.nan)
     rest = title.lower()
     tosave = [sel, rest, dim, IRREP,
               LATTICE_ENSEMBLE, ISOSPIN, fitwin]
@@ -412,10 +421,12 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
         info = (best_info, plot_info)
         fitwin_votes, toapp = plot_t_dep(
             tot, info, fitwin_votes, toapp, dump_min)
+        toapp = filter_toapp_nan(cbest, toapp, dim, 0)
         plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         info = (best_info, plot_info)
         fitwin_votes, toapp = plot_t_dep(
             tot, info, fitwin_votes, toapp, dump_min)
+        toapp = filter_toapp_nan(cbest, toapp, dim, 1)
         coll.append(toapp)
         toapp = []
     print(coll)
@@ -423,6 +434,19 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     cbest.append(coll)
     prune_cbest(cbest)
     return cbest
+
+def filter_toapp_nan(cbest, toapp, dim, itemidx):
+    """Make nan if best is known to be nan already"""
+    makenan = False
+    for best in cbest:
+        dbest = gvar.gvar(best[dim][itemidx])
+        if np.isnan(dbest.val):
+            makenan = True
+        assert 'nan' not in str(dbest) or makenan
+    if makenan:
+        toapp[itemidx] = gvar.gvar(np.nan, np.nan)
+    return toapp
+
 
 def compare_bests(new, curr):
     """Compare new best to current best
