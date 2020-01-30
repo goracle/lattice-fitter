@@ -98,6 +98,8 @@ def mkmin(covinv, coords, method=METHOD):
     """
     status = 1
     status2 = 1
+    KICK = False
+    KICK = True if latfit.config.BOOTSTRAP else KICK
     count = 15 if KICK else 1 # try 10 times to get convergence (abitrary)
     kick = False
     while (status or status2) and count:

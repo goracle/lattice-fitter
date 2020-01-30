@@ -30,7 +30,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT, UNCORR
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
-from latfit.config import NOLOOP
+from latfit.config import NOLOOP, ISOSPIN
 from latfit.config import SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
@@ -122,6 +122,11 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                 config_num] = get_doublejk_data(params, coords_jack,
                                                 reuse, reuse_blocked,
                                                 config_num)
+
+            if ISOSPIN == 0 and int(np.floor(len(
+                    config_range)/2)) == list(config_range).index(config_num):
+                start_loop = True
+
             if start_loop:
                 mkmin.SPARAMS = list(np.copy(START_PARAMS))
                 mkmin.PARAMS = params

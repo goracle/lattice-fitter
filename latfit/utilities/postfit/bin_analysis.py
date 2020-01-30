@@ -300,14 +300,14 @@ def plot_t_dep_totnew(tot_new, plot_info,
             print("omitting (item, dim, val(err), fitwindow):",
                   title, dim, item, fitwindow)
             continue
-        if np.isnan(item.val):
-            if ISOSPIN == 0:
-                itmin = (item, np.nan, (np.nan, np.nan))
-            continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        if item.sdev < itmin[0].sdev:
+        if item.sdev < itmin[0].sdev and not np.isnan(item.val):
             itmin = (item, fitrange, fitwindow)
+        elif np.isnan(item.val):
+            assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
+                           _, _ in tot_new])
+            print("ASSERT PASSED!!!!!")
         xticks_min.append(str(fitwindow[0]))
         xticks_max.append(str(fitwindow[1]))
         fitwinprev = fitwindow
@@ -316,6 +316,8 @@ def plot_t_dep_totnew(tot_new, plot_info,
         fitwin_votes[itmin[2]] = 0
     fitwin_votes[itmin[2]] += 1
     assert len(itmin) == 3, itmin
+    if not np.all([np.isnan(gvar.gvar(item).val) for item, _, _ in tot_new]):
+        assert not np.isnan(itmin[0].val), (tot_new, itmin)
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
@@ -415,8 +417,8 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     fitwin_votes = {}
     coll = []
     toapp = []
+    best_info = (not cbest and ISOSPIN != 0, ignorable_windows)
     for dim, _ in enumerate(tot[0]):
-        best_info = (not cbest, ignorable_windows)
         plot_info = (dim, 0, 'Energy', 'lattice units', fname)
         info = (best_info, plot_info)
         fitwin_votes, toapp = plot_t_dep(
@@ -426,8 +428,10 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
         info = (best_info, plot_info)
         fitwin_votes, toapp = plot_t_dep(
             tot, info, fitwin_votes, toapp, dump_min)
+        plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         toapp = filter_toapp_nan(cbest, toapp, dim, 1)
         coll.append(toapp)
+        print("coll", coll)
         toapp = []
     print(coll)
     pr_best_fitwin(fitwin_votes)

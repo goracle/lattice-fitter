@@ -121,9 +121,6 @@ def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
         print("Successful (tadd, tsub):")
         for i in success_tadd_tsub:
             print(i)
-        subprocess.check_output(['notify-send', '-u',
-                                 'critical', '-t', '30',
-                                 'hist: tloop complete'])
         print_sep_errors(tot_pr)
         newcbest = print_tot(fname, tot, cbest, ignorable_windows, dump_min)
         print("end of tloop")
@@ -256,6 +253,9 @@ def wallback():
     if useable: # to get final plot info, rerun
         tloop(*useable, dump_min=True)
     print("time route taken:", route)
+    subprocess.check_output(['notify-send', '-u',
+                             'critical', '-t', '30',
+                             'hist: walk-back complete'])
 
 def check_bad_bin(tmin):
     """Check to make sure this tmin_param
