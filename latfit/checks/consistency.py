@@ -102,9 +102,12 @@ def consistent_params(item1, item2):
         print(tlist)
         raise
     ret = not test > 1.5
-    if not ret:
-        print("problematic diff:", gvar(item1.val[idx], item1.err[idx]),
-              gvar(item2.val[idx], item2.err[idx]))
+    str1 = str(gvar(item1.val[idx], item1.err[idx]))
+    str2 = str(gvar(item2.val[idx], item2.err[idx]))
+    cond = str1 == str2 and str1 == '0(0)'
+    if not ret and not cond:
+        print("problematic diff:", str1,
+              str2)
     return ret
 
 def check_include(result_min):
