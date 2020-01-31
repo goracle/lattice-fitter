@@ -256,7 +256,8 @@ FIT_SELECT = ''
 
 if __name__ == '__main__':
     if INCLUDE:
-        FIT_SELECT = str(list_mat(INCLUDE))
+        pass
+        #FIT_SELECT = str(list_mat(INCLUDE))
     elif FIT_SELECT:
         pass
     else:
