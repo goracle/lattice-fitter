@@ -150,7 +150,7 @@ def mkplot(plotdata, input_f,
                          param_chisq, plotdata.coords)
 
             # save, output
-            do_plot(title, pdf)
+            do_plot(title, pdf, file_str)
 
     return 0
 
@@ -886,7 +886,7 @@ else:
         return args
 
 
-def do_plot(title, pdf):
+def do_plot(title, pdf, file_str):
     """Do the plot, given the title."""
     # setup fonts
     hfontt = {'fontname': 'FreeSans', 'size': 12}
@@ -905,6 +905,11 @@ def do_plot(title, pdf):
     # read out into a pdf
     pdf.savefig()
     # show the plot
+    assert '.pdf' in file_str, file_str
+    fname = re.sub('.pdf', '.p', file_str)
+    assert '.p' in file_str, file_str
+    assert '.pdf' not in file_str, file_str
+    pickle.dump(plt, open(fname, 'wb'))
     if not NOSHOW:
         plt.show()
 
