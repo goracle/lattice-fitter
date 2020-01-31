@@ -163,9 +163,7 @@ def singlefit(meta, input_f):
         reuse, singlefit.reuse_blocked, coords = randomize_data(
             params, reuse, singlefit.reuse_blocked, coords)
 
-    fiduc_point_cuts(meta)
-    if VERBOSE:
-        print("new excl:", latfit.config.FIT_EXCL)
+    point_cuts_wrapper(meta)
     if not toosmallp(meta, latfit.config.FIT_EXCL) and FIT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
@@ -203,6 +201,28 @@ singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
 
+def point_cuts_wrapper(meta):
+    """Point cuts wrapper:  make cuts, do check"""
+    old_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
+    fiduc_point_cuts(meta)
+    if VERBOSE:
+        print("new excl:", latfit.config.FIT_EXCL)
+        new_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
+        if NOLOOP:
+            assert new_excl == old_excl, (old_excl, new_excl)
+
+def tuple_mat_set_sort(mat):
+    """Tuplize matrix and sort entries; remove duplicates"""
+    ret = []
+    for i in mat:
+        row = set()
+        for j in i:
+            row.add(j)
+        row = sorted(list(row))
+        ret.append(row)
+    return ret
+        
+
 def fiduc_point_cuts(meta):
     """Perform fiducial cuts on individual effective mass points"""
     if FIT:
@@ -213,6 +233,15 @@ def fiduc_point_cuts(meta):
                 if VERBOSE:
                     print("fiducial cuts leave nothing to fit.  rank:", MPIRANK)
                 raise FitFail
+
+def include_cut(meta):
+    """We need to augment the exclude list
+    if we are starting with an include list.
+    We don't know what needs to be added until the user
+    specifies the fit window, though, so cut here.
+    """
+    for i, j in zip(INCLUDE, latfit.config.FIT_EXCL):
+        pass
 
 def non_jackknife_fit(params, cov, coords):
     """Compute using a very old fit style"""
@@ -530,7 +559,7 @@ def toosmallp(meta, excl):
             excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
         if not (ISOSPIN == 0 and GEVP):
             if VERBOSE:
-                print("skip: not an arithmetic sequence")
+                print("skip: not an arithmetic sequence; fit window:", meta.fitwindow)
             ret = True
         else:
             if VERBOSE:

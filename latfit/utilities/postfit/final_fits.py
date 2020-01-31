@@ -32,15 +32,23 @@ def main():
         print("using:", fil)
         print(arr)
         try:
-            xmin, xmax = arr[-4]
+            fitmin, fitmax = arr[-4]
         except ValueError:
             print(arr)
             raise
-        xmin, xmax = fitwin_from_include(arr[0])
-        xmin = str(xmin)
-        xmax = str(xmax)
-        call = 'latfit -f . --xmin='+xmin+' --xmax='+xmax
-        subprocess.call(call, shell=True)
+        dim = arr[2]
+        if dim != 1:
+            continue
+        xmin, xmax = 1, 16
+        xmin, xmax = str(xmin), str(xmax)
+        fitmin, fitmax = fitwin_from_include(arr[0])
+        fitmin = str(fitmin)
+        fitmax = str(fitmax)
+        xmin, xmax = fitmin, fitmax
+        call = 'latfit -f . --xmin='+xmin+' --xmax='+\
+            xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
+        print("call =", call)
+        assert not subprocess.call(call, shell=True)
 
 if __name__ == '__main__':
     main()

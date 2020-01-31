@@ -17,6 +17,12 @@ else:
 
     def fitrange_err(options, xmin, xmax):
         """Return fit range after checking for errors."""
+        xmin = float(xmin)
+        xmax = float(xmax)
+        assert int(xmin) == float(xmin), xmin
+        assert int(xmax) == float(xmax), xmax
+        xmin = int(xmin)
+        xmax = int(xmax)
         sent1 = object()
         sent2 = object()
         fitmin1 = sent1

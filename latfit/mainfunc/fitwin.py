@@ -24,8 +24,9 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         for _ in range(tsub):
             meta.decr_xmax(problemx=problemx)
         partial_reset()
-    if finished_win_check(meta, tsub=tsub) and not NOLOOP:
-        raise FinishedSkip
+    if not NOLOOP:
+        if finished_win_check(meta, tsub=tsub):
+            raise FinishedSkip
     if inconsistent_win_check(meta, tsub=tsub) and not NOLOOP:
         raise FitRangeInconsistency
 
@@ -40,7 +41,7 @@ def xmin_err(meta, err):
     update_fitwin(meta, 1, 0, problemx=err.problemx)
     if VERBOSE:
         print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
-    if meta.fitwindow[0] > meta.options.xmin and FIT:
+    if meta.fitwindow[0] > meta.options.xmin and FIT and not NOLOOP:
         print("***ERROR***")
         print("fit window beyond xmin:", meta.fitwindow)
         sys.exit(1)
@@ -56,7 +57,7 @@ def xmax_err(meta, err):
     update_fitwin(meta, 0, 1, problemx=err.problemx)
     if VERBOSE:
         print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
-    if meta.fitwindow[1] < meta.options.xmax and FIT:
+    if meta.fitwindow[1] < meta.options.xmax and FIT and not NOLOOP:
         print("***ERROR***")
         print("fit window beyond xmax:", meta.fitwindow)
         sys.exit(1)

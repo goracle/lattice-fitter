@@ -113,14 +113,15 @@ class FitRangeMetaData:
             print("increasing xmin by one*xstep")
         if problemx is None:
             #self.options.xmin += self.options.xstep
-            self.fitwindow = (self.fitwindow[0]+self.options.xstep,
-                              self.fitwindow[1])
+            self.fitwindow = (
+                self.fitwindow[0]+self.options.xstep, self.fitwindow[1])
             if TLOOP or inx:
                 self.options.xmin += self.options.xstep
         else:
             #self.options.xmin = problemx + self.options.xstep
-            self.fitwindow = (problemx + self.options.xstep,
-                              self.fitwindow[1])
+            if problemx >= self.fitwindow[0]:
+                self.fitwindow = (
+                    problemx + self.options.xstep, self.fitwindow[1])
             if TLOOP or inx:
                 self.options.xmin = problemx + self.options.xstep
         try:
@@ -143,7 +144,9 @@ class FitRangeMetaData:
                 self.options.xmax -= self.options.xstep
         else:
             #self.options.xmax = problemx - self.options.xstep
-            self.fitwindow = (self.fitwindow[0], problemx-self.options.xstep)
+            if problemx <= self.fitwindow[1]:
+                self.fitwindow = (
+                    self.fitwindow[0], problemx-self.options.xstep)
             if TLOOP or dex:
                 self.options.xmax = problemx - self.options.xstep
         try:
@@ -268,8 +271,8 @@ class FitRangeMetaData:
         self.options.xmin, self.options.xmax = xlim_err(self.options.xmin,
                                                         self.options.xmax)
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
-        self.fitwindow = fitrange_err(self.options, self.options.xmin,
-                                      self.options.xmax)
+        self.fitwindow = fitrange_err(self.options, self.options.fitmin,
+                                      self.options.fitmax)
         self.xmin_mat_sub()
         self.actual_range()
         latfit.config.TSTEP = self.options.xstep
