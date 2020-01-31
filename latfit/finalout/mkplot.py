@@ -3,6 +3,7 @@ import os.path
 import os
 import re
 import sys
+import pickle
 # from warnings import warn
 from decimal import Decimal
 from numbers import Number
@@ -90,6 +91,8 @@ def mkplot(plotdata, input_f,
            result_min=None, param_err=None, fitrange=None):
     """Plot the fitted graph."""
 
+    fig = plt.figure()
+
     if GEVP:
         plotdata = update_result_min_nofit(plotdata)
 
@@ -150,7 +153,7 @@ def mkplot(plotdata, input_f,
                          param_chisq, plotdata.coords)
 
             # save, output
-            do_plot(title, pdf, file_str)
+            do_plot(title, pdf, file_str, fig)
 
     return 0
 
@@ -886,7 +889,7 @@ else:
         return args
 
 
-def do_plot(title, pdf, file_str):
+def do_plot(title, pdf, file_str, fig):
     """Do the plot, given the title."""
     # setup fonts
     hfontt = {'fontname': 'FreeSans', 'size': 12}
@@ -907,9 +910,9 @@ def do_plot(title, pdf, file_str):
     # show the plot
     assert '.pdf' in file_str, file_str
     fname = re.sub('.pdf', '.p', file_str)
-    assert '.p' in file_str, file_str
-    assert '.pdf' not in file_str, file_str
-    pickle.dump(plt, open(fname, 'wb'))
+    assert '.p' in fname, fname
+    assert '.pdf' not in fname, fname
+    pickle.dump(fig, open(fname, 'wb'))
     if not NOSHOW:
         plt.show()
 
