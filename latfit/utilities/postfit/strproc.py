@@ -16,6 +16,10 @@ except NameError:
 def tot_to_stat(res, sys_err):
     """Get result object which has separate stat
     and sys errors"""
+    if isinstance(res, str):
+        res = gvar.gvar(res)
+    if isinstance(sys_err, str):
+        sys_err = float(sys_err)
     err = res.sdev
     assert err > sys_err, (err, sys_err)
     err = np.sqrt(err**2-sys_err**2)

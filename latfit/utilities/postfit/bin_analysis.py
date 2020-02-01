@@ -13,6 +13,7 @@ from latfit.utilities.postfit.fitwin import max_tmax
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
 from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
+from latfit.utilities.postfit.strproc import tot_to_stat
 from latfit.utilities.combine_pickle import main as getdts
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 
@@ -286,7 +287,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     itemprev = None
     fitwinprev = None
     itmin = [gvar.gvar(np.nan, np.inf), [], (np.nan, np.nan)]
-    for item, _, fitwin in tot_new:
+    for item, sys_err, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
         trfitwin = (fitwindow[0] + 1, fitwindow[1])
@@ -303,7 +304,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
         yarr.append(item.val)
         yerr.append(item.sdev)
         if item.sdev < itmin[0].sdev and not np.isnan(item.val):
-            itmin = (item, fitrange, fitwindow)
+            itmin = (item, fitrange, fitwindow, sys_err)
         elif np.isnan(item.val):
             assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
                            _, _ in tot_new])
@@ -315,7 +316,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     if itmin[2] not in fitwin_votes:
         fitwin_votes[itmin[2]] = 0
     fitwin_votes[itmin[2]] += 1
-    assert len(itmin) == 3, itmin
+    assert len(itmin) == 4, itmin
     if not np.all([np.isnan(gvar.gvar(item).val) for item, _, _ in tot_new]):
         assert not np.isnan(itmin[0].val), (tot_new, itmin)
     xarr = list(range(len(xticks_min)))
@@ -364,6 +365,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
 def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
     sel = [[j for j in i] for i in itmin[1]]
+    sys_err = itmin[3]
     if not np.isnan(itmin[0].val):
         fitwin = itmin[2]
     else:
@@ -380,11 +382,13 @@ def to_include(itmin, dim, title, dump_min):
     print("FIT_EXCL = invinc(INCLUDE,", str(fitwin)+")")
     tminuses, dt2s = getdts(sel)
     saven = min_fit_file(dim, rest)
+    res = tot_to_stat(itmin[0], sys_err)
+    print("stat err only min result:", res)
     for i, j in zip(tminuses, dt2s):
         ts_loop = list(tosave)
         ts_loop.append(i)
         ts_loop.append(j)
-        ts_loop.append(str(itmin[0]))
+        ts_loop.append(str(res))
         print("T0 =", i)
         if j is not None:
             print("DELTA_T_MATRIX_SUBTRACTION =", j)

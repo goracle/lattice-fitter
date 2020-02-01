@@ -56,7 +56,7 @@ def fitrange_skip_list(fit_range_arr, fitwindow):
         elif fitwincuts(item, fitwindow):
             fcut += 1
             ret.add(idx)
-        if ISOSPIN != 0:
+        if ISOSPIN != 0 and idx not in ret:
             if not arithseq(item):
                 acut += 1
                 ret.add(idx)
@@ -98,6 +98,8 @@ def lencut(fit_range):
 def arithseq(fitrange):
     """Check if arithmetic sequence"""
     ret = True
+    assert hasattr(fitrange, '__iter__'), fitrange
+    assert hasattr(fitrange[0], '__iter__'), fitrange
     for fitr in fitrange:
         minp = fitr[0]
         nextp = fitr[1]
