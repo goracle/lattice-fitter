@@ -39,7 +39,12 @@ def main():
         dim = arr[2]
         if dim != 1:
             continue
-        xmin, xmax = 1, 16
+        ens = arr[4]
+        xmin = 1
+        if ens == '24c':
+            xmax = 16
+        elif ens == '32c':
+            xmax = 22
         xmin, xmax = str(xmin), str(xmax)
         fitmin, fitmax = fitwin_from_include(arr[0])
         fitmin = str(fitmin)

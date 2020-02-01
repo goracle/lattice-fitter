@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import gvar
 
-from latfit.include import DIMSELECT
+from latfit.include import DIMSELECT, INCLUDE
 from latfit.utilities import read_file as rf
 from latfit.config import fit_func, MOMSTR, L_BOX
 from latfit.config import FINE
@@ -913,7 +913,7 @@ def do_plot(title, pdf, file_str, fig):
     assert '.p' in fname, fname
     assert '.pdf' not in fname, fname
     pickle.dump(fig, open(fname, 'wb'))
-    if not NOSHOW:
+    if not NOSHOW and not INCLUDE:
         plt.show()
 
 
