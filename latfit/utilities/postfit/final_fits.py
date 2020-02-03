@@ -36,20 +36,23 @@ def main():
         except ValueError:
             print(arr)
             raise
-        dim = arr[2]
-        if dim != 1:
-            continue
         ens = arr[4]
         xmin = 1
         if ens == '24c':
             xmax = 16
         elif ens == '32c':
             xmax = 22
+        dim = arr[2]
+        dimr = dim
+        if len(sys.argv) > 1:
+            dimr = int(sys.argv[1])
+        if dim != dimr:
+            continue
         xmin, xmax = str(xmin), str(xmax)
         fitmin, fitmax = fitwin_from_include(arr[0])
         fitmin = str(fitmin)
         fitmax = str(fitmax)
-        xmin, xmax = fitmin, fitmax
+        # xmin, xmax = fitmin, fitmax
         call = 'latfit -f . --xmin='+xmin+' --xmax='+\
             xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
         print("call =", call)
