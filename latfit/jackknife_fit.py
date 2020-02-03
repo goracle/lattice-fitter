@@ -124,7 +124,8 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                                                 config_num)
 
             if ISOSPIN == 0 and int(np.floor(len(
-                    config_range)/2)) == list(config_range).index(config_num):
+                    config_range)/2)) == list(
+                        config_range).index(config_num):
                 start_loop = True
 
             if start_loop:

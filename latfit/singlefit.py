@@ -224,14 +224,20 @@ def tuple_mat_set_sort(mat):
         
 
 def fiduc_point_cuts(meta):
-    """Perform fiducial cuts on individual effective mass points"""
+    """Perform fiducial cuts on individual
+    effective mass points"""
     if FIT:
         samerange = cut_on_errsize(meta)
+        if NOLOOP:
+            assert samerange, latfit.config.FIT_EXCL
         samerange = cut_on_growing_exp(meta) and samerange
+        if NOLOOP:
+            assert samerange, latfit.config.FIT_EXCL
         if not samerange:
             if toosmallp(meta, latfit.config.FIT_EXCL):
                 if VERBOSE:
-                    print("fiducial cuts leave nothing to fit.  rank:", MPIRANK)
+                    print("fiducial cuts leave nothing to fit.",
+                          " rank:", MPIRANK)
                 raise FitFail
 
 def include_cut(meta):
