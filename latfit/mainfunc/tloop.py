@@ -108,10 +108,10 @@ def tloop():
 
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
                     continue
-                if VERBOSE:
-                    print("starting tsub:", tsub, "rank:", MPIRANK)
                 if not TLOOP and tsub:
                     break
+                if VERBOSE:
+                    print("starting tsub:", tsub, "rank:", MPIRANK)
 
                 tadd = 0
                 flag = 1

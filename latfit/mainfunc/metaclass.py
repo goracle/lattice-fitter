@@ -129,6 +129,9 @@ class FitRangeMetaData:
             assert self.options.xmin < self.options.xmax
             assert self.options.xmin <= self.fitwindow[0]
         except AssertionError:
+            if VERBOSE:
+                print("current fit window too small:",
+                      self.fitwindow)
             raise DOFNonPos
         self.pr_fit_window()
 
@@ -154,6 +157,9 @@ class FitRangeMetaData:
             assert self.options.xmin < self.options.xmax
             assert self.options.xmax >= self.fitwindow[1]
         except AssertionError:
+            if VERBOSE:
+                print("current fit window too small:",
+                      self.fitwindow)
             raise DOFNonPos
         self.pr_fit_window()
 

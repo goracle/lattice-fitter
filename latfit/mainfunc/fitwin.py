@@ -18,6 +18,8 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
     """Update fit window"""
     # tadd tsub cut
     if tadd or tsub:
+        if VERBOSE:
+            print("tadd, tsub in update:", tadd, tsub)
         #print("tadd =", tadd, "tsub =", tsub)
         for _ in range(tadd):
             meta.incr_xmin(problemx=problemx)
@@ -26,17 +28,28 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         partial_reset()
     if not NOLOOP:
         if finished_win_check(meta, tsub=tsub):
+            if VERBOSE:
+                print("raising finished skip")
             raise FinishedSkip
     if inconsistent_win_check(meta, tsub=tsub) and not NOLOOP:
+        if VERBOSE:
+            print("raising inconsistent skip")
         raise FitRangeInconsistency
 
 def xmin_err(meta, err):
     """Handle xmax error"""
     if VERBOSE:
-        print("Test fit failed; bad xmin.")
+        print("Test fit failed; bad xmin:", err.problemx)
+        print("current xmin, xmax:", meta.options.xmin, meta.options.xmax)
     # if we're past the halfway point, then this error is likely a late time
     # error, not an early time error (usually from pion ratio)
-    if err.problemx > (meta.options.xmin + meta.options.xmax)/2:
+    more_than_halfway_through_plot_range = err.problemx > (
+        meta.options.xmin + meta.options.xmax)/2
+    cond1 = more_than_halfway_through_plot_range
+    more_than_halfway_through_fit_window = err.problemx > (
+        meta.fitwindow[0] + meta.fitwindow[1])/2
+    cond2 = more_than_halfway_through_fit_window
+    if cond1 or cond2:
         raise XmaxError(problemx=err.problemx)
     update_fitwin(meta, 1, 0, problemx=err.problemx)
     if VERBOSE:
