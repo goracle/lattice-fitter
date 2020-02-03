@@ -449,6 +449,9 @@ def cut_on_growing_exp(meta):
             actual_range = meta.actual_range()
             if excl_add not in actual_range:
                 continue
+            if NOLOOP:
+                if coords[i][0] not in actual_range:
+                    continue
             if MULT > 1:
                 for k in range(len(coords[0][1])):
                     if (j, k) in already_cut:
