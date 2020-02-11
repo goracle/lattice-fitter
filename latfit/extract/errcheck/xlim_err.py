@@ -7,11 +7,11 @@ from latfit.analysis.errorcodes import DOFNonPos
 
 if not FIT:
 
-    def fitrange_err(options, xmin, xmax):
+    def fitrange_err(options, *xargs):
         """Set fit range to be maximum."""
-        if options:
+        if xargs:
             pass
-        return xmin, xmax
+        return options.xmin, options.xmax
 
 else:
 
