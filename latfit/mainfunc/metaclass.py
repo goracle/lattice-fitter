@@ -252,9 +252,14 @@ class FitRangeMetaData:
     @PROFILE
     def actual_range(self):
         """Return the actual range spanned by the fit window"""
-        ret = np.arange(self.fitwindow[0],
-                        self.fitwindow[1]+self.options.xstep,
-                        self.options.xstep)
+        try:
+            ret = np.arange(self.fitwindow[0],
+                            self.fitwindow[1]+self.options.xstep,
+                            self.options.xstep)
+        except TypeError:
+            print(self.fitwindow)
+            print(self.options.xstep)
+            raise
         ret = tuple(ret)
         latfit.analysis.result_min.WINDOW = ret
         return ret
@@ -279,6 +284,7 @@ class FitRangeMetaData:
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
         self.fitwindow = fitrange_err(self.options, self.options.fitmin,
                                       self.options.fitmax)
+        assert isinstance(self.fitwindow[0], int) or isinstance(self.fitwindow[0], float), self.fitwindow
         self.xmin_mat_sub()
         self.actual_range()
         latfit.config.TSTEP = self.options.xstep
