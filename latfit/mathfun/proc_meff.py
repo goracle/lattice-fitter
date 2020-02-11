@@ -191,7 +191,7 @@ elif EFF_MASS_METHOD == 4:
             sol = corrs[0]
             sol = np.nan if sol < 0 else sol
         if np.isnan(sol):
-            assert None, "check this"
+            assert None, "check this "+str(corrs)+" "+str(index)+str(times)
             raise PrecisionLossError
             #errstr = "bad time/op combination in fit range."+\
                 #" (time, op index)=("+str(times[0])+","+str(index)+")"
