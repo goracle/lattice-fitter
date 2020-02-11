@@ -146,8 +146,9 @@ def energies_pionratio(timeij, delta_t):
         print("example config value of lhs, rhs:")
         print(lhs[10], rhs[10])
         sys.exit(1)
-    avg_energies = gdisp.callprocmeff([
-        (avglhs/avgrhs), (avglhs_p1/avgrhs)], timeij, delta_t, sort=True)
+    arg = [np.nan_to_num(avglhs/avgrhs), np.nan_to_num(avglhs_p1/avgrhs)]
+    dimops = 1 if PR_GROUND_ONLY else len(arg1)
+    avg_energies = gdisp.callprocmeff(arg, timeij, delta_t, sort=True, dimops=dimops)
     energies_pionratio.store[key] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
     # so we don't lose operators due to rho/sigma nan's
@@ -169,16 +170,21 @@ def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
     np.seterr(divide='ignore', invalid='ignore')
     arg1 = np.asarray(lhs/rhs)
     arg2 = np.asarray(lhs_p1/rhs)
+    dimops = 1 if PR_GROUND_ONLY else len(arg1)
     energies = []
     # config loop
     for i in range(len(lhs)):
         checkgteq0(arg1[i])
         checkgteq0(arg2[i])
         energies.append(gdisp.callprocmeff([arg1[i], arg2[i]],
-                                           timeij, delta_t, sort=True))
+                                           timeij, delta_t, sort=True, dimops=dimops))
     np.seterr(divide='warn', invalid='warn')
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
-    assert all(energies[0] != energies[1]), "same energy found."
+    if PR_GROUND_ONLY:
+        # sanity check
+        assert energies[0][0] != energies[1][0], ("same energy found.", energies)
+    else:
+        assert all(energies[0] != energies[1]), ("same energy found.", energies)
     energies = np.asarray(energies)
     for i, dim in enumerate(energies):
         for j, en1 in enumerate(dim):
@@ -304,6 +310,12 @@ def getkey(timeij, delta_t):
     ret = (timeij, delta_t, dt1, dt2)
     return ret
 
+def addzero_nan_to_num(addzero):
+    """Get rid of nan's in dimensions we are performing pion ratio"""
+    if PR_GROUND_ONLY:
+        addzero[:, 1:] = np.nan_to_num(addzero[:, 1:])
+    return addzero
+
 if PIONRATIO:
     def modenergies(energies_interacting, timeij, delta_t):
         """modify energies for pion ratio
@@ -331,16 +343,19 @@ if PIONRATIO:
                 energies_noninteracting)
         # this fails if the binning didn't fix the broadcast incompatibility
         addzero = -1*energies_noninteracting+np.asarray(gdisp.disp())
+        addzero = addzero_nan_to_num(addzero)
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
                 assert 'rho' in GEVP_DIRS_PLUS_ONE[
                     i][i] or 'sigma' in GEVP_DIRS_PLUS_ONE[i][i]
-        addzero = np.nan_to_num(addzero)
         # sanity check; all additive zeros should be small (magic number = 0.1)
         # chosen since usually 0.1 is O(100) MeV
         # sanity check
+        addzero = np.nan_to_num(addzero)
+        dimops = 1 if PR_GROUND_ONLY else len(arg1)
         try:
-            assert np.all(np.asarray(addzero) < 0.1), str(addzero)
+            chk = np.abs(addzero[:, :dimops])
+            assert np.all(np.asarray(chk) < 0.1), str(chk)
         except AssertionError:
             raise XminError(problemx=timeij)
         if PR_GROUND_ONLY:

@@ -69,9 +69,10 @@ def binhalf_e(ear):
         ear = np.swapaxes(new_disp, 0, 1)
     return ear
 
-def callprocmeff(eigvals, timeij, delta_t, sort=False):
+def callprocmeff(eigvals, timeij, delta_t, sort=False, dimops=None):
     """Call processing function for effective mass"""
-    dimops = len(eigvals[0])
+    dimops = len(eigvals[0]) if dimops is None else dimops
+    assert delta_t, delta_t
     if len(eigvals) == 2:
         eigvals = list(eigvals)
         eigvals.append(np.zeros(dimops)*np.nan)
@@ -80,7 +81,16 @@ def callprocmeff(eigvals, timeij, delta_t, sort=False):
     if sort:
         for i in range(4):
             eigvals[i] = glin.sortevals(eigvals[i])
-    toproc = 1/eigvals[0] if not LOGFORM else eigvals[0]/delta_t
+    try:
+        toproc = 1/(eigvals[0][:dimops]) if not LOGFORM else eigvals[0]/delta_t
+    except FloatingPointError:
+        print(dimops)
+        print(eigvals)
+        raise
+    if dimops > 1:
+        assert not np.any(np.isnan(toproc)[:dimops]), (toproc, eigvals, delta_t)
+    else:
+        assert not np.isnan(toproc[0]), (toproc, eigvals, delta_t)
     if GEVP_DERIV:
         energies = np.array([proc_meff((eigvals[0][op], eigvals[1][op],
                                         eigvals[1][op], eigvals[2][op]),
@@ -91,4 +101,8 @@ def callprocmeff(eigvals, timeij, delta_t, sort=False):
                                         eigvals[2][op]), index=op,
                                        time_arr=timeij)
                              for op in range(dimops)])
-    return energies
+    if len(eigvals[0]) != dimops:
+        energies = list(energies)
+        for _ in range(len(eigvals[0])-dimops):
+            energies.append(np.nan)
+    return np.asarray(energies)
