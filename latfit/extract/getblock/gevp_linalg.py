@@ -3,10 +3,12 @@ import sys
 
 import scipy
 import scipy.linalg
+from scipy.linalg import inv, det
 import numpy as np
 from accupy import kdot
 from sympy import S
 from sympy.matrices import Matrix
+from math import exp, log
 
 from latfit.utilities import exactmean as em
 from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSEUDO_SORT
@@ -323,33 +325,76 @@ def update_sort_evecs(evecs, presort_evals, postsort_evals):
     evecs = np.asarray(evecs)
     return evecs
 
-def ratio_evals(evecs, c_lhs, c_rhs):
+def ratio_evals(evecs, c_lhs, c_rhs, debug=False):
     """Get the ratio evals from the evecs and C(t), C(t_0)"""
     ret = []
     for i in evecs:
         assert len(i) == len(c_lhs), str(c_lhs)+" "+str(i)
         assert len(i) == len(c_rhs), str(c_rhs)+" "+str(i)
-        ret.append(bracket(i, c_lhs)/bracket(i, c_rhs))
+        num = bracket(i, c_lhs)
+        denom = bracket(i, c_rhs)
+        if debug:
+            print("num", num)
+            print("denom", denom)
+        ret.append(num/denom)
     ret = np.asarray(ret)
     return ret
 
-def map_evals(evals_from, evals_to, debug=False):
-    """Get similarity mapping"""
-    ret = {}
-    #used = set()
-    leval = len(evals_from)
-    assert leval == len(evals_to), str(
-        evals_from)+" "+str(evals_to)
-    assert list(evals_from) == list(fallback_sort(evals_from))
-    evals_to_sorted = fallback_sort(evals_to)
-    eleft = np.roll(evals_to_sorted, -1)
-    eright = np.roll(evals_to_sorted, 1)
-    rel_diff = np.abs(evals_from - evals_to_sorted)/evals_from
-    rdleft = np.abs(evals_from - eleft)/evals_from
-    rdright = np.abs(evals_from - eright)/evals_from
+def index_pm1(idx, refl):
+    """Find plus and minus index unless we are the border
+    then flip; use reference length refl for length of vector
+    to be indexed
+    """
+    assert refl > 1, refl
+    if idx:
+        idxm1 = idx-1
+    else:
+        idxm1 = 1
+    idxp1 = idx+1
+    if idxp1 >= refl:
+        idxp1 = idx - 1
+        assert idxp1
+    return idxp1, idxm1
 
-    #fallback = False # unambiguous mapping
-    test_arr = [1 if i > 0.01 else 0 for i in rel_diff]
+def score(eval_to_score, ref_evals, idx, func='gaussian'):
+    """Return an absolute similarity score for a pseudo
+    eigenvalue (eval_to_score) to a set of reference eigenvalues
+    using func as the base scoring function
+    with idx as the best match index
+    """
+    zero = 1e-8
+    idxp1, idxm1 = index_pm1(idx, len(ref_evals))
+    if func == 'gaussian':
+        diff = ref_evals[idx] - eval_to_score
+        if diff < 0:
+            #idxp1 = (idx+1) % len(ref_evals)
+            widp1 = (ref_evals[idx]-ref_evals[idxp1])**2/log(1/zero)
+            ret = exp(-(diff)**2/widp1)
+        else:
+            #idxm1 = (idx-1) % len(ref_evals)
+            widm1 = (ref_evals[idx]-ref_evals[idxm1])**2/log(1/zero)
+            ret = exp(-(diff)**2/widm1)
+    else:
+        assert None, "other functions not supported at this time"
+    return ret
+
+def indicator(pseudo_evals, ref_evals, idx, debug=False):
+    """Check the nearest neighbor alternative matches
+    return the max score, normalized to the base score"""
+    #idxp1 = (idx+1) % len(ref_evals)
+    #idxm1 = (idx-1) % len(ref_evals)
+    idxp1, idxm1 = index_pm1(idx, len(ref_evals))
+    base_score = score(pseudo_evals[idx], ref_evals, idx)
+    nplus1 = score(pseudo_evals[idxp1], ref_evals, idx)/base_score
+    nminus1 = score(pseudo_evals[idxm1], ref_evals, idx)/base_score
+    if debug:
+        print("idx, idxp1, idxm1", idx, idxp1, idxm1)
+        print("p1 vs. r", pseudo_evals[idxp1], pseudo_evals[idx], nplus1)
+        print("m1 vs. r", pseudo_evals[idxm1], pseudo_evals[idx], nminus1)
+    return max(nplus1, nminus1)
+
+def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
+    """Obsolete way to flip match"""
     for idx, item in enumerate(test_arr):
         lcomp = np.real(rdleft[idx]/rel_diff[idx])
         rcomp = np.real(rdright[idx]/rel_diff[idx])
@@ -371,7 +416,7 @@ def map_evals(evals_from, evals_to, debug=False):
                 test_arr[idx] = 0
         else:
             # comparison may be good, but neighbor also matches
-            if lcomp <= 3 or rcomp <= 3:
+            if rel_diff:
                 if debug and False:
                     print(lcomp, rcomp)
                     print('evals_to_sorted', evals_to_sorted)
@@ -380,13 +425,45 @@ def map_evals(evals_from, evals_to, debug=False):
                     print('rdright', rdright)
                     print("flipped to", True)
                 test_arr[idx] = 1
+    return test_arr
+
+def map_evals(evals_from, evals_to, debug=False):
+    """Get similarity mapping"""
+    ret = {}
+    #used = set()
+    leval = len(evals_from)
+    assert leval == len(evals_to), str(
+        evals_from)+" "+str(evals_to)
+    assert list(evals_from) == list(fallback_sort(evals_from))
+    evals_to_sorted = fallback_sort(evals_to)
+    if debug:
+        print("evals to, sorted", evals_to_sorted)
+
+    # obsolete indicator
+    #eleft = np.roll(evals_to_sorted, -1)
+    #eright = np.roll(evals_to_sorted, 1)
+    #rel_diff = np.abs(evals_from - evals_to_sorted)/evals_from
+    #rdleft = np.abs(evals_from - eleft)/evals_from
+    #rdright = np.abs(evals_from - eright)/evals_from
+
+    rel_diff = [indicator(
+        evals_to_sorted, evals_from, idx, debug=debug) for idx,
+                _ in enumerate(evals_from)]
+    #fallback = False # unambiguous mapping
+    test_arr = [1 if i > 1e-2 else 0 for i in rel_diff]
+    if debug:
+        print('rel_diff', rel_diff)
+        print('test_arr', test_arr)
+    # old_test
+    # test_arr = old_test(test_arr, rdleft, rel_diff,
+    # evals_to_sorted, debug=debug)
     # > 1 since getting one eigenvalue wrong still gives a good sort
     test = np.sum(test_arr) == len(evals_to)
     test2 = np.sum(test_arr) > 1
     test3 = np.sum(test_arr) <= 1
     ret = make_id(leval)
     if debug:
-        print('test_arr', test_arr)
+        print('test_arr2', test_arr)
     evals_to = list(evals_to)
     fallback_level = -1
     unambig_indices = set()
@@ -442,6 +519,11 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
+        #debug = debug if timeij < 7 else True
+        if debug:
+            print("c_lhs", c_lhs)
+            print("c_rhs", c_rhs)
+            print("det", det(np.dot(inv(c_rhs), c_lhs)))
         if timeij + 1 == 12 + np.nan:
             debug = True
         #if debug or timeij + 1 == 13:
@@ -467,9 +549,9 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             #if debug:
                 #assert timeij in sortevals.sorted_evecs
             evals_from = np.copy(evals)
-            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs)
+            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs, debug=debug)
             if debug:
-                #print("evals from", evals_from)
+                print("evals from", evals_from)
                 print("evals to", evals_to)
             vote_map, fallback_level, unambig_indices = map_evals(
                 evals_from, evals_to, debug=debug)
@@ -498,15 +580,16 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 #if debug:
                     #print("good votes")
                 #break
-        if len(votes) >= 3:
+        if debug:
+            print(count)
+        altlen = int(len(votes) + np.floor(len(soft_votes)/2))
+        if len(votes) >= 3 or (count == 2 and len(votes) == 2):
             dot_map = votes_to_map(votes)
-        elif len(votes) + np.floor(len(soft_votes)/2) >= 3:
-            stop_votes_len = len(votes)+np.floor(len(soft_votes)/2)
-            stop_votes_len = int(stop_votes_len)
+        elif altlen >= 3 or (count == 2 and altlen == 2):
             if debug:
                 print("votes", votes, "soft_votes", soft_votes)
             votes.extend(soft_votes)
-            dot_map = votes_to_map(votes, stop=stop_votes_len)
+            dot_map = votes_to_map(votes, stop=altlen)
         if debug:
             print("final votes", votes)
             print("final dot map:", dot_map)
@@ -524,7 +607,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     elif not np.any(np.isnan(evals)):
         if debug:
             print("evals final", ret)
-    if debug and False:
+    if debug:
         sys.exit()
     return ret
 sortevals.sorted_evecs = {}
@@ -675,7 +758,7 @@ def select_sorted_evecs(config_num, timeij):
     sortevals.config = config_num
     sortevals.last_time = timeij - 1
 
-def fallback_sort(evals, evecs=None):
+def fallback_sort(evals, evecs=None, reverse=None):
     """The usual sorting procedure for the eigenvalues"""
     evals = list(evals)
 
@@ -685,7 +768,10 @@ def fallback_sort(evals, evecs=None):
             #ret[i] += np.inf
             ind.append(i)
 
-    sortrev = not LOGFORM
+    if reverse is None:
+        sortrev = not LOGFORM
+    else:
+        sortrev = reverse
 
     if evecs is not None:
         evecs = [x for y, x in sorted(zip(evals, evecs.T), reverse=sortrev)]
@@ -738,7 +824,8 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
     ret = (orig-avg)*decrease_var+avg
     check = (ret-avg)/decrease_var+avg
     try:
-        assert np.allclose(check, orig, rtol=1e-8, equal_nan=True), \
+        assert np.allclose(
+            check, orig, rtol=1e-8, equal_nan=True), \
             "precision loss detected:"+str(decrease_var)
     except AssertionError:
         #print('avg =', avg)
