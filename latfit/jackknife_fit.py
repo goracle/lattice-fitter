@@ -222,6 +222,10 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         result_min.pvalue.val, result_min.pvalue.err =\
             jack_mean_err(result_min.pvalue.arr)
 
+        # print out the jackknife blocks for manual management
+        if NOLOOP:
+            result_min.printjack()
+
         # get the optimal params
         result_min.min_params.val, result_min.min_params.err = jack_mean_err(
             result_min.min_params.arr)

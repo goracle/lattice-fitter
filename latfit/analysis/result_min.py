@@ -119,6 +119,18 @@ class ResultMin:
         self.energy.arr = np.zeros((params.num_configs,
                                     len(START_PARAMS)
                                     if not GEVP else params.dimops))
+        self.__paramlist = {'energy': self.energy,
+                            'systematics': self.systematics,
+                            'chisq': self.chisq,
+                            'phase_shift': self.phase_shift,
+                            'scattering_length': self.scattering_length,
+                            'min_params': self.min_params}
+
+    def printjack(self):
+        """Prints out the jackknife blocks"""
+        for i in self.__paramlist:
+            print("jackknife blocks for", i, ":")
+            print(self.__paramlist[i].arr)
 
     @PROFILE
     def alloc_errbar_arr(self, params, time_length):
