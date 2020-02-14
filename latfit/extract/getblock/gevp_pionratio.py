@@ -147,7 +147,7 @@ def energies_pionratio(timeij, delta_t):
         print(lhs[10], rhs[10])
         sys.exit(1)
     arg = [np.nan_to_num(avglhs/avgrhs), np.nan_to_num(avglhs_p1/avgrhs)]
-    dimops = 1 if PR_GROUND_ONLY else len(arg1)
+    dimops = 1 if PR_GROUND_ONLY else len(avglhs)
     avg_energies = gdisp.callprocmeff(arg, timeij, delta_t, sort=True, dimops=dimops)
     energies_pionratio.store[key] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
@@ -170,7 +170,7 @@ def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
     np.seterr(divide='ignore', invalid='ignore')
     arg1 = np.asarray(lhs/rhs)
     arg2 = np.asarray(lhs_p1/rhs)
-    dimops = 1 if PR_GROUND_ONLY else len(arg1)
+    dimops = 1 if PR_GROUND_ONLY else len(arg1[0])
     energies = []
     # config loop
     for i in range(len(lhs)):
@@ -352,7 +352,7 @@ if PIONRATIO:
         # chosen since usually 0.1 is O(100) MeV
         # sanity check
         addzero = np.nan_to_num(addzero)
-        dimops = 1 if PR_GROUND_ONLY else len(arg1)
+        dimops = 1 if PR_GROUND_ONLY else len(enint[0])
         try:
             chk = np.abs(addzero[:, :dimops])
             assert np.all(np.asarray(chk) < 0.1), str(chk)
