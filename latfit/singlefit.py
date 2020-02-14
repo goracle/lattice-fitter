@@ -1,5 +1,6 @@
 """Standard fit branch"""
 import sys
+import ast
 import os
 from collections import namedtuple
 import mpi4py
@@ -437,7 +438,7 @@ def cut_on_growing_exp(meta):
     assert singlefit.error2 is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(
     # err.shape)+" "+str(coords.shape)
-    start = str(latfit.config.FIT_EXCL)
+    start = ast.literal_eval(str(latfit.config.FIT_EXCL))
     excl = list_mat(latfit.config.FIT_EXCL)
     actual_range = meta.actual_range()
     already_cut = set()
@@ -488,7 +489,7 @@ def cut_on_growing_exp(meta):
                     excl[0] = list(set(excl[0]))
                     already_cut.add(j)
     excl = tupl_mat(excl)
-    ret = start == str(excl)
+    ret = same_range(excl, start)
     latfit.config.FIT_EXCL = excl
     return ret
 
@@ -500,7 +501,7 @@ def cut_on_errsize(meta):
     assert singlefit.error2 is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(
     # err.shape)+" "+str(coords.shape)
-    start = str(latfit.config.FIT_EXCL)
+    start = ast.literal_eval(str(latfit.config.FIT_EXCL))
     excl = list_mat(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
@@ -527,9 +528,22 @@ def cut_on_errsize(meta):
                 excl[0].append(excl_add)
                 excl[0] = list(set(excl[0]))
     excl = tupl_mat(excl)
-    ret = start == str(excl)
+    ret = same_range(excl, start)
     latfit.config.FIT_EXCL = excl
     return ret
+
+def same_range(excl1, excl2):
+    """Are the the two lists of excluded points the same?"""
+    ret = True
+    assert len(excl1) == len(excl2), (excl1, excl2)
+    for i, j in zip(excl1, excl2):
+        i = set(i)
+        j = set(j)
+        if j-i or i-j:
+            ret = False
+    return ret
+    
+            
 
 @PROFILE
 def toosmallp(meta, excl):
