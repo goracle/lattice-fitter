@@ -224,7 +224,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
         # print out the jackknife blocks for manual management
         if NOLOOP:
-            result_min.printjack()
+            result_min.printjack(meta)
 
         # get the optimal params
         result_min.min_params.val, result_min.min_params.err = jack_mean_err(

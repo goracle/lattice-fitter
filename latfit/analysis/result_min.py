@@ -1,12 +1,14 @@
 """Contains result min class used in jackknife fit loop; stores results
  of fit"""
 from collections import namedtuple
+import pickle
 from random import randint
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
 from latfit.config import GEVP, NBOOT, VERBOSE
 from latfit.analysis.errorcodes import DOFNonPosFit
+from latfit.analysis.filename_windows import filename_plus_config_info
 import latfit.config
 import latfit.analysis.hotelling as hotelling
 
@@ -70,6 +72,36 @@ def chisq_arr_to_pvalue_arr(dof, nconf, chisq_arr_boot, chisq_arr):
     pvalue_arr = np.array(pvalue_arr)
     return pvalue_arr
 
+def trash(item):
+    """Is item 0, np.nan, or None?"""
+    if hasattr(item, '__iter__') and not isinstance(item, str):
+        raise ValueError
+    else:
+        if isinstance(item, str):
+            ret = not item
+        else:
+            ret = not item or str(item) == 'nan'
+    return ret
+
+def dead(arr):
+    """Is the array alive?
+    Multiple tests to see if it's filled with real data
+    or just some placeholder"""
+    if hasattr(arr, '__iter__'):
+        try:
+            arr = list(arr)
+            ret = np.all([trash(i) for i in arr])
+        except ValueError:
+            ret = np.all([dead(i) for i in arr])
+        except TypeError:
+            arr = str(arr)
+            ret = dead(arr)
+    else:
+        ret = trash(arr)
+    assert ret == True or ret == False, (ret, arr)
+    return ret
+
+
 class Param:
     """Storage for the average param, the array of the param,
     and the error on the param
@@ -126,11 +158,18 @@ class ResultMin:
                             'scattering_length': self.scattering_length,
                             'min_params': self.min_params}
 
-    def printjack(self):
+    def printjack(self, meta):
         """Prints out the jackknife blocks"""
         for i in self.__paramlist:
             print("jackknife blocks for", i, ":")
-            print(self.__paramlist[i].arr)
+            name = i+'_single'
+            fname = filename_plus_config_info(meta, name)+'.jkdat'
+            topr = self.__paramlist[i].arr
+            if not dead(topr):
+                print("writing jackknife blocks in:", fname)
+                fn1 = open(fname, 'wb')
+                pickle.dump(topr, fn1)
+
 
     @PROFILE
     def alloc_errbar_arr(self, params, time_length):

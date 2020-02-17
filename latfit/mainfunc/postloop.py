@@ -487,7 +487,7 @@ def mean_and_err_loop_continue(name, min_arr):
     """should we continue in the loop
     """
     ret = False
-    if 'misc' in name:
+    if 'misc' in name or '__paramlist' in name:
         ret = True
     else:
         try:
