@@ -282,6 +282,10 @@ class FitRangeMetaData:
         self.options.xmin, self.options.xmax = xlim_err(self.options.xmin,
                                                         self.options.xmax)
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
+        if not isinstance(self.options.fitmin, float) and not isinstance(self.options.fitmin, int):
+            self.options.fitmin = self.options.xmin
+        if not isinstance(self.options.fitmax, float) and not isinstance(self.options.fitmax, int):
+            self.options.fitmax = self.options.xmax
         self.fitwindow = fitrange_err(self.options, self.options.fitmin,
                                       self.options.fitmax)
         assert isinstance(self.fitwindow[0], int) or isinstance(self.fitwindow[0], float), self.fitwindow
