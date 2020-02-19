@@ -485,7 +485,7 @@ def map_evals(evals_from, evals_to, debug=False):
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
     #fallback = False # unambiguous mapping
-    test_arr = [1 if i > 1e-3 else 0 for i in rel_diff]
+    test_arr = [1 if i > 1e-2 else 0 for i in rel_diff]
     if debug:
         print('rel_diff', rel_diff)
         print('test_arr', test_arr)
