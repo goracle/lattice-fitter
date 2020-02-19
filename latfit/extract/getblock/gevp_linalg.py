@@ -385,8 +385,12 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     #idxm1 = (idx-1) % len(ref_evals)
     idxp1, idxm1 = index_pm1(idx, len(ref_evals))
     base_score = score(pseudo_evals[idx], ref_evals, idx)
-    nplus1 = score(pseudo_evals[idxp1], ref_evals, idx)/base_score
-    nminus1 = score(pseudo_evals[idxm1], ref_evals, idx)/base_score
+    if base_score:
+        nplus1 = score(pseudo_evals[idxp1], ref_evals, idx)/base_score
+        nminus1 = score(pseudo_evals[idxm1], ref_evals, idx)/base_score
+    else:
+        nplus1 = np.inf
+        nminus1 = np.inf
     if debug:
         print("idx, idxp1, idxm1", idx, idxp1, idxm1)
         print("p1 vs. r", pseudo_evals[idxp1], pseudo_evals[idx], nplus1)
@@ -550,7 +554,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 5 else True
+        #debug = debug if timeij < 6 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -614,13 +618,17 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         if debug:
             print(count)
         altlen = int(len(votes) + np.floor(len(soft_votes)/2))
-        if len(votes) >= 3 or (count == 2 and len(votes) == 2):
-            dot_map = votes_to_map(votes)
-        elif altlen >= 3 or (count == 2 and altlen == 2):
-            if debug:
-                print("votes", votes, "soft_votes", soft_votes)
-            votes.extend(soft_votes)
+        votes.extend(soft_votes)
+        if votes:
             dot_map = votes_to_map(votes, stop=altlen)
+        # old way
+        #if len(votes) >= 3 or (count == 2 and len(votes) == 2):
+        #    dot_map = votes_to_map(votes)
+        #elif altlen >= 3 or (count == 2 and altlen == 2):
+        #    if debug:
+        #        print("votes", votes, "soft_votes", soft_votes)
+        #    votes.extend(soft_votes)
+        #    dot_map = votes_to_map(votes, stop=altlen)
         if debug:
             print("final votes", votes)
             print("final dot map:", dot_map)
