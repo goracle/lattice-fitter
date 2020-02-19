@@ -168,7 +168,7 @@ PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
-    '32c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
+    'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
