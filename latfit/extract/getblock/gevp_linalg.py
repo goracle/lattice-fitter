@@ -427,6 +427,36 @@ def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
                 test_arr[idx] = 1
     return test_arr
 
+def most_similar_pair(veca, vecb):
+    """Find most similar pair of entries"""
+    dist = np.inf
+    for i in veca:
+        for j in vecb:
+            dist = min(dist, np.abs(i-j))
+            if dist == np.abs(i-j):
+                ret = (i, j)
+    return ret
+
+def init_sort(pseudosi, evalsi):
+    """Initial sort of pseudo eigenvalues"""
+    used = set()
+    mapi = {}
+    evalsi = list(evalsi)
+    pseudosi = list(pseudosi)
+    ret = list(evalsi)
+    evals = list(evalsi)
+    pseudos = list(pseudosi)
+    while pseudos:
+        valp, vale = most_similar_pair(pseudos, evals)
+        idxp, idxe = pseudos.index(valp), evals.index(vale)
+        mapi[vale] = valp
+        pseudos = list(np.delete(pseudos, idxp, axis=0))
+        evals = list(np.delete(evals, idxe, axis=0))
+    for i in mapi:
+        ret[evalsi.index(i)] = mapi[i]
+    return ret
+
+
 def map_evals(evals_from, evals_to, debug=False):
     """Get similarity mapping"""
     ret = {}
@@ -435,7 +465,8 @@ def map_evals(evals_from, evals_to, debug=False):
     assert leval == len(evals_to), str(
         evals_from)+" "+str(evals_to)
     assert list(evals_from) == list(fallback_sort(evals_from))
-    evals_to_sorted = fallback_sort(evals_to)
+    #evals_to_sorted = fallback_sort(evals_to)
+    evals_to_sorted = init_sort(evals_to, evals_from)
     if debug:
         print("evals to, sorted", evals_to_sorted)
 
@@ -450,7 +481,7 @@ def map_evals(evals_from, evals_to, debug=False):
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
     #fallback = False # unambiguous mapping
-    test_arr = [1 if i > 1e-2 else 0 for i in rel_diff]
+    test_arr = [1 if i > 1e-3 else 0 for i in rel_diff]
     if debug:
         print('rel_diff', rel_diff)
         print('test_arr', test_arr)
@@ -519,7 +550,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 7 else True
+        #debug = debug if timeij < 5 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
