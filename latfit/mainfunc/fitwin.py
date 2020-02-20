@@ -17,14 +17,15 @@ mpi4py.rc.recv_mprobe = False
 def update_fitwin(meta, tadd, tsub, problemx=None):
     """Update fit window"""
     # tadd tsub cut
+    upx = False if problemx is None else True
     if tadd or tsub:
         if VERBOSE:
             print("tadd, tsub in update:", tadd, tsub)
         #print("tadd =", tadd, "tsub =", tsub)
         for _ in range(tadd):
-            meta.incr_xmin(problemx=problemx)
+            meta.incr_xmin(problemx=problemx, inx=upx)
         for _ in range(tsub):
-            meta.decr_xmax(problemx=problemx)
+            meta.decr_xmax(problemx=problemx, dex=upx)
         partial_reset()
     if not NOLOOP:
         if finished_win_check(meta, tsub=tsub):
@@ -54,10 +55,10 @@ def xmin_err(meta, err):
     update_fitwin(meta, 1, 0, problemx=err.problemx)
     if VERBOSE:
         print("new xmin, xmax =", meta.options.xmin, meta.options.xmax)
-    if meta.fitwindow[0] > meta.options.xmin and FIT and not NOLOOP:
-        print("***ERROR***")
-        print("fit window beyond xmin:", meta.fitwindow)
-        sys.exit(1)
+    #if meta.fitwindow[0] > meta.options.xmin and FIT and not NOLOOP:
+    #    print("***ERROR***")
+    #    print("fit window beyond xmin:", meta.fitwindow)
+    #    sys.exit(1)
     #meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
     #                              meta.options.xmax)
     #print("new fit window = ", meta.fitwindow)
@@ -70,10 +71,10 @@ def xmax_err(meta, err):
     update_fitwin(meta, 0, 1, problemx=err.problemx)
     if VERBOSE:
         print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
-    if meta.fitwindow[1] < meta.options.xmax and FIT and not NOLOOP:
-        print("***ERROR***")
-        print("fit window beyond xmax:", meta.fitwindow)
-        sys.exit(1)
+    #if meta.fitwindow[1] < meta.options.xmax and FIT and not NOLOOP:
+        #print("***ERROR***")
+        #print("fit window beyond xmax:", meta.fitwindow)
+        #sys.exit(1)
     #meta.fitwindow = fitrange_err(meta.options, meta.options.xmin,
     #                              meta.options.xmax)
     #print("new fit window = ", meta.fitwindow)

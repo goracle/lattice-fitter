@@ -106,7 +106,7 @@ class FitRangeMetaData:
         self.options = recordtype('ops',
                                   'xmin xmax xstep trials fitmin fitmax')
 
-    def incr_xmin(self, problemx=None, inx=True):
+    def incr_xmin(self, problemx=None, inx=False):
         """Increment xmin by one*xstep"""
         assert self.fitwindow
         if VERBOSE:
@@ -115,14 +115,14 @@ class FitRangeMetaData:
             #self.options.xmin += self.options.xstep
             self.fitwindow = (
                 self.fitwindow[0]+self.options.xstep, self.fitwindow[1])
-            if TLOOP or inx:
+            if inx:
                 self.options.xmin += self.options.xstep
         else:
             #self.options.xmin = problemx + self.options.xstep
             if problemx >= self.fitwindow[0]:
                 self.fitwindow = (
                     problemx + self.options.xstep, self.fitwindow[1])
-            if TLOOP or inx:
+            if inx:
                 self.options.xmin = problemx + self.options.xstep
         try:
             assert self.fitwindow[0] < self.fitwindow[1]
@@ -135,7 +135,7 @@ class FitRangeMetaData:
             raise DOFNonPos
         self.pr_fit_window()
 
-    def decr_xmax(self, problemx=None, dex=True):
+    def decr_xmax(self, problemx=None, dex=False):
         """Decrement xmax by one*xstep"""
         if VERBOSE:
             print("decreasing xmax by one*xstep")
@@ -143,14 +143,14 @@ class FitRangeMetaData:
             #self.options.xmax -= self.options.xstep
             self.fitwindow = (self.fitwindow[0],
                               self.fitwindow[1]-self.options.xstep)
-            if TLOOP or dex:
+            if dex:
                 self.options.xmax -= self.options.xstep
         else:
             #self.options.xmax = problemx - self.options.xstep
             if problemx <= self.fitwindow[1]:
                 self.fitwindow = (
                     self.fitwindow[0], problemx-self.options.xstep)
-            if TLOOP or dex:
+            if dex:
                 self.options.xmax = problemx - self.options.xstep
         try:
             assert self.fitwindow[0] < self.fitwindow[1]
