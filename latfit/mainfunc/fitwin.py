@@ -3,7 +3,7 @@ import sys
 import mpi4py
 from mpi4py import MPI
 
-from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP
+from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP, FIT
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import finished_windows
@@ -96,7 +96,10 @@ def finished_win_check(meta, tsub=None):
 
 def inconsistent_win_check(meta, tsub=None):
     """Check if the window has already given an inconsistent result"""
-    fwin = inconsistent_windows()
+    if FIT:
+        fwin = inconsistent_windows()
+    else:
+        fwin = []
     ret = False
     for i in fwin:
         if i[0] == meta.fitwindow[0] and i[1] == meta.fitwindow[1]:

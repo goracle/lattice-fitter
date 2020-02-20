@@ -286,7 +286,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    itmin = [gvar.gvar(np.nan, np.inf), [], (np.nan, np.nan)]
+    itmin = [gvar.gvar(np.nan, np.inf), [], (np.nan, np.nan), np.nan]
     for item, sys_err, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
@@ -557,5 +557,6 @@ def quick_compare(tot_new, prin=False):
         for item2, _, fitwin2 in tot_new:
             item2 = gvar.gvar(item2)
             if not consistency(item, item2, prin=prin):
+                print("raising inconsistency:")
                 print(item, item2, fitwin, fitwin2)
                 raise BinInconsistency

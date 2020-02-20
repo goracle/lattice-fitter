@@ -21,7 +21,8 @@ def tot_to_stat(res, sys_err):
     if isinstance(sys_err, str):
         sys_err = float(sys_err)
     err = res.sdev
-    assert err > sys_err, (err, sys_err)
+    if not np.isnan(sys_err):
+        assert err > sys_err, (err, sys_err)
     err = np.sqrt(err**2-sys_err**2)
     ret = gvar.gvar(res.val, err)
     return ret

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+"""Shows a pickled matplotlib plot and saves a static copy as a pdf"""
 import sys
 import re
 import pickle
@@ -9,7 +9,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 fname = sys.argv[1]
 print('plotting:', fname)
 figx = pickle.load(open(fname, 'rb'))
-pname = re.sub('.p', '.pdf', fname)
+pname = re.sub(r'.p$', '.pdf', fname)
 print('saving plot as:', pname)
 pfig = PdfPages(pname)
 pfig.savefig(figx)

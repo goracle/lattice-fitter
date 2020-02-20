@@ -118,11 +118,16 @@ def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
                       tadd, tsub)
                 break
             tsub -= 1
-        print("Successful (tadd, tsub):")
-        for i in success_tadd_tsub:
-            print(i)
-        print_sep_errors(tot_pr)
-        newcbest = print_tot(fname, tot, cbest, ignorable_windows, dump_min)
+        if success_tadd_tsub:
+            print("Successful (tadd, tsub):")
+            for i in success_tadd_tsub:
+                print(i)
+            print_sep_errors(tot_pr)
+            newcbest = print_tot(fname, tot, cbest, ignorable_windows, dump_min)
+        else:
+            print("raising inconsistency since no consistent results found")
+            raise BinInconsistency
+            newcbest = cbest
         print("end of tloop")
     else:
         for fname in sys.argv[1:]:
