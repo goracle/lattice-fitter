@@ -645,9 +645,14 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
         todel = []
         badcoord = []
         for j, coord in enumerate(xcoord):
-            if coord in latfit.config.FIT_EXCL[i]:
-                todel.append(j)
-                badcoord.append(coord)
+            if GEVP:
+                if coord in latfit.config.FIT_EXCL[i]:
+                    todel.append(j)
+                    badcoord.append(coord)
+            else:
+                if coord in latfit.config.FIT_EXCL:
+                    todel.append(j)
+                    badcoord.append(coord)
         xfit[i] = np.delete(xfit[i], todel)
         if not box_plot:
             step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(

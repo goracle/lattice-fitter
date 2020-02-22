@@ -1,5 +1,6 @@
 """Various basic linear algebra operations on the GEVP matrices"""
 import sys
+from itertools import permutations 
 
 import scipy
 import scipy.linalg
@@ -353,7 +354,7 @@ def index_pm1(idx, refl):
     idxp1 = idx+1
     if idxp1 >= refl:
         idxp1 = idx - 1
-        assert idxp1
+        assert idxp1 >= 0, (idx, refl)
     return idxp1, idxm1
 
 def score(eval_to_score, ref_evals, idx, func='gaussian'):
@@ -383,19 +384,33 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     return the max score, normalized to the base score"""
     #idxp1 = (idx+1) % len(ref_evals)
     #idxm1 = (idx-1) % len(ref_evals)
-    idxp1, idxm1 = index_pm1(idx, len(ref_evals))
+
+    # this sort of subtle:
+    # the init_sort of the pseudo eigenvalues may leave them
+    # not in ascending (or descending) order
+    # thus, we may not find nearest (numerically) neighbors just by
+    # looking at the init_sort'd vector of pseudo eigenvalues
+    sorted_pseudos = list(fallback_sort(pseudo_evals))
+    sorted_idx = sorted_pseudos.index(pseudo_evals[idx])
+    idxp1, idxm1 = index_pm1(sorted_idx, len(ref_evals))
+
     base_score = score(pseudo_evals[idx], ref_evals, idx)
+
     if base_score:
-        nplus1 = score(pseudo_evals[idxp1], ref_evals, idx)/base_score
-        nminus1 = score(pseudo_evals[idxm1], ref_evals, idx)/base_score
+        nplus1 = score(sorted_pseudos[idxp1], ref_evals, idx)/base_score
+        nminus1 = score(sorted_pseudos[idxm1], ref_evals, idx)/base_score
     else:
         nplus1 = np.inf
         nminus1 = np.inf
+    if nplus1 > 1 or nminus1 > 1:
+        ret = np.inf
+    else:
+        ret = max(nplus1, nminus1)
     if debug:
         print("idx, idxp1, idxm1", idx, idxp1, idxm1)
         print("p1 vs. r", pseudo_evals[idxp1], pseudo_evals[idx], nplus1)
         print("m1 vs. r", pseudo_evals[idxm1], pseudo_evals[idx], nminus1)
-    return max(nplus1, nminus1)
+    return ret
 
 def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
     """Obsolete way to flip match"""
@@ -431,14 +446,16 @@ def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
                 test_arr[idx] = 1
     return test_arr
 
-def most_similar_pair(veca, vecb):
+def most_similar_pair(pseudos, evals, evalsi):
     """Find most similar pair of entries"""
-    dist = np.inf
-    for i in veca:
-        for j in vecb:
-            dist = min(dist, np.abs(i-j))
-            if dist == np.abs(i-j):
-                ret = (i, j)
+    mscr = 0
+    for _, item1 in enumerate(pseudos):
+        for _, item2 in enumerate(evals):
+            idx = list(evalsi).index(item2)
+            scr = score(item1, evalsi, idx)
+            mscr = max(scr, mscr)
+            if scr == mscr:
+                ret = (item1, item2)
     return ret
 
 def init_sort(pseudosi, evalsi):
@@ -450,8 +467,25 @@ def init_sort(pseudosi, evalsi):
     ret = list(evalsi)
     evals = list(evalsi)
     pseudos = list(pseudosi)
+    # (eval_to_score, ref_evals, idx, func='gaussian')
+
+    #perms = permutations(range(len(evalsi)))
+    #mscr = 0
+    #mperm = None
+    #for perm in perms:
+    #    scr = 0
+    #    perm = list(perm)
+    #    for idx1, idx2 in zip(range(len(evals)), perm):
+    #        toadd = score(pseudos[idx1], evals, idx2)
+    #        scr += toadd
+    #    mscr = max(scr, mscr)
+    #    if scr == mscr:
+    #        mperm = perm
+    #for idx1, idx2 in zip(range(len(evals)), mperm):
+    #    mapi[evals[idx2]] = pseudos[idx1]
+
     while pseudos:
-        valp, vale = most_similar_pair(pseudos, evals)
+        valp, vale = most_similar_pair(pseudos, evals, evalsi)
         idxp, idxe = pseudos.index(valp), evals.index(vale)
         mapi[vale] = valp
         pseudos = list(np.delete(pseudos, idxp, axis=0))
@@ -484,6 +518,9 @@ def map_evals(evals_from, evals_to, debug=False):
     rel_diff = [indicator(
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
+    for i in rel_diff:
+        if i == np.inf:
+            rel_diff = list(np.ones(len(rel_diff)))
     #fallback = False # unambiguous mapping
     test_arr = [1 if i > 1e-2 else 0 for i in rel_diff]
     if debug:
@@ -554,7 +591,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 6 else True
+        # debug = debug if timeij < 6 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -617,10 +654,15 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 #break
         if debug:
             print(count)
-        altlen = int(len(votes) + np.floor(len(soft_votes)/2))
+        altlen = int(len(votes) + np.floor(len(soft_votes)/1))
         votes.extend(soft_votes)
         if votes:
             dot_map = votes_to_map(votes, stop=altlen)
+        elif count < 0:
+            print("late time sorting break down; timeij=", timeij)
+            raise PrecisionLossError
+        #if altlen > 1:
+        #    dot_map = votes_to_map(votes, stop=altlen)
         # old way
         #if len(votes) >= 3 or (count == 2 and len(votes) == 2):
         #    dot_map = votes_to_map(votes)
