@@ -407,9 +407,9 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     else:
         ret = max(nplus1, nminus1)
     if debug:
-        print("idx, idxp1, idxm1", idx, idxp1, idxm1)
-        print("p1 vs. r", pseudo_evals[idxp1], pseudo_evals[idx], nplus1)
-        print("m1 vs. r", pseudo_evals[idxm1], pseudo_evals[idx], nminus1)
+        print("idx, idxp1, idxm1", sorted_idx, idxp1, idxm1)
+        print("p1 vs. r", sorted_pseudos[idxp1], pseudo_evals[idx], nplus1)
+        print("m1 vs. r", sorted_pseudos[idxm1], pseudo_evals[idx], nminus1)
     return ret
 
 def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
@@ -658,7 +658,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         votes.extend(soft_votes)
         if votes:
             dot_map = votes_to_map(votes, stop=altlen)
-        elif count < 0:
+        elif count < 2:
             print("late time sorting break down; timeij=", timeij)
             raise PrecisionLossError
         #if altlen > 1:
