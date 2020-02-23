@@ -1,11 +1,10 @@
 """Fit window module"""
 import numpy as np
-from latfit.config import RANGE_LENGTH_MIN, GEVP
+from latfit.config import RANGE_LENGTH_MIN
 
 LENMIN = 3
 MIN_FITWIN_LEN = LENMIN+1
-if GEVP: # hack, FIX THIS
-    assert LENMIN == RANGE_LENGTH_MIN
+assert LENMIN == RANGE_LENGTH_MIN
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined

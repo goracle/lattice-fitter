@@ -17,6 +17,24 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def mod180(deg):
+    """Flip negative phase shift to pos"""
+    deg = np.real(deg)
+    if hasattr(deg, '__iter__'):
+        ret = []
+        for idx, item in enumerate(deg):
+            if item >= 0:
+                ret.append(item)
+            else:
+                ret.append(180+item)
+        ret = np.asarray(ret)
+    else:
+        if deg >= 0:
+            ret = deg
+        else:
+            ret = 180+deg
+    return ret
+
 # https://stackoverflow.com/questions/1158076/implement-touch-using-python
 @PROFILE
 def touch(fname, mode=0o666, dir_fd=None, **kwargs):
@@ -34,12 +52,12 @@ def create_dummy_skip(meta):
     print("creating skip file:", fname)
     touch(fname)
 
-def fit_range_consistency_check(meta, min_arr, name):
+def fit_range_consistency_check(meta, min_arr, name, mod_180=False):
     """Check consistency of energies and phase shifts so far"""
     lparam = []
     for i in min_arr:
         lparam.append(getattr(i[0], name))
-    consis = consistent_list_params(lparam)
+    consis = consistent_list_params(lparam, mod_180=mod_180)
     err_handle(meta, consis, lparam, name)
 
 def err_handle(meta, consis, lparam, name):
@@ -67,22 +85,25 @@ def sort_by_val(lparam):
         ret = sorted(lparam, key=lambda param: param.val)
     return ret
 
-def consistent_list_params(lparam):
+def consistent_list_params(lparam, mod_180=False):
     """Check the consistency across a list of Param objects"""
     ret = True
     for i in lparam:
         if not ret:
             break
         for j in lparam:
-            ret = consistent_params(i, j)
+            ret = consistent_params(i, j, mod_180=mod_180)
             if not ret:
                 break
     return ret
 
-def consistent_params(item1, item2):
+def consistent_params(item1, item2, mod_180=False):
     """Check the consistency of two Param objects
     if discrepant by > 1.5 sigma, return False (inconsistent)
     """
+    if mod_180:
+        item1.val = mod180(item1.val)
+        item2.val = mod180(item2.val)
     diff = item1.val-item2.val
     if GEVP:
         diff = np.asarray(diff)

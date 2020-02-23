@@ -7,6 +7,7 @@ from latfit.utilities.postfit.fitwin import LENMIN
 from latfit.utilities.postfit.fitwin import lenfitw, inside_win
 from latfit.utilities.postfit.fitwin import wintoosmall, get_fitwindow
 from latfit.utilities.postfit.strproc import round_wrt
+from latfit.checks.consistency import mod180
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -198,6 +199,8 @@ def fitwincuts(fit_range, fitwindow, dim=None):
 @PROFILE
 def consistency(item1, item2, prin=False):
     """Check two gvar items for consistency"""
+    item1 = gvar.gvar(mod180(item1.val), item1.sdev)
+    item2 = gvar.gvar(mod180(item2.val), item2.sdev)
     diff = np.abs(item1.val-item2.val)
     dev = max(item1.sdev, item2.sdev)
     sig = statlvl(gvar.gvar(diff, dev))

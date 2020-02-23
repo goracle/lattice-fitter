@@ -299,7 +299,7 @@ def fit(tadd=0, tsub=0):
 
                 if CALC_PHASE_SHIFT:
                     fit_range_consistency_check(meta, min_arr,
-                                                'phase_shift')
+                                                'phase_shift', mod_180=True)
                 fit_range_consistency_check(meta, min_arr, 'energy')
 
             if not meta.skip_loop:
