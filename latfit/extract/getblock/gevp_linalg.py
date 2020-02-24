@@ -19,6 +19,8 @@ from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 
+SCORE_CUTOFF = 1e-2
+
 def checkgteq0(eigfin):
     """Check to be sure all eigenvalues are greater than 0"""
     for i in eigfin:
@@ -385,7 +387,6 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     #idxp1 = (idx+1) % len(ref_evals)
     #idxm1 = (idx-1) % len(ref_evals)
 
-    # this sort of subtle:
     # the init_sort of the pseudo eigenvalues may leave them
     # not in ascending (or descending) order
     # thus, we may not find nearest (numerically) neighbors just by
@@ -395,15 +396,21 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     idxp1, idxm1 = index_pm1(sorted_idx, len(ref_evals))
 
     base_score = score(pseudo_evals[idx], ref_evals, idx)
+    if debug:
+        print('base', base_score)
 
-    if base_score:
-        nplus1 = score(sorted_pseudos[idxp1], ref_evals, idx)/base_score
-        nminus1 = score(sorted_pseudos[idxm1], ref_evals, idx)/base_score
-    else:
+    if not base_score:
         nplus1 = np.inf
         nminus1 = np.inf
+        #nplus1 = 0.1
+        #nminus1 = 0.1
+    else:
+        nplus1 = score(sorted_pseudos[idxp1], ref_evals, idx)/base_score
+        nminus1 = score(sorted_pseudos[idxm1], ref_evals, idx)/base_score
     if nplus1 > 1 or nminus1 > 1:
         ret = np.inf
+    elif base_score < SCORE_CUTOFF:
+        ret = 0.1
     else:
         ret = max(nplus1, nminus1)
     if debug:
@@ -522,7 +529,7 @@ def map_evals(evals_from, evals_to, debug=False):
         if i == np.inf:
             rel_diff = list(np.ones(len(rel_diff)))
     #fallback = False # unambiguous mapping
-    test_arr = [1 if i > 1e-2 else 0 for i in rel_diff]
+    test_arr = [1 if i >= SCORE_CUTOFF else 0 for i in rel_diff]
     if debug:
         print('rel_diff', rel_diff)
         print('test_arr', test_arr)
@@ -591,7 +598,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        # debug = debug if timeij < 6 else True
+        #debug = debug if timeij < 3 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -711,7 +718,9 @@ def votes_to_map(votes, stop=np.inf):
                 agree = agree-set(disagree)
                 allid = partial_id_check(ret, agree)
                 if allid:
-                    ret = make_id(ret)
+                    print("votes disagree:", votes)
+                    raise PrecisionLossError
+                    #ret = make_id(ret)
     return ret
 
 def partial_id_check(rdict, keys):
