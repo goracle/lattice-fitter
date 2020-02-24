@@ -187,6 +187,11 @@ EFF_MASS = False
 EFF_MASS = True
 EFF_MASS = True if GEVP else EFF_MASS
 
+# Log plot
+LOGPLOT = False
+LOGPLOT = True
+LOGPLOT = False if EFF_MASS else LOGPLOT
+
 # set the minimum number of points to qualify a data subset as a fit range
 RANGE_LENGTH_MIN = 0
 RANGE_LENGTH_MIN = 3
@@ -604,6 +609,8 @@ def title_prefix(tzero=T0, dtm=DELTA_T_MATRIX_SUBTRACTION):
         ret = ret + 't-t0=' + tzero[6:] + " "
     if GEVP_DERIV:
         ret = ret + r'$\partial t$, ' + " "
+    if LOGPLOT:
+        ret = ret + r'logplot '
     if SUPERJACK_CUTOFF and not SLOPPYONLY:
         ret = ret + 'exact '
     else:
@@ -651,7 +658,8 @@ if EFF_MASS:
     else:
         YLABEL = r'$am_{eff}(t)$'
 else:
-    YLABEL = 'C(t)'
+    if LOGPLOT:
+        YLABEL = r'log(C(t))'
 
 # calculate the I=0 phase shift?
 CALC_PHASE_SHIFT = False

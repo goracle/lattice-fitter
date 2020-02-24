@@ -21,7 +21,7 @@ from latfit.utilities import read_file as rf
 from latfit.config import fit_func, MOMSTR, L_BOX
 from latfit.config import FINE
 from latfit.config import TITLE, TLOOP
-from latfit.config import XLABEL
+from latfit.config import XLABEL, LOGPLOT
 from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR, UNCORR_OP
 from latfit.config import FIT, PIONRATIO
@@ -329,11 +329,28 @@ def get_coord(coords, cov, error2=None):
         else:
             error2 = np.array([
                 np.sqrt(cov[i][i]) for i in range(len(coords))])
+    if LOGPLOT:
+        ycoord2 = []
+        err3 = []
+        xcoord2 = []
+        for i, j, k in zip(ycoord, error2, xcoord):
+            toapp = gvar.gvar(i, j)
+            if toapp.val < 0:
+                break
+            xcoord2.append(k)
+            toapp = np.log(toapp)
+            ycoord2.append(toapp.val)
+            err3.append(toapp.sdev)
+        ycoord = ycoord2
+        xcoord = xcoord2
+        error2 = err3
     root_s_var = []
     var = []
     for i, j, k in zip(xcoord, ycoord, error2):
         res = gvar.gvar(j, k)
         var.append(res)
+        if not EFF_MASS:
+            continue
         errstate = np.geterr()['invalid']
         if errstate == 'raise':
             np.seterr(invalid='warn')
@@ -350,12 +367,20 @@ def get_coord(coords, cov, error2=None):
                 larg = 1
             root_s_var.append(np.array([np.nan]*larg))
         np.seterr(errstate)
+    if EFF_MASS:
+        lbl = "E(lattice units) ="
+    else:
+        if LOGPLOT:
+            lbl = "log(C(t)) ="
+        else:
+            lbl = "C(t) ="
     for i, xc1 in enumerate(xcoord):
-        print(xc1, "E(lattice units) =", var[i])
-    for i, xc1 in enumerate(xcoord):
-        print(xc1, "sqrt(s) (MeV) =", 1000*AINVERSE*root_s_var[i])
-    for i, xc1 in enumerate(xcoord):
-        print(xc1, "sqrt(s) (lattice units) =", root_s_var[i])
+        print(xc1, lbl, var[i])
+    if EFF_MASS:
+        for i, xc1 in enumerate(xcoord):
+            print(xc1, "sqrt(s) (MeV) =", 1000*AINVERSE*root_s_var[i])
+        for i, xc1 in enumerate(xcoord):
+            print(xc1, "sqrt(s) (lattice units) =", root_s_var[i])
     return xcoord, ycoord, error2
 
 def testcoordarg(res, ycoord):
@@ -572,6 +597,8 @@ def plot_errorbar(dimops, xcoord, ycoord, error2):
                              linestyle='None', ms=3.75, marker=next(marker),)
     else:
         if not TLOOP:
+            assert len(xcoord) == len(ycoord), (len(xcoord), len(ycoord))
+            assert len(xcoord) == len(error2), (len(xcoord), len(error2))
             plt.errorbar(xcoord, ycoord, yerr=error2,
                          linestyle='None', ms=3.75, marker='o')
 
