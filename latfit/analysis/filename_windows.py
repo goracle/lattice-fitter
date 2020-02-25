@@ -64,7 +64,12 @@ def checked_windows(name):
         else:
             assert test2 in i, (test2, i)
             fin = i.split(test2)[1].split('_')[1:3]
-        win = tuple((float(fin[0]), float(fin[1])))
+        try:
+            xmin = float(fin[0])
+            xmax = float(fin[1])
+        except ValueError:
+            continue
+        win = tuple((xmin, xmax))
         ret.add(win)
     ret = sorted(list(ret))
     return ret
