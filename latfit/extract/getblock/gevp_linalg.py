@@ -384,8 +384,6 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
 def indicator(pseudo_evals, ref_evals, idx, debug=False):
     """Check the nearest neighbor alternative matches
     return the max score, normalized to the base score"""
-    #idxp1 = (idx+1) % len(ref_evals)
-    #idxm1 = (idx-1) % len(ref_evals)
 
     # the init_sort of the pseudo eigenvalues may leave them
     # not in ascending (or descending) order
@@ -402,17 +400,13 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     if not base_score:
         nplus1 = np.inf
         nminus1 = np.inf
-        #nplus1 = 0.1
-        #nminus1 = 0.1
     else:
         nplus1 = score(sorted_pseudos[idxp1], ref_evals, idx)/base_score
         nminus1 = score(sorted_pseudos[idxm1], ref_evals, idx)/base_score
-    if nplus1 > 1 or nminus1 > 1:
-        ret = np.inf
-    elif base_score < SCORE_CUTOFF:
-        ret = 0.1
-    else:
-        ret = max(nplus1, nminus1)
+    #if nplus1 > 1 or nminus1 > 1:
+    #    nplus1 = np.inf
+    #    nminus1 = np.inf
+    ret = max(nplus1, nminus1)
     if debug:
         print("idx, idxp1, idxm1", sorted_idx, idxp1, idxm1)
         print("p1 vs. r", sorted_pseudos[idxp1], pseudo_evals[idx], nplus1)
@@ -525,11 +519,16 @@ def map_evals(evals_from, evals_to, debug=False):
     rel_diff = [indicator(
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
-    for i in rel_diff:
-        if i == np.inf:
-            rel_diff = list(np.ones(len(rel_diff)))
+    #for i in rel_diff:
+    #    if i == np.inf:
+    #        rel_diff = list(np.ones(len(rel_diff)))
     #fallback = False # unambiguous mapping
-    test_arr = [1 if i >= SCORE_CUTOFF else 0 for i in rel_diff]
+    # test_arr = [1 if i >= SCORE_CUTOFF else 0 for i in rel_diff]
+
+    # get rid of artificial SCORE_CUTOFF
+    test_arr = [0 for i in rel_diff] # hack around the below code
+
+    # begin legacy methods
     if debug:
         print('rel_diff', rel_diff)
         print('test_arr', test_arr)
@@ -578,7 +577,21 @@ def map_evals(evals_from, evals_to, debug=False):
     assert fallback_level >= 0, str(test_arr)
     assert not check_map_dups(ret), str(ret)+" "+str(test_arr)
     assert len(ret) == leval, str(ret)
-    return ret, fallback_level, unambig_indices
+    # end legacy
+    assert ret, ret
+    return ret, rel_diff
+
+def collision_check(smap):
+    """Check for collision"""
+    ret = len(set(smap)) != len(smap)
+    if not ret:
+        used = set()
+        for i in smap:
+            if smap[i] in used:
+                ret = True
+            else:
+                used.add(smap[i])
+    return ret
 
 
 def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
@@ -598,7 +611,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 3 else True
+        #debug = debug if timeij < 12 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -609,7 +622,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #    print("\nevals init", evals)
         #fallback = True
         votes = []
-        soft_votes = []
+        #        soft_votes = []
         while timeij in sortevals.sorted_evecs:
 
             # loop increment
@@ -632,39 +645,40 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             if debug:
                 print("evals from", evals_from)
                 print("evals to", evals_to)
-            vote_map, fallback_level, unambig_indices = map_evals(
+            vote_map, rel_diff = map_evals(
                 evals_from, evals_to, debug=debug)
-            if debug and False:
+            if debug:
                 print('vote map', vote_map)
-                print('fallback', fallback_level)
+                # print('fallback', fallback_level)
 
             # unambiguous different mapping; accumulate two identical votes
             # to resort the eigenvalues
             # ambiguous sorting, throw out this map
-            if fallback_level == 2:
-                continue
-            if fallback_level == 1:
-                soft_votes.append((vote_map, unambig_indices))
-            else:
-                assert not fallback_level
-                votes.append((vote_map, unambig_indices))
-            if debug:
-                print('votes', votes)
-                print('soft_votes', soft_votes)
+            #if fallback_level == 2:
+            #    continue
+            #if fallback_level == 1:
+            #    soft_votes.append((vote_map, unambig_indices))
+            #else:
+            #    assert not fallback_level
+            assert vote_map, vote_map
+            votes.append((vote_map, rel_diff))
+            #if debug:
+            #    print('votes', votes)
+            #    print('soft_votes', soft_votes)
 
-            if len(votes)+np.floor(len(soft_votes)/2) == 3:
-                break
+            #if len(votes)+np.floor(len(soft_votes)/2) == 3:
+            #    break
 
             #if len(votes) == 2: # two unambiguous votes is arbitrary
-                #if debug:
-                    #print("good votes")
-                #break
+            #if debug:
+            #print("good votes")
+            #break
         if debug:
             print(count)
-        altlen = int(len(votes) + np.floor(len(soft_votes)/1))
-        votes.extend(soft_votes)
+        #altlen = int(len(votes) + np.floor(len(soft_votes)/1))
+        #votes.extend(soft_votes)
         if votes:
-            dot_map = votes_to_map(votes, stop=altlen)
+            dot_map = votes_to_map(votes)
         elif count < 2:
             print("late time sorting break down; timeij=", timeij)
             raise PrecisionLossError
@@ -689,6 +703,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             sevals[i] = drop0imag(evals[dot_map[i]])
             sevecs[i] = drop0imag(evecs.T[dot_map[i]])
         ret = (sevals, sevecs.T)
+    assert not collision_check(dot_map)
     if evecs is not None and not np.any(np.isnan(evals)):
         if debug:
             print("evals final", ret[0])
@@ -705,23 +720,163 @@ sortevals.config = None
 def votes_to_map(votes, stop=np.inf):
     """Get sorting map based on previous time slice votes
     for what each one thinks is the right ordering"""
-    ret, _ = votes[0]
+    ret = votes[0]
     stop = len(votes) if stop >= len(votes) else stop
     votes = votes[:stop]
     for i, idxsi in votes:
-        i = filter_dict(i, idxsi)
+        #i = filter_dict(i, idxsi)
         for j, idxsj in votes:
-            j = filter_dict(j, idxsj)
-            disagree = partial_compare_dicts(i, j)
-            if disagree:
-                agree = set(idxsi).intersection(idxsj)
-                agree = agree-set(disagree)
-                allid = partial_id_check(ret, agree)
-                if allid:
-                    print("votes disagree:", votes)
-                    raise PrecisionLossError
+            assert list(idxsj), votes
+            #j = filter_dict(j, idxsj)
+            ret1 = partial_compare_dicts((i, idxsi), (j, idxsj))
+            ret = partial_compare_dicts(ret, ret1)
+            #if disagree:
+            #    agree = set(idxsi).intersection(idxsj)
+                #agree = agree-set(disagree)
+                #allid = partial_id_check(ret, agree)
+                #if allid:
+                    #print("votes disagree:", votes)
+                    #raise PrecisionLossError
                     #ret = make_id(ret)
+    return ret[0]
+
+def partial_compare_dicts(ainfo, binfo):
+    """Compare common entries in two dictionaries"""
+    adict, arel = ainfo
+    bdict, brel = binfo
+    assert list(arel), ainfo
+    assert list(brel), binfo
+    arel = del_maxrel(arel)
+    brel = del_maxrel(brel)
+    assert len(brel) == len(arel), (arel, brel)
+    aset = set(adict)
+    bset = set(bdict)
+    inter = aset.intersection(bset)
+    assert len(inter) == len(arel), (arel, inter)
+    rrel = {}
+    used = {}
+    ret = {}
+    retrev = {}
+    passed = False
+    while collision_check(ret) or len(ret) < len(inter):
+        flag = 0
+        if ret and False: # set to True if debugging
+            print('debug')
+            print(ret)
+            print(rrel)
+            print(retrev)
+            print(used)
+            print('inter', inter)
+            print('adict', adict)
+            print("arel", arel)
+            print('bdict', bdict)
+            print("brel", brel)
+            flag = 0 # set to 1 if debugging
+        for i in sorted(list(inter)):
+
+            # the score for the source is minimized
+            # by second pass
+            if i in ret:
+                continue
+            # the score for the target is minimized
+            # by second pass
+            if adict[i] in used and passed:
+                aarel = np.inf
+            else:
+                aarel = arel[i]
+            if bdict[i] in used and passed:
+                bbrel = np.inf
+            else:
+                bbrel = brel[i]
+
+            if adict[i] != bdict[i]:
+                if aarel < bbrel:
+                    toadd = adict[i]
+                    mrel = aarel
+                else:
+                    toadd = bdict[i]
+                    mrel = bbrel
+            else:
+                toadd = adict[i]
+                mrel = min(aarel, bbrel)
+
+            if flag:
+                print('toadd', toadd)
+                print('used', used)
+                print('ret', ret)
+                print('rrel', rrel)
+            # check to see if already mapped
+            if toadd in used:
+                if mrel < used[toadd]:
+                    # unmap prev src
+                    del ret[retrev[toadd]]
+                    del rrel[retrev[toadd]]
+                    # remap target
+                    used[toadd] = mrel
+                    retrev[toadd] = i
+                    # map new src
+                    rrel[i] = mrel
+                    ret[i] = toadd
+            else:
+                # mapt target
+                used[toadd] = mrel
+                retrev[toadd] = i
+                # map src
+                rrel[i] = mrel
+                ret[i] = toadd
+        if flag:
+            print('debug2')
+            print(ret)
+            print(rrel)
+            print(retrev)
+            print(used)
+            if len(ret) < len(inter):
+                sys.exit()
+        if passed:
+            ret = fill_in_missing(ret, inter)
+            for i in ret:
+                if i not in rrel:
+                    raise PrecisionLossError
+                    #rrel[i] = np.inf
+        passed = True
+    assert not collision_check(ret), ret
+    assert rrel, (ret, used, rrel)
+    rrel = conv_dict_to_list(rrel)
+    assert rrel
+    return ret, rrel
+
+def fill_in_missing(sdict, keys):
+    """Fill in 1 to 1 mapping with missing entry"""
+    rev = [sdict[i] for i in sdict]
+    miss = set(keys)-set(rev)
+    ret = sdict
+    if len(miss) == 1:
+        for i in keys:
+            if i not in sdict:
+                ret[i] = list(miss)[0]
     return ret
+            
+            
+
+def conv_dict_to_list(rrel):
+    """Convert dict to list"""
+    ret = []
+    for i in sorted(list(rrel)):
+        ret.append(rrel[i])
+    return ret
+
+def del_maxrel(rel):
+    """We can sort by process of elimination
+    delete the max relative difference
+    replace with second highest
+    """
+    rel = list(rel)
+    mmax = max(rel)
+    idx = rel.index(mmax)
+    rel2 = list(np.delete(rel, idx))
+    mmax2 = max(rel2)
+    rel[idx] = mmax2
+    return rel
 
 def partial_id_check(rdict, keys):
     """All the keys in rdict are mapped to themselves
@@ -731,17 +886,6 @@ def partial_id_check(rdict, keys):
         if i in rdict:
             if rdict[i] != i:
                 ret = False
-    return ret
-
-def partial_compare_dicts(adict, bdict):
-    """Compare common entries in two dictionaries"""
-    aset = set(adict)
-    bset = set(bdict)
-    inter = aset.intersection(bset)
-    ret = []
-    for i in sorted(list(inter)):
-        if adict[i] != bdict[i]:
-            ret.append(i)
     return ret
 
 def filter_dict(sdict, good_keys):
