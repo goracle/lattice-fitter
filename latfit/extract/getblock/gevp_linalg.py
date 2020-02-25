@@ -19,7 +19,7 @@ from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 
-SCORE_CUTOFF = 1e-2
+#SCORE_CUTOFF = 1e-3
 
 def checkgteq0(eigfin):
     """Check to be sure all eigenvalues are greater than 0"""
@@ -679,9 +679,10 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #votes.extend(soft_votes)
         if votes:
             dot_map = votes_to_map(votes)
-        elif count < 2:
-            print("late time sorting break down; timeij=", timeij)
-            raise PrecisionLossError
+        assert votes
+        #elif count < 2:
+            #print("late time sorting break down; timeij=", timeij)
+            #raise PrecisionLossError
         #if altlen > 1:
         #    dot_map = votes_to_map(votes, stop=altlen)
         # old way
