@@ -679,7 +679,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #votes.extend(soft_votes)
         if votes:
             dot_map = votes_to_map(votes)
-        assert votes
+        assert votes or count == 5
         #elif count < 2:
             #print("late time sorting break down; timeij=", timeij)
             #raise PrecisionLossError
