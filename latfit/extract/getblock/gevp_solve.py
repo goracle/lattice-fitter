@@ -75,7 +75,7 @@ def calleig(c_lhs, c_rhs=None):
         checkherm(c_rhs)
         signlhs = defsign(c_lhs)
         signrhs = defsign(c_rhs)
-        assert signlhs == signrhs
+        assert signlhs == signrhs, (c_lhs, c_rhs)
         assert signrhs
         assert signlhs
         eigenvals, evecs = scipy.linalg.eig(c_lhs, c_rhs,
