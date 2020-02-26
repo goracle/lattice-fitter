@@ -120,7 +120,9 @@ def delta_e2_mod(systematic_est, pionratio,
     #assert not PIONRATIO or ISOSPIN == 2
     #assert MATRIX_SUBTRACTION or not PIONRATIO
     if delta_e2_around_the_world is not None:
-        delta_e2_around_the_world -= delta_e_around_the_world
+        del2 = np.array(delta_e2_around_the_world)
+        del1 = np.array(delta_e_around_the_world)
+        delta_e2_around_the_world = tuple(del2-del1)
     if pionratio:
         #assert ISOSPIN == 2
         print("using pion ratio method, PIONRATIO:", pionratio)

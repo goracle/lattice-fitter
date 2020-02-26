@@ -220,7 +220,8 @@ def dispersive(momentum, mass=None, box_length=None, continuum=False):
     assert continuum == CONTINUUM, "dispersion relation mismatch."
     box_length = BOX_LENGTH if box_length is None else box_length
     if hasattr(mass, '__iter__') and mass.shape and momentum is not None:
-        ret = [sqrt(i**2 + 4*np.sin(pi/box_length)**2*norm2(momentum)) for i in mass]
+        ret = [sqrt(i**2 + 4*np.sin(
+            pi/box_length)**2*norm2(momentum)) for i in mass]
         ret = [sqrt(i**2+(2*pi/box_length)**2*norm2(momentum)) for i in mass]\
             if continuum else ret
     else:

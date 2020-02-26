@@ -677,7 +677,9 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             print(count)
         #altlen = int(len(votes) + np.floor(len(soft_votes)/1))
         #votes.extend(soft_votes)
-        if votes:
+        if debug:
+            print("final votes", votes)
+        if len(votes) > 1:
             dot_map = votes_to_map(votes)
         assert votes or count == 5
         #elif count < 2:
@@ -697,6 +699,8 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             print("final votes", votes)
             print("final dot map:", dot_map)
     #exitp = False
+    assert len(dot_map) == len(evals), (evals, dot_map)
+    #print('dot_map', dot_map, 'timeij', evals)
     if not isid(dot_map):
         sevals = np.zeros(len(evals))
         sevecs = np.zeros(np.asarray(evecs).T.shape)
@@ -713,6 +717,8 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             print("evals final", ret)
     if debug:
         sys.exit()
+    #print(evals)
+    #print(ret[0])
     return ret
 sortevals.sorted_evecs = {}
 sortevals.last_time = None
@@ -834,12 +840,13 @@ def partial_compare_dicts(ainfo, binfo):
             if len(ret) < len(inter):
                 sys.exit()
         if passed:
-            ret = fill_in_missing(ret, inter)
-            for i in ret:
+            for i in inter:
                 if i not in rrel:
-                    print("no vote gives necessary pairing")
+                    print("no vote gives necessary pairing:", ret)
                     raise PrecisionLossError
                     #rrel[i] = np.inf
+                    #ret = fill_in_missing(ret, inter)
+                    #break
         passed = True
     assert not collision_check(ret), ret
     assert rrel, (ret, used, rrel)

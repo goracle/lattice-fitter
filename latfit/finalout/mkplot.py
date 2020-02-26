@@ -682,8 +682,11 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
                     badcoord.append(coord)
         xfit[i] = np.delete(xfit[i], todel)
         if not box_plot:
-            step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
-                len(xfit[i])-1) if step_size is None else step_size
+            try:
+                step_size = abs((xfit[i][len(xfit[i])-1]-xfit[i][0]))/FINE/(
+                    len(xfit[i])-1) if step_size is None else step_size
+            except FloatingPointError:
+                step_size = 1.0
             step_size = 1.0 if np.isnan(step_size) else step_size
             try:
                 xfit[i] = list(np.arange(xfit[i][0],
