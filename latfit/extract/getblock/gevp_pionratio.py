@@ -469,7 +469,7 @@ def atwsub(cmat_arg, timeij, delta_t, reverseatw=False):
     assert timeij >= 0, str(timeij)
     cmat = np.array(copy.deepcopy(np.array(cmat_arg)))
     origshape = cmat.shape
-    if not MATRIX_SUBTRACTION and ISOSPIN != 1 and not NOATWSUB:
+    if ISOSPIN != 1 and not NOATWSUB:
         suffix = r'_pisq_atwR' if reverseatw else r'_pisq_atw'
         suffix = suffix + '_dt' + str(int(delta_t))+'.jkdat'
         for i, diag in enumerate(GEVP_DIRS):
