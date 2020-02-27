@@ -51,7 +51,7 @@ def fitrange_skip_list(fit_range_arr, fitwindow):
     fcut = 0
     acut = 0
     for idx, item in enumerate(fit_range_arr):
-        if lencut(item) and ISOSPIN != 0:
+        if lencut(item):
             lcut += 1
             ret.add(idx)
         elif fitwincuts(item, fitwindow):

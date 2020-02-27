@@ -1,10 +1,12 @@
 """Fit window module"""
 import numpy as np
-from latfit.config import RANGE_LENGTH_MIN
+from latfit.config import RANGE_LENGTH_MIN, ISOSPIN
 
 LENMIN = 3
 MIN_FITWIN_LEN = LENMIN+1
 assert LENMIN == RANGE_LENGTH_MIN
+if not ISOSPIN:
+    LENMIN -= 1
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
