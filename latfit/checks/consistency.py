@@ -101,15 +101,18 @@ def consistent_params(item1, item2, mod_180=False):
     """Check the consistency of two Param objects
     if discrepant by > 1.5 sigma, return False (inconsistent)
     """
+    diff = np.abs(item1.val-item2.val)
     if mod_180:
         item1a = mod180(item1.val)
         item2a = mod180(item2.val)
-    diff = np.abs(item1.val-item2.val)
-    diff2 = np.abs(item1a-item2a)
-    if hasattr(diff, '__iter__'):
-        diff = [min(i, j) for i, j in zip(diff, diff2)]
+        diff2 = np.abs(item1a-item2a)
     else:
-        diff = min(diff1, diff2)
+        diff2 = None
+    if diff2 is not None:
+        if hasattr(diff, '__iter__'):
+                diff = [min(i, j) for i, j in zip(diff, diff2)]
+        else:
+            diff = min(diff1, diff2)
     if GEVP:
         diff = np.asarray(diff)
         err = []
