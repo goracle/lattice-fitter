@@ -199,9 +199,11 @@ def fitwincuts(fit_range, fitwindow, dim=None):
 @PROFILE
 def consistency(item1, item2, prin=False):
     """Check two gvar items for consistency"""
-    item1 = gvar.gvar(mod180(item1.val), item1.sdev)
-    item2 = gvar.gvar(mod180(item2.val), item2.sdev)
+    item1a = gvar.gvar(mod180(item1.val), item1.sdev)
+    item2a = gvar.gvar(mod180(item2.val), item2.sdev)
     diff = np.abs(item1.val-item2.val)
+    diff2 = np.abs(item1a.val-item2a.val)
+    diff = min(diff, diff2)
     dev = max(item1.sdev, item2.sdev)
     sig = statlvl(gvar.gvar(diff, dev))
     ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
