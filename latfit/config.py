@@ -421,6 +421,10 @@ print("2nd order momenta for around the world:",
       opc.mom2ndorder('A1_mom11'), opc.mom2ndorder('A1_mom111'))
 # we do the following subtraction to compensate below:
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
+if DELTA_E2_AROUND_THE_WORLD is not None:
+    if DELTA_E_AROUND_THE_WORLD[0] > DELTA_E2_AROUND_THE_WORLD[0]:
+        DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD = \
+            DELTA_E2_AROUND_THE_WORLD, DELTA_E_AROUND_THE_WORLD
 
 # set to None if not GEVP
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
