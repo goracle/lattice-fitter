@@ -422,9 +422,15 @@ print("2nd order momenta for around the world:",
 # we do the following subtraction to compensate below:
 # DELTA_E2_AROUND_THE_WORLD -= DELTA_E_AROUND_THE_WORLD
 if DELTA_E2_AROUND_THE_WORLD is not None:
-    if DELTA_E_AROUND_THE_WORLD[0] > DELTA_E2_AROUND_THE_WORLD[0]:
-        DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD = \
-            DELTA_E2_AROUND_THE_WORLD, DELTA_E_AROUND_THE_WORLD
+    if MATRIX_SUBTRACTION:
+        if DELTA_E_AROUND_THE_WORLD[0] > DELTA_E2_AROUND_THE_WORLD[0]:
+            pass
+        #      DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD = \
+            #          DELTA_E2_AROUND_THE_WORLD, DELTA_E_AROUND_THE_WORLD
+
+# turn off second subtraction (buggy)
+DELTA_E2_AROUND_THE_WORLD = None
+
 
 # set to None if not GEVP
 DELTA_E2_AROUND_THE_WORLD = None if not GEVP else DELTA_E2_AROUND_THE_WORLD
