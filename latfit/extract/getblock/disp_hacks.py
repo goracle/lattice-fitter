@@ -5,6 +5,8 @@ jackknifing and binning.
 import numpy as np
 from latfit.config import MULT, GEVP, GEVP_DIRS, DISP_ENERGIES, OPERATOR_NORMS
 from latfit.config import LOGFORM, GEVP_DERIV
+from latfit.config import DELTA_E_AROUND_THE_WORLD
+from latfit.config import DELTA_E2_AROUND_THE_WORLD
 import latfit.analysis.misc as misc
 from latfit.mathfun.proc_meff import proc_meff
 import latfit.extract.getblock.gevp_linalg as glin
@@ -49,6 +51,16 @@ def disp():
         #disp.energies = mod_disp(disp.energies)
         disp.energies = binhalf_e(disp.energies)
         disp.binned = True
+        if DELTA_E_AROUND_THE_WORLD is not None:
+            delt = np.asarray(DELTA_E_AROUND_THE_WORLD)
+            disp.energies = np.swapaxes(disp.energies, 0, 1)
+            disp.energies = np.asarray(disp.energies) - delt
+            disp.energies = np.swapaxes(disp.energies, 0, 1)
+        if DELTA_E2_AROUND_THE_WORLD is not None:
+            delt = np.asarray(DELTA_E2_AROUND_THE_WORLD)
+            disp.energies = np.swapaxes(disp.energies, 0, 1)
+            disp.energies = disp.energies - delt
+            disp.energies = np.swapaxes(disp.energies, 0, 1)
     return disp.energies
 disp.energies = np.asarray(DISP_ENERGIES)
 disp.binned = False
