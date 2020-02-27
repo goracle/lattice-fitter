@@ -408,6 +408,12 @@ elif GEVP:
 assert E21 is None or (np.all(E21 > 0) and np.all(E22+E21 > 0))
 assert E21 is None or (np.all(E22) >= 0)
 DELTA_E2_AROUND_THE_WORLD = E22
+
+
+# turn off second subtraction (buggy)
+DELTA_E2_AROUND_THE_WORLD = None
+
+
 #MINE2 = min(E21, E22)
 MINE2 = None # second order around the world fit no longer supported
 print("2nd order momenta for around the world:",
