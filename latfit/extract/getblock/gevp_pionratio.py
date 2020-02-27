@@ -116,7 +116,7 @@ def evals_pionratio(timeij, delta_t, switch=False):
     ret = np.swapaxes(ret, 0, 1)
     ret = np.real(ret)
     ret = variance_reduction(ret, em.acmean(ret, axis=0))
-    if not MATRIX_SUBTRACTION and not NOATWSUB:
+    if not NOATWSUB and not MATRIX_SUBTRACTION:
         ret = atwsub(ret, timeij, delta_t, reverseatw=switch)
     return np.asarray(ret)
 
@@ -176,9 +176,13 @@ def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
     for i in range(len(lhs)):
         checkgteq0(arg1[i])
         checkgteq0(arg2[i])
-        energies.append(gdisp.callprocmeff([arg1[i], arg2[i]],
-                                           timeij, delta_t, sort=True, dimops=dimops))
+        arg = np.nan_to_num([arg1[i], arg2[i]])
+        energies.append(gdisp.callprocmeff(
+            arg, timeij, delta_t, sort=True, dimops=dimops))
     np.seterr(divide='warn', invalid='warn')
+    if PR_GROUND_ONLY:
+        energies = [[i] for i in np.asarray(energies)[:, 0]]
+        avg_energies = [avg_energies[0]]
     energies = variance_reduction(energies, avg_energies, 1/DECREASE_VAR)
     if PR_GROUND_ONLY:
         # sanity check
@@ -353,10 +357,16 @@ if PIONRATIO:
         # sanity check
         addzero = np.nan_to_num(addzero)
         dimops = 1 if PR_GROUND_ONLY else len(enint[0])
+        #print('addzero', addzero[10], addzero[:, :dimops][0])
+        #print('ennon', ennon[0])
+        #print('enint', enint[0])
+        #print('disp', gdisp.disp()[0])
         try:
             chk = np.abs(addzero[:, :dimops])
+            #print('chk', chk[0])
             assert np.all(np.asarray(chk) < 0.1), str(chk)
         except AssertionError:
+            #sys.exit()
             raise XminError(problemx=timeij)
         if PR_GROUND_ONLY:
             for i in range(addzero.shape[1]):
