@@ -154,6 +154,18 @@ def is_pos_semidef(cmat):
     """Check for positive semi-definiteness"""
     return np.all(np.linalg.eigvals(cmat) >= 0)
 
+def posdef_diag_check(cmat):
+    """If any of the GEVP diagonal terms is zero within errors,
+    throw an error"""
+    for i, _ in enumerate(cmat[0]):
+        mat = cmat[:, i, i]
+        val = em.acmean(mat, axis=0)
+        assert not hasattr(val, '__iter__'), val
+        sdev = em.acstd(mat, axis=0)*np.sqrt(len(mat)-1)
+        if sdev*1.5 >= np.abs(val):
+            print("Signal loss for correlator src index", i, "to sink index", i)
+            raise PrecisionLossError
+
 def defsign(cmat):
     """Check for definite sign (pos def or neg def)"""
     evals = np.linalg.eigvals(cmat)

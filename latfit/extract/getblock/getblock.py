@@ -19,7 +19,7 @@ from latfit.analysis.superjack import jack_mean_err
 from latfit.extract.getblock.gevp_linalg import sterr, checkgteq0
 from latfit.extract.getblock.gevp_linalg import degenerate_subspace_check
 from latfit.extract.getblock.gevp_linalg import enforce_hermiticity, norms
-from latfit.extract.getblock.gevp_linalg import checkherm
+from latfit.extract.getblock.gevp_linalg import checkherm, posdef_diag_check
 from latfit.extract.getblock.gevp_solve import allowedeliminations
 from latfit.extract.getblock.gevp_linalg import variance_reduction
 from latfit.extract.getblock.gevp_pionratio import atwsub_cmats, modenergies
@@ -120,6 +120,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         #    pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
+    posdef_diag_check(cmat)
     mean = em.acmean(cmat, axis=0)
     checkherm(mean)
     if decrease_var != 1:
