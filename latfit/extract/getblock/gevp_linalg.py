@@ -423,7 +423,11 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
         print("idx, idxp1, idxm1", sorted_idx, idxp1, idxm1)
         print("p1 vs. r", sorted_pseudos[idxp1], pseudo_evals[idx], nplus1)
         print("m1 vs. r", sorted_pseudos[idxm1], pseudo_evals[idx], nminus1)
-    return ret
+    if base_score:
+        ret = base_score
+    else:
+        ret = np.inf
+    return None, ret
 
 def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
     """Obsolete way to flip match"""
@@ -531,6 +535,10 @@ def map_evals(evals_from, evals_to, debug=False):
     rel_diff = [indicator(
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
+    #norm = 1/np.sum([i for _, i in rel_diff])
+    rel_diff = np.array([i for _, i in rel_diff])
+    rel_diff = 1/(np.sum(rel_diff)*rel_diff)
+    rel_diff = list(rel_diff)
     #for i in rel_diff:
     #    if i == np.inf:
     #        rel_diff = list(np.ones(len(rel_diff)))
@@ -541,9 +549,6 @@ def map_evals(evals_from, evals_to, debug=False):
     test_arr = [0 for i in rel_diff] # hack around the below code
 
     # begin legacy methods
-    if debug:
-        print('rel_diff', rel_diff)
-        print('test_arr', test_arr)
     # old_test
     # test_arr = old_test(test_arr, rdleft, rel_diff,
     # evals_to_sorted, debug=debug)
@@ -591,7 +596,20 @@ def map_evals(evals_from, evals_to, debug=False):
     assert len(ret) == leval, str(ret)
     # end legacy
     assert ret, ret
+    rel_diff = invert_reldiff_map(rel_diff, ret)
+    if debug:
+        print('rel_diff', rel_diff)
+        print('test_arr', test_arr)
     return ret, rel_diff
+
+def invert_reldiff_map(rel_diff, dot_map):
+    """Invert the ordering of relative diff vector
+    (the later analysis assumes score is property of source, not sink)"""
+    ret = []
+    for idx in range(len(rel_diff)):
+        ret.append(rel_diff[dot_map[idx]])
+    return ret
+        
 
 def collision_check(smap):
     """Check for collision"""
@@ -623,7 +641,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 12 else True
+        #debug = debug if timeij < 13 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -635,8 +653,13 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #fallback = True
         votes = []
         #        soft_votes = []
-        while timeij in sortevals.sorted_evecs:
+        while timeij in sortevals.sorted_evecs and len(sortevals.sorted_evecs.keys()) > 1:
 
+            if debug:
+                print("stored times:", sortevals.sorted_evecs.keys())
+
+            if timeij == min(sortevals.sorted_evecs.keys()):
+                break
             # loop increment
             count -= 1 # 3, 2, 1
             if debug and False:
@@ -649,7 +672,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             assert len(evecs_past[0]) == len(evals), str(evecs_past[0])
             assert len(evecs_past[0]) == len(c_lhs), str(
                 evecs_past[0])+" "+str(c_lhs)
-            timeij -= 1 # t-1, t-2, t-3
             #if debug:
                 #assert timeij in sortevals.sorted_evecs
             evals_from = np.copy(evals)
@@ -673,7 +695,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             #else:
             #    assert not fallback_level
             assert vote_map, vote_map
-            votes.append((vote_map, rel_diff))
+            votes.append((vote_map, rel_diff, timeij))
             #if debug:
             #    print('votes', votes)
             #    print('soft_votes', soft_votes)
@@ -685,13 +707,17 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             #if debug:
             #print("good votes")
             #break
+
+            timeij -= 1 # t-1, t-2, t-3
+
         if debug:
             print(count)
         #altlen = int(len(votes) + np.floor(len(soft_votes)/1))
         #votes.extend(soft_votes)
         if debug:
             print("final votes", votes)
-        if len(votes) > 1:
+        #if len(votes) > 1:
+        if votes:
             dot_map = votes_to_map(votes)
         assert votes or count == 5
         #elif count < 2:
@@ -731,6 +757,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         sys.exit()
     #print(evals)
     #print(ret[0])
+    #print("BREAK")
     return ret
 sortevals.sorted_evecs = {}
 sortevals.last_time = None
@@ -742,12 +769,13 @@ def votes_to_map(votes, stop=np.inf):
     ret = votes[0]
     stop = len(votes) if stop >= len(votes) else stop
     votes = votes[:stop]
-    for i, idxsi in votes:
+    for i, idxsi, timei in votes:
         #i = filter_dict(i, idxsi)
-        for j, idxsj in votes:
+        for j, idxsj, timej in votes:
             assert list(idxsj), votes
             #j = filter_dict(j, idxsj)
-            ret1 = partial_compare_dicts((i, idxsi), (j, idxsj))
+            ret1 = partial_compare_dicts((i, idxsi, timei),
+                                         (j, idxsj, timej))
             ret = partial_compare_dicts(ret, ret1)
             #if disagree:
             #    agree = set(idxsi).intersection(idxsj)
@@ -761,8 +789,8 @@ def votes_to_map(votes, stop=np.inf):
 
 def partial_compare_dicts(ainfo, binfo):
     """Compare common entries in two dictionaries"""
-    adict, arel = ainfo
-    bdict, brel = binfo
+    adict, arel, timea = ainfo
+    bdict, brel, timeb = binfo
     assert list(arel), ainfo
     assert list(brel), binfo
     arel = del_maxrel(arel)
@@ -786,9 +814,9 @@ def partial_compare_dicts(ainfo, binfo):
             print(retrev)
             print(used)
             print('inter', inter)
-            print('adict', adict)
+            print('adict', adict, 'timea', timea)
             print("arel", arel)
-            print('bdict', bdict)
+            print('bdict', bdict, 'timeb', timeb)
             print("brel", brel)
             flag = 0 # set to 1 if debugging
         for i in sorted(list(inter)):
@@ -855,7 +883,8 @@ def partial_compare_dicts(ainfo, binfo):
             for i in inter:
                 if i not in rrel:
                     print("no vote gives necessary pairing:", ret)
-                    raise PrecisionLossError
+                    assert None, "Please examine this case before proceeding further."
+                    #raise PrecisionLossError
                     #rrel[i] = np.inf
                     #ret = fill_in_missing(ret, inter)
                     #break
@@ -864,7 +893,7 @@ def partial_compare_dicts(ainfo, binfo):
     assert rrel, (ret, used, rrel)
     rrel = conv_dict_to_list(rrel)
     assert rrel
-    return ret, rrel
+    return ret, rrel, None
 
 def fill_in_missing(sdict, keys):
     """Fill in 1 to 1 mapping with missing entry"""
