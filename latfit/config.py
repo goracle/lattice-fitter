@@ -311,7 +311,10 @@ if 'mom000' in IRREP and ISOSPIN == 0:
     FULLDIM = False
     DIM -= 2
 DIM = 1 if not GEVP else DIM
-if 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
+if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
+    FULLDIM = False
+    DIM -= 1
+elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
     FULLDIM = False
     DIM = 3
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
@@ -351,8 +354,8 @@ misc.CONTINUUM = FIT_SPACING_CORRECTION
 # use pseudo-eigenvalues of the GEVP to sort GEVP eigenvalues
 # pseudo-eigenvalues are obtained from a ratio solve of the GEVP
 # using eigenvectors from past time slices
-PSEUDO_SORT = True
 PSEUDO_SORT = False
+PSEUDO_SORT = True
 PSEUDO_SORT = False if ISOSPIN == 2 else PSEUDO_SORT
 
 # no around the world subtraction at all
