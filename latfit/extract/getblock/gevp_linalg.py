@@ -537,6 +537,8 @@ def map_evals(evals_from, evals_to, debug=False):
                 _ in enumerate(evals_from)]
     #norm = 1/np.sum([i for _, i in rel_diff])
     rel_diff = np.array([i for _, i in rel_diff])
+    if debug:
+        print("base scores", rel_diff)
     rel_diff = 1/(np.sum(rel_diff)*rel_diff)
     rel_diff = list(rel_diff)
     #for i in rel_diff:
@@ -641,7 +643,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 13 else True
+        #debug = debug if timeij < 7 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
