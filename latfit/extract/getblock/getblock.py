@@ -120,7 +120,6 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         #    pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
-    posdef_diag_check(cmat)
     mean = em.acmean(cmat, axis=0)
     checkherm(mean)
     if decrease_var != 1:
@@ -270,6 +269,8 @@ if EFF_MASS:
         assert len(file_tup) == 5, "bad length:"+str(len(file_tup))
         for idx in range(5):
             cmat, mean = readin_gevp_matrices(file_tup[idx], num_configs)
+            if not idx:
+                posdef_diag_check(cmat)
             if idx == 1:
                 cmat_rhs, mean_crhs = cmat, mean
             else:
