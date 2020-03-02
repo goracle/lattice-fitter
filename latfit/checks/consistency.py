@@ -106,13 +106,16 @@ def consistent_params(item1, item2, mod_180=False):
         item1a = mod180(item1.val)
         item2a = mod180(item2.val)
         diff2 = np.abs(item1a-item2a)
+        diff3 = np.abs(item1-item2a)
+        diff4 = np.abs(item1a-item2)
     else:
         diff2 = None
     if diff2 is not None:
         if hasattr(diff, '__iter__'):
-                diff = [min(i, j) for i, j in zip(diff, diff2)]
+                diff = [min(i, j, k, l) for i, j, k, l in zip(
+                    diff, diff2, diff3, diff4)]
         else:
-            diff = min(diff1, diff2)
+            diff = min(diff1, diff2, diff3, diff4)
     if GEVP:
         diff = np.asarray(diff)
         err = []
