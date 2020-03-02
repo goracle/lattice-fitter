@@ -172,7 +172,7 @@ def modmissingdim(dimops, plotdata, result_min):
         # delete the unwanted dimensions
         for idx in todel:
             #result_min_mod.x = np.delete(result_min.energy.val, todel)
-            result_min_mod.x[idx] = np.nan
+            result_min_mod.energy.val[idx] = np.nan
     return dimops_mod, result_min_mod
 
 
