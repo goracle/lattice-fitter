@@ -128,14 +128,14 @@ def get_medians_and_plot_syserr(loop, freqarr, freq,
     median = systematic_err_est(freq, median_err, freq_median, nosave=nosave)
     return (median_err, median), freq_median
 
-def apply_cuts(median_store, fit_range_arr, twin):
+def apply_cuts(median_store, fit_range_arr, twin, dim):
     """Apply cuts"""
     # apply cuts
     # cut results outside the fit window
     median_err, median = median_store
     print("after init cut len =", len(median_err))
     median_err, fit_range_arr = fitrange_cuts(
-        median_err, fit_range_arr, twin)
+        median_err, fit_range_arr, twin, dim)
     print("final cut result len =", len(median_err))
     median_store = (median_err, median)
     return median_store, fit_range_arr
@@ -189,7 +189,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
                              xycoords='axes fraction')
           
             median_store, fit_range_arr = apply_cuts(
-                median_store, fit_range_arr, twin)
+                median_store, fit_range_arr, twin, dim)
 
             # prints the sorted results
             try:
