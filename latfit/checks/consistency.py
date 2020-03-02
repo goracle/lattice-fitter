@@ -106,8 +106,8 @@ def consistent_params(item1, item2, mod_180=False):
         item1a = mod180(item1.val)
         item2a = mod180(item2.val)
         diff2 = np.abs(item1a-item2a)
-        diff3 = np.abs(item1-item2a)
-        diff4 = np.abs(item1a-item2)
+        diff3 = np.abs(item1.val-item2a)
+        diff4 = np.abs(item1a-item2.val)
     else:
         diff2 = None
     if diff2 is not None:
