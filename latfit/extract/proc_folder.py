@@ -13,6 +13,7 @@ from latfit.config import GROUP_LIST
 import latfit
 from latfit.utilities import exactmean as em
 from latfit.extract.binout import binout, halftotal
+from latfit.extract.getblock.gevp_linalg import posdef_check
 import latfit.mathfun.elim_jkconfigs as elimjk
 
 if STYPE == 'hdf5':
@@ -23,7 +24,7 @@ if STYPE == 'hdf5':
         return np.array(fn1[prefix+'/'+hdf5_file.split('.')[
             0]][:, ctime])
 
-    def proc_folder(hdf5_file, ctime, other_regex=""):
+    def proc_folder(hdf5_file, ctime, other_regex="", chkpos=False, opa=None):
         """Check cache, otherwise, proc_folder"""
         key = (hdf5_file, ctime)
         if key in proc_folder.cache:
@@ -33,6 +34,8 @@ if STYPE == 'hdf5':
             out = proc_folder_get(hdf5_file, ctime, other_regex)
             proc_folder.cache[key] = copy.deepcopy(np.array(np.copy(out)))
             proc_folder.cache[key] = np.asarray(proc_folder.cache[key])
+        if chkpos and False:
+            posdef_check(out, time=ctime, idx1=opa)
         return out
     proc_folder.sent = object()
     proc_folder.prefix = GROUP_LIST[0]

@@ -95,7 +95,7 @@ def getfiles_gevp_singlerhs(time, time2, xstep=1):
     extra_lhs_times = [*extra_lhs_times, *extra_lhs_times2]
     extra_rhs_times = [extra_rhs_time, extra_rhs_time2]
     if NUM_PENCILS < 1:
-        files[time] = gevp_getfiles_onetime(time)
+        files[time] = gevp_getfiles_onetime(time, chkpos=True)
         files[time2] = gevp_getfiles_onetime(time2)
         if EFF_MASS:
             files[time+xstep] = gevp_getfiles_onetime(time+xstep)

@@ -159,12 +159,19 @@ def posdef_diag_check(cmat):
     throw an error"""
     for i, _ in enumerate(cmat[0]):
         mat = cmat[:, i, i]
-        val = em.acmean(mat, axis=0)
-        assert not hasattr(val, '__iter__'), val
-        sdev = em.acstd(mat, axis=0)*np.sqrt(len(mat)-1)
-        if sdev*1.5 >= np.abs(val):
-            print("Signal loss for correlator src index", i, "to sink index", i)
-            raise PrecisionLossError
+        posdef_check(mat, idx1=i, idx2=i)
+
+def posdef_check(mat, idx1=None, idx2=None, time=None):
+    """Check for positive definiteness"""
+    val = em.acmean(mat, axis=0)
+    assert not hasattr(val, '__iter__'), val
+    sdev = em.acstd(mat, axis=0)*np.sqrt(len(mat)-1)
+    if sdev*1.5 >= np.abs(val):
+        print("Signal loss for correlator src index", idx1,
+              "to sink index", idx2)
+        if time is not None:
+            print("op from time:", time)
+        raise PrecisionLossError
 
 def defsign(cmat):
     """Check for definite sign (pos def or neg def)"""
@@ -423,11 +430,8 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
         print("idx, idxp1, idxm1", sorted_idx, idxp1, idxm1)
         print("p1 vs. r", sorted_pseudos[idxp1], pseudo_evals[idx], nplus1)
         print("m1 vs. r", sorted_pseudos[idxm1], pseudo_evals[idx], nminus1)
-    if base_score:
-        ret = base_score
-    else:
-        ret = np.inf
-    return None, ret
+    ret = base_score
+    return ret
 
 def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
     """Obsolete way to flip match"""
@@ -536,10 +540,10 @@ def map_evals(evals_from, evals_to, debug=False):
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
     #norm = 1/np.sum([i for _, i in rel_diff])
-    rel_diff = np.array([i for _, i in rel_diff])
+    rel_diff = np.array(rel_diff)
     if debug:
         print("base scores", rel_diff)
-    rel_diff = 1/(np.sum(rel_diff)*rel_diff)
+    rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
     rel_diff = list(rel_diff)
     #for i in rel_diff:
     #    if i == np.inf:
@@ -643,7 +647,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        #debug = debug if timeij < 7 else True
+        debug = debug if timeij < 12 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
@@ -659,6 +663,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
 
             if debug:
                 print("stored times:", sortevals.sorted_evecs.keys())
+                print("timeij", timeij)
 
             if timeij == min(sortevals.sorted_evecs.keys()):
                 break
@@ -717,10 +722,12 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #altlen = int(len(votes) + np.floor(len(soft_votes)/1))
         #votes.extend(soft_votes)
         if debug:
-            print("final votes", votes)
+            print("final votes")
+            for i in votes:
+                print(i)
         #if len(votes) > 1:
         if votes:
-            dot_map = votes_to_map(votes)
+            dot_map = votes_to_map(votes, debug=debug)
         assert votes or count == 5
         #elif count < 2:
             #print("late time sorting break down; timeij=", timeij)
@@ -736,7 +743,9 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #    votes.extend(soft_votes)
         #    dot_map = votes_to_map(votes, stop=altlen)
         if debug:
-            print("final votes", votes)
+            print("final votes")
+            for i in votes:
+                print(i)
             print("final dot map:", dot_map)
     #exitp = False
     assert len(dot_map) == len(evals), (evals, dot_map)
@@ -765,7 +774,7 @@ sortevals.sorted_evecs = {}
 sortevals.last_time = None
 sortevals.config = None
 
-def votes_to_map(votes, stop=np.inf):
+def votes_to_map(votes, stop=np.inf, debug=False):
     """Get sorting map based on previous time slice votes
     for what each one thinks is the right ordering"""
     ret = votes[0]
@@ -774,11 +783,16 @@ def votes_to_map(votes, stop=np.inf):
     for i, idxsi, timei in votes:
         #i = filter_dict(i, idxsi)
         for j, idxsj, timej in votes:
+            if timej <= timei:
+                continue
             assert list(idxsj), votes
             #j = filter_dict(j, idxsj)
             ret1 = partial_compare_dicts((i, idxsi, timei),
-                                         (j, idxsj, timej))
-            ret = partial_compare_dicts(ret, ret1)
+                                         (j, idxsj, timej), debug=debug)
+            if debug:
+                print('ret1', ret1, 'timei', timei)
+                print('ret tl', ret, 'timej', timej)
+            ret = partial_compare_dicts(ret, ret1, debug=debug)
             #if disagree:
             #    agree = set(idxsi).intersection(idxsj)
                 #agree = agree-set(disagree)
@@ -789,7 +803,7 @@ def votes_to_map(votes, stop=np.inf):
                     #ret = make_id(ret)
     return ret[0]
 
-def partial_compare_dicts(ainfo, binfo):
+def partial_compare_dicts(ainfo, binfo, debug=False):
     """Compare common entries in two dictionaries"""
     adict, arel, timea = ainfo
     bdict, brel, timeb = binfo
@@ -809,7 +823,7 @@ def partial_compare_dicts(ainfo, binfo):
     passed = False
     while collision_check(ret) or len(ret) < len(inter):
         flag = 0
-        if ret and False: # set to True if debugging
+        if ret and debug: # set to True if debugging
             print('debug')
             print(ret)
             print(rrel)
@@ -820,7 +834,7 @@ def partial_compare_dicts(ainfo, binfo):
             print("arel", arel)
             print('bdict', bdict, 'timeb', timeb)
             print("brel", brel)
-            flag = 0 # set to 1 if debugging
+            flag = debug # set to 1 if debugging
         for i in sorted(list(inter)):
 
             # the score for the source is minimized
