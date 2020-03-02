@@ -18,10 +18,10 @@ except NameError:
     PROFILE = profile
 
 @PROFILE
-def fitrange_cuts(median_err, fit_range_arr, twin):
+def fitrange_cuts(median_err, fit_range_arr, twin, dim):
     """Get fit window, apply cuts"""
     fitwindow = get_fitwindow(fit_range_arr, twin, prin=True)
-    skip_list = fitrange_skip_list(fit_range_arr, fitwindow)
+    skip_list = fitrange_skip_list(fit_range_arr, fitwindow, dim)
     median_err = cut_arr(median_err, skip_list)
     fit_range_arr = cut_arr(fit_range_arr, skip_list)
     return median_err, fit_range_arr
@@ -43,7 +43,7 @@ def statlvl(diff):
 
 
 @PROFILE
-def fitrange_skip_list(fit_range_arr, fitwindow):
+def fitrange_skip_list(fit_range_arr, fitwindow, dim):
     """List of indices to skip"""
     # fit window cut
     ret = set()
@@ -51,7 +51,7 @@ def fitrange_skip_list(fit_range_arr, fitwindow):
     fcut = 0
     acut = 0
     for idx, item in enumerate(fit_range_arr):
-        if lencut(item):
+        if lencut(item, dim):
             lcut += 1
             ret.add(idx)
         elif fitwincuts(item, fitwindow):
@@ -73,7 +73,7 @@ def cut_arr(arr, skip_list):
     return np.delete(arr, skip_list, axis=0)
 
 @PROFILE
-def lencut(fit_range):
+def lencut(fit_range, dim):
     """Length cut; we require each fit range to have
     a minimum number of time slices
     length cut for safety (better systematic error control
@@ -88,7 +88,10 @@ def lencut(fit_range):
         ret = True
     if not ret:
         if iterf:
-            ret = any([len(i) < LENMIN for i in fit_range])
+            if ISOSPIN: # I = 1, 2
+                ret = any([len(i) < LENMIN for i in fit_range])
+            else: # I = 0
+                ret = [len(i) < LENMIN for i in fit_range][dim]
         else:
             ret = len(fit_range) < LENMIN
     if ret:
