@@ -647,7 +647,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         count = 5
         #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        debug = debug if timeij < 12 else True
+        # debug = debug if timeij < 12 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
