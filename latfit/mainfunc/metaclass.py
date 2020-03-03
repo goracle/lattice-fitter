@@ -279,16 +279,21 @@ class FitRangeMetaData:
     def setup(self, plotdata):
         """Setup the fitter at the beginning of the run"""
         self.input_f, self.options = procargs(sys.argv[1:])
+        self.options.fitmin = str2float(self.options.fitmin)
+        self.options.fitmax = str2float(self.options.fitmax)
         self.options.xmin, self.options.xmax = xlim_err(self.options.xmin,
                                                         self.options.xmax)
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
-        if not isinstance(self.options.fitmin, float) and not isinstance(self.options.fitmin, int):
+        if not isinstance(self.options.fitmin, float) and not isinstance(
+                self.options.fitmin, int):
             self.options.fitmin = self.options.xmin
-        if not isinstance(self.options.fitmax, float) and not isinstance(self.options.fitmax, int):
+        if not isinstance(self.options.fitmax, float) and not isinstance(
+                self.options.fitmax, int):
             self.options.fitmax = self.options.xmax
         self.fitwindow = fitrange_err(self.options, self.options.fitmin,
                                       self.options.fitmax)
-        assert isinstance(self.fitwindow[0], int) or isinstance(self.fitwindow[0], float), self.fitwindow
+        assert isinstance(self.fitwindow[0], int) or isinstance(
+            self.fitwindow[0], float), self.fitwindow
         self.xmin_mat_sub()
         self.actual_range()
         latfit.config.TSTEP = self.options.xstep
@@ -300,3 +305,13 @@ class FitRangeMetaData:
                 self.input_f if not GEVP else None))
 
         return trials, plotdata, str(self.input_f)
+
+def str2float(sstr):
+    """Convert string to float"""
+    if isinstance(sstr, float):
+        ret = sstr
+    elif isinstance(sstr, str):
+        ret = float(sstr)
+    else:
+        ret = None
+    return ret
