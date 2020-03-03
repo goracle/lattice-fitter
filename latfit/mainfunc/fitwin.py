@@ -4,6 +4,8 @@ import mpi4py
 from mpi4py import MPI
 
 from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP, FIT
+from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP, FIT
+from latfit.include import INCLUDE
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import finished_windows
@@ -14,10 +16,26 @@ MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
+def augment_xmax():
+    """Find the actual xmax needed"""
+    mmax = 0
+    if INCLUDE:
+        for i in INCLUDE:
+            if hasattr(i, '__iter__'):
+                for j in i:
+                    mmax = max(mmax, j)
+    return mmax
+
 def update_fitwin(meta, tadd, tsub, problemx=None):
     """Update fit window"""
     # tadd tsub cut
     upx = False if problemx is None else True
+    if problemx is not None and not tadd:
+        mmax = augment_xmax()
+        problemxnew = mmax+1
+        assert problemx-problemxnew >= 0, (mmax, problemx, INCLUDE)
+        tsub += problemx-problemxnew
+        tsub = int(tsub)
     if tadd or tsub:
         if VERBOSE:
             print("tadd, tsub in update:", tadd, tsub)
