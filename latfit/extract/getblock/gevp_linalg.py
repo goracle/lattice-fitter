@@ -10,6 +10,7 @@ from accupy import kdot
 from sympy import S
 from sympy.matrices import Matrix
 from math import exp, log
+import gvar
 
 from latfit.utilities import exactmean as em
 from latfit.config import GEVP_DEBUG, LOGFORM, DECREASE_VAR, PSEUDO_SORT
@@ -676,6 +677,10 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 print('count', count)
 
             evecs_past = sortevals.sorted_evecs[timeij][sortevals.config]
+            evals_past = sortevals.sorted_evals[timeij]
+            evals_past = gvar.gvar(np.mean(evals_past, axis=0),
+                                   np.std(evals_past, axis=0)*np.sqrt(
+                                       len(evals_past)-1)*1/DECREASE_VAR)
             if debug and False:
                 print("evecs(", timeij, ") =", evecs_past)
             assert len(evecs_past) == len(evals), str(evecs_past)
@@ -704,8 +709,10 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             #    soft_votes.append((vote_map, unambig_indices))
             #else:
             #    assert not fallback_level
-            assert vote_map, vote_map
-            votes.append((vote_map, rel_diff, timeij))
+            if not pos_shift(evals_past, dot_map_to_evals_final(
+                    dot_map, evals, evecs)[0]):
+                assert vote_map, vote_map
+                votes.append((vote_map, rel_diff, timeij))
             #if debug:
             #    print('votes', votes)
             #    print('soft_votes', soft_votes)
@@ -731,7 +738,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #if len(votes) > 1:
         if votes:
             dot_map = votes_to_map(votes, debug=debug)
-        assert votes or count == 5
+        # assert votes or count == 5
         #elif count < 2:
             #print("late time sorting break down; timeij=", timeij)
             #raise PrecisionLossError
@@ -753,6 +760,31 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     #exitp = False
     assert len(dot_map) == len(evals), (evals, dot_map)
     #print('dot_map', dot_map, 'timeij', evals)
+    assert not collision_check(dot_map)
+    ret = dot_map_to_evals_final(dot_map, evals, evecs)
+    if evecs is not None and not np.any(np.isnan(evals)):
+        if debug:
+            print("evals final", ret[0])
+    elif not np.any(np.isnan(evals)):
+        if debug:
+            print("evals final", ret)
+    if np.isnan(ret[0][0]):
+        print("raising nan")
+        raise
+    #print('BREAK')
+    #print(ret[0])
+    #print(evals)
+    if debug:
+        sys.exit()
+    return ret
+sortevals.sorted_evecs = {}
+sortevals.sorted_evals = {}
+sortevals.last_time = None
+sortevals.config = None
+
+def dot_map_to_evals_final(dot_map, evals, evecs):
+    """Get final eval sort from dot map"""
+    ret = (np.array(evals), np.array(evecs))
     if not isid(dot_map):
         sevals = np.zeros(len(evals))
         sevecs = np.zeros(np.asarray(evecs).T.shape)
@@ -760,22 +792,20 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             sevals[i] = drop0imag(evals[dot_map[i]])
             sevecs[i] = drop0imag(evecs.T[dot_map[i]])
         ret = (sevals, sevecs.T)
-    assert not collision_check(dot_map)
-    if evecs is not None and not np.any(np.isnan(evals)):
-        if debug:
-            print("evals final", ret[0])
-    elif not np.any(np.isnan(evals)):
-        if debug:
-            print("evals final", ret)
-    if debug:
-        sys.exit()
-    #print(evals)
-    #print(ret[0])
-    #print("BREAK")
     return ret
-sortevals.sorted_evecs = {}
-sortevals.last_time = None
-sortevals.config = None
+
+def pos_shift(evals_past, evals_final):
+    """Detect negative energy by positive shift in eigenvalue"""
+    ret = False
+    for i, j in zip(evals_past, evals_final):
+        diff = i.val-j
+        if diff < 0:
+            dev = i.sdev
+            if -1*diff/dev > 1.5:
+                ret = True
+    return ret
+
+
 
 def votes_to_map(votes, stop=np.inf, debug=False):
     """Get sorting map based on previous time slice votes
@@ -1041,6 +1071,7 @@ def max_sign(evec):
 def reset_sortevals():
     """Reset function variables"""
     sortevals.sorted_evecs = {}
+    sortevals.sorted_evals = {}
     sortevals.last_time = None
     sortevals.config = None
 
@@ -1055,6 +1086,19 @@ def update_sorted_evecs(newe, timeij, config_num):
     sortevals.sorted_evecs[timeij].append(np.copy(newe))
     assert np.all(sortevals.sorted_evecs[timeij][config_num] == newe),\
         (newe, config_num, sortevals.sorted_evecs[timeij][config_num])
+
+def update_sorted_evals(newe, timeij, config_num):
+    """Update sortevals.sorted_evals; perform stability check
+    (evecs should be stable from time slice to time slice
+    otherwise sorting by dot product is not reliable)"""
+    if timeij not in sortevals.sorted_evals:
+        sortevals.sorted_evals[timeij] = []
+        assert sortevals.last_time == timeij - 1, (
+            timeij, sortevals.last_time)
+    sortevals.sorted_evals[timeij].append(np.copy(newe))
+    assert np.all(sortevals.sorted_evals[timeij][config_num] == newe),\
+        (newe, config_num, sortevals.sorted_evals[timeij][config_num])
+
 
 def select_sorted_evecs(config_num, timeij):
     """Select evecs to use"""
