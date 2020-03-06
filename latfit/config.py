@@ -422,9 +422,6 @@ assert E21 is None or (np.all(E22) >= 0)
 DELTA_E2_AROUND_THE_WORLD = E22
 
 
-# turn off second subtraction (buggy)
-DELTA_E2_AROUND_THE_WORLD = None
-
 
 #MINE2 = min(E21, E22)
 MINE2 = None # second order around the world fit no longer supported
@@ -436,9 +433,8 @@ print("2nd order momenta for around the world:",
 if DELTA_E2_AROUND_THE_WORLD is not None:
     if MATRIX_SUBTRACTION:
         if DELTA_E_AROUND_THE_WORLD[0] > DELTA_E2_AROUND_THE_WORLD[0]:
-            pass
-        #      DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD = \
-            #          DELTA_E2_AROUND_THE_WORLD, DELTA_E_AROUND_THE_WORLD
+            DELTA_E_AROUND_THE_WORLD, DELTA_E2_AROUND_THE_WORLD = \
+                DELTA_E2_AROUND_THE_WORLD, DELTA_E_AROUND_THE_WORLD
 
 # turn off second subtraction (buggy)
 DELTA_E2_AROUND_THE_WORLD = None
