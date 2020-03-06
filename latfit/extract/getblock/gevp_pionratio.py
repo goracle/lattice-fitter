@@ -148,7 +148,11 @@ def energies_pionratio(timeij, delta_t):
         sys.exit(1)
     arg = [np.nan_to_num(avglhs/avgrhs), np.nan_to_num(avglhs_p1/avgrhs)]
     dimops = 1 if PR_GROUND_ONLY else len(avglhs)
-    avg_energies = gdisp.callprocmeff(arg, timeij, delta_t, sort=True, dimops=dimops)
+    #print('arg', arg)
+    #print(avglhs)
+    #print(avgrhs)
+    avg_energies = gdisp.callprocmeff(arg, timeij, delta_t,
+                                      sort=True, dimops=dimops)
     energies_pionratio.store[key] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
     # so we don't lose operators due to rho/sigma nan's

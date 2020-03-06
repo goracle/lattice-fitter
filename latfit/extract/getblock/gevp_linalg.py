@@ -327,6 +327,8 @@ def degenerate_subspace_check(evecs_mean_t):
             assert np.allclose(dotprod, 1.0, rtol=1e-8),\
                 str(dotprod)
         except AssertionError:
+            print("degenerate subspace failure; dotprod:", dotprod)
+            print("dotprod should be 1.0")
             raise PrecisionLossError
     if GEVP_DEBUG:
         print("evecs of avg gevp",
@@ -659,7 +661,8 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         #fallback = True
         votes = []
         #        soft_votes = []
-        while timeij in sortevals.sorted_evecs and len(sortevals.sorted_evecs.keys()) > 1:
+        while timeij in sortevals.sorted_evecs and len(
+                sortevals.sorted_evecs.keys()) > 1:
 
             if debug:
                 print("stored times:", sortevals.sorted_evecs.keys())

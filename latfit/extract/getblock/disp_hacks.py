@@ -92,12 +92,21 @@ def callprocmeff(eigvals, timeij, delta_t, sort=False, dimops=None):
         assert len(eigvals) == 4
     if sort:
         for i in range(4):
-            eigvals[i] = glin.sortevals(eigvals[i])
+            tosort = eigvals[i]
+            if len(tosort) > 1:
+                eigvals[i] = glin.sortevals(tosort)[0]
+    todiv = eigvals[0]
     try:
-        toproc = 1/(eigvals[0][:dimops]) if not LOGFORM else eigvals[0]/delta_t
+        toproc = 1/(todiv[:dimops]) if not LOGFORM else todiv/delta_t
     except FloatingPointError:
         print(dimops)
+        print(eigvals[0])
+        print(delta_t)
+        raise
+    except TypeError:
         print(eigvals)
+        print(dimops)
+        print(delta_t)
         raise
     if dimops > 1:
         assert not np.any(np.isnan(toproc)[:dimops]), (toproc, eigvals, delta_t)
