@@ -125,7 +125,8 @@ def identity_sort_meff(tosort, timeij, dimops):
                     print("non-identity map found")
                     print(ret)
                     print(begin)
-                raise XminError(problemx=timeij)
+                assert None, "check this before proceeding"
+                #raise XminError(problemx=timeij)
     return ret
 
 def inv_arr(arr):
