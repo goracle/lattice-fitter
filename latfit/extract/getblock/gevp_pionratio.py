@@ -419,7 +419,8 @@ if PIONRATIO:
                 energies_noninteracting)
         # this fails if the binning didn't fix the broadcast incompatibility
         addzero = -1*energies_noninteracting+np.asarray(gdisp.disp())
-        print("addzero", addzero[0])
+        if VERBOSE:
+            print("additive zero, first sample", addzero[0])
         addzero = addzero_nan_to_num(addzero)
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
