@@ -243,7 +243,7 @@ elif EFF_MASS_METHOD == 4:
 
     def checksol(sol, index, times, corrs, fun):
         """Check the solution."""
-        assert fun < 1e-16
+        assert fun < 1e-15, fun
         if isinstance(sol, collections.Iterable):
             test = any(i < 0 for i in sol[1:])
         else:
