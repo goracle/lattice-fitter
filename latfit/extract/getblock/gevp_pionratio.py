@@ -148,13 +148,16 @@ def energies_pionratio(timeij, delta_t):
         sys.exit(1)
     arg = [np.nan_to_num(avglhs/avgrhs), np.nan_to_num(avglhs_p1/avgrhs)]
     dimops = 1 if PR_GROUND_ONLY else len(avglhs)
-    #print('arg', arg)
-    #print(avglhs)
-    #print(avgrhs)
+
+    # average energies
     avg_energies = gdisp.callprocmeff(arg, timeij, delta_t,
-                                      sort=True, dimops=dimops)
+                                      id_sort=True, dimops=dimops)
+
+    # per config energies
+    # id_sort = True here as well (see func def)
     energies_pionratio.store[key] = proc_meff_pionratio(
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
+
     # so we don't lose operators due to rho/sigma nan's
     latfit.config.FIT_EXCL = exclsave
     return energies_pionratio.store[key]
@@ -181,8 +184,9 @@ def proc_meff_pionratio(lhs, lhs_p1, rhs, avg_energies, timedata):
         checkgteq0(arg1[i])
         checkgteq0(arg2[i])
         arg = np.nan_to_num([arg1[i], arg2[i]])
-        energies.append(gdisp.callprocmeff(
-            arg, timeij, delta_t, sort=True, dimops=dimops))
+        toapp = gdisp.callprocmeff(
+            arg, timeij, delta_t, id_sort=True, dimops=dimops)
+        energies.append(toapp)
     np.seterr(divide='warn', invalid='warn')
     if PR_GROUND_ONLY:
         energies = [[i] for i in np.asarray(energies)[:, 0]]
@@ -214,7 +218,7 @@ def finsum_dev(i, j, addzero, eint):
     dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
     return dev
 
-def sort_addzero(addzero, enint, timeij, sortbydist=True):
+def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
     """Introducing rho/sigma operator introduces ambiguity
     in energy sort:  where to sort the extra 0 entry
     in the non-interacting energies introduced by these operators?
@@ -227,6 +231,9 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True):
     mapi = []
     ret = np.zeros(addzero.shape, np.float)
     dispf = np.asarray(gdisp.disp())
+
+    distdict = {}
+
     if not isinstance(gdisp.disp()[0], float):
         dispf = em.acmean(gdisp.disp(), axis=0)
         # eint = np.swapaxes(enint, 0, 1)
@@ -248,14 +255,14 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True):
         for j, edisp in enumerate(dispf):
 
             # calculate metrics
-            dist = np.abs(mean-edisp)
             # rho/sigma index is 1
-            if i == 1 and not np.any(edisp):
+            if j == 1 and not np.all(dispf):
                 assert FULLDIM,\
                     "rho/sig disp energy is 0 (skipped),"+\
                     " but we have leftover disp energy"+\
                     " which is not being used"
-                dist = 0
+                #dist = np.inf
+            dist = np.abs(mean-edisp)
             # dev = finsum_dev(i, j, addzero, eint)
 
             # which additive zero
@@ -267,15 +274,29 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True):
             # mindev = min(dev, mindev)
 
             # store result
-            if mindist == dist and sortbydist:
+            if mindist == dist and dist != np.inf and sortbydist:
                 mindx = j
             #elif mindev == dev:
                 #mindx = j
         # check
         if not np.isnan(mindx):
             # print(mindist, mindx, i)
-            mapi.append((mindx, i))
-    check_map(mapi, timeij)
+            if mindx in distdict and dist <= distdict[mindx]:
+                # sanity check
+                assert dist != distdict[mindx], (mindist, distdict)
+                # purge prev
+                mapi = delj(mapi, mindx)
+                # update
+                mapi.append((mindx, i))
+                distdict[mindx] = mindist
+            elif mindx not in distdict:
+                # update
+                mapi.append((mindx, i))
+                distdict[mindx] = mindist
+
+    # fill in missing entries by process of elim
+    mapi = fill_in_addzero_map(mapi)
+    check_map(mapi, timeij, check_sort_all=check_sort_all)
     for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
         #assert toi != 1, \
@@ -298,18 +319,65 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True):
             ret[:, i] = make_avg_zero(ret[:, i])
     return ret
 
-def check_map(mapi, timeij):
+def delj(mapi, idx):
+    """Delete entry beginning with idx"""
+    ret = []
+    for i, j in mapi:
+        if i == idx:
+            continue
+        ret.append((i, j))
+    return ret
+        
+
+def fill_in_addzero_map(mapi):
+    """Fill in one-to-one map"""
+    seti = set()
+    setj = set()
+    mapi = list(mapi)
+    mmax = 0
+    for i, j in mapi:
+        mmax = max(i, mmax)
+        mmax = max(j, mmax)
+        seti.add(i)
+        setj.add(j)
+    for i in range(mmax):
+        if i not in seti and i not in setj:
+            mapi.append((i, i))
+    if setj-seti and seti-setj:
+        assert len(setj-seti) == 1
+        assert len(seti-setj) == 1
+        missing = (list(setj-seti)[0], list(seti-setj)[0])
+        mapi.append(missing)
+    return mapi
+
+
+
+def check_map(mapi, timeij, check_sort_all=True):
     """check to make sure the map doesn't change
     from the trivial identity map
     otherwise, our dispersive energy mapping
     to interacting energy is unstable
     and can't be used when doing a continuum extrap."""
-    for item in mapi:
-        i, j = item
-        if i != j:
+    if not check_sort_all:
+        try:
+            assert (0, 0) in mapi, mapi
+        except AssertionError:
             if VERBOSE:
-                print(str(mapi)+" "+str(i)+" "+str(j))
+                print("problem map:", mapi)
             raise XminError(problemx=timeij)
+    else:
+        print("mapi", mapi)
+        for i, j in mapi:
+            cond1 = not i and not j
+            cond2 = ISOSPIN == 2 and i == j
+            if j == len(mapi)-1:
+                cond3 = i == 1
+            else:
+                cond3 = j+1 == i
+            if not (cond1 or cond2 or cond3):
+                if VERBOSE:
+                    print(str(mapi)+" "+str(i)+" "+str(j))
+                raise XminError(problemx=timeij)
 
 def getkey(timeij, delta_t):
     """Get cache key"""
@@ -351,6 +419,7 @@ if PIONRATIO:
                 energies_noninteracting)
         # this fails if the binning didn't fix the broadcast incompatibility
         addzero = -1*energies_noninteracting+np.asarray(gdisp.disp())
+        print("addzero", addzero[0])
         addzero = addzero_nan_to_num(addzero)
         for i, energy in enumerate(addzero[0]):
             if np.isnan(energy):
@@ -373,6 +442,8 @@ if PIONRATIO:
             #sys.exit()
             raise XminError(problemx=timeij)
         if PR_GROUND_ONLY:
+            _ = sort_addzero(addzero, enint,
+                             timeij, check_sort_all=False)
             for i in range(addzero.shape[1]):
                 if i:
                     addzero[:, i] = 0.0

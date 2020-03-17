@@ -4,7 +4,7 @@ jackknifing and binning.
 """
 import numpy as np
 from latfit.config import MULT, GEVP, GEVP_DIRS, DISP_ENERGIES, OPERATOR_NORMS
-from latfit.config import LOGFORM, GEVP_DERIV
+from latfit.config import LOGFORM, GEVP_DERIV, VERBOSE
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 import latfit.analysis.misc as misc
@@ -53,18 +53,39 @@ def disp():
         disp.binned = True
         if DELTA_E_AROUND_THE_WORLD is not None:
             delt = np.asarray(DELTA_E_AROUND_THE_WORLD)
-            disp.energies = np.swapaxes(disp.energies, 0, 1)
+            delt = match_delt(delt)
+            assert np.asarray(
+                disp.energies).shape == delt.shape, (disp.energies.shape)
             disp.energies = np.asarray(disp.energies) - delt
-            disp.energies = np.swapaxes(disp.energies, 0, 1)
         if DELTA_E2_AROUND_THE_WORLD is not None:
             delt = np.asarray(DELTA_E2_AROUND_THE_WORLD)
-            disp.energies = np.swapaxes(disp.energies, 0, 1)
+            delt = match_delt(delt)
+            assert np.asarray(
+                disp.energies).shape == delt.shape, (disp.energies.shape)
             disp.energies = disp.energies - delt
-            disp.energies = np.swapaxes(disp.energies, 0, 1)
     return disp.energies
 disp.energies = np.asarray(DISP_ENERGIES)
 disp.binned = False
 disp.origl = len(DISP_ENERGIES)
+
+def match_delt(delt):
+    """Duplicate delta energy in matrix subtraction
+    to give it the same array structure as disp energies.
+    """
+    ret = []
+    sigveck = True if not np.all(DISP_ENERGIES[0]) else False
+    mult = int(MULT)
+    if sigveck:
+        mult -= 1
+    mult = range(mult)
+    for i in delt:
+        toapp = []
+        for _ in mult:
+            toapp.append(i)
+        toapp = mod_disp(toapp)
+        ret.append(toapp)
+    ret = np.asarray(ret)
+    return ret
 
 def binhalf_e(ear):
     """Update energies for binning and elimination
@@ -81,7 +102,43 @@ def binhalf_e(ear):
         ear = np.swapaxes(new_disp, 0, 1)
     return ear
 
-def callprocmeff(eigvals, timeij, delta_t, sort=False, dimops=None):
+def identity_sort_meff(tosort, timeij, dimops):
+    """Perform a check:
+    Sort the eigenvalues; throw an error if the sort
+    is not the identity"""
+    ret = list(tosort)
+    if dimops == 1:
+        begin = tosort[0]
+    else:
+        begin = list(tosort)
+    if len(tosort) > 1:
+        ret = glin.sortevals(tosort)[0]
+        if dimops == 1:
+            # assert map is identity
+            assert np.all(begin == ret[0]), (ret, begin)
+        else:
+            try:
+                assert np.all(begin == ret) or np.all(np.isnan(ret)),\
+                    (ret, begin)
+            except AssertionError:
+                if VERBOSE:
+                    print("non-identity map found")
+                    print(ret)
+                    print(begin)
+                raise XminError(problemx=timeij)
+    return ret
+
+def inv_arr(arr):
+    """1/array without throwing error"""
+    ret = []
+    for i in arr:
+        if not i:
+            ret.append(np.inf)
+        else:
+            ret.append(1/i)
+    return ret
+
+def callprocmeff(eigvals, timeij, delta_t, id_sort=False, dimops=None):
     """Call processing function for effective mass"""
     dimops = len(eigvals[0]) if dimops is None else dimops
     assert delta_t, delta_t
@@ -90,14 +147,14 @@ def callprocmeff(eigvals, timeij, delta_t, sort=False, dimops=None):
         eigvals.append(np.zeros(dimops)*np.nan)
         eigvals.append(np.zeros(dimops)*np.nan)
         assert len(eigvals) == 4
-    if sort:
+    if id_sort:
         for i in range(4):
             tosort = eigvals[i]
-            if len(tosort) > 1:
-                eigvals[i] = glin.sortevals(tosort)[0]
+            eigvals[i] = identity_sort_meff(
+                tosort, timeij, dimops)
     todiv = eigvals[0]
     try:
-        toproc = 1/(todiv[:dimops]) if not LOGFORM else todiv/delta_t
+        toproc = inv_arr(todiv[:dimops]) if not LOGFORM else todiv/delta_t
     except FloatingPointError:
         print(dimops)
         print(eigvals[0])

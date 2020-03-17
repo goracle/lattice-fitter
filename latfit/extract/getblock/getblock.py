@@ -256,7 +256,7 @@ if EFF_MASS:
         avg_energies = gdisp.callprocmeff([eigvals_mean_t, eigvals_mean_tp1,
                                            eigvals_mean_tp2,
                                            eigvals_mean_tp3], timeij,
-                                          delta_t, sort=False)
+                                          delta_t, id_sort=False)
 
         return avg_energies, eigvals_mean_t, evecs_mean_t
 
@@ -371,7 +371,7 @@ if EFF_MASS:
             energies = gdisp.callprocmeff([eigret[0], eigvals2,
                                            [np.nan]*len(eigret[0]),
                                            [np.nan]*len(eigret[0])],
-                                          timeij, delta_t)
+                                          timeij, delta_t, id_sort=False)
             if not REINFLATE_BEFORE_LOG:
                 energies = variance_reduction(energies,
                                               avg_en_eig[0],

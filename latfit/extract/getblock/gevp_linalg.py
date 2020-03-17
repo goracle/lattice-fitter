@@ -768,9 +768,9 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     elif not np.any(np.isnan(evals)):
         if debug:
             print("evals final", ret)
-    if np.isnan(ret[0][0]):
-        print("raising nan")
-        raise
+    #if np.isnan(ret[0][0]):
+    #    print("raising nan")
+    #    raise
     #print('BREAK')
     #print(ret[0])
     #print(evals)
@@ -798,11 +798,17 @@ def pos_shift(evals_past, evals_final):
     """Detect negative energy by positive shift in eigenvalue"""
     ret = False
     for i, j in zip(evals_past, evals_final):
+        break # until this is debugged
         diff = i.val-j
         if diff < 0:
             dev = i.sdev
             if -1*diff/dev > 1.5:
                 ret = True
+                print('diff', diff)
+                print('dev', dev)
+                print('evals past', evals_past)
+                print('evals final', evals_final)
+                sys.exit()
     return ret
 
 
@@ -954,8 +960,8 @@ def fill_in_missing(sdict, keys):
             if i not in sdict:
                 ret[i] = list(miss)[0]
     return ret
-            
-            
+
+
 
 def conv_dict_to_list(rrel):
     """Convert dict to list"""

@@ -221,7 +221,7 @@ elif EFF_MASS_METHOD == 4:
                                           args=(times[0], sol),
                                           bounds=(0, None))
                     fun = sol.fun
-                    sol = sol.x
+                    sol = sol.x if fun != np.inf else np.nan
             # other solution methods:
             # too unstable
             # sol = brentq(eff_mass_root, 0, 5, args=(times[0], sol))
@@ -243,6 +243,7 @@ elif EFF_MASS_METHOD == 4:
 
     def checksol(sol, index, times, corrs, fun):
         """Check the solution."""
+        assert fun < 1e-16
         if isinstance(sol, collections.Iterable):
             test = any(i < 0 for i in sol[1:])
         else:
