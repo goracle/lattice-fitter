@@ -938,8 +938,9 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
             for i in inter:
                 if i not in rrel:
                     print("no vote gives necessary pairing:", ret)
-                    assert None, "Please examine this case before proceeding further."
-                    #raise PrecisionLossError
+                    #assert None,\
+                    #    "Please examine this case before proceeding further."
+                    raise PrecisionLossError
                     #rrel[i] = np.inf
                     #ret = fill_in_missing(ret, inter)
                     #break
