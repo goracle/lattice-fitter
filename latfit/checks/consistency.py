@@ -57,7 +57,8 @@ def fit_range_consistency_check(meta, min_arr, name, mod_180=False):
     lparam = []
     for i in min_arr:
         lparam.append(getattr(i[0], name))
-    consis = consistent_list_params(lparam, mod_180=mod_180)
+    consis = consistent_list_params(lparam, mod_180=mod_180,
+                                    state_collapse_check='energy' in name)
     err_handle(meta, consis, lparam, name)
 
 def err_handle(meta, consis, lparam, name):
@@ -85,19 +86,24 @@ def sort_by_val(lparam):
         ret = sorted(lparam, key=lambda param: param.val)
     return ret
 
-def consistent_list_params(lparam, mod_180=False):
+def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
     """Check the consistency across a list of Param objects"""
     ret = True
     for i in lparam:
         if not ret:
             break
         for j in lparam:
-            ret = consistent_params(i, j, mod_180=mod_180)
+            ret = consistent_params(i, j, mod_180=mod_180, verb=True)
             if not ret:
                 break
+            if state_collapse_check:
+                kitem = np.swapaxes(j, 0, 1)
+                ret = not consistent_params(i, kitem, mod_180=mod_180)
+                if not ret:
+                    break
     return ret
 
-def consistent_params(item1, item2, mod_180=False):
+def consistent_params(item1, item2, mod_180=False, verb=VERBOSE):
     """Check the consistency of two Param objects
     if discrepant by > 1.5 sigma, return False (inconsistent)
     """
@@ -137,7 +143,7 @@ def consistent_params(item1, item2, mod_180=False):
     str1 = str(gvar(item1.val[idx], item1.err[idx]))
     str2 = str(gvar(item2.val[idx], item2.err[idx]))
     cond = str1 == str2 and str1 == '0(0)'
-    if not ret and not cond:
+    if not ret and not cond and verb:
         print("problematic diff:", str1,
               str2)
     return ret
