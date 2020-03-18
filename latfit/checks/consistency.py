@@ -93,6 +93,8 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
         if not ret:
             break
         for j in lparam:
+            if i is j: # check if referring to same object
+                continue
             ret = consistent_params(i, j, mod_180=mod_180, verb=True)
             if not ret:
                 break
@@ -101,6 +103,9 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
                 ret = not consistent_params(i, kitem, mod_180=mod_180)
                 _ = j.swapidx(0, 1) # swap back; pass by reference
                 if not ret:
+                    print("States 0 and 1 have collapsed into each other.")
+                    print(gvar(i.val, i.err))
+                    print(gvar(j.val, j.err))
                     break
     return ret
 

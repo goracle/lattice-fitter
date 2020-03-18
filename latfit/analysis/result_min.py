@@ -118,6 +118,8 @@ class Param:
         if hasattr(self.arr, '__iter__'):
             self.arr[:, idx1], self.arr[:, idx2] = self.arr[
                 :, idx2], self.arr[:, idx1]
+        if hasattr(self.err, '__iter__'):
+            self.err[idx1], self.err[idx2] = self.err[idx2], self.err[idx1]
         return self
 
     def zero(self, num_configs=None):
