@@ -111,6 +111,15 @@ class Param:
         self.err = None
         self.val = None
 
+    def swapidx(self, idx1, idx2):
+        """Swap axes method"""
+        if hasattr(self.val, '__iter__'):
+            self.val[idx1], self.val[idx2] = self.val[idx2], self.val[idx1]
+        if hasattr(self.arr, '__iter__'):
+            self.arr[:, idx1], self.arr[:, idx2] = self.arr[
+                :, idx2], self.arr[:, idx1]
+        return self
+
     def zero(self, num_configs=None):
         """Zero out the array, value, and error"""
         self.val = 0

@@ -97,8 +97,9 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
             if not ret:
                 break
             if state_collapse_check:
-                kitem = np.swapaxes(j, 0, 1)
+                kitem = j.swapidx(0, 1)
                 ret = not consistent_params(i, kitem, mod_180=mod_180)
+                _ = j.swapidx(0, 1) # swap back; pass by reference
                 if not ret:
                     break
     return ret
