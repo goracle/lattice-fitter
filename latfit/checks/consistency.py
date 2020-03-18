@@ -1,5 +1,6 @@
 """Check consistency of fit results"""
 import os
+import copy
 import numpy as np
 from gvar import gvar
 from latfit.config import GEVP, VERBOSE
@@ -93,19 +94,21 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
         if not ret:
             break
         for j in lparam:
-            if i is j: # check if referring to same object
-                continue
-            ret = consistent_params(i, j, mod_180=mod_180, verb=True)
+            ret, _ = consistent_params(i, j, mod_180=mod_180, verb=True)
             if not ret:
                 break
             if state_collapse_check:
-                kitem = j.swapidx(0, 1)
-                ret = not consistent_params(i, kitem, mod_180=mod_180)
-                _ = j.swapidx(0, 1) # swap back; pass by reference
+                kitem = copy.deepcopy(j)
+                kitem.swapidx(0, 1)
+                print("DEBUG:")
+                print('kitem', gvar(kitem.val, kitem.err))
+                print('iitem', gvar(i.val, i.err))
+                print("END DEBUG:")
+                _, ret = consistent_params(i, kitem, mod_180=mod_180)
                 if not ret:
                     print("States 0 and 1 have collapsed into each other.")
                     print(gvar(i.val, i.err))
-                    print(gvar(j.val, j.err))
+                    print(gvar(k.val, k.err))
                     break
     return ret
 
@@ -140,19 +143,21 @@ def consistent_params(item1, item2, mod_180=False, verb=VERBOSE):
     diff = np.asarray(diff)
     tlist = list(np.abs(diff/err))
     test = np.max(tlist)
+    test_inv = np.min(tlist[:2])
     try:
         idx = tlist.index(test)
     except ValueError:
         print(tlist)
         raise
-    ret = not test > 1.5
+    ret = not test > 1.5 # True => all consistent
+    ret2 = test_inv > 1.5 # True => first two are both inconsistent
     str1 = str(gvar(item1.val[idx], item1.err[idx]))
     str2 = str(gvar(item2.val[idx], item2.err[idx]))
     cond = str1 == str2 and str1 == '0(0)'
     if not ret and not cond and verb:
         print("problematic diff:", str1,
               str2)
-    return ret
+    return ret, ret2
 
 def check_include(result_min):
     """Check that we've obtained the result we're after"""
