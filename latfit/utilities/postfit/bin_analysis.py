@@ -27,10 +27,13 @@ except NameError:
 
 def round_gvar(item):
     """do not store extra error digits in a gvar item"""
-    item = gvar.gvar(item)
-    item = str(item)
-    item = gvar.gvar(item)
-    return item
+    if item is None or str(item) == 'None':
+        ret = None
+    else:
+        item = gvar.gvar(item)
+        item = str(item)
+        ret = gvar.gvar(item)
+    return ret
 
 def fill_best(cbest):
     """Fill the ALLOW buffers with current best known result"""
@@ -286,7 +289,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    itmin = [gvar.gvar(np.nan, np.inf), [], (np.nan, np.nan), np.nan]
+    itmin = [None, [], (np.nan, np.nan), np.nan]
     for item, sys_err, fitwin in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
@@ -303,7 +306,9 @@ def plot_t_dep_totnew(tot_new, plot_info,
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        if item.sdev < itmin[0].sdev and not np.isnan(item.val):
+        if itmin[0] is None:
+            itmin = (item, fitrange, fitwindow, sys_err)
+        elif item.sdev < itmin[0].sdev and not np.isnan(item.val):
             itmin = (item, fitrange, fitwindow, sys_err)
         elif np.isnan(item.val):
             assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
@@ -366,7 +371,9 @@ def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
     sel = [[j for j in i] for i in itmin[1]]
     sys_err = itmin[3]
-    if not np.isnan(itmin[0].val):
+    if itmin[0] is None:
+        fitwin = (None, None)
+    elif not np.isnan(itmin[0].val):
         fitwin = itmin[2]
     else:
         fitwin = (np.nan, np.nan)
@@ -447,10 +454,14 @@ def filter_toapp_nan(cbest, toapp, dim, itemidx):
     """Make nan if best is known to be nan already"""
     makenan = False
     for best in cbest:
-        dbest = gvar.gvar(best[dim][itemidx])
-        if np.isnan(dbest.val):
-            makenan = True
-        assert 'nan' not in str(dbest) or makenan
+        if best[dim][itemidx] is None or str(best[dim][itemidx]) == 'None':
+            continue
+        else:
+            dbest = gvar.gvar(best[dim][itemidx])
+            if np.isnan(dbest.val):
+                makenan = True
+                print("making nan")
+            assert 'nan' not in str(dbest) or makenan
     if makenan:
         toapp[itemidx] = gvar.gvar(np.nan, np.nan)
     return toapp
@@ -493,10 +504,22 @@ def prune_cbest(cbest):
                 continue
             assert len(cnew) == len(ibest)
             for idx, (jit, kit) in enumerate(zip(ibest, cnew)):
-                enerr = gvar.gvar(jit[0]).sdev
-                pherr = gvar.gvar(jit[1]).sdev
-                enerr_new = gvar.gvar(kit[0]).sdev
-                pherr_new = gvar.gvar(kit[1]).sdev
+                if jit[0] is not None and str(jit[0]) != 'None': 
+                    enerr = gvar.gvar(jit[0]).sdev
+                else:
+                    enerr = np.inf
+                if jit[1] is not None and str(jit[1]) != 'None': 
+                    pherr = gvar.gvar(jit[1]).sdev
+                else:
+                    pherr = np.inf
+                if kit[0] is not None and str(kit[0]) != 'None': 
+                    enerr_new = gvar.gvar(kit[0]).sdev
+                else:
+                    enerr_new = np.inf
+                if kit[1] is not None and str(kit[1]) != 'None': 
+                    pherr_new = gvar.gvar(kit[1]).sdev
+                else:
+                    pherr_new = np.inf
                 if enerr < enerr_new:
                     cnew[idx][0] = str(jit[0])
                 if pherr < pherr_new:

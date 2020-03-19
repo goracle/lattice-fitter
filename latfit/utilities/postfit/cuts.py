@@ -152,7 +152,10 @@ def res_best_comp(res, best, dim, chk_consis=True, cutstat=True):
     if chk_consis:
         ret = not consistency(best, res, prin=False)
     if cutstat:
-        devc = best.sdev if not np.isnan(best.sdev) else np.inf
+        if best is None:
+            devc = np.inf
+        else:
+            devc = best.sdev if not np.isnan(best.sdev) else np.inf
         try:
             # make cut not aggressive since it's a speed trick
             devd = min(round_wrt(devc, res.sdev), res.sdev)
@@ -202,22 +205,25 @@ def fitwincuts(fit_range, fitwindow, dim=None):
 @PROFILE
 def consistency(item1, item2, prin=False):
     """Check two gvar items for consistency"""
-    item1a = gvar.gvar(mod180(item1.val), item1.sdev)
-    item2a = gvar.gvar(mod180(item2.val), item2.sdev)
-    diff = np.abs(item1.val-item2.val)
-    diff2 = np.abs(item1a.val-item2a.val)
-    diff3 = np.abs(item1.val-item2a.val)
-    diff4 = np.abs(item1a.val-item2.val)
-    diff = min(diff, diff2, diff3, diff4)
-    dev = max(item1.sdev, item2.sdev)
-    sig = statlvl(gvar.gvar(diff, dev))
-    ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
-    if not ret:
-        if prin:
-            print("sig inconsis. =", sig)
-        # sanity check; relax '15' to a higher number as necessary
-        assert sig < 15 or ISOSPIN == 0,\
-            (sig, "check the best known list for",
-             "compatibility with current set",
-             "of results being analyzed", item1, item2)
+    if item1 is None or item2 is None:
+        ret = True
+    else:
+        item1a = gvar.gvar(mod180(item1.val), item1.sdev)
+        item2a = gvar.gvar(mod180(item2.val), item2.sdev)
+        diff = np.abs(item1.val-item2.val)
+        diff2 = np.abs(item1a.val-item2a.val)
+        diff3 = np.abs(item1.val-item2a.val)
+        diff4 = np.abs(item1a.val-item2.val)
+        diff = min(diff, diff2, diff3, diff4)
+        dev = max(item1.sdev, item2.sdev)
+        sig = statlvl(gvar.gvar(diff, dev))
+        ret = np.allclose(0, max(0, sig-1.5), rtol=1e-12)
+        if not ret:
+            if prin:
+                print("sig inconsis. =", sig)
+            # sanity check; relax '15' to a higher number as necessary
+            assert sig < 15 or ISOSPIN == 0,\
+                (sig, "check the best known list for",
+                "compatibility with current set",
+                "of results being analyzed", item1, item2)
     return ret
