@@ -100,15 +100,15 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
             if state_collapse_check:
                 kitem = copy.deepcopy(j)
                 kitem.swapidx(0, 1)
-                print("DEBUG:")
-                print('kitem', gvar(kitem.val, kitem.err))
-                print('iitem', gvar(i.val, i.err))
-                print("END DEBUG:")
+                #print("DEBUG:")
+                #print('kitem', gvar(kitem.val, kitem.err))
+                #print('iitem', gvar(i.val, i.err))
+                #print("END DEBUG:")
                 _, ret = consistent_params(i, kitem, mod_180=mod_180)
                 if not ret:
                     print("States 0 and 1 have collapsed into each other.")
                     print(gvar(i.val, i.err))
-                    print(gvar(k.val, k.err))
+                    print(gvar(kitem.val, kitem.err))
                     break
     return ret
 
