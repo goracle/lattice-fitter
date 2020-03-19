@@ -107,7 +107,7 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
                     break
     return ret
 
-def state_collapse_check(iitem, jitem, mod180=False):
+def state_collapse_check(iitem, jitem, mod_180=False):
     """Check all permutations of j's item against i's item for
     duplicate states"""
     ret = True
