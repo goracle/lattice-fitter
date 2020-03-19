@@ -1,6 +1,7 @@
 """Check consistency of fit results"""
 import os
 import copy
+# import itertools
 import numpy as np
 from gvar import gvar
 from latfit.config import GEVP, VERBOSE
@@ -98,19 +99,42 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
             if not ret:
                 break
             if state_collapse_check:
-                kitem = copy.deepcopy(j)
-                kitem.swapidx(0, 1)
-                #print("DEBUG:")
-                #print('kitem', gvar(kitem.val, kitem.err))
-                #print('iitem', gvar(i.val, i.err))
-                #print("END DEBUG:")
-                _, ret = consistent_params(i, kitem, mod_180=mod_180)
+                ret, idx, jdx = state_collapse_check(i, j)
                 if not ret:
-                    print("States 0 and 1 have collapsed into each other.")
+                    print("States", idx, "and", jdx "have collapsed into each other.")
                     print(gvar(i.val, i.err))
-                    print(gvar(kitem.val, kitem.err))
+                    print(gvar(j.val, j.err))
                     break
     return ret
+
+def state_collapse_check(iitem, jitem):
+    """Check all permutations of j's item against i's item for
+    duplicate states"""
+    ret = True
+    idx, jdx = None, None
+    if hasattr(iitem.val, '__iter__'):
+        llen = len(iitem.val)
+        for i in range(llen):
+            for j in range(llen):
+                if i >= j:
+                    continue
+                kitem = copy.deepcopy(jitem)
+                litem = copy.deepcopy(iitem)
+                kitem.swapidx(i, 0)
+                kitem.swapidx(j, 1)
+                litem.swapidx(i, 0)
+                litem.swapidx(j, 1)
+                litem.swapidx(0, 1)
+                _, ret = consistent_params(iitem, kitem, mod_180=mod_180)
+                if not ret:
+                    idx, jdx = i, j
+                    break
+    #for perm in list(itertools.permutations(range(len(iitem.val)))):
+    #print("DEBUG:")
+    #print('kitem', gvar(kitem.val, kitem.err))
+    #print('iitem', gvar(i.val, i.err))
+    #print("END DEBUG:")
+    return ret, idx, jdx
 
 def consistent_params(item1, item2, mod_180=False, verb=VERBOSE):
     """Check the consistency of two Param objects

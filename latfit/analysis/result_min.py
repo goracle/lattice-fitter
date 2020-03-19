@@ -113,13 +113,14 @@ class Param:
 
     def swapidx(self, idx1, idx2):
         """Swap axes method"""
-        if hasattr(self.val, '__iter__'):
-            self.val[idx1], self.val[idx2] = self.val[idx2], self.val[idx1]
-        if hasattr(self.arr, '__iter__'):
-            self.arr[:, idx1], self.arr[:, idx2] = self.arr[
-                :, idx2], self.arr[:, idx1]
-        if hasattr(self.err, '__iter__'):
-            self.err[idx1], self.err[idx2] = self.err[idx2], self.err[idx1]
+        if idx1 != idx2:
+            if hasattr(self.val, '__iter__'):
+                self.val[idx1], self.val[idx2] = self.val[idx2], self.val[idx1]
+            if hasattr(self.arr, '__iter__'):
+                self.arr[:, idx1], self.arr[:, idx2] = self.arr[
+                    :, idx2], self.arr[:, idx1]
+            if hasattr(self.err, '__iter__'):
+                self.err[idx1], self.err[idx2] = self.err[idx2], self.err[idx1]
         return self
 
     def zero(self, num_configs=None):
