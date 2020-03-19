@@ -99,7 +99,7 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
             if not ret:
                 break
             if collapse_check:
-                ret, idx, jdx = state_collapse_check(i, j)
+                ret, idx, jdx = state_collapse_check(i, j, mod_180=mod_180)
                 if not ret:
                     print("States", idx, "and", jdx, "have collapsed into each other.")
                     print(gvar(i.val, i.err))
@@ -107,7 +107,7 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
                     break
     return ret
 
-def state_collapse_check(iitem, jitem):
+def state_collapse_check(iitem, jitem, mod180=False):
     """Check all permutations of j's item against i's item for
     duplicate states"""
     ret = True
