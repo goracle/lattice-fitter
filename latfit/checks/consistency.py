@@ -60,7 +60,7 @@ def fit_range_consistency_check(meta, min_arr, name, mod_180=False):
     for i in min_arr:
         lparam.append(getattr(i[0], name))
     consis = consistent_list_params(lparam, mod_180=mod_180,
-                                    state_collapse_check='energy' in name)
+                                    collapse_check='energy' in name)
     err_handle(meta, consis, lparam, name)
 
 def err_handle(meta, consis, lparam, name):
@@ -88,7 +88,7 @@ def sort_by_val(lparam):
         ret = sorted(lparam, key=lambda param: param.val)
     return ret
 
-def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
+def consistent_list_params(lparam, mod_180=False, collapse_check=False):
     """Check the consistency across a list of Param objects"""
     ret = True
     for i in lparam:
@@ -98,7 +98,7 @@ def consistent_list_params(lparam, mod_180=False, state_collapse_check=False):
             ret, _ = consistent_params(i, j, mod_180=mod_180, verb=True)
             if not ret:
                 break
-            if state_collapse_check:
+            if collapse_check:
                 ret, idx, jdx = state_collapse_check(i, j)
                 if not ret:
                     print("States", idx, "and", jdx, "have collapsed into each other.")
