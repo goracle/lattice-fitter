@@ -438,7 +438,7 @@ if PIONRATIO:
         try:
             chk = np.abs(addzero[:, :dimops])
             #print('chk', chk[0])
-            assert np.all(np.asarray(chk) < 0.1), str(chk)
+            assert np.all(np.asarray(chk) < np.inf), str(chk) # turned off
         except AssertionError:
             #sys.exit()
             raise XminError(problemx=timeij)
