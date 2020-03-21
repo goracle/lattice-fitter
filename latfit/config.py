@@ -162,13 +162,13 @@ PIONRATIO = False if not GEVP else PIONRATIO
 
 # only apply pion ratio to ground state
 PR_GROUND_ONLY = True
-PR_GROUND_ONLY = False
 PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
+PR_GROUND_ONLY = False
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -377,7 +377,8 @@ if LATTICE_ENSEMBLE == '24c':
         MATRIX_SUBTRACTION = True 
 elif LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A1_avg_mom111':
-        MATRIX_SUBTRACTION = True 
+        MATRIX_SUBTRACTION = False # signal loss
+        MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
