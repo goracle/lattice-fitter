@@ -295,7 +295,11 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
                 distdict[mindx] = mindist
 
     # fill in missing entries by process of elim
-    mapi = fill_in_addzero_map(mapi, timeij)
+    if len(dispf)-len(mapi) == 1:
+        mapi = fill_in_addzero_map(mapi, timeij)
+    if len(dispf)-len(mapi):
+        print("pion ratio mapping is incomplete:", mapi)
+        raise XminError(problemx=timeij)
     check_map(mapi, timeij, check_sort_all=check_sort_all)
     for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
@@ -344,6 +348,7 @@ def fill_in_addzero_map(mapi, timeij):
         if i not in seti and i not in setj:
             mapi.append((i, i))
     if setj-seti and seti-setj:
+        # assume we only have one leftover
         try:
             assert len(setj-seti) == 1, (seti, setj, mapi)
             assert len(seti-setj) == 1, (seti, setj, mapi)
@@ -372,13 +377,16 @@ def check_map(mapi, timeij, check_sort_all=True):
     else:
         print("mapi", mapi)
         for i, j in mapi:
-            cond1 = not i and not j
-            cond2 = ISOSPIN == 2 and i == j
-            if j == len(mapi)-1:
-                cond3 = i == 1
-            else:
-                cond3 = j+1 == i
-            if not (cond1 or cond2 or cond3):
+            cond1 = not i and not j # ground to ground
+            cond2 = i == j # identity for I=2
+            cond3 = (2, 1) in mapi # sigma is higher energy, but op idx is 1
+            if ISOSPIN == 2:
+                cond = cond2
+            elif ISOSPIN == 0:
+                cond = cond1 and cond3
+            elif ISOSPIN == 1:
+                assert None, "not supported yet"
+            if not cond:
                 if VERBOSE:
                     print(str(mapi)+" "+str(i)+" "+str(j))
                 raise XminError(problemx=timeij)
@@ -447,8 +455,8 @@ if PIONRATIO:
             #sys.exit()
             raise XminError(problemx=timeij)
         if PR_GROUND_ONLY:
-            _ = sort_addzero(addzero, enint,
-                             timeij, check_sort_all=False)
+            #_ = sort_addzero(addzero, enint,
+            #timeij, check_sort_all=False)
             for i in range(addzero.shape[1]):
                 if i:
                     addzero[:, i] = 0.0
