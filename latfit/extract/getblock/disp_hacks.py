@@ -3,9 +3,9 @@ These are hacks to deal with dynamic array structure introduced by
 jackknifing and binning.
 """
 import numpy as np
-from latfit.config import MULT, GEVP, GEVP_DIRS, DISP_ENERGIES, OPERATOR_NORMS
-from latfit.config import LOGFORM, GEVP_DERIV, VERBOSE
-from latfit.config import DELTA_E_AROUND_THE_WORLD
+from latfit.config import MULT, GEVP, GEVP_DIRS, OPERATOR_NORMS
+from latfit.config import LOGFORM, GEVP_DERIV, VERBOSE, DISP_ENERGIES
+from latfit.config import DELTA_E_AROUND_THE_WORLD, MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 import latfit.analysis.misc as misc
 from latfit.mathfun.proc_meff import proc_meff
@@ -51,13 +51,14 @@ def disp():
         #disp.energies = mod_disp(disp.energies)
         disp.energies = binhalf_e(disp.energies)
         disp.binned = True
-        if DELTA_E_AROUND_THE_WORLD is not None:
+        if DELTA_E_AROUND_THE_WORLD is not None and MATRIX_SUBTRACTION:
             delt = np.asarray(DELTA_E_AROUND_THE_WORLD)
             delt = match_delt(delt)
             assert np.asarray(
-                disp.energies).shape == delt.shape, (disp.energies.shape)
+                disp.energies).shape == delt.shape, (
+                    disp.energies.shape, delt.shape)
             disp.energies = np.asarray(disp.energies) - delt
-        if DELTA_E2_AROUND_THE_WORLD is not None:
+        if DELTA_E2_AROUND_THE_WORLD is not None and MATRIX_SUBTRACTION:
             delt = np.asarray(DELTA_E2_AROUND_THE_WORLD)
             delt = match_delt(delt)
             assert np.asarray(
