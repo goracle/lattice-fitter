@@ -186,6 +186,7 @@ elif EFF_MASS_METHOD == 4:
                     "solution to energy from eval is unexpectedly nan."+str(
                         corrs)
             except NegLogArgument:
+                print("arg to log is < 0")
                 sol = np.nan
         else:
             sol = corrs[0]

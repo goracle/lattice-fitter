@@ -295,12 +295,16 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
                 distdict[mindx] = mindist
 
     # fill in missing entries by process of elim
+    if ISOSPIN == 0 and len(dispf) == 3: # hard coding!
+        mapi = [(0, 0), (2, 1), (1, 2)]
+    else:
+        assert None, "map not hard-coded yet"
     if len(dispf)-len(mapi) == 1:
         mapi = fill_in_addzero_map(mapi, timeij)
     if len(dispf)-len(mapi):
         print("pion ratio mapping is incomplete:", mapi)
         raise XminError(problemx=timeij)
-    check_map(mapi, timeij, check_sort_all=check_sort_all)
+    #check_map(mapi, timeij, check_sort_all=check_sort_all)
     for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
         #assert toi != 1, \
@@ -376,14 +380,17 @@ def check_map(mapi, timeij, check_sort_all=True):
             raise XminError(problemx=timeij)
     else:
         print("mapi", mapi)
+        cond3 = (2, 1) in mapi # sigma is higher energy, but op idx is 1
         for i, j in mapi:
-            cond1 = not i and not j # ground to ground
+            if i:
+                cond1 = True
+            else:
+                cond1 = not j # ground to ground
             cond2 = i == j # identity for I=2
-            cond3 = (2, 1) in mapi # sigma is higher energy, but op idx is 1
             if ISOSPIN == 2:
                 cond = cond2
             elif ISOSPIN == 0:
-                cond = cond1 and cond3
+                cond = cond3 and cond1
             elif ISOSPIN == 1:
                 assert None, "not supported yet"
             if not cond:
