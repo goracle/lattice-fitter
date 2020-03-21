@@ -295,7 +295,7 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
                 distdict[mindx] = mindist
 
     # fill in missing entries by process of elim
-    mapi = fill_in_addzero_map(mapi)
+    mapi = fill_in_addzero_map(mapi, timeij)
     check_map(mapi, timeij, check_sort_all=check_sort_all)
     for i, mapel in enumerate(mapi):
         # fromj, toi = mapel
@@ -329,7 +329,7 @@ def delj(mapi, idx):
     return ret
         
 
-def fill_in_addzero_map(mapi):
+def fill_in_addzero_map(mapi, timeij):
     """Fill in one-to-one map"""
     seti = set()
     setj = set()
@@ -344,8 +344,12 @@ def fill_in_addzero_map(mapi):
         if i not in seti and i not in setj:
             mapi.append((i, i))
     if setj-seti and seti-setj:
-        assert len(setj-seti) == 1
-        assert len(seti-setj) == 1
+        try:
+            assert len(setj-seti) == 1, (seti, setj, mapi)
+            assert len(seti-setj) == 1, (seti, setj, mapi)
+        except AssertionError:
+            print("mapping is too competitive->incomplete")
+            raise XminError(problemx=timeij)
         missing = (list(setj-seti)[0], list(seti-setj)[0])
         mapi.append(missing)
     return mapi
