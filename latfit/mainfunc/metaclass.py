@@ -204,7 +204,7 @@ class FitRangeMetaData:
                 print(delta, latfit.config.T0)
                 raise
             #print("xmin_req", xmin_req)
-            if self.options.xmin < xmin_req:
+            if self.options.xmin <= xmin_req:
                 self.incr_xmin(problemx=xmin_req, inx=True)
 
     @PROFILE
