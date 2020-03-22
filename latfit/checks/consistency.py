@@ -101,7 +101,8 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
             if collapse_check:
                 ret, idx, jdx = state_collapse_check(i, j, mod_180=mod_180)
                 if not ret:
-                    print("States", idx, "and", jdx, "have collapsed into each other.")
+                    print("States", idx, "and", jdx,
+                          "have collapsed into each other.")
                     print(gvar(i.val, i.err))
                     print(gvar(j.val, j.err))
                     break
@@ -125,7 +126,7 @@ def state_collapse_check(iitem, jitem, mod_180=False):
                 litem.swapidx(i, 0)
                 litem.swapidx(j, 1)
                 litem.swapidx(0, 1)
-                _, ret = consistent_params(iitem, kitem, mod_180=mod_180)
+                _, ret = consistent_params(kitem, litem, mod_180=mod_180)
                 if not ret:
                     idx, jdx = i, j
                     break
