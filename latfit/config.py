@@ -162,13 +162,13 @@ PIONRATIO = False if not GEVP else PIONRATIO
 
 # only apply pion ratio to ground state
 PR_GROUND_ONLY = True
+PR_GROUND_ONLY = False
 PR_GROUND_ONLY = True if ISOSPIN == 1 and 'mom000' in MOMSTR\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
-PR_GROUND_ONLY = False
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
