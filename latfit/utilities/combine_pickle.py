@@ -2,6 +2,7 @@
 """Combine pickle files with the same structure.
 Essentially list extend + i/o"""
 import sys
+import subprocess
 import pickle
 import glob
 import numpy as np
@@ -65,6 +66,7 @@ def main(fit_select=''):
     file_list = sys.argv[1:] if not fit_select else dummy_glob()
     if fit_select and verb:
         print("fit select:", fit_select)
+    prlit = False
     for i in file_list:
         if '.cp' in i:
             continue
@@ -74,6 +76,8 @@ def main(fit_select=''):
             continue
         if 'badfit' in i:
             continue
+        if 'phase_shift_err' in i:
+            prlit = True
         try:
             new_early = rf.earliest_time(i)
         except ValueError:
@@ -176,7 +180,12 @@ def main(fit_select=''):
         earlylist = prune_earlylist(earlylist)
         print("earliest time:", early, "from:")
         for i in earlylist:
-            print('prl.sh', i, 'tocut/')
+            call = 'prl.sh '+str(i)+' tocut/'
+            print(call)
+            if prlit:
+                assert not subprocess.call(call, shell=True)
+        #call = 'prl.sh tocut/* .'
+        #assert not subprocess.call(call, shell=True)
         if '.p.p' not in outfn:
             pickle.dump(ret, open(outfn, "wb"))
     return ret
