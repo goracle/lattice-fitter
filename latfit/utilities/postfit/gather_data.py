@@ -180,7 +180,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
             fit_range_arr = build_sliced_fitrange_list(median_store, freq, exclarr)
             fitwin = get_fitwindow(fit_range_arr, twin)
             if wintoosmall(fitwin):
-                print("fit window too small")
+                print("fit window too small:", fitwin)
                 break
 
             # plot median fit result (median energy)
