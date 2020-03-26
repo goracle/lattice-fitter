@@ -297,6 +297,8 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
     # fill in missing entries by process of elim
     if ISOSPIN == 0 and len(dispf) == 3: # hard coding!
         mapi = [(0, 0), (2, 1), (1, 2)]
+    elif ISOSPIN == 0 and len(dispf) == 2: # hard coding!
+        mapi = [(0, 0), (1, 1)]
     else:
         assert None, "map not hard-coded yet"
     if len(dispf)-len(mapi) == 1:
