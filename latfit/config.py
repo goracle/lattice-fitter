@@ -28,6 +28,7 @@ from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION, ISOSPIN, IRREP
 
 FIT = False
 FIT = True
+FIT = FIT if IRREP is None else True
 
 # loop over t-t0 and delta_t_around_the_world
 TLOOP = False
