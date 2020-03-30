@@ -117,6 +117,7 @@ def state_collapse_check(iitem, jitem, mod_180=False):
         llen = len(iitem.val)
         for i in range(llen):
             for j in range(llen):
+                #if i >= j or j == 2 or i == 2:
                 if i >= j:
                     continue
                 kitem = copy.deepcopy(jitem)
