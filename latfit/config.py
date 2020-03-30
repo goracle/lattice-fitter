@@ -67,10 +67,10 @@ if IRREP is None:
     IRREP = 'T_1_MINUS'
     IRREP = 'T_1_3MINUS'
     IRREP = 'A1x_mom011'
-    IRREP = 'A1_avg_mom111'
-    IRREP = 'A1_mom11'
-    IRREP = 'A1_mom1'
     IRREP = 'A_1PLUS_mom000'
+    IRREP = 'A1_avg_mom111'
+    IRREP = 'A1_mom1'
+    IRREP = 'A1_mom11'
 
     if ISOSPIN == 1:
         # control
@@ -98,8 +98,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 # lattice ensemble to take gauge config average over
 
 if LATTICE_ENSEMBLE is None:
-    LATTICE_ENSEMBLE = '24c'
     LATTICE_ENSEMBLE = '32c'
+    LATTICE_ENSEMBLE = '24c'
 print("LATTICE_ENSEMBLE:", LATTICE_ENSEMBLE)
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
@@ -377,10 +377,14 @@ if LATTICE_ENSEMBLE == '24c':
         MATRIX_SUBTRACTION = False # signal loss
     elif IRREP == 'A1_mom11':
         MATRIX_SUBTRACTION = True 
+        MATRIX_SUBTRACTION = False # signal loss
 elif LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A1_avg_mom111':
         MATRIX_SUBTRACTION = False # signal loss
         MATRIX_SUBTRACTION = True
+    elif IRREP == 'A1_mom1':
+        MATRIX_SUBTRACTION = True # used in bug version
+        MATRIX_SUBTRACTION = False
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
