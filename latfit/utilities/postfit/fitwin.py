@@ -3,7 +3,9 @@ import numpy as np
 from latfit.config import RANGE_LENGTH_MIN, ISOSPIN
 
 LENMIN = 3
-MIN_FITWIN_LEN = LENMIN + 1*0
+MIN_FITWIN_LEN = LENMIN
+if ISOSPIN:
+    MIN_FITWIN_LEN += 1
 assert LENMIN == RANGE_LENGTH_MIN
 # I=0 we have fewer successful fit ranges, so apply a less stringent cut
 if not ISOSPIN:
