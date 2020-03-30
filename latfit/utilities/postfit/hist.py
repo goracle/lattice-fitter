@@ -205,7 +205,8 @@ def wallback():
     """At late times, walk the plateau backwards to find optimal tmin"""
     # p11 32c, hard coded
     if LATTICE_ENSEMBLE == '32c' and IRREP == 'A1_mom11':
-        ignorable_windows = [(9, 13), (10, 14)]
+        pass
+        #ignorable_windows = [(9, 13), (10, 14)]
     else:
         ignorable_windows = []
 

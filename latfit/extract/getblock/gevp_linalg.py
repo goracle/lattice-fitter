@@ -170,6 +170,7 @@ def posdef_check(mat, idx1=None, idx2=None, time=None):
     if sdev*1.5 >= np.abs(val):
         print("Signal loss for correlator src index", idx1,
               "to sink index", idx2)
+        print('val', gvar.gvar(val, sdev))
         if time is not None:
             print("op from time:", time)
         raise PrecisionLossError
@@ -546,7 +547,11 @@ def map_evals(evals_from, evals_to, debug=False):
     rel_diff = np.array(rel_diff)
     if debug:
         print("base scores", rel_diff)
-    rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
+    try:
+        rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
+    except FloatingPointError:
+        print('rel diff', rel_diff)
+        raise
     rel_diff = list(rel_diff)
     #for i in rel_diff:
     #    if i == np.inf:
