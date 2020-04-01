@@ -373,11 +373,11 @@ MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' else MATRIX_SUBTRACTION
 # observed visible around the world effect
 if LATTICE_ENSEMBLE == '24c':
     if IRREP == 'A1_mom1':
-        MATRIX_SUBTRACTION = True 
         MATRIX_SUBTRACTION = False # signal loss
+        MATRIX_SUBTRACTION = True 
     elif IRREP == 'A1_mom11':
-        MATRIX_SUBTRACTION = True 
         MATRIX_SUBTRACTION = False # signal loss
+        MATRIX_SUBTRACTION = True 
 elif LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A1_avg_mom111':
         MATRIX_SUBTRACTION = False # signal loss
