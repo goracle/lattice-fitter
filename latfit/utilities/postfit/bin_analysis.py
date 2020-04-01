@@ -442,9 +442,9 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
         plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         toapp = filter_toapp_nan(cbest, toapp, dim, 1)
         coll.append(toapp)
-        print("coll", coll)
+        #print("coll", coll)
         toapp = []
-    print(coll)
+    print('coll', coll)
     pr_best_fitwin(fitwin_votes)
     cbest.append(coll)
     prune_cbest(cbest)
@@ -524,7 +524,8 @@ def prune_cbest(cbest):
                     cnew[idx][0] = str(jit[0])
                 if pherr < pherr_new:
                     cnew[idx][1] = str(jit[1])
-    print("pruned cbest list:", cnew)
+    print("pruned cbest list:")
+    print(cnew)
     return cnew
 
 
