@@ -364,9 +364,9 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
                 if not noprint:
                     printres(themin[0], pval, syserr, fit_range, maxrange)
     if themin is not None:
-        print('p-value weighted median =', gvar.gvar(avg_gvar(median),
-                                                     median[0].sdev))
-        print("p-value weighted mean =", avg_dim)
+        #print('p-value weighted median =', gvar.gvar(avg_gvar(median),
+        #                                              median[0].sdev))
+        # print("p-value weighted mean =", avg_dim)
         ret = (
             themin[0], themin[1], [themin[2]])
     else:
