@@ -198,10 +198,12 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
                     fit_range_arr, best)
                 fitr = augment_fitr(fitr, fitwin)
             except FitRangeInconsistency:
+                assert None, "check this"
                 continue
 
             if str(themin) == str(gvar.gvar(np.nan, np.nan)):
-                print(best, "min not found for dim:", dim)
+                print(best, "min not found for dim:",
+                      dim, "fname:", fname)
                 continue
             assert len(median_store[0]), (
                 len(median_store[0]), themin)
