@@ -201,7 +201,7 @@ def sort_filenames(fnames):
         ret.append(sdict[i])
     return ret
 
-def wallback():
+def walkback():
     """At late times, walk the plateau backwards to find optimal tmin"""
     # p11 32c, hard coded
     if LATTICE_ENSEMBLE == '32c' and IRREP == 'A1_mom11':
@@ -294,4 +294,4 @@ if __name__ == '__main__':
         pickle.dump(IDS_HIST, open('ids_hist.p', "wb"))
     check_ids_hist()
     check_ids(LATTICE_ENSEMBLE)
-    wallback()
+    walkback()
