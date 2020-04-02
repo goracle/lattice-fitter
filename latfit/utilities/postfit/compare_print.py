@@ -143,8 +143,8 @@ def print_compiled_res(cbest, min_en, min_ph):
     """Print the compiled results"""
 
     # total error results to plot
-    min_enf = [(str(i), j, k) for i, j, k in min_en]
-    min_phf = [(str(i), j, k) for i, j, k in min_ph]
+    min_enf = [(str(i), j, k, l) for i, j, k, l in min_en]
+    min_phf = [(str(i), j, k, l) for i, j, k, l in min_ph]
     ret = list(zip(min_enf, min_phf))
 
     # perform check
@@ -157,8 +157,8 @@ def print_compiled_res(cbest, min_en, min_ph):
                 fitwins[0], fitwins2[0])
 
     # res(stat)(sys) error string to print
-    min_en = [errstr(i, j) for i, j, _ in min_en]
-    min_ph = [errstr(i, j) for i, j, _ in min_ph]
+    min_en = [errstr(i, j) for i, j, _, _ in min_en]
+    min_ph = [errstr(i, j) for i, j, _, _ in min_ph]
     min_res = [
         list(i) for i in zip(min_en, min_ph) if list(i)]
     min_res_pr = [
@@ -253,6 +253,8 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
 
     sort_check(median_err, reverse=False)
 
+    effmass = []
+
     for idx, (effmass, pval, emean) in enumerate(median_err):
 
         sdev = effmass[0].sdev
@@ -303,7 +305,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
         noprint = False
         if themin is not None:
             if themin[0].sdev > errterm:
-                themin = (gvar.gvar(emean, errterm), syserr, fit_range)
+                themin = (gvar.gvar(emean, errterm), syserr, fit_range, effmass)
                 #pvalmin = pval
                 #fitrmin = fit_range
             else:
@@ -311,7 +313,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
         else:
             #pvalmin = pval
             #fitrmin = fit_range
-            themin = (gvar.gvar(emean, errterm), syserr, fit_range)
+            themin = (gvar.gvar(emean, errterm), syserr, fit_range, effmass)
 
         # if the max difference is not zero
         if ind_diff.val:
@@ -368,10 +370,18 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
         #                                              median[0].sdev))
         # print("p-value weighted mean =", avg_dim)
         ret = (
-            themin[0], themin[1], [themin[2]])
+            themin[0], themin[1], [themin[2]], dropsdev(themin[3]))
     else:
-        ret = (gvar.gvar(np.nan, np.nan), np.nan, [[[]]])
+        ret = (gvar.gvar(np.nan, np.nan), np.nan,
+               [[[]]], np.nan*dropsdev(effmass))
     return ret
+
+def dropsdev(arr):
+    """From array of gvar items, drop sdev info"""
+    ret = []
+    if list(arr):
+        ret = [i.val for i in arr]
+    return np.array(ret)
 
 @PROFILE
 def avg_gvar(arr):

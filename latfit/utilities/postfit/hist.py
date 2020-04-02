@@ -16,6 +16,7 @@ from latfit.utilities.postfit.compare_print import print_compiled_res
 from latfit.utilities.postfit.bin_analysis import print_tot, fill_best
 from latfit.utilities.postfit.bin_analysis import consis_tot, BinInconsistency
 from latfit.utilities.postfit.strproc import tmin_param
+from latfit.utilities.postfit.dropdown import weight_sum
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -68,6 +69,7 @@ def get_mins(bests, files, twin, nosave):
 @PROFILE
 def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
     """Make the histograms."""
+    cbest, cbest_blks = cbest
     if len(fnames) == 1 and (
             'phase_shift' in fnames[0] or\
             'energy' in fnames[1]) and nosave:
@@ -123,18 +125,20 @@ def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
             for i in success_tadd_tsub:
                 print(i)
             print_sep_errors(tot_pr)
-            newcbest = print_tot(fname, tot, cbest, ignorable_windows, dump_min)
+            newcbest, newcbest_blks = print_tot(
+                fname, tot, (cbest, cbest_blks), ignorable_windows, dump_min)
         else:
             print("raising inconsistency since no consistent results found")
             raise BinInconsistency
             newcbest = cbest
+            newcbest_blks = cbest_blks
         print("end of tloop")
     else:
         for fname in sys.argv[1:]:
             min_res = make_hist(fname, '', (np.nan, np.nan), nosave=nosave)
         print("minimized error results:", min_res)
         newcbest = []
-    return newcbest
+    return newcbest, newcbest_blks
 
 
 # don't count these fit windows for continuity check
@@ -221,6 +225,7 @@ def walkback():
     print("ignorable_windows =", ignorable_windows)
 
     cbest = []
+    cbest_blks = []
     flag = 1
     fname = next_filename(fnames)
     useable = ()
@@ -232,10 +237,11 @@ def walkback():
             if flag != 2:
                 check_bad_bin(tmin_param(fname))
             print("starting analysis on file:", fname)
-            cbest = tloop(cbest, ignorable_windows, [fname], dump_min=False)
+            cbest, cbest_blks = tloop((cbest, cbest_blks),
+                                      ignorable_windows, [fname], dump_min=False)
             success = True
             print("success found for file:", fname)
-            useable = (cbest, ignorable_windows, [fname])
+            useable = ((cbest, cbest_blks), ignorable_windows, [fname])
             if flag == 1: # now start the walk back
                 print("starting walk-back")
                 flag = 2
@@ -255,13 +261,59 @@ def walkback():
         if not fname:
             print("no more data to examine")
             break
-    print("CBEST, final =", cbest)
     if useable: # to get final plot info, rerun
         tloop(*useable, dump_min=True)
+    print("CBEST, final =", cbest)
     print("time route taken:", route)
+    print("starting drop down version")
+    drop_down(cbest_blks)
     subprocess.check_output(['notify-send', '-u',
                              'critical', '-t', '30',
                              'hist: walk-back complete'])
+
+def drop_down(cbest_blks):
+    """Perform drop down sum"""
+    diml = len(cbest_blks[0])
+    cbest = []
+    for dim in range(diml):
+        toapp = []
+        acc_en = build_weightsum_list(cbest_blks, dim, 0)
+        mean, err = weight_sum(np.array(acc_en))
+        toapp.append(str(gvar.gvar(mean, err)))
+        acc_ph = build_weightsum_list(cbest_blks, dim, 1)
+        mean, err = weight_sum(np.array(acc_ph))
+        toapp.append(str(gvar.gvar(mean, err)))
+        cbest.append(toapp)
+    print('drop down cbest:')
+    print(cbest)
+
+def build_weightsum_list(cbest_blks, dim, itemidx):
+    """Ok here we are"""
+    ret = []
+    for i in cbest_blks:
+        if not list(i[dim][itemidx]):
+            #print("item not found", dim, itemidx)
+            #print(i[dim][itemidx])
+            #sys.exit()
+            continue
+        if not np.isnan(i[dim][itemidx][0]):
+            toapp = i[dim][itemidx]
+            for j in ret:
+                if np.allclose(toapp, j, rtol=1e-12):
+                    toapp = None
+                    break
+            if toapp is not None:
+                ret.append(toapp)
+        else:
+            break # do not continue; we have no result at any earlier times
+    if len(ret) > 1:
+        for idx, res1 in enumerate(ret):
+            for jdx, res2 in enumerate(ret):
+                if jdx <= idx:
+                    continue
+                assert not np.allclose(res1, res2, rtol=1e-12)
+    return ret
+
 
 def check_bad_bin(tmin):
     """Check to make sure this tmin_param

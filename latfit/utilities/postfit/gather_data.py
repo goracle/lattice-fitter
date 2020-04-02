@@ -193,7 +193,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
 
             # prints the sorted results
             try:
-                themin, sys_err, fitr = output_loop(
+                themin, sys_err, fitr, effmass = output_loop(
                     median_store, avg[dim], (dim, allowidx),
                     fit_range_arr, best)
                 fitr = augment_fitr(fitr, fitwin)
@@ -207,7 +207,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
                 continue
             assert len(median_store[0]), (
                 len(median_store[0]), themin)
-            ret[dim] = (themin, sys_err, fitr)
+            ret[dim] = (themin, sys_err, fitr, effmass)
 
             if not nosave:
                 print("saving plot as filename:", save_str)
@@ -309,7 +309,7 @@ def fill_conv_dict(todict, dimlen):
         for i in range(dimlen):
             if i not in todict:
                 ret.append((gvar.gvar(np.nan, np.nan),
-                            np.nan, ([[]], (np.nan, np.nan))))
+                            np.nan, ([[]], (np.nan, np.nan)), np.array([])))
             else:
                 ret.append(todict[i])
     return ret

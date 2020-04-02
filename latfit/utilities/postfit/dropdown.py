@@ -10,7 +10,6 @@ from scipy import stats
 import numpy as np
 from latfit.utilities import exactmean as em
 from latfit.analysis.superjack import jack_mean_err
-from latfit
 
 
 # the weight sum
@@ -21,35 +20,52 @@ def weight_sum(sorted_block_list):
     use list of jackknife blocks
     index runs towards earlier (more goal-like) times
     """
+    assert list(sorted_block_list), len(sorted_block_list)
+    if len(sorted_block_list) > 1:
+        assert None, "Success!"
+        retblk = non_triv_block(sorted_block_list)
+    else:
+        print("using trivial block")
+        retblk = sorted_block_list[0]
+    # jackknife average
+    mean, err = jack_mean_err(retblk)
+    return mean, err
+
+def non_triv_block(sorted_block_list):
+    """If the number of steps is in the walk back
+    is greater than 1, get this non-trivial block"""
     retblk = []
     norm = [] # sum of weights
     for idx, blk in enumerate(sorted_block_list):
-        nlist = sorted_block_list[:idx]
         np1list = sorted_block_list[:idx+1]
-        fact1 = chained_probs(nlist)
         fact2 = 1-chained_probs(np1list)
+        if idx:
+            nlist = sorted_block_list[:idx]
+            fact1 = chained_probs(nlist)
+        else:
+            fact1 = fact2
         weight = fact1*fact2
         norm.append(weight)
         retblk.append(blk*weight)
     # perform the weight sum here
-    norm = np.array(norm)
     retblk = np.array(retblk)
+    norm = np.array(norm)
     retblk = em.acsum(retblk, axis=0)*em.acsum(1/norm, axis=0)
+    return retblk
 
-    # jackknife average
-    mean, err = jack_mean_err(retblk)
-    return mean, err
 
 def chained_probs(nlist):
     """Get the probablity that all blocks in nlist
     have the same mean.
     return a jackknifed answer to that question.
     """
-    ret = 1
+    assert list(nlist)
+    ret = np.ones(len(nlist[0]))
     for idx, blk1 in enumerate(nlist):
         for jdx, blk2 in enumerate(nlist):
             if jdx <= idx:
                 continue
+            assert not np.allclose(blk1, blk2, rtol=1e-12)
             nprob = prob_blk(blk1, blk2)
             nprob = np.asarray(nprob)
             ret *= nprob

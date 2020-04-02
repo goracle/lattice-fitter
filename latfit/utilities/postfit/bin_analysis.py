@@ -108,6 +108,7 @@ def drop_extra_info(ilist):
     (in general i[j][0] == result)
     i[j][1] == sys_err
     i[j][2] == (fit_range, fit window)
+    i[j][3] == jackknife blocks
     """
     # find the common fit range, for this fit window if it exists
     fit_range = None
@@ -248,12 +249,12 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
     if list(tot_new) or ISOSPIN == 0:
         quick_compare(tot_new, prin=True)
         plot_info = dim, title, units, fname
-        fitwin_votes, toapp = plot_t_dep_totnew(
+        fitwin_votes, toapp, blks = plot_t_dep_totnew(
             tot_new, plot_info, fitwin_votes, toapp, dump_min)
     else:
         print("not enough consistent results for a complete set of plots")
         sys.exit(1)
-    return fitwin_votes, toapp
+    return fitwin_votes, toapp, blks
 
 @PROFILE
 def check_fitwin_continuity(tot_new, ignorable_windows):
@@ -289,8 +290,8 @@ def plot_t_dep_totnew(tot_new, plot_info,
     xticks_max = []
     itemprev = None
     fitwinprev = None
-    itmin = [None, [], (np.nan, np.nan), np.nan]
-    for item, sys_err, fitwin in tot_new:
+    itmin = [None, [], (np.nan, np.nan), np.nan, []]
+    for item, sys_err, fitwin, effmass in tot_new:
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
         trfitwin = (fitwindow[0] + 1, fitwindow[1])
@@ -307,9 +308,9 @@ def plot_t_dep_totnew(tot_new, plot_info,
         yarr.append(item.val)
         yerr.append(item.sdev)
         if itmin[0] is None:
-            itmin = (item, fitrange, fitwindow, sys_err)
+            itmin = (item, fitrange, fitwindow, sys_err, effmass)
         elif item.sdev < itmin[0].sdev and not np.isnan(item.val):
-            itmin = (item, fitrange, fitwindow, sys_err)
+            itmin = (item, fitrange, fitwindow, sys_err, effmass)
         elif np.isnan(item.val):
             assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
                            _, _ in tot_new])
@@ -321,8 +322,9 @@ def plot_t_dep_totnew(tot_new, plot_info,
     if itmin[2] not in fitwin_votes:
         fitwin_votes[itmin[2]] = 0
     fitwin_votes[itmin[2]] += 1
-    assert len(itmin) == 4, itmin
-    if not np.all([np.isnan(gvar.gvar(item).val) for item, _, _ in tot_new]):
+    assert len(itmin) == 5, itmin
+    if not np.all([np.isnan(gvar.gvar(item).val)
+                   for item, _, _, _ in tot_new]):
         assert not np.isnan(itmin[0].val), (tot_new, itmin)
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
@@ -365,7 +367,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
         print("saving fig:", save_str)
         pdf.savefig()
     #plt.show()
-    return fitwin_votes, toapp
+    return fitwin_votes, toapp, itmin[4]
 
 def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
@@ -404,9 +406,13 @@ def to_include(itmin, dim, title, dump_min):
             fn1 = open(savel+'.p', 'wb')
             pickle.dump(ts_loop, fn1)
 
+def alt_coll(coll_blks):
+    """ok"""
+
 @PROFILE
 def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     """Print results vs. tmin"""
+    cbest, cbest_blks = cbest
     tot_new = []
     lenmax = 0
     print("summary results:")
@@ -427,28 +433,31 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     tot = tot_new
     fitwin_votes = {}
     coll = []
+    coll_blks = []
     toapp = []
     best_info = (not cbest and ISOSPIN != 0, ignorable_windows)
     for dim, _ in enumerate(tot[0]):
         plot_info = (dim, 0, 'Energy', 'lattice units', fname)
         info = (best_info, plot_info)
-        fitwin_votes, toapp = plot_t_dep(
+        fitwin_votes, toapp, blks1 = plot_t_dep(
             tot, info, fitwin_votes, toapp, dump_min)
         toapp = filter_toapp_nan(cbest, toapp, dim, 0)
         plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         info = (best_info, plot_info)
-        fitwin_votes, toapp = plot_t_dep(
+        fitwin_votes, toapp, blks2 = plot_t_dep(
             tot, info, fitwin_votes, toapp, dump_min)
         plot_info = (dim, 1, 'Phase Shift', 'degrees', fname)
         toapp = filter_toapp_nan(cbest, toapp, dim, 1)
         coll.append(toapp)
+        coll_blks.append([blks1, blks2])
         #print("coll", coll)
         toapp = []
     print('coll', coll)
     pr_best_fitwin(fitwin_votes)
     cbest.append(coll)
+    cbest_blks.append(coll_blks)
     prune_cbest(cbest)
-    return cbest
+    return cbest, cbest_blks
 
 def filter_toapp_nan(cbest, toapp, dim, itemidx):
     """Make nan if best is known to be nan already"""
@@ -463,7 +472,7 @@ def filter_toapp_nan(cbest, toapp, dim, itemidx):
                 print("making nan")
             assert 'nan' not in str(dbest) or makenan
     if makenan:
-        toapp[itemidx] = gvar.gvar(np.nan, np.nan)
+        toapp[itemidx] = (gvar.gvar(np.nan, np.nan))
     return toapp
 
 
@@ -576,9 +585,9 @@ class BinInconsistency(Exception):
 @PROFILE
 def quick_compare(tot_new, prin=False):
     """Check final results for consistency"""
-    for item, _, fitwin in tot_new:
+    for item, _, fitwin, _ in tot_new:
         item = gvar.gvar(item)
-        for item2, _, fitwin2 in tot_new:
+        for item2, _, fitwin2, _ in tot_new:
             item2 = gvar.gvar(item2)
             if not consistency(item, item2, prin=prin):
                 print("raising inconsistency:")
