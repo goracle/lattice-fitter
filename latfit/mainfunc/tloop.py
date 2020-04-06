@@ -271,7 +271,8 @@ def fit(tadd=0, tsub=0):
                 # get one fit range, check it
                 excl, checked = frsort.get_one_fit_range(
                     meta, prod, idx, sorted_fit_ranges, checked)
-                excl = list(excl)
+                if excl is not None:
+                    excl = list(excl)
                 if excl is None:
                     continue
                 if sfit.toosmallp(meta, excl):
@@ -525,7 +526,7 @@ def augment_excl(excli):
         excl[num] = sorted(list(set(j).union(set(i))))
     return excl
 augment_excl.excl_orig = list(EXCL_ORIG)
-frsort.augment_excl = list(augment_excl)
+frsort.augment_excl = augment_excl
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style
