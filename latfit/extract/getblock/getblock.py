@@ -12,7 +12,7 @@ from latfit.mathfun.binconf import binconf
 from latfit.extract.proc_line import proc_line
 from latfit.analysis.errorcodes import XmaxError, NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError, NegativeEnergy
-from latfit.analysis.errorcodes import ImaginaryEigenvalue
+from latfit.analysis.errorcodes import ImaginaryEigenvalue, XminError
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 from latfit.analysis.superjack import jack_mean_err
 
@@ -27,7 +27,7 @@ import latfit.extract.getblock.disp_hacks as gdisp
 import latfit.extract.getblock.gevp_solve as gsolve
 import latfit.extract.getblock.gevp_linalg as glin
 
-from latfit.config import EFF_MASS
+from latfit.config import EFF_MASS, PIONRATIO
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import GEVP_DEBUG, GEVP_DERIV, STYPE
 from latfit.config import DECREASE_VAR, ISOSPIN
@@ -323,6 +323,9 @@ if EFF_MASS:
         num = 0
         # reset the list of allowed operator eliminations at the
         # beginning of the loop
+
+        brackets = []
+
         allowedeliminations(reset=True)
         #glin.reset_sortevals()
         while num < num_configs:
@@ -333,6 +336,7 @@ if EFF_MASS:
 
                 eigret = gsolve.get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
                                             print_evecs=True, commnorm=True)
+                brackets.append(glin.bracket(eigret[1][1], cmats_lhs[0][num]))
                 eigret = np.asarray(eigret)
 
                 glin.update_sorted_evecs(eigret[1], timeij, num)
@@ -387,8 +391,29 @@ if EFF_MASS:
             "number of configs should be the block length"
         final_gevp_debug_print(timeij, num_configs)
         #glin.update_sorted_evecs(avg_en_eig[2], timeij)
+        test_bracket_signal(brackets)
+        test_ground_increase(retblk, timeij)
         return retblk
 
+    def test_ground_increase(retblk, timeij):
+        """Test for increasing energy in the ground state.
+        Throw an xmin error if it increases.
+        """
+        mean = em.acmean(retblk, axis=0)[0]
+        prev = test_ground_increase.mean
+        if prev is not None and prev != mean:
+            test_ground_increase.mean = mean
+            if not np.isnan(prev):
+                if prev < mean:
+                    assert PIONRATIO
+                    if VERBOSE:
+                        print("ground state is still increasing:")
+                        print("prev, mean:", prev, mean)
+                        print("increasing tmin to decay region")
+                    raise XminError(problemx=timeij-1)
+                else:
+                    test_ground_increase.mean = None
+    test_ground_increase.mean = np.nan
 
     if GEVP_DERIV:
         def eigvals_tplus_one(dimops, num, cmats_lhs, cmat_rhs):
@@ -432,6 +457,22 @@ else:
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk
+
+def test_bracket_signal(brackets, decrease_var=DECREASE_VAR):
+    """Test the bracket signal"""
+    mean = em.acmean(np.real(brackets))
+    brackets = np.real(brackets)
+    assert np.all(brackets > 0) or np.all(brackets < 0), brackets
+    brackets = variance_reduction(
+        np.real(brackets), mean, 1/decrease_var)
+    err = em.acstd(brackets)*np.sqrt(len(brackets)-1)
+    if 1.5 * err >= mean:
+        pass
+        #print("Ground state bracket is statistically zero.")
+        #print(brackets)
+        #raise PrecisionLossError
+
+
 
 def continue_neg(eigvals):
     """Restart config loop if we find
