@@ -8,6 +8,7 @@ The first point we land on is our answer
 import sys
 from scipy import stats
 import numpy as np
+import gvar
 from latfit.utilities import exactmean as em
 from latfit.analysis.superjack import jack_mean_err
 
@@ -22,10 +23,8 @@ def weight_sum(sorted_block_list):
     """
     assert list(sorted_block_list), len(sorted_block_list)
     if len(sorted_block_list) > 1:
-        assert None, "Success!"
         retblk = non_triv_block(sorted_block_list)
     else:
-        print("using trivial block")
         retblk = sorted_block_list[0]
     # jackknife average
     mean, err = jack_mean_err(retblk)
@@ -114,3 +113,24 @@ def prob_blk(blk1, blk2):
         res.append(pval)
     return res
 
+def main():
+    """Test function using gaussian noise"""
+    llen = 200
+    tavg = []
+    for _ in range(3):
+        arr1 = np.ones(llen)+np.array([
+            np.random.normal(0, 0.01*2**(i+1)) for _ in range(llen)])
+        tavg.append(arr1)
+    tavg = list(reversed(tavg))
+    last = np.ones(llen)
+    last += np.array([np.random.normal(0.1, 0.01) for _ in range(llen)])
+    tavg.append(last)
+    mean, err = weight_sum(tavg)
+    print("test array weighted sum:")
+    print(gvar.gvar(mean, err))
+
+
+
+
+if __name__ == '__main__':
+    main()
