@@ -208,11 +208,10 @@ def sort_filenames(fnames):
 def walkback():
     """At late times, walk the plateau backwards to find optimal tmin"""
     # p11 32c, hard coded
+    ignorable_windows = []
     if LATTICE_ENSEMBLE == '32c' and IRREP == 'A1_mom11':
         pass
         #ignorable_windows = [(9, 13), (10, 14)]
-    else:
-        ignorable_windows = []
 
     fnames = sys.argv[1:]
     fnames = sort_filenames(fnames)
