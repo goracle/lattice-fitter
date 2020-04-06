@@ -686,6 +686,13 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
                     len(xfit[i])-1) if step_size is None else step_size
             except FloatingPointError:
                 step_size = 1.0
+            except IndexError:
+                if list(xfit[i]):
+                    print("index error bug?")
+                    raise
+                else:
+                    print("missing dim:", i)
+                    step_size = 1.0
             step_size = 1.0 if np.isnan(step_size) else step_size
             try:
                 xfit[i] = list(np.arange(xfit[i][0],
