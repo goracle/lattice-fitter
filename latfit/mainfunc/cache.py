@@ -9,20 +9,20 @@ import latfit.extract.getblock.gevp_linalg as glin
 import latfit.singlefit as sfit
 import latfit.config
 
-EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
+EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 
 def reset_main(mintol):
     """Reset all dynamic variables"""
     latfit.config.MINTOL = mintol
-    latfit.config.FIT_EXCL = np.copy(EXCL_ORIG)
-    latfit.config.FIT_EXCL = tuple(tuple(i) for i in latfit.config.FIT_EXCL)
+    latfit.config.FIT_EXCL = np.copy(list(EXCL_ORIG))
+    latfit.config.FIT_EXCL = tuple(tuple(i) for i in list(latfit.config.FIT_EXCL))
     partial_reset()
 
 def partial_reset():
     """Partial reset during tloop. Only partially clear some caches.
     """
-    glin.reset_sortevals() # this deserves some scrutiny #todo
     sfit.singlefit_reset()
+    glin.reset_sortevals()
 
 def reset_cache():
     """Until the globals in the loop are removed,

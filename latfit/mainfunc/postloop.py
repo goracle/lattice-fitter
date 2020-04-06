@@ -111,11 +111,11 @@ def closest_fit_to_avg(result_min_avg, min_arr):
         minmax_i = max(abs(fiti[0].energy.val-result_min_avg))
         if i == 0:
             minmax = minmax_i
-            ret_excl = fiti[2]
+            ret_excl = list(fiti[2])
         else:
             minmax = min(minmax_i, minmax)
             if minmax == minmax_i:
-                ret_excl = fiti[2]
+                ret_excl = list(fiti[2])
     return ret_excl
 
 
@@ -578,8 +578,8 @@ def post_loop(meta, loop_store, plotdata,
         result_min = find_mean_and_err(meta, min_arr)
         param_err = result_min['energy'].err
 
-        latfit.config.FIT_EXCL = closest_fit_to_avg(
-            result_min['energy'].val, min_arr)
+        latfit.config.FIT_EXCL = list(closest_fit_to_avg(
+            result_min['energy'].val, min_arr))
         # do the best fit again, with good stopping condition
         # latfit.config.FIT_EXCL = min_excl(min_arr)
     elif len(min_arr) == 1:

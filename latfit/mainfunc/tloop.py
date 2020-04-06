@@ -51,7 +51,7 @@ import latfit.config
 import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.proc_meff as effmass
 
-EXCL_ORIG = np.copy(EXCL_ORIG_IMPORT)
+EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -228,7 +228,7 @@ def fit(tadd=0, tsub=0):
         # which are nan (not a number) or
         # which have error bars which are too large
         # also, update with deliberate exclusions as part of TLOOP mode
-        augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
+        augment_excl.excl_orig = np.copy(list(latfit.config.FIT_EXCL))
 
         if FIT:
 
@@ -271,13 +271,14 @@ def fit(tadd=0, tsub=0):
                 # get one fit range, check it
                 excl, checked = frsort.get_one_fit_range(
                     meta, prod, idx, sorted_fit_ranges, checked)
+                excl = list(excl)
                 if excl is None:
                     continue
                 if sfit.toosmallp(meta, excl):
                     continue
 
                 # update global info about excluded points
-                latfit.config.FIT_EXCL = excl
+                latfit.config.FIT_EXCL = list(excl)
 
                 # do fit
                 start = time.perf_counter()
@@ -333,7 +334,8 @@ def dofit_initial(meta, plotdata):
         try:
             if VERBOSE:
                 print("Trying initial fit with excluded times:",
-                      latfit.config.FIT_EXCL, "fit window:", meta.fitwindow,
+                      list(latfit.config.FIT_EXCL),
+                      "fit window:", meta.fitwindow,
                       'rank:', MPIRANK)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
@@ -382,7 +384,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
         if not samerange and FIT:
             if VERBOSE:
                 print("Trying second initial fit with excluded times:",
-                      latfit.config.FIT_EXCL)
+                      list(latfit.config.FIT_EXCL))
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             if test_success and VERBOSE:
@@ -412,7 +414,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
         if not cutresult(result_min, min_arr,
                          overfit_arr, param_err):
             result = (result_min, list(param_err),
-                      latfit.config.FIT_EXCL)
+                      list(latfit.config.FIT_EXCL))
             # don't overfit
             if result_min.chisq.val/result_min.misc.dof >= 1 and\
                SKIP_OVERFIT:
@@ -432,7 +434,7 @@ def store_init(plotdata):
     assert sfit.singlefit.coords_full is not None
     plotdata.coords, plotdata.cov = sfit.singlefit.coords_full, \
         sfit.singlefit.cov_full
-    augment_excl.excl_orig = np.copy(latfit.config.FIT_EXCL)
+    augment_excl.excl_orig = np.copy(list(latfit.config.FIT_EXCL))
     return plotdata
 
 
@@ -442,6 +444,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
     # unpack
     min_arr, overfit_arr, retsingle_save = results_store
     idx, excl, fit_range_init = fit_range_data
+    excl = list(excl)
     skip = False
     try:
         showint = int(min(np.floor(meta.lenprod/10), (MPISIZE*5)))
@@ -464,7 +467,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
               "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
     # retsingle_save needs a cut on error size
-    if frsort.keyexcl(excl) == fit_range_init:
+    if frsort.keyexcl(list(excl)) == fit_range_init:
         skip = True
     else:
         try:
@@ -473,7 +476,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
             if VERBOSE:
                 print("fit succeeded for this selection"+\
-                      " excluded points=", excl)
+                      " excluded points=", list(excl))
             if meta.lenprod == 1 or MAX_RESULTS == 1:
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
@@ -515,13 +518,14 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
     return min_arr, overfit_arr, retsingle_save
 
 @PROFILE
-def augment_excl(excl):
+def augment_excl(excli):
     """If the user has specified excluded indices add these to the list."""
+    excl = list(excli)
     for num, (i, j) in enumerate(zip(excl, augment_excl.excl_orig)):
         excl[num] = sorted(list(set(j).union(set(i))))
     return excl
-augment_excl.excl_orig = EXCL_ORIG
-frsort.augment_excl = augment_excl
+augment_excl.excl_orig = list(EXCL_ORIG)
+frsort.augment_excl = list(augment_excl)
 
 def old_fit_style(meta, trials, plotdata):
     """Fit using the original fit style

@@ -137,7 +137,7 @@ def energies_pionratio(timeij, delta_t):
     avglhs = np.asarray(em.acmean(lhs, axis=0))
     avglhs_p1 = np.asarray(em.acmean(lhs_p1, axis=0))
     avgrhs = np.asarray(em.acmean(rhs, axis=0))
-    exclsave = tuple(tuple(i) for i in latfit.config.FIT_EXCL)
+    exclsave = tuple(tuple(i) for i in list(latfit.config.FIT_EXCL))
     try:
         pass
         #assert all(abs(rhs[0]/rhs[0]) > 1)
@@ -159,7 +159,7 @@ def energies_pionratio(timeij, delta_t):
         lhs, lhs_p1, rhs, avg_energies, (timeij, delta_t))
 
     # so we don't lose operators due to rho/sigma nan's
-    latfit.config.FIT_EXCL = exclsave
+    latfit.config.FIT_EXCL = list(exclsave)
     return energies_pionratio.store[key]
 energies_pionratio.store = {}
 

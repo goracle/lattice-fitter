@@ -16,5 +16,5 @@ def dof_errchk(dimcov, dimops=1):
             print("dimcov =", dimcov)
             print("dimops =", dimops)
             print("Rerun with a different number of fit parameters.")
-        raise DOFNonPos(dof=0, excl=latfit.config.FIT_EXCL)
+        raise DOFNonPos(dof=0, excl=list(latfit.config.FIT_EXCL))
     return 0

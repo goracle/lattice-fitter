@@ -490,7 +490,7 @@ def cut_on_growing_exp(meta):
                     already_cut.add(j)
     excl = tupl_mat(excl)
     ret = same_range(excl, start)
-    latfit.config.FIT_EXCL = excl
+    latfit.config.FIT_EXCL = list(excl)
     return ret
 
 @PROFILE
@@ -529,7 +529,7 @@ def cut_on_errsize(meta):
                 excl[0] = list(set(excl[0]))
     excl = tupl_mat(excl)
     ret = same_range(excl, start)
-    latfit.config.FIT_EXCL = excl
+    latfit.config.FIT_EXCL = list(excl)
     return ret
 
 def same_range(excl1, excl2):

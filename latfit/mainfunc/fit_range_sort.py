@@ -144,15 +144,17 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
     key = None
     if not meta.random_fit:
         excl = prod[idx]
+        excl = list(excl)
     else: # large fit range, try to get lucky
         if idx == 0:
-            excl = latfit.config.FIT_EXCL
+            excl = list(latfit.config.FIT_EXCL)
         else:
             excl = tuple(np.random.choice(
                 samp_mult[i][1], p=samp_mult[i][0])
                          for i in range(MULT))
     # add user info
     excl = augment_excl([list(j) for j in excl])
+    excl = list(excl)
 
     key = keyexcl(excl)
     ret = None
@@ -161,7 +163,7 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
             print("key checked, continuing:", key)
         ret = None
     else:
-        ret = excl
+        ret = list(excl)
         checked.add(key)
     return ret, checked
 

@@ -336,7 +336,7 @@ def prune_fit_range(covinv_jack, coords_jack, debug=False):
     from fit range.
     Thus, the contribution to chi^2 (or, usually, t^2) will be 0.
     """
-    excl = latfit.config.FIT_EXCL
+    excl = list(latfit.config.FIT_EXCL)
     dimops1 = len(excl) == 1
     for i, xcoord in enumerate(coords_jack[:, 0]):
         if not debug:
