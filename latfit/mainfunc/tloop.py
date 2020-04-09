@@ -32,8 +32,8 @@ from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT
 from latfit.mainfunc.cache import reset_cache, reset_main
 from latfit.mainfunc.metaclass import FitRangeMetaData
 from latfit.mainfunc.postloop import dump_fit_range
-from latfit.mainfunc.fitwin import winsize_check, update_fitwin, xmax_err
-from latfit.mainfunc.fitwin import xmin_err
+from latfit.mainfunc.fitwin import winsize_check, update_fitwin
+from latfit.mainfunc.fitwin import xmin_err, xmax_err
 from latfit.mainfunc.cuts import cutresult
 from latfit.mainfunc.postloop import post_loop
 

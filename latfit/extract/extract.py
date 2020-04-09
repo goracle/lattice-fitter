@@ -39,8 +39,10 @@ def extract(input_f, xmin, xmax, xstep):
 
         # reuse results
         reuse = extract.reuse
-        #query(reuse)
+        # first run through, prune dict afterwards
+        setprune = False
         if not reuse:
+            setprune = True
             reuse = {xmin: 0}
 
         # allocate space for return values
@@ -90,8 +92,21 @@ def extract(input_f, xmin, xmax, xstep):
                     resret.coords[i][1] = resret_proc.coord
     #query(reuse)
     #print("end extract")
+    prune_ext(xmin, xmax)
+    #print("ext keys", extract.reuse.keys())
     return resret.coords, resret.cov, reuse
 extract.reuse = {}
+
+def prune_ext(xmin, xmax):
+    """Prune the extraction dictionary"""
+    keys = extract.reuse
+    for key in list(keys):
+        if isinstance(key, str):
+            del keys[key]
+        elif isinstance(key, float) or isinstance(key, int):
+            if key < xmin or key > xmax:
+                del keys[key]
+    extract.resuse = keys
 
 def query(reuse):
     """Print a list of the keys"""
