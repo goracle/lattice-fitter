@@ -114,7 +114,10 @@ def inconsistent_win_check(meta, tsub=None):
                 print(prs)
             ret = True
     if INCLUDE:
-        assert not ret
+        if ret:
+            print("using the bin analyzed results anyway")
+        ret = False
+        #assert not ret
     return ret
 
 
