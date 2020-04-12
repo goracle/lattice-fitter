@@ -98,7 +98,7 @@ def finished_win_check(meta, tsub=None):
 
 def inconsistent_win_check(meta, tsub=None):
     """Check if the window has already given an inconsistent result"""
-    if FIT:
+    if FIT and not INCLUDE:
         fwin = inconsistent_windows()
     else:
         fwin = []
