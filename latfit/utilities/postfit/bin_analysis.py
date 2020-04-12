@@ -251,7 +251,9 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
         #tot_new = []
     if list(tot_new) or ISOSPIN == 0:
         if dim < RESOLVABLE_STATES:
-            quick_compare(tot_new, prin=True)
+            minormax = min_or_max(item_num)
+            tot_new = quick_compare(
+                tot_new, prin=True, minormax=minormax)
         plot_info = dim, title, units, fname
         fitwin_votes, toapp, blks = plot_t_dep_totnew(
             tot_new, plot_info, fitwin_votes, toapp, dump_min)
@@ -282,6 +284,22 @@ def check_fitwin_continuity(tot_new, ignorable_windows):
             if ISOSPIN != 0:
                 continuous_tmin_singleton(tot_new)
     return tot_new
+
+def min_or_max(item_num):
+    """Do we prefer the minimum or maximum value?
+    item num 0: energy -> min (assume only excited state contamination)
+    item num 1: phase shift -> depends on sign of force (depends on ISOSPIN)
+    """
+    if not item_num:
+        # energy
+        ret = 'min'
+    else:
+        # phase shift
+        if ISOSPIN == 2:
+            ret = 'min'
+        elif not ISOSPIN:
+            ret = 'max'
+    return ret
 
 @PROFILE
 def plot_t_dep_totnew(tot_new, plot_info,
@@ -316,9 +334,10 @@ def plot_t_dep_totnew(tot_new, plot_info,
         elif item.sdev < itmin[0].sdev and not np.isnan(item.val):
             itmin = (item, fitrange, fitwindow, sys_err, effmass)
         elif np.isnan(item.val):
-            assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
-                           _, _ in tot_new])
-            print("ASSERT PASSED!!!!!")
+            pass
+            #assert np.all([np.isnan(gvar.gvar(itx).val) for itx,
+            #               _, _, _ in tot_new])
+            #print("ASSERT PASSED!!!!!")
         xticks_min.append(str(fitwindow[0]))
         xticks_max.append(str(fitwindow[1]))
         fitwinprev = fitwindow
@@ -572,11 +591,14 @@ def consis_tot(tot):
     """Check tot for consistency"""
     tot = np.array(tot)
     for opa in range(tot.shape[1]):
-        if opa == RESOLVABLE_STATES:
+        if opa >= RESOLVABLE_STATES:
             continue
-        print("opa", opa)
-        quick_compare(tot[:, opa, 0], prin=False)
-        quick_compare(tot[:, opa, 1], prin=False)
+        minormax = min_or_max(0)
+        tot[:, opa, 0] = quick_compare(
+            tot[:, opa, 0], prin=False, minormax=minormax)
+        minormax = min_or_max(1)
+        tot[:, opa, 1] = quick_compare(
+            tot[:, opa, 1], prin=False, minormax=minormax)
     tot = list(tot)
 
 class BinInconsistency(Exception):
@@ -590,13 +612,39 @@ class BinInconsistency(Exception):
         self.message = message
 
 @PROFILE
-def quick_compare(tot_new, prin=False):
+def quick_compare(tot_new, prin=False, minormax=None):
     """Check final results for consistency"""
+    ret = []
+    todel = set()
     for item, _, fitwin, _ in tot_new:
         item = gvar.gvar(item)
+        if str(item) in todel:
+            continue
         for item2, _, fitwin2, _ in tot_new:
             item2 = gvar.gvar(item2)
+            if str(item2) in todel:
+                continue
             if not consistency(item, item2, prin=prin):
-                print("raising inconsistency:")
-                print(item, item2, fitwin, fitwin2)
-                raise BinInconsistency
+                if minormax is None:
+                    print("raising inconsistency:")
+                    print(item, item2, fitwin, fitwin2)
+                    raise BinInconsistency
+                elif minormax == 'max':
+                    if item.val >= item2.val:
+                        todel.add(str(item2))
+                    else:
+                        todel.add(str(item))
+                elif minormax == 'min':
+                    if item.val <= item2.val:
+                        todel.add(str(item2))
+                    else:
+                        todel.add(str(item))
+    for item in tot_new:
+        comp = str(gvar.gvar(item[0]))
+        if comp not in todel:
+            ret.append(item)
+        else:
+            add = [i for i in item]
+            add[0] = None
+            ret.append(add)
+    return ret
