@@ -37,26 +37,37 @@ def main():
             print(arr)
             raise
         ens = arr[4]
+        fitmin, fitmax = fitwin_from_include(arr[0])
+
+        # old method for xmin/xmax
         xmin = 1
         if ens == '24c':
             xmax = 16
         elif ens == '32c':
             xmax = 22
+
+        # processing
+        xmin, xmax = fitmin, fitmax
         dim = arr[2]
         dimr = dim
         if len(sys.argv) > 1:
             dimr = int(sys.argv[1])
         if dim != dimr:
             continue
-        xmin, xmax = str(xmin), str(xmax)
-        fitmin, fitmax = fitwin_from_include(arr[0])
+        xmin, xmax = xmin, str(xmax)
         fitmin = str(fitmin)
         fitmax = str(fitmax)
         # xmin, xmax = fitmin, fitmax
-        call = 'latfit -f . --xmin='+xmin+' --xmax='+\
-            xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
-        print("call =", call)
-        assert not subprocess.call(call, shell=True)
+        flag = 1
+        while flag:
+            call = 'latfit -f . --xmin='+str(xmin)+' --xmax='+\
+                xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
+            print("call =", call)
+            flag = subprocess.call(call, shell=True)
+            if flag and xmin:
+                xmin -= 1
+            else:
+                break
 
 if __name__ == '__main__':
     main()
