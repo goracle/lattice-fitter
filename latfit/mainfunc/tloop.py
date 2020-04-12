@@ -14,6 +14,7 @@ from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
 from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
+from latfit.config import INCLUDE
 
 # errors
 from latfit.analysis.errorcodes import XmaxError
@@ -70,6 +71,8 @@ mpi4py.rc.recv_mprobe = False
 ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
                  EnergySortError, TooManyBadFitsError, BadJackknifeDist,
                  DOFNonPosFit, BadChisq, ZetaError, XmaxError)
+if INCLUDE:
+    ACCEPT_ERRORS = ()
 
 def tloop():
     """main"""
@@ -327,6 +330,8 @@ def dofit_initial(meta, plotdata):
                      OverflowError, EnergySortError, TooManyBadFitsError,
                      np.linalg.linalg.LinAlgError, BadJackknifeDist,
                      DOFNonPosFit, BadChisq, ZetaError)
+    if INCLUDE:
+        accept_errors = ()
 
     test_success = False
     retsingle_save = None
