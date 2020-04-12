@@ -4,6 +4,7 @@ import mpi4py
 from mpi4py import MPI
 
 from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP, FIT
+from latfit.config import INCLUDE
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import finished_windows
@@ -112,6 +113,8 @@ def inconsistent_win_check(meta, tsub=None):
                     prs += " tsub: "+str(tsub)
                 print(prs)
             ret = True
+    if INCLUDE:
+        assert not ret
     return ret
 
 
