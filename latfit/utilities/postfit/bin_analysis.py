@@ -16,6 +16,7 @@ from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
 from latfit.utilities.postfit.strproc import tot_to_stat
 from latfit.utilities.combine_pickle import main as getdts
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
+from latfit.config import RESOLVABLE_STATES
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -241,13 +242,16 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
         gvar.gvar(i[dim][item_num][0]).val)]
     try:
         if cond:
-            tot_new = check_fitwin_continuity(tot_new, ignorable_windows)
+            tot_new = check_fitwin_continuity(
+                tot_new, ignorable_windows)
     except AssertionError:
-        print("fit windows are not continuous for dim, item:", dim, title)
+        print("fit windows are not continuous for dim, item:",
+              dim, title)
         raise
         #tot_new = []
     if list(tot_new) or ISOSPIN == 0:
-        quick_compare(tot_new, prin=True)
+        if dim < RESOLVABLE_STATES:
+            quick_compare(tot_new, prin=True)
         plot_info = dim, title, units, fname
         fitwin_votes, toapp, blks = plot_t_dep_totnew(
             tot_new, plot_info, fitwin_votes, toapp, dump_min)
@@ -568,6 +572,9 @@ def consis_tot(tot):
     """Check tot for consistency"""
     tot = np.array(tot)
     for opa in range(tot.shape[1]):
+        if opa == RESOLVABLE_STATES:
+            continue
+        print("opa", opa)
         quick_compare(tot[:, opa, 0], prin=False)
         quick_compare(tot[:, opa, 1], prin=False)
     tot = list(tot)

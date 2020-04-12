@@ -4,7 +4,7 @@ import copy
 # import itertools
 import numpy as np
 from gvar import gvar
-from latfit.config import GEVP, VERBOSE
+from latfit.config import GEVP, VERBOSE, RESOLVABLE_STATES
 from latfit.config import MATRIX_SUBTRACTION, NOLOOP, DIMSELECT
 from latfit.include import VALUE_STR, PARAM_OF_INTEREST
 from latfit.analysis.errorcodes import FitRangeInconsistency
@@ -113,12 +113,12 @@ def state_collapse_check(iitem, jitem, mod_180=False):
     duplicate states"""
     ret = True
     idx, jdx = None, None
+    ress = RESOLVABLE_STATES
     if hasattr(iitem.val, '__iter__'):
         llen = len(iitem.val)
         for i in range(llen):
             for j in range(llen):
-                #if i >= j or j == 2 or i == 2:
-                if i >= j:
+                if i >= j or i >= ress or j >= ress:
                     continue
                 kitem = copy.deepcopy(jitem)
                 litem = copy.deepcopy(iitem)

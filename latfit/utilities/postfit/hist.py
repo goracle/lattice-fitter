@@ -236,8 +236,9 @@ def walkback():
             if flag != 2:
                 check_bad_bin(tmin_param(fname))
             print("starting analysis on file:", fname)
-            cbest, cbest_blks = tloop((cbest, cbest_blks),
-                                      ignorable_windows, [fname], dump_min=False)
+            cbest, cbest_blks = tloop(
+                (cbest, cbest_blks), ignorable_windows, [fname],
+                dump_min=False)
             success = True
             print("success found for file:", fname)
             useable = ((cbest, cbest_blks), ignorable_windows, [fname])
