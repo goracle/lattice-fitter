@@ -269,7 +269,7 @@ class ResultMin:
         if self.misc.dof < 1:
             if VERBOSE:
                 print("dof < 1. dof =", self.misc.dof)
-                print("fit window:", WINDOW)
+                print("actual fit range:", WINDOW)
                 print("excl:", latfit.config.FIT_EXCL)
             raise DOFNonPosFit(dof=self.misc.dof,
                                excl=list(latfit.config.FIT_EXCL))
