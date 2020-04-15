@@ -59,7 +59,15 @@ def main():
         fitmax = str(fitmax)
         # xmin, xmax = fitmin, fitmax
         flag = 1
+        xmin = 1
+        call = 'latfit -f . --xmin='+str(xmin)+' --xmax='+\
+            xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
+        print("call =", call)
+        flag = subprocess.call(call, shell=True)
+        if flag:
+            xmin = int(fitmin)
         while flag:
+            break
             call = 'latfit -f . --xmin='+str(xmin)+' --xmax='+\
                 xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
             print("call =", call)
