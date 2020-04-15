@@ -11,9 +11,10 @@ from latfit.extract.getfiles import getfiles
 
 from latfit.config import GEVP_DIRS
 from latfit.config import GEVP, VERBOSE
-from latfit.config import EIGCUT
+from latfit.config import EIGCUT, MATRIX_SUBTRACTION
 from latfit.config import NUM_PENCILS
 from latfit.config import STYPE
+import latfit.config
 
 MPIRANK = MPI.COMM_WORLD.rank
 #MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -43,6 +44,7 @@ def extract(input_f, xmin, xmax, xstep):
         setprune = False
         if not reuse:
             setprune = True
+            pr_extract(xmin, xmax, xstep=xstep)
             reuse = {xmin: 0}
 
         # allocate space for return values
@@ -97,6 +99,18 @@ def extract(input_f, xmin, xmax, xstep):
     #print("ext keys", extract.reuse.keys())
     return resret.coords, resret.cov, reuse
 extract.reuse = {}
+
+def pr_extract(xmin, xmax, xstep=1):
+    """Print extraction info"""
+    print("starting extraction with xmin, xmax, xtep, mpi rank=",
+          xmin, xmax, xstep, MPIRANK)
+    print("starting extraction with t-t0:",
+          latfit.config.T0, "rank=", MPIRANK)
+    matdt = latfit.config.DELTA_T_MATRIX_SUBTRACTION
+    if MATRIX_SUBTRACTION:
+        print("starting extraction with matdt:",
+              matdt, "rank=", MPIRANK)
+
 
 def prune_ext(xmin, xmax):
     """Prune the extraction dictionary"""
