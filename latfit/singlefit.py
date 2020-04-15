@@ -484,6 +484,7 @@ def cut_on_growing_exp(meta):
                               coords[i][1], coords[j][1])
                         print("cutting dimension", 0, "for time slice",
                               excl_add, "(exp grow cut)")
+                        print("time slices:", coords[i][0], coords[j][0])
                         print("err/coords > diff cut =", 1.5)
                     excl[0].append(excl_add)
                     excl[0] = list(set(excl[0]))
