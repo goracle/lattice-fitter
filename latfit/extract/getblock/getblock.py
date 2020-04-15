@@ -403,9 +403,14 @@ if EFF_MASS:
         err = em.acstd(retblk, axis=0)[0]*np.sqrt(len(retblk)-1)
         prev = test_ground_increase.mean
         if prev is not None and prev != mean:
+            if not np.isnan(test_ground_increase.err):
+                merr = max(err, test_ground_increase.err)
+            else:
+                merr = err
             test_ground_increase.mean = mean
+            test_ground_increase.err = err
             statistically_significant = np.abs(
-                mean-prev) > 1.5*err
+                mean-prev) > 1.5*merr
             if not np.isnan(prev):
                 if prev < mean and statistically_significant:
                     assert PIONRATIO
@@ -417,10 +422,12 @@ if EFF_MASS:
                 else:
                     test_ground_increase.mean = None
     test_ground_increase.mean = np.nan
+    test_ground_increase.err = np.nan
 
     def grd_inc_reset():
         """Reset cache when beginning to reprocess"""
         test_ground_increase.mean = np.nan
+        test_ground_increase.err = np.nan
 
     if GEVP_DERIV:
         def eigvals_tplus_one(dimops, num, cmats_lhs, cmat_rhs):
