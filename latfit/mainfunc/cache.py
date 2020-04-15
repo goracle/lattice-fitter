@@ -23,12 +23,17 @@ def partial_reset():
     """Partial reset during tloop. Only partially clear some caches.
     """
     sfit.singlefit_reset()
-    glin.reset_sortevals()
 
 def reset_cache():
     """Until the globals in the loop are removed,
     caches must be manually cleared"""
+    partial_reset()
+    reset_processing()
+
+def reset_processing():
+    """Reset all caches used in processing data
+    into sets of fit points"""
+    glin.reset_sortevals()
     ext.reset_extract()
     grat.reset()
     gblock.grd_inc_reset()
-    partial_reset()

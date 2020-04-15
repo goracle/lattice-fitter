@@ -1,6 +1,5 @@
 """Actions peformed after the fit"""
 import sys
-import os
 import re
 import pickle
 import numpy as np
@@ -10,7 +9,6 @@ from latfit.config import EFF_MASS, MULT, GEVP, SUPERJACK_CUTOFF
 from latfit.config import TLOOP, METHOD
 from latfit.config import NOLOOP, UNCORR, LATTICE_ENSEMBLE
 from latfit.config import SYS_ENERGY_GUESS
-from latfit.include import VALUE_STR, PARAM_OF_INTEREST
 from latfit.checks.consistency import check_include
 
 from latfit.makemin.mkmin import convert_to_namedtuple

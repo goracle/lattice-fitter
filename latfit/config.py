@@ -332,7 +332,8 @@ if LATTICE_ENSEMBLE == '24c':
 if LATTICE_ENSEMBLE == '32c':
     TSEP_VEC = [4 for _ in range(DIM)] if GEVP else [0]
 if GEVP:
-    assert check_ids(LATTICE_ENSEMBLE)[0] == TSEP_VEC[0], "ensemble mismatch:"+str(check_ids(LATTICE_ENSEMBLE)[0])
+    assert check_ids(LATTICE_ENSEMBLE)[0] == TSEP_VEC[0],\
+        "ensemble mismatch:"+str(check_ids(LATTICE_ENSEMBLE)[0])
 TSEP_VEC = tuple(TSEP_VEC)
 
 # Bootstrap params

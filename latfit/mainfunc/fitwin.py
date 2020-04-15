@@ -1,9 +1,8 @@
 """Main function's fit window functions"""
-import sys
 import mpi4py
 from mpi4py import MPI
 
-from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP, FIT
+from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP
 from latfit.config import INCLUDE
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
 from latfit.analysis.errorcodes import FitRangeInconsistency
@@ -18,7 +17,7 @@ mpi4py.rc.recv_mprobe = False
 def update_fitwin(meta, tadd, tsub, problemx=None):
     """Update fit window"""
     # tadd tsub cut
-    upx = False if problemx is None else True
+    upx = problemx is not None
     if tadd or tsub:
         if VERBOSE:
             print("tadd, tsub in update:", tadd, tsub)

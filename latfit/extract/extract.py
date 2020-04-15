@@ -92,7 +92,8 @@ def extract(input_f, xmin, xmax, xstep):
                     resret.coords[i][1] = resret_proc.coord
     #query(reuse)
     #print("end extract")
-    prune_ext(xmin, xmax)
+    if setprune:
+        prune_ext(xmin, xmax)
     #print("ext keys", extract.reuse.keys())
     return resret.coords, resret.cov, reuse
 extract.reuse = {}

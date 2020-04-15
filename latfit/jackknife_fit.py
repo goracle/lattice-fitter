@@ -30,7 +30,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT, UNCORR
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
-from latfit.config import NOLOOP, ISOSPIN
+from latfit.config import NOLOOP
 from latfit.config import SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION

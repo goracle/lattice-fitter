@@ -33,6 +33,7 @@ from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
 from latfit.config import PRINT_CORR, MULT, ERR_CUT, ISOSPIN
 from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE, DIMSELECT
+from latfit.config import INCLUDE
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.analysis.covops as covops
@@ -222,7 +223,7 @@ def tuple_mat_set_sort(mat):
         row = sorted(list(row))
         ret.append(row)
     return ret
-        
+
 
 def fiduc_point_cuts(meta):
     """Perform fiducial cuts on individual
@@ -241,13 +242,13 @@ def fiduc_point_cuts(meta):
                           " rank:", MPIRANK)
                 raise FitFail
 
-def include_cut(meta):
+def include_cut(_):
     """We need to augment the exclude list
     if we are starting with an include list.
     We don't know what needs to be added until the user
     specifies the fit window, though, so cut here.
     """
-    for i, j in zip(INCLUDE, latfit.config.FIT_EXCL):
+    for _ in zip(INCLUDE, latfit.config.FIT_EXCL):
         pass
 
 def non_jackknife_fit(params, cov, coords):
@@ -543,8 +544,8 @@ def same_range(excl1, excl2):
         if j-i or i-j:
             ret = False
     return ret
-    
-            
+
+
 
 @PROFILE
 def toosmallp(meta, excl):

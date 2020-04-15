@@ -24,7 +24,7 @@ def mod180(deg):
     deg = np.real(deg)
     if hasattr(deg, '__iter__'):
         ret = []
-        for idx, item in enumerate(deg):
+        for _, item in enumerate(deg):
             if item >= 0:
                 ret.append(item)
             else:
@@ -153,10 +153,10 @@ def consistent_params(item1, item2, mod_180=False, verb=VERBOSE):
         diff2 = None
     if diff2 is not None:
         if hasattr(diff, '__iter__'):
-                diff = [min(i, j, k, l) for i, j, k, l in zip(
-                    diff, diff2, diff3, diff4)]
+            diff = [min(i, j, k, l) for i, j, k, l in zip(
+                diff, diff2, diff3, diff4)]
         else:
-            diff = min(diff1, diff2, diff3, diff4)
+            diff = min(diff, diff2, diff3, diff4)
     if GEVP:
         diff = np.asarray(diff)
         err = []
@@ -189,9 +189,9 @@ def check_include(result_min):
     """Check that we've obtained the result we're after"""
     ret = not NOLOOP or not VALUE_STR
     if not ret:
-        if 'phase shift' == PARAM_OF_INTEREST:
+        if PARAM_OF_INTEREST == 'phase shift':
             param = result_min.phase_shift
-        elif 'energy' == PARAM_OF_INTEREST:
+        elif PARAM_OF_INTEREST == 'energy':
             param = result_min.energy
         dim = DIMSELECT
         chk = gvar(param.val[dim], param.err[dim])
