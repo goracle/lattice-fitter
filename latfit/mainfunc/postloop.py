@@ -571,15 +571,20 @@ def post_loop(meta, loop_store, plotdata,
     # did anything succeed?
     # test = False if not list(min_arr) and not meta.random_fit else True
     test = list(min_arr) or meta.random_fit
-    latfit.config.FIT_EXCL = list(closest_fit_to_avg(
-        result_min['energy'].val, min_arr))
-
     if len(min_arr) > 1:
+
         result_min = find_mean_and_err(meta, min_arr)
         param_err = result_min['energy'].err
+
+        latfit.config.FIT_EXCL = list(closest_fit_to_avg(
+            result_min['energy'].val, min_arr))
+        # do the best fit again, with good stopping condition
+        # latfit.config.FIT_EXCL = min_excl(min_arr)
     elif len(min_arr) == 1:
         result_min = min_arr[0]
         param_err = result_min[1]
+        latfit.config.FIT_EXCL = list(min_arr[0][2])
+        dump_single_fit(meta, min_arr)
 
     print("fit excluded points (indices):",
           latfit.config.FIT_EXCL)
