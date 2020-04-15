@@ -316,16 +316,12 @@ if 'mom000' in IRREP and ISOSPIN == 0:
 DIM = 1 if not GEVP else DIM
 if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
     FULLDIM = True
-    DIM -= 0
+    DIM -= 2
 elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
     FULLDIM = False
     DIM = 3
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 DISP_ENERGIES = tuple(DISP_ENERGIES)
-
-
-# how many states to target to resolve.
-RESOLVABLE_STATES = 4
 
 # time extent (1/2 is time slice where the mirroring occurs in periodic bc's)
 TSEP_VEC = [0]
