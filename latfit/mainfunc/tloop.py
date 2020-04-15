@@ -21,6 +21,7 @@ from latfit.analysis.errorcodes import XmaxError, XminError
 from latfit.analysis.errorcodes import NegChisq
 from latfit.analysis.errorcodes import RelGammaError, ZetaError
 from latfit.analysis.errorcodes import FitRangeInconsistency
+from latfit.analysis.errorcodes import FitRangesAlreadyInconsistent
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq, FitFail
 from latfit.analysis.errorcodes import DOFNonPosFit, MpiSkip, FinishedSkip
 from latfit.analysis.errorcodes import BadJackknifeDist, NoConvergence
@@ -152,6 +153,13 @@ def tloop():
                         check = True
                         tadd += 1 # add this to tmin
 
+                    except FitRangesAlreadyInconsistent:
+                        if VERBOSE:
+                            print("starting a new main()",
+                                  "fit ranges already found to be inconsistent.  rank:",
+                                  MPIRANK)
+                        flag = 1
+                        tadd += 1 # add this to tmin
                     except FinishedSkip:
                         if VERBOSE:
                             print("starting a new main() with new tsub rank:",

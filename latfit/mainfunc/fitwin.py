@@ -5,7 +5,7 @@ from mpi4py import MPI
 from latfit.config import RANGE_LENGTH_MIN, VERBOSE, FIT, NOLOOP
 from latfit.config import INCLUDE
 from latfit.analysis.errorcodes import XmaxError, FinishedSkip
-from latfit.analysis.errorcodes import FitRangeInconsistency
+from latfit.analysis.errorcodes import FitRangesAlreadyInconsistent
 from latfit.analysis.filename_windows import finished_windows
 from latfit.analysis.filename_windows import inconsistent_windows
 from latfit.mainfunc.cache import partial_reset
@@ -35,7 +35,7 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
     if inconsistent_win_check(meta, tsub=tsub) and not NOLOOP:
         if VERBOSE:
             print("raising inconsistent skip")
-        raise FitRangeInconsistency
+        raise FitRangesAlreadyInconsistent
 
 def xmin_err(meta, err):
     """Handle xmax error"""
