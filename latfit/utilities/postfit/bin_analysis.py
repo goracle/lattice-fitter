@@ -314,6 +314,8 @@ def plot_t_dep_totnew(tot_new, plot_info,
     fitwinprev = None
     itmin = [None, [], (np.nan, np.nan), np.nan, []]
     for item, sys_err, fitwin, effmass in tot_new:
+        if item is None:
+            continue
         fitrange, fitwindow = fitwin
         item = gvar.gvar(item)
         trfitwin = (fitwindow[0] + 1, fitwindow[1])
@@ -329,7 +331,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
             continue
         yarr.append(item.val)
         yerr.append(item.sdev)
-        if itmin[0] is None:
+        if itmin[0] is None and not np.isnan(item.val):
             itmin = (item, fitrange, fitwindow, sys_err, effmass)
         elif item.sdev < itmin[0].sdev and not np.isnan(item.val):
             itmin = (item, fitrange, fitwindow, sys_err, effmass)
@@ -348,7 +350,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
     assert len(itmin) == 5, itmin
     if not np.all([np.isnan(gvar.gvar(item).val)
                    for item, _, _, _ in tot_new]):
-        assert not np.isnan(itmin[0].val), (tot_new, itmin)
+        assert not np.isnan(itmin[0].val), itmin
     xarr = list(range(len(xticks_min)))
     assert len(xticks_min) == len(xticks_max)
 
