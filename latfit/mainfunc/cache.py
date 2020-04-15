@@ -12,17 +12,19 @@ import latfit.config
 
 EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 
-def reset_main(mintol):
+def reset_main(mintol, check=False):
     """Reset all dynamic variables"""
     latfit.config.MINTOL = mintol
     latfit.config.FIT_EXCL = np.copy(list(EXCL_ORIG))
     latfit.config.FIT_EXCL = tuple(tuple(i) for i in list(latfit.config.FIT_EXCL))
-    partial_reset()
+    partial_reset(check=check)
 
-def partial_reset():
+def partial_reset(check=False):
     """Partial reset during tloop. Only partially clear some caches.
     """
     sfit.singlefit_reset()
+    if check:
+        assert ext.iscomplete()
 
 def reset_cache():
     """Until the globals in the loop are removed,

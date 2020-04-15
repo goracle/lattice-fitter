@@ -214,7 +214,7 @@ def cmatdot(cmat, vec, transp=False, sloppy=False):
     cmat = cmat.T if transp else cmat
     vec = np.asarray(vec)
     assert len(vec) == len(cmat), str(vec)+" "+str(cmat)
-    ret = np.zeros(vec.shape)
+    ret = np.zeros(vec.shape, np.complex)
     for i, row in enumerate(cmat):
         tosum = []
         for j, item in enumerate(row):
@@ -392,13 +392,16 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
     idxp1, idxm1 = index_pm1(idx, len(ref_evals))
     if func == 'gaussian':
         diff = ref_evals[idx] - eval_to_score
+        assert not np.imag(diff)
         if diff < 0:
             #idxp1 = (idx+1) % len(ref_evals)
             widp1 = (ref_evals[idx]-ref_evals[idxp1])**2/log(1/zero)
+            assert not np.imag(widp1)
             ret = exp(-(diff)**2/widp1)
         else:
             #idxm1 = (idx-1) % len(ref_evals)
             widm1 = (ref_evals[idx]-ref_evals[idxm1])**2/log(1/zero)
+            assert not np.imag(widm1)
             ret = exp(-(diff)**2/widm1)
     else:
         assert None, "other functions not supported at this time"

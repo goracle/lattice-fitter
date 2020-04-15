@@ -187,7 +187,7 @@ class NegativeEnergy(Exception):
     """Exception for imaginary GEVP eigenvalue"""
     def __init__(self, expression='', message=''):
         print("***ERROR***")
-        print('negative energy found')
+        print('negative energy found (NegativeEnergy)')
         super(NegativeEnergy, self).__init__(message)
         self.expression = expression
         self.message = message

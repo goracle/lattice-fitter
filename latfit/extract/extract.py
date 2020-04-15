@@ -116,6 +116,10 @@ def extract(input_f, xmin, xmax, xstep):
 extract.reuse = {}
 extract.complete = False
 
+def iscomplete():
+    """Processing finished?"""
+    return extract.complete
+
 def ijprune(adict):
     """Prune 'i' and 'j' keys from dict
     """
@@ -146,8 +150,8 @@ def stored_xmin_xmax(xmin, xmax):
 
 def pr_extract(xmin, xmax, xstep=1):
     """Print extraction info"""
-    print("starting extraction with xmin, xmax, xtep, mpi rank=",
-          xmin, xmax, xstep, MPIRANK)
+    print("starting extraction with xmin, xmax, mpi rank=",
+          xmin, xmax, MPIRANK)
     print("starting extraction with t-t0:",
           latfit.config.T0, "rank=", MPIRANK)
     matdt = latfit.config.DELTA_T_MATRIX_SUBTRACTION

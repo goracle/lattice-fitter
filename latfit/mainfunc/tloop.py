@@ -107,6 +107,7 @@ def tloop():
                 latfit.config.TITLE_PREFIX = latfit.config.title_prefix(
                     tzero=latfit.config.T0,
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+            check = False
             for tsub in range(int(tdis_max)): # this is the tmax loop
 
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
@@ -124,7 +125,8 @@ def tloop():
                     if not TLOOP and tadd:
                         break
 
-                    reset_main(mintol) # reset the fitter for next fit
+                    # reset the fitter for next fit
+                    reset_main(mintol, check=check)
 
                    # parallelize loop
                     #if (1000*j+100*i+10*tsub+tadd) % MPISIZE != MPIRANK\
@@ -138,6 +140,7 @@ def tloop():
                     try:
                         test = fit(tadd=tadd, tsub=tsub)
                         flag = 0 # flag stays 0 if fit succeeds
+                        check = True
                         if not test:
                             break
                     except (FitRangeInconsistency, FitFail, MpiSkip):
@@ -146,6 +149,7 @@ def tloop():
                                   "(inconsistent/fitfail/mpi skip).  rank:",
                                   MPIRANK)
                         flag = 1
+                        check = True
                         tadd += 1 # add this to tmin
 
                     except FinishedSkip:
@@ -370,6 +374,7 @@ def dofit_initial(meta, plotdata):
 
     # results need for return
     # plotdata, meta, test_success, fit_range_init
+    assert ext.iscomplete()
     return (meta, plotdata, test_success, retsingle_save)
 
 def dofit_second_initial(meta, retsingle_save, test_success):
