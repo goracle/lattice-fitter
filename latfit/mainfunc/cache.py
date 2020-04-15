@@ -6,6 +6,7 @@ from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 import latfit.extract.extract as ext
 import latfit.extract.getblock.gevp_pionratio as grat
 import latfit.extract.getblock.gevp_linalg as glin
+import latfit.extract.getblock.getblock as gblock
 import latfit.singlefit as sfit
 import latfit.config
 
@@ -29,4 +30,5 @@ def reset_cache():
     caches must be manually cleared"""
     ext.reset_extract()
     grat.reset()
+    gblock.grd_inc_reset()
     partial_reset()
