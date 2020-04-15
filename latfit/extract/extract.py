@@ -13,6 +13,7 @@ from latfit.config import GEVP_DIRS
 from latfit.config import GEVP, VERBOSE
 from latfit.config import EIGCUT, MATRIX_SUBTRACTION
 from latfit.config import NUM_PENCILS
+from latfit.analysis.errorcodes import XmaxError, XminError
 from latfit.config import STYPE
 import latfit.config
 
@@ -38,14 +39,24 @@ def extract(input_f, xmin, xmax, xstep):
     # test if directory
     elif os.path.isdir(input_f) or STYPE == 'hdf5':
 
-        # reuse results
-        reuse = extract.reuse
+        # if we've never finished a full time extent
+        # without an error abort, then wipe the cache for safety
+        if not extract.complete:
+            extract.reuse = {}
+
+        # get rid of temp entries
+        reuse = ijprune(extract.reuse)
+
         # first run through, prune dict afterwards
         setprune = False
         if not reuse:
+            assert not extract.complete
             setprune = True
             pr_extract(xmin, xmax, xstep=xstep)
-            reuse = {xmin: 0}
+        else:
+            # avoid going outside the established original bounds
+            xmin, xmax = stored_xmin_xmax(xmin, xmax)
+            origl = len(reuse)
 
         # allocate space for return values
 
@@ -92,13 +103,46 @@ def extract(input_f, xmin, xmax, xstep):
                     # only store coordinates once.
                     resret.coords[i][0] = timei
                     resret.coords[i][1] = resret_proc.coord
-    #query(reuse)
-    #print("end extract")
+
     if setprune:
         prune_ext(xmin, xmax)
+    else:
+        assert len(ijprune(reuse)) == origl, (origl, reuse.keys())
     #print("ext keys", extract.reuse.keys())
+    if not extract.complete:
+        pr_complete(xmin, xmax)
+    extract.complete = True
     return resret.coords, resret.cov, reuse
 extract.reuse = {}
+extract.complete = False
+
+def ijprune(adict):
+    """Prune 'i' and 'j' keys from dict
+    """
+    if 'i' in adict:
+        del adict['i']
+    if 'j' in adict:
+        del adict['j']
+    return adict
+
+def stored_xmin_xmax(xmin, xmax):
+    """Get the dictionary stored xmin, xmax"""
+    xmins, xmaxs = np.inf, 0
+    for key in extract.reuse.keys():
+        if isinstance(key, str):
+            continue
+        else:
+            assert isinstance(key, float) or isinstance(
+                key, int), key
+            xmins = min(key, xmins)
+            xmaxs = max(key, xmaxs)
+    if xmin < xmins:
+        raise XminError(problemx=xmin)
+    if xmax > xmaxs:
+        raise XmaxError(problemx=xmax)
+    xmin = max(xmin, xmins)
+    xmax = min(xmax, xmaxs)
+    return xmin, xmax
 
 def pr_extract(xmin, xmax, xstep=1):
     """Print extraction info"""
@@ -112,15 +156,28 @@ def pr_extract(xmin, xmax, xstep=1):
               matdt, "rank=", MPIRANK)
 
 
+def pr_complete(xmin, xmax, xstep=1):
+    """Print extraction info"""
+    print("finished extraction with xmin, xmax, xtep, mpi rank=",
+          xmin, xmax, xstep, MPIRANK)
+    print("finished extraction with t-t0:",
+          latfit.config.T0, "rank=", MPIRANK)
+    matdt = latfit.config.DELTA_T_MATRIX_SUBTRACTION
+    if MATRIX_SUBTRACTION:
+        print("finished extraction with matdt:",
+              matdt, "rank=", MPIRANK)
+
 def prune_ext(xmin, xmax):
     """Prune the extraction dictionary"""
-    keys = extract.reuse
+    keys = ijprune(extract.reuse)
     for key in list(keys):
         if isinstance(key, str):
             del keys[key]
         elif isinstance(key, float) or isinstance(key, int):
             if key < xmin or key > xmax:
                 del keys[key]
+        assert max(list(keys)) == xmax
+        assert min(list(keys)) == xmin
     extract.resuse = keys
 
 def query(reuse):
@@ -133,8 +190,8 @@ def reset_extract():
     if VERBOSE:
         print("zeroing out reuse dictionary, rank:", MPIRANK)
     extract.reuse = {}
+    extract.complete = False
 
-# side effects warning
 def reuse_ij(reuse, time):
     """Prepare reuse container with proper block for i or j
     This allows proc_ijfile to remain agnostic as to where it is in the

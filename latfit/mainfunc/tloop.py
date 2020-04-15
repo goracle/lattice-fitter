@@ -17,8 +17,8 @@ from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
 from latfit.config import INCLUDE
 
 # errors
-from latfit.analysis.errorcodes import XmaxError
-from latfit.analysis.errorcodes import XminError, NegChisq
+from latfit.analysis.errorcodes import XmaxError, XminError
+from latfit.analysis.errorcodes import NegChisq
 from latfit.analysis.errorcodes import RelGammaError, ZetaError
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.errorcodes import DOFNonPos, BadChisq, FitFail

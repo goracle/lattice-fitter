@@ -56,6 +56,5 @@ def proc_ijfile(ifile_tup, jfile_tup, reuse=None, timeij=(None, None), delta_t=N
     return rets(coord=avg_i, covar=get_coventry(reuse, sameblk, avg_i),
                 returnblk=reuse['j'])
 
-
 # test to see if we've already printed the number of configurations
 proc_ijfile.CONFIGSENT = object()
