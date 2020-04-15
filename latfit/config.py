@@ -965,6 +965,11 @@ if FULLDIM:
     GEVP_DIRS_PLUS_ONE = GEVP_DIRS
 MULT = len(GEVP_DIRS) if GEVP else 1
 
+# how many states to target to resolve.
+RESOLVABLE_STATES = 4
+
+if RESOLVABLE_STATES > MULT:
+    RESOLVABLE_STATES = MULT
 
 # perform check
 fitfunc.check_start_params_len(EFF_MASS, EFF_MASS_METHOD, ORIGL,
