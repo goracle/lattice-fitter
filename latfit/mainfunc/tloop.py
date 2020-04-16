@@ -171,12 +171,14 @@ def tloop():
 
                     except FinishedSkip:
                         if VERBOSE:
-                            print("starting a new main() with new tsub rank:",
+                            print("already done fitting this fit window.",
+                                  "starting a new main() with new tsub rank:",
                                   MPIRANK)
-                        flag = 0 # flag stays 0 if fit succeeds
                         break
 
                     except DOFNonPos:
+                        if VERBOSE:
+                            print("skipping fit window; degrees of freedom <= 0")
                         # exit the loop; we're totally out of dof
                         break
     if TLOOP:
