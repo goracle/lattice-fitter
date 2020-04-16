@@ -60,6 +60,7 @@ def main():
         # xmin, xmax = fitmin, fitmax
         flag = 1
         xmin = 1
+        xmax = '22'
         call = 'latfit -f . --xmin='+str(xmin)+' --xmax='+\
             xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
         print("call =", call)

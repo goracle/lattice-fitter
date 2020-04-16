@@ -139,18 +139,26 @@ def tloop():
                           latfit.config.T0, MPIRANK)
                     print("tadd, tsub, mpi rank:", tadd, tsub, MPIRANK)
                     try:
-                        test = fit(tadd=tadd, tsub=tsub)
+                        test, check2 = fit(tadd=tadd, tsub=tsub)
+                        check = check or check2
                         flag = 0 # flag stays 0 if fit succeeds
-                        check = True
                         if not test:
                             break
-                    except (FitRangeInconsistency, FitFail, MpiSkip):
+                    except (FitRangeInconsistency, FitFail):
                         if VERBOSE:
                             print("starting a new main()",
                                   "(inconsistent/fitfail/mpi skip).  rank:",
                                   MPIRANK)
                         flag = 1
                         check = True
+                        tadd += 1 # add this to tmin
+
+                    except MpiSkip:
+                        if VERBOSE:
+                            print("starting a new main()",
+                                  "(mpi skip).  rank:",
+                                  MPIRANK)
+                        flag = 1
                         tadd += 1 # add this to tmin
 
                     except FitRangesAlreadyInconsistent:
@@ -160,12 +168,14 @@ def tloop():
                                   MPIRANK)
                         flag = 1
                         tadd += 1 # add this to tmin
+
                     except FinishedSkip:
                         if VERBOSE:
                             print("starting a new main() with new tsub rank:",
                                   MPIRANK)
                         flag = 0 # flag stays 0 if fit succeeds
                         break
+
                     except DOFNonPos:
                         # exit the loop; we're totally out of dof
                         break
@@ -218,6 +228,7 @@ def fit(tadd=0, tsub=0):
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
     test = not FIT
+    processed = False
 
     meta = FitRangeMetaData()
     trials, plotdata, dump_fit_range.fn1 = meta.setup(plotdata)
@@ -235,6 +246,7 @@ def fit(tadd=0, tsub=0):
         start = time.perf_counter()
         meta, plotdata, test_success, retsingle_save = dofit_initial(
             meta, plotdata)
+        processed = True
         if VERBOSE:
             print("Total elapsed time =",
                   time.perf_counter()-start, "seconds. rank:", MPIRANK)
@@ -332,7 +344,7 @@ def fit(tadd=0, tsub=0):
         old_fit_style(meta, trials, plotdata)
     if VERBOSE:
         print("END FIT, rank:", MPIRANK)
-    return test
+    return test, processed
 
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
