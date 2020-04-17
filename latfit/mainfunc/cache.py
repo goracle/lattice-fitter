@@ -7,6 +7,7 @@ import latfit.extract.extract as ext
 import latfit.extract.getblock.gevp_pionratio as grat
 import latfit.extract.getblock.gevp_linalg as glin
 import latfit.extract.getblock.getblock as gblock
+import latfit.extract.getfiles as getf
 import latfit.singlefit as sfit
 import latfit.config
 
@@ -37,5 +38,6 @@ def reset_processing():
     into sets of fit points"""
     glin.reset_sortevals()
     ext.reset_extract()
+    getf.file_reset()
     grat.reset()
     gblock.grd_inc_reset()
