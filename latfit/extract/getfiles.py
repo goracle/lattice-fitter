@@ -136,6 +136,10 @@ def getfiles_gevp_singlerhs(time, time2, xstep=1):
     return ret
 getfiles_gevp_singlerhs.mats = {}
 
+def file_reset():
+    """Reset file cache"""
+    getfiles_gevp_singlerhs.mats = {}
+
 def mult_sub_by_delta(sub_timeidx, delta_e, timeidx):
     """Multiply subtraction term by exponential to shift energy"""
     if sub_timeidx is not None:
