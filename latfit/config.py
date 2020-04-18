@@ -30,6 +30,10 @@ FIT = False
 FIT = True
 FIT = FIT if IRREP is None else True
 
+# only extract; do not plot, do not fit
+ONLY_EXTRACT = False
+ONLY_EXTRACT = True
+
 # loop over t-t0 and delta_t_around_the_world
 TLOOP = False
 TLOOP = True
@@ -489,9 +493,9 @@ assert len(FIT_EXCL) == DIM or not GEVP
 print_include_messages(GEVP)
 
 # Verbose mode
-VERBOSE = True
 VERBOSE = False
-VERBOSE = True if NOLOOP or not FIT else VERBOSE
+VERBOSE = True
+VERBOSE = True if NOLOOP or not FIT or ONLY_EXTRACT else VERBOSE
 errc.PRIN = VERBOSE
 
 # hints to eliminate

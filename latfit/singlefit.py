@@ -33,7 +33,7 @@ from latfit.config import JACKKNIFE_FIT, JACKKNIFE_BLOCK_SIZE
 from latfit.config import JACKKNIFE, NOLOOP, BOOTSTRAP_PVALUES
 from latfit.config import PRINT_CORR, MULT, ERR_CUT, ISOSPIN
 from latfit.config import GEVP, RANDOMIZE_ENERGIES, VERBOSE, DIMSELECT
-from latfit.config import INCLUDE
+from latfit.config import INCLUDE, ONLY_EXTRACT
 import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.analysis.covops as covops
@@ -166,7 +166,7 @@ def singlefit(meta, input_f):
             params, reuse, singlefit.reuse_blocked, coords)
 
     point_cuts_wrapper(meta)
-    if not toosmallp(meta, latfit.config.FIT_EXCL) and FIT:
+    if not toosmallp(meta, latfit.config.FIT_EXCL) and FIT and not ONLY_EXTRACT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
             # initial fit

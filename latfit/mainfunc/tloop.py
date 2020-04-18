@@ -14,7 +14,7 @@ from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
 from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
-from latfit.config import INCLUDE
+from latfit.config import INCLUDE, ONLY_EXTRACT
 
 # errors
 from latfit.analysis.errorcodes import XmaxError, XminError
@@ -110,6 +110,11 @@ def tloop():
                     dtm=latfit.config.DELTA_T_MATRIX_SUBTRACTION)
             check = False
             for tsub in range(int(tdis_max)): # this is the tmax loop
+
+                if tsub and ONLY_EXTRACT:
+                    break
+
+                tsub += 3
 
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
                     continue
@@ -229,7 +234,7 @@ def fit(tadd=0, tsub=0):
     """Main for latfit"""
     # set up 1ab
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
-    test = not FIT
+    test = not FIT or ONLY_EXTRACT
     processed = False
 
     meta = FitRangeMetaData()
@@ -259,7 +264,7 @@ def fit(tadd=0, tsub=0):
         # also, update with deliberate exclusions as part of TLOOP mode
         augment_excl.excl_orig = np.copy(list(latfit.config.FIT_EXCL))
 
-        if FIT:
+        if FIT and not ONLY_EXTRACT:
 
             test = True
             # print loop info
