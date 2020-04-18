@@ -240,7 +240,7 @@ elif EFF_MASS_METHOD == 4:
         if not np.isnan(sol):
             sol = checksol(sol, index, times, corrs, fun)
         return sol
-    proc_meff4.badtimes = []
+    #proc_meff4.badtimes = []
 
     def checksol(sol, index, times, corrs, fun):
         """Check the solution."""
