@@ -114,8 +114,6 @@ def tloop():
                 if tsub and ONLY_EXTRACT:
                     break
 
-                tsub += 3
-
                 if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
                     continue
                 if not TLOOP and tsub:
