@@ -17,6 +17,7 @@ from latfit.analysis.filename_windows import filename_plus_config_info
 from latfit.finalout.printerr import printerr
 
 # dynamic
+import latfit.extract.extract as ext
 from latfit.utilities import exactmean as em
 import latfit.singlefit as sfit
 import latfit.config
@@ -593,6 +594,7 @@ def post_loop(meta, loop_store, plotdata,
         if not TLOOP:
             latfit.config.MINTOL = True
         print("fitting for representative fit")
+        assert ext.iscomplete()
         try:
             retsingle = sfit.singlefit(meta, meta.input_f)
         except ACCEPT_ERRORS_FIN:

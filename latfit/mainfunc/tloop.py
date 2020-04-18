@@ -167,7 +167,8 @@ def tloop():
                     except FitRangesAlreadyInconsistent:
                         if VERBOSE:
                             print("starting a new main()",
-                                  "fit ranges already found to be inconsistent.  rank:",
+                                  "fit ranges already found to be",
+                                  "inconsistent.  rank:",
                                   MPIRANK)
                         flag = 1
                         tadd += 1 # add this to tmin
@@ -181,7 +182,8 @@ def tloop():
 
                     except DOFNonPos:
                         if VERBOSE:
-                            print("skipping fit window; degrees of freedom <= 0")
+                            print("skipping fit window;",
+                                  "degrees of freedom <= 0")
                         # exit the loop; we're totally out of dof
                         break
     if TLOOP:
@@ -224,7 +226,8 @@ def incr_dt():
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else dtee
     latfit.config.FITS.select_and_update(ADD_CONST)
     if VERBOSE:
-        print("new delta t matsub =", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+        print("new delta t matsub =",
+              latfit.config.DELTA_T_MATRIX_SUBTRACTION)
         print("current GEVP t-t0 =", latfit.config.T0)
 
 @PROFILE
@@ -372,6 +375,12 @@ def dofit_initial(meta, plotdata):
                       list(latfit.config.FIT_EXCL),
                       "fit window:", meta.fitwindow,
                       'rank:', MPIRANK)
+            if not ext.iscomplete(): # void the cache here for safety
+                # it should be voided if it's partially full
+                # this prevents bugs where some error starts filling it
+                # then breaks us out of the 'while flag' loop
+                # (e.g. fit window found to be inconsistent already)
+                reset_cache()
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             flag = False
