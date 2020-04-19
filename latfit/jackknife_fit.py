@@ -30,7 +30,7 @@ from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT, UNCORR
 from latfit.config import EFF_MASS
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
-from latfit.config import NOLOOP
+from latfit.config import NOLOOP, ALTERNATIVE_PARALLELIZATION
 from latfit.config import SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
@@ -102,6 +102,12 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         start_loop = True
 
         for config_num in config_range:
+
+            if ALTERNATIVE_PARALLELIZATION:
+                assert not latfit.config.BOOTSTRAP, "not supported"
+                if config_num not in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
+                    if config_num % MPISIZE != MPIRANK and MPISIZE > 1:
+                        continue
 
             # copy the jackknife block into coords_jack
             if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
@@ -214,6 +220,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         # reset the precomputed quantities
         mkmin.dealloc_chi()
         # average results, compute jackknife uncertainties
+
+        if ALTERNATIVE_PARALLELIZATION:
+            result_min.gather()
 
         # pickle/unpickle the jackknifed arrays
         result_min = pickl(result_min)

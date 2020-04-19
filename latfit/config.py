@@ -159,6 +159,13 @@ RANDOMIZE_ENERGIES = True
 RANDOMIZE_ENERGIES = False
 # T0 behavior for GEVP (t/2 or t-1)
 
+# parallelize over jackknife samples (jackknife loop)
+# involves comms (non-trivial), but since number of samples >> time slices,
+# past a certain number of ranks, it scales better
+# overhead in either case is similar (because of caching)
+ALTERNATIVE_PARALLELIZATION = True
+ALTERNATIVE_PARALLELIZATION = False
+
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
 PIONRATIO = False

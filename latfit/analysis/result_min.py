@@ -3,6 +3,7 @@
 from collections import namedtuple
 import pickle
 from random import randint
+from mpi4py import MPI
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
@@ -11,6 +12,11 @@ from latfit.analysis.errorcodes import DOFNonPosFit
 from latfit.analysis.filename_windows import filename_plus_config_info
 import latfit.config
 import latfit.analysis.hotelling as hotelling
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+COMM = MPI.COMM_WORLD
+mpi4py.rc.recv_mprobe = False
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -102,6 +108,12 @@ def dead(arr):
     return ret
 
 
+def blank(arr):
+    """is the array just zeros?"""
+    arr = np.asarray(arr)
+    comp = np.zeros(arr.shape)
+    return np.all(comp == arr)
+
 class Param:
     """Storage for the average param, the array of the param,
     and the error on the param
@@ -110,6 +122,53 @@ class Param:
         self.arr = np.array(None)
         self.err = None
         self.val = None
+        self.__gathered = False
+
+    def gather(self):
+        if not self.__gathered:
+            self.__callgather()
+            self.__gathered = True
+
+    def __callgather(self):
+        """MPI gather array"""
+        COMM.barrier()
+        arr = self.arr
+        gat = COMM.allgather(arr)
+        ret = []
+        shape = None
+
+        # shape check
+        for item in gat:
+            item = np.array(item)
+            if shape is None:
+                shape = item.shape
+            else:
+                assert shape == item.shape, (
+                    shape, item.shape)
+
+        for cfig in range(len(gat[0])):
+            app = False
+            prev = None
+            for rank in range(len(gat)):
+                item = gat[rank][cfig]
+                #print("it", item, rank, cfig)
+                if blank(item): 
+                    # we did no work for this rank,
+                    # config combination
+                    continue
+                if not app: # append once
+                    ret.append(item)
+                    app = True
+                else:
+                    # if we duplicated some work, then make sure
+                    # every rank got the same result
+                    assert np.all(prev == item), (prev, item)
+            assert app, "we missed a config with our parallelization"
+        ret = np.array(ret)
+        # final shape check
+        assert ret.shape == arr.shape, (ret, arr)
+        COMM.barrier()
+        self.arr = ret
 
     def swapidx(self, idx1, idx2):
         """Swap axes method"""
@@ -138,6 +197,8 @@ class Param:
 class ResultMin:
     """Store fit results for an individual fit range in this class"""
     def __init__(self, meta, params, coords):
+
+        # the Params
         self.energy = Param()
         self.systematics = Param()
         self.pvalue = Param()
@@ -145,6 +206,7 @@ class ResultMin:
         self.phase_shift = Param()
         self.scattering_length = Param()
         self.min_params = Param()
+
         self.misc = namedtuple(
             'misc', ['error_bars', 'dof',
                      'status', 'num_configs'])
@@ -165,10 +227,16 @@ class ResultMin:
                                     if not GEVP else params.dimops))
         self.__paramlist = {'energy': self.energy,
                             'systematics': self.systematics,
+                            'pvalue': self.pvalue,
                             'chisq': self.chisq,
                             'phase_shift': self.phase_shift,
                             'scattering_length': self.scattering_length,
                             'min_params': self.min_params}
+
+    def gather(self):
+        """MPI gather data from parallelized jackknife loop"""
+        for item in self.__paramlist:
+            self.__paramlist[item].gather()
 
     def printjack(self, meta):
         """Prints out the jackknife blocks"""

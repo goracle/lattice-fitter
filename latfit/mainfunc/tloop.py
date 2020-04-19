@@ -14,7 +14,7 @@ from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
 from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
-from latfit.config import INCLUDE, ONLY_EXTRACT
+from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 
 # errors
 from latfit.analysis.errorcodes import XmaxError, XminError
@@ -114,8 +114,9 @@ def tloop():
                 if tsub and ONLY_EXTRACT:
                     break
 
-                if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
-                    continue
+                if not ALTERNATIVE_PARALLELIZATION:
+                    if tsub % MPISIZE != MPIRANK and MPISIZE > 1:
+                        continue
                 if not TLOOP and tsub:
                     break
                 if VERBOSE:
