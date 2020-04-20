@@ -103,11 +103,15 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
         for config_num in config_range:
 
+            halfway = int(np.floor(len(config_range)/2)) == list(
+                config_range).index(config_num)
+
             if ALTERNATIVE_PARALLELIZATION:
                 assert not latfit.config.BOOTSTRAP, "not supported"
                 if config_num not in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
                     if config_num % MPISIZE != MPIRANK and MPISIZE > 1:
-                        continue
+                        if not (ISOSPIN == 0 and halfway):
+                            continue
 
             # copy the jackknife block into coords_jack
             if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
@@ -129,9 +133,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                                                 reuse, reuse_blocked,
                                                 config_num)
 
-            if ISOSPIN == 0 and int(np.floor(len(
-                    config_range)/2)) == list(
-                        config_range).index(config_num):
+            if ISOSPIN == 0 and halfway:
                 start_loop = True
 
             if start_loop:

@@ -126,7 +126,7 @@ class Param:
         self.__gathered = False
 
     def gather(self):
-        if not self.__gathered:
+        if not self.__gathered and self.arr.shape:
             self.__callgather()
             self.__gathered = True
 
@@ -151,6 +151,7 @@ class Param:
             app = False
             prev = None
             for rank in range(len(gat)):
+                assert len(gat) == MPISIZE
                 item = gat[rank][cfig]
                 #print("it", item, rank, cfig)
                 if blank(item): 
@@ -238,6 +239,8 @@ class ResultMin:
     def gather(self):
         """MPI gather data from parallelized jackknife loop"""
         for item in self.__paramlist:
+            if VERBOSE:
+                print("gathering:", item)
             self.__paramlist[item].gather()
 
     def printjack(self, meta):

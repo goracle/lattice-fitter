@@ -163,8 +163,9 @@ RANDOMIZE_ENERGIES = False
 # involves comms (non-trivial), but since number of samples >> time slices,
 # past a certain number of ranks, it scales better
 # overhead in either case is similar (because of caching)
-ALTERNATIVE_PARALLELIZATION = True
 ALTERNATIVE_PARALLELIZATION = False
+ALTERNATIVE_PARALLELIZATION = True
+ALTERNATIVE_PARALLELIZATION = bool(INCLUDE)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
