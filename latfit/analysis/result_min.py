@@ -4,6 +4,7 @@ from collections import namedtuple
 import pickle
 from random import randint
 from mpi4py import MPI
+import mpi4py
 import numpy as np
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR
