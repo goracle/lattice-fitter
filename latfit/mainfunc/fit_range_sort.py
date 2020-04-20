@@ -6,6 +6,7 @@ import latfit.analysis.sortfit as sortfit
 from latfit.config import GEVP, MAX_RESULTS
 from latfit.config import SKIP_LARGE_ERRORS
 from latfit.config import VERBOSE
+from latfit.config import ALTERNATIVE_PARALLELIZATION
 from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
 import latfit.singlefit
@@ -15,6 +16,10 @@ assert not BIASED_SPEEDUP
 MPIRANK = MPI.COMM_WORLD.rank
 #MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
+
+VERBOSE = VERBOSE and DOWRITE
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined

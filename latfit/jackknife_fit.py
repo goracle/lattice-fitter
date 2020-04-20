@@ -52,6 +52,9 @@ import latfit.makemin.mkmin as mkmin
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
+
 
 SUPERJACK_CUTOFF = 0 if SLOPPYONLY else SUPERJACK_CUTOFF
 
@@ -244,7 +247,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(
             result_min.energy.arr)
-        if VERBOSE:
+        if VERBOSE and DOWRITE:
             print('param err:', result_min.energy.err,
                   'np.std:', np.std(result_min.energy.arr, axis=0))
 
@@ -267,7 +270,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         result_min.chisq.val, result_min.chisq.err = jack_mean_err(
             result_min.chisq.arr)
 
-        if VERBOSE:
+        if VERBOSE and DOWRITE:
             print(hotelling.torchi(), result_min.chisq.val/result_min.misc.dof,
                   "std dev:", np.std(result_min.chisq.arr, ddof=1))
 
@@ -323,16 +326,17 @@ def skip_range(params, result_min, skip_votes,
     if skip_votes:
         # the second sample should never have a good fit
         # if the first one has that bad a fit
-        print("fiducial cut =", chisq_fiduc_cut)
-        print("dof=", result_min.misc.dof)
-        print("first two chi^2's:",
-              result_min_jack.fun, result_min.chisq.arr[zero])
-        print("var, var_approx, div, diff", var, var_approx, div, diff)
-        print("Bad jackknife distribution:"+\
-                str(result_min.chisq.arr[zero]/result_min.misc.dof)+" "+\
-                str(result_min.chisq.arr[one]/result_min.misc.dof)+" "+\
-                str(result_min.pvalue.arr[zero])+" "+\
-                str(result_min.pvalue.arr[one])+" ")
+        if DOWRITE:
+            print("fiducial cut =", chisq_fiduc_cut)
+            print("dof=", result_min.misc.dof)
+            print("first two chi^2's:",
+                result_min_jack.fun, result_min.chisq.arr[zero])
+            print("var, var_approx, div, diff", var, var_approx, div, diff)
+            print("Bad jackknife distribution:"+\
+                    str(result_min.chisq.arr[zero]/result_min.misc.dof)+" "+\
+                    str(result_min.chisq.arr[one]/result_min.misc.dof)+" "+\
+                    str(result_min.pvalue.arr[zero])+" "+\
+                    str(result_min.pvalue.arr[one])+" ")
         #sys.exit(1)
         if not latfit.config.BOOTSTRAP and not NOLOOP:
             raise BadJackknifeDist(uncorr=UNCORR)

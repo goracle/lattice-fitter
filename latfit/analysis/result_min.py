@@ -7,7 +7,7 @@ from mpi4py import MPI
 import mpi4py
 import numpy as np
 from scipy import stats
-from latfit.config import START_PARAMS, UNCORR
+from latfit.config import START_PARAMS, UNCORR, ALTERNATIVE_PARALLELIZATION
 from latfit.config import GEVP, NBOOT, VERBOSE
 from latfit.analysis.errorcodes import DOFNonPosFit
 from latfit.analysis.filename_windows import filename_plus_config_info
@@ -18,6 +18,8 @@ MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 COMM = MPI.COMM_WORLD
 mpi4py.rc.recv_mprobe = False
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -239,13 +241,16 @@ class ResultMin:
     def gather(self):
         """MPI gather data from parallelized jackknife loop"""
         for item in self.__paramlist:
-            if VERBOSE:
-                print("gathering:", item)
+            if VERBOSE and DOWRITE:
+                pass
+                #print("gathering:", item)
             self.__paramlist[item].gather()
 
     def printjack(self, meta):
         """Prints out the jackknife blocks"""
         for i in self.__paramlist:
+            if not DOWRITE:
+                break
             print("jackknife blocks for", i, ":")
             name = i+'_single'
             fname = filename_plus_config_info(meta, name)+'.jkdat'

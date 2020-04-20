@@ -3,10 +3,12 @@ import sys
 import re
 import pickle
 import numpy as np
+import mpi4py
+from mpi4py import MPI
 
 # config
 from latfit.config import EFF_MASS, MULT, GEVP, SUPERJACK_CUTOFF
-from latfit.config import TLOOP, METHOD
+from latfit.config import TLOOP, METHOD, ALTERNATIVE_PARALLELIZATION
 from latfit.config import NOLOOP, UNCORR, LATTICE_ENSEMBLE
 from latfit.config import SYS_ENERGY_GUESS
 from latfit.checks.consistency import check_include
@@ -47,11 +49,20 @@ ACCEPT_ERRORS_FIN = (NegChisq, RelGammaError, NoConvergence,
                      OverflowError, EnergySortError, TooManyBadFitsError,
                      BadJackknifeDist, BadChisq, ZetaError)
 
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
+
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not\
+    MPIRANK or not ALTERNATIVE_PARALLELIZATION
+
+
 def write_pickle_file_verb(filename, arr):
     """Write pickle file; print info"""
-    print("writing pickle file", filename)
     # assert not os.path.exists(filename+'.p'), filename+'.p'
-    pickle.dump(arr, open(filename+'.p', "wb"))
+    if DOWRITE:
+        print("writing pickle file", filename)
+        pickle.dump(arr, open(filename+'.p', "wb"))
 
 @PROFILE
 def divbychisq(param_arr, pvalue_arr):
@@ -121,7 +132,8 @@ def closest_fit_to_avg(result_min_avg, min_arr):
 @PROFILE
 def dump_fit_range(meta, min_arr, name, res_mean, err_check):
     """Pickle the fit range result"""
-    print("starting arg:", name)
+    if DOWRITE:
+        print("starting arg:", name)
     if 'energy' in name: # no clobber (only do this once)
         if MULT > 1:
             for i in range(len(res_mean)):
@@ -162,23 +174,26 @@ def pickle_excl(meta, min_arr):
     append the effective mass points
     """
     ret = [print_res.inverse_excl(meta, i[2]) for i in min_arr]
-    print("original number of fit ranges before effective mass append:",
-          len(ret))
+    if DOWRITE:
+        print("original number of fit ranges before effective mass append:",
+              len(ret))
     if EFF_MASS:
         xcoord = list(sfit.singlefit.coords_full[:, 0])
         xcoordapp = [[i] for i in xcoord]
         ret = [*ret, *xcoordapp]
     ret = np.array(ret, dtype=object)
-    print("final fit range amount:", len(ret))
+    if DOWRITE:
+        print("final fit range amount:", len(ret))
     return ret
 
 @PROFILE
 def pickle_res_err(name, min_arr):
     """Append the effective mass errors to the """
     ret = [getattr(i[0], name).err for i in min_arr]
-    print("debug:[getattr(i[0], name) for i in min_arr].shape",
-          np.asarray(ret).shape)
-    print("debug2:", np.asarray(sfit.singlefit.error2).shape)
+    if DOWRITE:
+        print("debug:[getattr(i[0], name) for i in min_arr].shape",
+              np.asarray(ret).shape)
+        print("debug2:", np.asarray(sfit.singlefit.error2).shape)
     origl = len(ret)
     if GEVP and 'systematics' not in name:
         if len(np.asarray(ret).shape) > 1:
@@ -195,8 +210,9 @@ def pickle_res_err(name, min_arr):
         ret = np.array([*ret, *erreff])
     ret = np.asarray(ret)
     flen = len(ret)
-    print("original error length (err):", origl,
-          "final error length:", flen)
+    if DOWRITE:
+        print("original error length (err):", origl,
+              "final error length:", flen)
     return ret
 
 @PROFILE
@@ -206,7 +222,8 @@ def pickle_res(name, min_arr):
     """
     ret = [getattr(i[0], name).arr for i in min_arr]
     origlshape = np.asarray(ret, dtype=object).shape
-    print("res shape", origlshape)
+    if DOWRITE:
+        print("res shape", origlshape)
     origl = len(ret)
     if 'energy' in name:
         arreff, _ = min_eff_mass_errors()
@@ -215,8 +232,9 @@ def pickle_res(name, min_arr):
     assert len(origlshape) == len(ret.shape), str(origlshape)+","+str(
         ret.shape)
     flen = len(ret)
-    print("original error length (res):", origl,
-          "final error length:", flen)
+    if DOWRITE:
+        print("original error length (res):", origl,
+              "final error length:", flen)
     return ret
 
 @PROFILE
@@ -236,7 +254,8 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     else:
         assert mindim is not None, "needs specification of operator"+\
             " dimension to write min error jackknife blocks (unsupported)."
-        print(err.shape)
+        if DOWRITE:
+            print(err.shape)
         errmin = min(err[:, mindim])
         ind = list(err[:, mindim]).index(errmin)
         fname = fname+'_mindim'+str(mindim)
@@ -244,10 +263,12 @@ def dump_min_err_jackknife_blocks(meta, min_arr, mindim=None):
     arr, errmin = compare_eff_mass_to_range(arr, errmin, mindim=mindim)
 
     fname = filename_plus_config_info(meta, fname)
-    print("dumping jackknife energies with error:", errmin,
-          "into file:", fname+'.p')
+    if DOWRITE:
+        print("dumping jackknife energies with error:", errmin,
+              "into file:", fname+'.p')
     # assert not os.path.exists(fname+'.p'), fname+'.p'
-    pickle.dump(arr, open(fname+'.p', "wb"))
+    if DOWRITE:
+        pickle.dump(arr, open(fname+'.p', "wb"))
 
 @PROFILE
 def compare_eff_mass_to_range(arr, errmin, mindim=None):
@@ -418,8 +439,9 @@ def find_mean_and_err(meta, min_arr):
             continue
 
         # find the name of the array
-        print("finding error in", name, "which has shape=",
-              np.asarray(min_arr[0][0].__dict__[name].val).shape)
+        if DOWRITE:
+            print("finding error in", name, "which has shape=",
+                  np.asarray(min_arr[0][0].__dict__[name].val).shape)
 
         # compute the jackknife errors as a check
         # (should give same result as error propagation)
@@ -511,7 +533,8 @@ def combine_results(result_min, result_min_close,
         result_min['misc'] = result_min_close.misc
         result_min['pvalue'] = result_min_close.pvalue
         #result_min['pvalue'].err = result_min_close.pvalue.err
-        print("closest representative fit result (lattice units):")
+        if DOWRITE:
+            print("closest representative fit result (lattice units):")
         # convert here since we can't set attributes afterwards
         result_min = convert_to_namedtuple(result_min)
         printerr(result_min_close.energy.val, param_err_close)
@@ -522,10 +545,10 @@ def combine_results(result_min, result_min_close,
 @PROFILE
 def loop_result(min_arr, overfit_arr):
     """Test if fit range loop succeeded"""
-    if min_arr:
+    if min_arr and DOWRITE:
         print(min_arr[0], np.array(min_arr).shape)
     min_arr = collapse_filter(min_arr)
-    if overfit_arr:
+    if overfit_arr and DOWRITE:
         print(overfit_arr[0])
     overfit_arr = collapse_filter(overfit_arr)
     try:
@@ -587,13 +610,15 @@ def post_loop(meta, loop_store, plotdata,
         latfit.config.FIT_EXCL = list(min_arr[0][2])
         dump_single_fit(meta, min_arr)
 
-    print("fit excluded points (indices):",
-          latfit.config.FIT_EXCL)
+    if DOWRITE:
+        print("fit excluded points (indices):",
+              latfit.config.FIT_EXCL)
 
     if len(min_arr) > 1:
         if not TLOOP:
             latfit.config.MINTOL = True
-        print("fitting for representative fit")
+        if DOWRITE:
+            print("fitting for representative fit")
         assert ext.iscomplete()
         try:
             retsingle = sfit.singlefit(meta, meta.input_f)
@@ -603,7 +628,8 @@ def post_loop(meta, loop_store, plotdata,
             retsingle = retsingle_save
             param_err = retsingle_save[1]
     else:
-        print("reusing first successful fit result for representative fit")
+        if DOWRITE:
+            print("reusing first successful fit result for representative fit")
         retsingle = retsingle_save
         param_err = retsingle_save[1]
     result_min_close, param_err_close, \
@@ -614,9 +640,10 @@ def post_loop(meta, loop_store, plotdata,
         result_min, result_min_close,
         meta, param_err, param_err_close)
 
-    print("fit window = ", meta.fitwindow)
+    if DOWRITE:
+        print("fit window = ", meta.fitwindow)
     # plot the result
-    if check_include(result_min):
+    if check_include(result_min) and DOWRITE:
         mkplot.mkplot(plotdata, meta.input_f, result_min,
                       param_err, meta.fitwindow)
 

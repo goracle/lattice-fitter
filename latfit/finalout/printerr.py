@@ -1,11 +1,21 @@
 """Print error"""
 import gvar
-from latfit.config import VERBOSE
+import mpi4py
+from mpi4py import MPI
+from latfit.config import VERBOSE, ALTERNATIVE_PARALLELIZATION
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
+
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
+
 
 def printerr(result_min, param_err):
     """Print the param error"""
     for i, err in enumerate(param_err):
-        if VERBOSE:
+        if VERBOSE and DOWRITE:
             print("Minimized parameter #", i, " = ")
             print(gvar.gvar(result_min[i], err))
 

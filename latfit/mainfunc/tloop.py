@@ -67,6 +67,10 @@ MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
+
+VERBOSE = VERBOSE and DOWRITE
 
 # for subsequent fits
 ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
@@ -138,10 +142,11 @@ def tloop():
                     #   and MPISIZE > 1:
                         #tadd += 1
                         #continue
-                    print("t indices, matdt, t-t0, mpi rank:",
-                          i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
-                          latfit.config.T0, MPIRANK)
-                    print("tadd, tsub, mpi rank:", tadd, tsub, MPIRANK)
+                    if DOWRITE:
+                        print("t indices, matdt, t-t0, mpi rank:",
+                            i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
+                            latfit.config.T0, MPIRANK)
+                        print("tadd, tsub, mpi rank:", tadd, tsub, MPIRANK)
                     try:
                         test, check2 = fit(tadd=tadd, tsub=tsub)
                         check = check or check2
@@ -449,8 +454,9 @@ def dofit_second_initial(meta, retsingle_save, test_success):
         # plotdata.fitcoord = meta.fit_coord()
         fit_range_init = None
     except ACCEPT_ERRORS as err:
-        print("fit failed (acceptably) with error:",
-              err.__class__.__name__)
+        if DOWRITE:
+            print("fit failed (acceptably) with error:",
+                  err.__class__.__name__)
         fit_range_init = None
     if test_success:
         result_min, param_err, _, _ = retsingle_save
@@ -502,7 +508,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
         print(MPISIZE)
         showint = 1
 
-    if VERBOSE or not idx % showint:
+    if (VERBOSE or not idx % showint) and DOWRITE:
         print("Trying fit with excluded times:",
               latfit.config.FIT_EXCL,
               "fit window:", meta.fitwindow,
@@ -527,7 +533,7 @@ def dofit(meta, fit_range_data, results_store, plotdata):
                 retsingle_save = retsingle
         except ACCEPT_ERRORS as err:
             # skip on any error
-            if VERBOSE or not idx % showint:
+            if (VERBOSE or not idx % showint) and DOWRITE:
                 print("fit failed for this selection."+\
                       " excluded points=", excl, "with error:",
                       err.__class__.__name__)

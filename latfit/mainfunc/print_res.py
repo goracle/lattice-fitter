@@ -1,7 +1,18 @@
 """formatted print functions used in main()"""
 import numpy as np
+import mpi4py
+from mpi4py import MPI
 import gvar
 from latfit.config import MULT, CALC_PHASE_SHIFT
+from latfit.config import ALTERNATIVE_PARALLELIZATION
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
+
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
+
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -15,7 +26,7 @@ except NameError:
 def print_phaseshift(result_min):
     """Print the phase shift info from a single fit range"""
     for i in range(MULT):
-        if CALC_PHASE_SHIFT:
+        if CALC_PHASE_SHIFT and DOWRITE:
             print("phase shift of state #")
             if np.isreal(result_min.phase_shift.val[i]):
                 print(i, gvar.gvar(
@@ -59,13 +70,14 @@ def inverse_excl(meta, excl):
 def print_fit_results(meta, min_arr):
     """ Print the fit results
     """
-    print("Fit results:  pvalue, energies,",
-          "err on energies, included fit points")
-    res = []
-    for i in min_arr:
-        res.append((getattr(i[0], "pvalue").val,
-                    getattr(i[0], 'energy').val,
-                    i[1], inverse_excl(meta, i[2])))
-    res = sorted(res, key=lambda x: x[0])
-    for i in res:
-        print(i)
+    if DOWRITE:
+        print("Fit results:  pvalue, energies,",
+            "err on energies, included fit points")
+        res = []
+        for i in min_arr:
+            res.append((getattr(i[0], "pvalue").val,
+                        getattr(i[0], 'energy').val,
+                        i[1], inverse_excl(meta, i[2])))
+        res = sorted(res, key=lambda x: x[0])
+        for i in res:
+            print(i)

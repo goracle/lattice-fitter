@@ -3,13 +3,23 @@ import os
 import copy
 # import itertools
 import numpy as np
+import mpi4py
+from mpi4py import MPI
 from gvar import gvar
 from latfit.config import GEVP, VERBOSE, RESOLVABLE_STATES
+from latfit.config import ALTERNATIVE_PARALLELIZATION
 from latfit.config import MATRIX_SUBTRACTION, NOLOOP, DIMSELECT
 from latfit.include import VALUE_STR, PARAM_OF_INTEREST
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.filename_windows import filename_plus_config_info
 import latfit.config
+
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
+mpi4py.rc.recv_mprobe = False
+
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK or not ALTERNATIVE_PARALLELIZATION
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -37,6 +47,7 @@ def mod180(deg):
             ret = 180+deg
     return ret
 
+
 # https://stackoverflow.com/questions/1158076/implement-touch-using-python
 @PROFILE
 def touch(fname, mode=0o666, dir_fd=None, **kwargs):
@@ -51,8 +62,9 @@ def create_dummy_skip(meta):
     """If we find an inconsistent fit,
     create a dummy file so that we skip that in any repeat run"""
     fname = filename_plus_config_info(meta, 'badfit')+'.p'
-    print("creating skip file:", fname)
-    touch(fname)
+    if DOWRITE:
+        print("creating skip file:", fname)
+        touch(fname)
 
 def fit_range_consistency_check(meta, min_arr, name, mod_180=False):
     """Check consistency of energies and phase shifts so far"""
@@ -68,13 +80,15 @@ def err_handle(meta, consis, lparam, name):
     try:
         assert consis
     except AssertionError:
-        print("fit ranges are inconsistent with respect to:", name)
+        if DOWRITE:
+            print("fit ranges are inconsistent with respect to:", name)
         meta.pr_fit_window()
-        print("t-t0:", latfit.config.T0)
-        if MATRIX_SUBTRACTION:
-            print("dt matsub:", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
-        for i in sort_by_val(lparam):
-            print(gvar(i.val, i.err))
+        if DOWRITE:
+            print("t-t0:", latfit.config.T0)
+            if MATRIX_SUBTRACTION:
+                print("dt matsub:", latfit.config.DELTA_T_MATRIX_SUBTRACTION)
+            for i in sort_by_val(lparam):
+                print(gvar(i.val, i.err))
         create_dummy_skip(meta)
         raise FitRangeInconsistency
 
@@ -101,10 +115,11 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
             if collapse_check:
                 ret, idx, jdx = state_collapse_check(i, j, mod_180=mod_180)
                 if not ret:
-                    print("States", idx, "and", jdx,
-                          "have collapsed into each other.")
-                    print(gvar(i.val, i.err))
-                    print(gvar(j.val, j.err))
+                    if DOWRITE:
+                        print("States", idx, "and", jdx,
+                            "have collapsed into each other.")
+                        print(gvar(i.val, i.err))
+                        print(gvar(j.val, j.err))
                     break
     return ret
 
@@ -180,7 +195,7 @@ def consistent_params(item1, item2, mod_180=False, verb=VERBOSE):
     str1 = str(gvar(item1.val[idx], item1.err[idx]))
     str2 = str(gvar(item2.val[idx], item2.err[idx]))
     cond = str1 == str2 and str1 == '0(0)'
-    if not ret and not cond and verb:
+    if not ret and not cond and verb and DOWRITE:
         print("problematic diff:", str1,
               str2)
     return ret, ret2
@@ -196,7 +211,7 @@ def check_include(result_min):
         dim = DIMSELECT
         chk = gvar(param.val[dim], param.err[dim])
         chk = str(chk)
-        if VERBOSE:
+        if VERBOSE and DOWRITE:
             print("chk, VALUE_STR:", chk, VALUE_STR)
         if chk == VALUE_STR:
             ret = True

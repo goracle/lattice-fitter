@@ -5,12 +5,15 @@ from mpi4py import MPI
 from latfit.config import VERBOSE, PVALUE_MIN, CALC_PHASE_SHIFT, MULT, NOLOOP
 from latfit.config import PHASE_SHIFT_ERR_CUT, ISOSPIN, GEVP
 from latfit.config import LAST_STATE_PHASE_ERR_CUT
+from latfit.config import ALTERNATIVE_PARALLELIZATION
 
 import latfit.mainfunc.fit_range_sort as frsort
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
+DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -28,7 +31,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
     (result should be recorded or not)
     """
     ret = False
-    if VERBOSE:
+    if VERBOSE and DOWRITE:
         print("p-value = ", result_min.pvalue.val, "rank:", MPIRANK)
     # reject model at 10% level
     if result_min.pvalue.val < PVALUE_MIN:
