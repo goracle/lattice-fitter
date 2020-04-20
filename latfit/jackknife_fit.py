@@ -172,8 +172,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                 params, result_min.min_params.arr[config_num])
 
             if result_min_jack.fun/result_min.misc.dof < 10 and\
-               list(result_min.systematics.arr[config_num][:-1]) and VERBOSE:
-                print('systematics:',
+               list(result_min.systematics.arr[config_num][:-1]) and (
+                   VERBOSE or ALTERNATIVE_PARALLELIZATION):
+                print("config", config_num, 'systematics:',
                       result_min.systematics.arr[config_num][:-1])
 
             # we shifted the GEVP energy spectrum down
@@ -198,7 +199,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                    else ''
 
             # print results for this config
-            if VERBOSE:
+            if VERBOSE or ALTERNATIVE_PARALLELIZATION:
                 print("config", config_num, ":",
                       result_min.energy.arr[config_num],
                       sys_str, hotelling.torchi(),
@@ -247,7 +248,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         # compute the mean, error on the params
         result_min.energy.val, result_min.energy.err = jack_mean_err(
             result_min.energy.arr)
-        if VERBOSE and DOWRITE:
+        if VERBOSE:
             print('param err:', result_min.energy.err,
                   'np.std:', np.std(result_min.energy.arr, axis=0))
 
@@ -270,7 +271,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         result_min.chisq.val, result_min.chisq.err = jack_mean_err(
             result_min.chisq.arr)
 
-        if VERBOSE and DOWRITE:
+        if VERBOSE:
             print(hotelling.torchi(), result_min.chisq.val/result_min.misc.dof,
                   "std dev:", np.std(result_min.chisq.arr, ddof=1))
 
