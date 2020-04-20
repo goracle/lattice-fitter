@@ -32,7 +32,7 @@ def cutresult(result_min, min_arr, overfit_arr, param_err):
     (result should be recorded or not)
     """
     ret = False
-    if VERBOSE and DOWRITE:
+    if VERBOSE:
         print("p-value = ", result_min.pvalue.val, "rank:", MPIRANK)
     # reject model at 10% level
     if result_min.pvalue.val < PVALUE_MIN:
