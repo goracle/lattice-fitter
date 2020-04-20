@@ -23,6 +23,7 @@ except NameError:
         return arg2
     PROFILE = profile
 
+VERBOSE = VERBOSE and DOWRITE
 
 @PROFILE
 def cutresult(result_min, min_arr, overfit_arr, param_err):

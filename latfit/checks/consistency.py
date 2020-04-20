@@ -21,6 +21,8 @@ mpi4py.rc.recv_mprobe = False
 
 DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK or not ALTERNATIVE_PARALLELIZATION
 
+VERBOSE = VERBOSE and DOWRITE
+
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
@@ -211,7 +213,7 @@ def check_include(result_min):
         dim = DIMSELECT
         chk = gvar(param.val[dim], param.err[dim])
         chk = str(chk)
-        if VERBOSE and DOWRITE:
+        if VERBOSE:
             print("chk, VALUE_STR:", chk, VALUE_STR)
         if chk == VALUE_STR:
             ret = True

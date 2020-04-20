@@ -21,6 +21,7 @@ mpi4py.rc.recv_mprobe = False
 DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
     or not ALTERNATIVE_PARALLELIZATION
 
+VERBOSE = VERBOSE and DOWRITE
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:
@@ -241,7 +242,7 @@ class ResultMin:
     def gather(self):
         """MPI gather data from parallelized jackknife loop"""
         for item in self.__paramlist:
-            if VERBOSE and DOWRITE:
+            if VERBOSE:
                 pass
                 #print("gathering:", item)
             self.__paramlist[item].gather()
