@@ -21,7 +21,6 @@ mpi4py.rc.recv_mprobe = False
 DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
     or not ALTERNATIVE_PARALLELIZATION
 
-VERBOSE = VERBOSE and DOWRITE
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
 except NameError:

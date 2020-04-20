@@ -70,8 +70,6 @@ mpi4py.rc.recv_mprobe = False
 DOWRITE = ALTERNATIVE_PARALLELIZATION and not MPIRANK\
     or not ALTERNATIVE_PARALLELIZATION
 
-VERBOSE = VERBOSE and DOWRITE
-
 # for subsequent fits
 ACCEPT_ERRORS = (NegChisq, RelGammaError, NoConvergence, OverflowError,
                  EnergySortError, TooManyBadFitsError, BadJackknifeDist,

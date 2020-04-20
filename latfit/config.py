@@ -2,6 +2,7 @@
 import sys
 from copy import copy
 import numpy as np
+from mpi4py import MPI
 import latfit.analysis.misc as misc
 from latfit.analysis.gevp_dirs import gevp_dirs
 from latfit.analysis.irr2tex import irr2tex
@@ -20,6 +21,7 @@ from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE, FIT_EXCL
 from latfit.include import print_include_messages, LATTICE_ENSEMBLE
 from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION, ISOSPIN, IRREP
 
+MPIRANK = MPI.COMM_WORLD.rank
 # PRE-LOG.  NOTHING HERE IS PRINTED IN THE LOG
 
 # TYPE OF FIT
@@ -504,6 +506,9 @@ print_include_messages(GEVP)
 VERBOSE = True
 VERBOSE = False
 VERBOSE = True if NOLOOP or not FIT or ONLY_EXTRACT else VERBOSE
+VERBOSE = (ALTERNATIVE_PARALLELIZATION and not MPIRANK\
+    or not ALTERNATIVE_PARALLELIZATION) and VERBOSE
+
 errc.PRIN = VERBOSE
 
 # hints to eliminate
