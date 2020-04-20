@@ -159,6 +159,7 @@ class Param:
                     continue
                 if not app: # append once
                     ret.append(item)
+                    prev = item
                     app = True
                 else:
                     # if we duplicated some work, then make sure
