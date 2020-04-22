@@ -436,9 +436,6 @@ def to_include(itmin, dim, title, dump_min):
             fn1 = open(savel+'.p', 'wb')
             pickle.dump(ts_loop, fn1)
 
-def alt_coll(coll_blks):
-    """ok"""
-
 @PROFILE
 def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     """Print results vs. tmin"""
