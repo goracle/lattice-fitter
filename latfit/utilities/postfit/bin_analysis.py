@@ -13,7 +13,7 @@ from latfit.utilities.postfit.fitwin import max_tmax, contains
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
 from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
-from latfit.utilities.postfit.strproc import tot_to_stat
+from latfit.utilities.postfit.strproc import tot_to_stat, stat_from_blocks
 from latfit.utilities.combine_pickle import main as getdts
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 from latfit.config import RESOLVABLE_STATES, STRONG_CUTS
@@ -420,7 +420,8 @@ def to_include(itmin, dim, title, dump_min):
     print("FIT_EXCL = invinc(INCLUDE,", str(fitwin)+")")
     tminuses, dt2s = getdts(sel)
     saven = min_fit_file(dim, rest)
-    res = tot_to_stat(itmin[0], sys_err)
+    #res = tot_to_stat(itmin[0], sys_err)
+    res = stat_from_blocks(itmin[0], itmin[4])
     print("stat err only min result:", res)
     for i, j in zip(tminuses, dt2s):
         ts_loop = list(tosave)

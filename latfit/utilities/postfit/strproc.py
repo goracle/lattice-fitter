@@ -2,6 +2,7 @@
 import re
 import gvar
 import numpy as np
+from latfit.jackknife_fit import jack_mean_err
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 
 try:
@@ -27,6 +28,18 @@ def tot_to_stat(res, sys_err):
         if not np.isnan(sys_err):
             assert err > sys_err, (err, sys_err)
         err = np.sqrt(err**2-sys_err**2)
+        ret = gvar.gvar(res.val, err)
+    return ret
+
+def stat_from_blocks(res, blocks):
+    """Calculate stat error again from jackknife blocks"""
+    if res is None:
+        ret = None
+    else:
+        _, err = jack_mean_err(blocks)
+        if isinstance(res, str):
+            res = gvar.gvar(res)
+        assert not np.isnan(err)
         ret = gvar.gvar(res.val, err)
     return ret
 
