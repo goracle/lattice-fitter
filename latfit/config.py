@@ -165,8 +165,8 @@ RANDOMIZE_ENERGIES = False
 # involves comms (non-trivial), but since number of samples >> time slices,
 # past a certain number of ranks, it scales better
 # overhead in either case is similar (because of caching)
-ALTERNATIVE_PARALLELIZATION = False
 ALTERNATIVE_PARALLELIZATION = True
+ALTERNATIVE_PARALLELIZATION = False
 ALTERNATIVE_PARALLELIZATION = bool(INCLUDE)
 
 # Pion ratio?  Put single pion correlators in the denominator
@@ -184,7 +184,6 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
-
 print("PR_GROUND_ONLY", PR_GROUND_ONLY)
 
 # use the pion ratio to correct systematic
@@ -361,6 +360,12 @@ BOOTSTRAP = False # don't modify; internal global
 BOOTSTRAP_PVALUES = True
 BOOTSTRAP_PVALUES = False
 BOOTSTRAP_PVALUES = True if INCLUDE and ISOSPIN else BOOTSTRAP_PVALUES
+
+## post fit config
+STRONG_CUTS = True # use I=2 level cuts
+STRONG_CUTS = False
+print("Strong cuts:", STRONG_CUTS)
+
 
 # continuum dispersion relation corrected using fits (true) or phat (false)
 FIT_SPACING_CORRECTION = True

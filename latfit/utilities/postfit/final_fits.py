@@ -63,6 +63,8 @@ def main():
         xmax = '22'
         call = 'mpirun -np 4 latfit -f . --xmin='+str(xmin)+' --xmax='+\
             xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
+        call = 'latfit -f . --xmin='+str(xmin)+' --xmax='+\
+            xmax+' --fitmin='+fitmin+' --fitmax='+fitmax
         print("call =", call)
         flag = subprocess.call(call, shell=True)
         if flag:

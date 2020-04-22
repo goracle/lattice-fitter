@@ -1,14 +1,15 @@
 """Fit window module"""
 import numpy as np
 from latfit.config import RANGE_LENGTH_MIN, ISOSPIN
+from latfit.config import STRONG_CUTS
 
 LENMIN = 3
 MIN_FITWIN_LEN = LENMIN
-if ISOSPIN:
+if ISOSPIN or STRONG_CUTS:
     MIN_FITWIN_LEN += 1
 assert LENMIN == RANGE_LENGTH_MIN
 # I=0 we have fewer successful fit ranges, so apply a less stringent cut
-if not ISOSPIN:
+if not ISOSPIN and not STRONG_CUTS:
     LENMIN -= 1
 
 try:
@@ -92,11 +93,23 @@ def replace_inf_fitwin(fitw):
             ret.append(i)
     return ret
 
+def contains(win1, win2):
+    """Check if either fit window contains the other one"""
+    xmin1 = win1[0]
+    xmin2 = win2[0]
+    xmax1 = win1[1]
+    xmax2 = win2[1]
+    if xmin1 <= xmin2:
+        ret = xmax1 >= xmax2
+    else:
+        ret = xmax2 <= xmax1
+    return ret
+
 @PROFILE
 def max_tmax(tot_new):
     """Find the maximum tmax for each tmin"""
     ret = {}
-    for _, _, fitwin in tot_new:
+    for _, _, fitwin, _ in tot_new:
         fitwin = fitwin[1]
         if fitwin[0] in ret:
             ret[fitwin[0]] = max(ret[fitwin[0]],

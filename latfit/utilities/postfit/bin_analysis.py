@@ -9,14 +9,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 import gvar
 from latfit.utilities.postfit.fitwin import pr_best_fitwin
 from latfit.utilities.postfit.fitwin import replace_inf_fitwin, win_nan
-from latfit.utilities.postfit.fitwin import max_tmax
+from latfit.utilities.postfit.fitwin import max_tmax, contains
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
 from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
 from latfit.utilities.postfit.strproc import tot_to_stat
 from latfit.utilities.combine_pickle import main as getdts
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
-from latfit.config import RESOLVABLE_STATES
+from latfit.config import RESOLVABLE_STATES, STRONG_CUTS
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -73,7 +73,7 @@ def continuous_tmax(tot_new, ignorable_windows):
     for tmin in maxtmax:
         check_set = set()
         check_set = check_set.union(set(ignorable_windows))
-        for _, _, fitwin in tot_new:
+        for _, _, fitwin, _ in tot_new:
             fitwin = fitwin[1]
             if fitwin[0] == tmin:
                 check_set.add(fitwin)
@@ -92,7 +92,8 @@ def continuous_tmin_singleton(tot_new):
     """Check for continous tmin, singleton cut"""
 
     # singleton cut
-    assert len(tot_new) > 1 or ISOSPIN == 0, tot_new
+    assert len(tot_new) > 1 or (
+        not ISOSPIN and not STRONG_CUTS), tot_new
     maxtmax = max_tmax(tot_new)
     tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
 
@@ -199,8 +200,11 @@ def drop_extra_info(ilist):
         con1 = list(fitw[0]) == list(fitw[1])
         con2 = np.inf == fitw[0][1] or win_nan(fitw[0])
         con3 = np.inf == fitw[1][1] or win_nan(fitw[1])
-        if ISOSPIN != 0:
-            assert con1 or con2 or con3, fitw
+        if ISOSPIN or STRONG_CUTS:
+            try:
+                assert con1 or con2 or con3, fitw
+            except AssertionError:
+                assert contains(fitw[0], fitw[1]), fitw
         if con1:
             fitw = fitw[0]
         elif con2:
@@ -249,7 +253,7 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
               dim, title)
         raise
         #tot_new = []
-    if list(tot_new) or ISOSPIN == 0:
+    if list(tot_new) or (not ISOSPIN and not STRONG_CUTS):
         if dim < RESOLVABLE_STATES:
             minormax = min_or_max(item_num)
             tot_new = quick_compare(
@@ -266,7 +270,7 @@ def plot_t_dep(tot, info, fitwin_votes, toapp, dump_min):
 def check_fitwin_continuity(tot_new, ignorable_windows):
     """Check fit window continuity
     up to the minimal separation of tmin, tmax"""
-    if ISOSPIN != 0:
+    if ISOSPIN or STRONG_CUTS:
         continuous_tmin_singleton(tot_new)
     flag = 1
     while flag:
@@ -281,7 +285,7 @@ def check_fitwin_continuity(tot_new, ignorable_windows):
                 tocut.add(i[0])
             print("cutting:", tocut)
             tot_new = cut_tmin(tot_new, tocut)
-            if ISOSPIN != 0:
+            if ISOSPIN or STRONG_CUTS:
                 continuous_tmin_singleton(tot_new)
     return tot_new
 
@@ -460,7 +464,7 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
     coll = []
     coll_blks = []
     toapp = []
-    best_info = (not cbest and ISOSPIN != 0, ignorable_windows)
+    best_info = (not cbest and (ISOSPIN or STRONG_CUTS), ignorable_windows)
     for dim, _ in enumerate(tot[0]):
         plot_info = (dim, 0, 'Energy', 'lattice units', fname)
         info = (best_info, plot_info)

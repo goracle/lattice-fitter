@@ -4,7 +4,7 @@ import gvar
 import latfit.utilities.exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.superjack import jack_mean_err
-from latfit.config import ISOSPIN
+from latfit.config import ISOSPIN, STRONG_CUTS
 from latfit.utilities.postfit.fitwin import win_nan
 from latfit.utilities.postfit.cuts import lencut, allow_cut
 from latfit.utilities.postfit.cuts import statlvl
@@ -269,7 +269,8 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
                 break
 
         fit_range = fit_range_arr[idx]
-        assert not lencut(fit_range, dim) or ISOSPIN == 0, (fit_range, idx)
+        assert not lencut(fit_range, dim) or (
+            not ISOSPIN and not STRONG_CUTS), (fit_range, idx)
 
         # best known cut (stat comparison only)
         if allow_cut(gvar.gvar(emean, sdev),

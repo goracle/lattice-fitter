@@ -174,8 +174,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
             if result_min_jack.fun/result_min.misc.dof < 10 and\
                list(result_min.systematics.arr[config_num][:-1]) and (
                    VERBOSE or ALTERNATIVE_PARALLELIZATION):
-                print("config", config_num, 'systematics:',
-                      result_min.systematics.arr[config_num][:-1])
+                print('systematics:',
+                      result_min.systematics.arr[config_num][:-1],
+                      "config:", config_num)
 
             # we shifted the GEVP energy spectrum down
             # to fix the leading order around the world term

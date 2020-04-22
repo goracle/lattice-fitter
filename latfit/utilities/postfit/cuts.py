@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import gvar
-from latfit.config import ISOSPIN
+from latfit.config import ISOSPIN, STRONG_CUTS
 from latfit.utilities.postfit.fitwin import LENMIN
 from latfit.utilities.postfit.fitwin import lenfitw, inside_win
 from latfit.utilities.postfit.fitwin import wintoosmall, get_fitwindow
@@ -57,7 +57,7 @@ def fitrange_skip_list(fit_range_arr, fitwindow, dim):
         elif fitwincuts(item, fitwindow):
             fcut += 1
             ret.add(idx)
-        if ISOSPIN != 0 and idx not in ret:
+        if (ISOSPIN or STRONG_CUTS) and idx not in ret:
             if not arithseq(item):
                 acut += 1
                 ret.add(idx)
@@ -88,14 +88,14 @@ def lencut(fit_range, dim):
         ret = True
     if not ret:
         if iterf:
-            if ISOSPIN: # I = 1, 2
+            if ISOSPIN or STRONG_CUTS: # I = 1, 2
                 ret = any([len(i) < LENMIN for i in fit_range])
             else: # I = 0
                 ret = [len(i) < LENMIN for i in fit_range][dim]
         else:
             ret = len(fit_range) < LENMIN
     if ret:
-        assert effmasspt or ISOSPIN == 0, fit_range
+        assert effmasspt or not ISOSPIN, fit_range
     return ret
 
 @PROFILE
@@ -222,7 +222,7 @@ def consistency(item1, item2, prin=False):
             if prin:
                 print("sig inconsis. =", sig)
             # sanity check; relax '15' to a higher number as necessary
-            assert sig < 15 or ISOSPIN == 0,\
+            assert sig < 15 or not ISOSPIN,\
                 (sig, "check the best known list for",
                 "compatibility with current set",
                 "of results being analyzed", item1, item2)
