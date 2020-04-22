@@ -323,16 +323,25 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
 FULLDIM = True
-if 'mom000' in IRREP and ISOSPIN == 0:
-    FULLDIM = False
-    DIM -= 2
-DIM = 1 if not GEVP else DIM
-if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
-    FULLDIM = True
-    DIM -= 2
-elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
-    FULLDIM = False
-    DIM = 3
+def subdim(dim, fulldim):
+    """adjust gevp dimension"""
+    dim = 1 if not GEVP else dim
+    dimstart = int(dim)
+
+
+    # make edits here
+    if 'mom000' in IRREP and ISOSPIN == 0:
+        dim -= 2
+    if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
+        dim -= 0
+    elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
+        dim = 3
+
+
+    if dim < dimstart:
+        fulldim = False
+    return dim, fulldim
+DIM, FULLDIM = subdim(DIM, FULLDIM)
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 DISP_ENERGIES = tuple(DISP_ENERGIES)
 
@@ -362,8 +371,8 @@ BOOTSTRAP_PVALUES = False
 BOOTSTRAP_PVALUES = True if INCLUDE and ISOSPIN else BOOTSTRAP_PVALUES
 
 ## post fit config
-STRONG_CUTS = True # use I=2 level cuts
 STRONG_CUTS = False
+STRONG_CUTS = True # use I=2 level cuts
 print("Strong cuts:", STRONG_CUTS)
 
 
