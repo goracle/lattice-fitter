@@ -322,14 +322,14 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # whether we use all available lattice data
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
-FULLDIM = True
-def subdim(dim, fulldim):
+def subdim(dim):
     """adjust gevp dimension"""
+    fulldim = True
     dim = 1 if not GEVP else dim
     dimstart = int(dim)
 
 
-    # make edits here
+    # make edits to the dimension here
     if 'mom000' in IRREP and ISOSPIN == 0:
         dim -= 2
     if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
@@ -341,7 +341,7 @@ def subdim(dim, fulldim):
     if dim < dimstart:
         fulldim = False
     return dim, fulldim
-DIM, FULLDIM = subdim(DIM, FULLDIM)
+DIM, FULLDIM = subdim(DIM)
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 DISP_ENERGIES = tuple(DISP_ENERGIES)
 
