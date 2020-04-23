@@ -56,7 +56,7 @@ def fill_best(cbest):
 def cut_tmin(tot_new, tocut):
     """Cut tmin"""
     todel = []
-    for i, (_, _, fitwin) in enumerate(tot_new):
+    for i, (_, _, fitwin, _) in enumerate(tot_new):
         fitwin = fitwin[1] # cut out the fit range info
         assert isinstance(fitwin[0], np.float), fitwin
         if fitwin[0] in tocut or fitwin[0] < min(tocut):

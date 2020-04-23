@@ -184,11 +184,13 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
-print("PR_GROUND_ONLY", PR_GROUND_ONLY)
+PR_GROUND_ONLY = False
+
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
 # if not, we can use it to correct statistical error
+print("PR_GROUND_ONLY", PR_GROUND_ONLY)
 MINIMIZE_STAT_ERROR_PR = True
 MINIMIZE_STAT_ERROR_PR = False
 
