@@ -58,7 +58,8 @@ def cut_tmin(tot_new, tocut):
     todel = []
     for i, (_, _, fitwin, _) in enumerate(tot_new):
         fitwin = fitwin[1] # cut out the fit range info
-        assert isinstance(fitwin[0], np.float), fitwin
+        assert isinstance(fitwin[0], np.float) or isinstance(
+            fitwin[0], np.integer), (fitwin[0], type(fitwin[0]))
         if fitwin[0] in tocut or fitwin[0] < min(tocut):
             todel.append(i)
     ret = np.delete(tot_new, todel, axis=0)
@@ -95,7 +96,9 @@ def continuous_tmin_singleton(tot_new):
     assert len(tot_new) > 1 or (
         not ISOSPIN and not STRONG_CUTS), tot_new
     maxtmax = max_tmax(tot_new)
-    tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
+    tmin_cont = set()
+    if maxtmax:
+        tmin_cont = np.arange(min(maxtmax), max(maxtmax)+1)
 
     # check tmin is continuous
     assert not set(tmin_cont)-set(maxtmax), list(maxtmax)
