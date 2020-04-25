@@ -203,6 +203,7 @@ singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
 
+@PROFILE
 def point_cuts_wrapper(meta):
     """Point cuts wrapper:  make cuts, do check"""
     old_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
@@ -213,6 +214,7 @@ def point_cuts_wrapper(meta):
         if NOLOOP:
             assert new_excl == old_excl, (old_excl, new_excl)
 
+@PROFILE
 def tuple_mat_set_sort(mat):
     """Tuplize matrix and sort entries; remove duplicates"""
     ret = []
@@ -225,6 +227,7 @@ def tuple_mat_set_sort(mat):
     return ret
 
 
+@PROFILE
 def fiduc_point_cuts(meta):
     """Perform fiducial cuts on individual
     effective mass points"""
@@ -259,6 +262,7 @@ def non_jackknife_fit(params, cov, coords):
     param_err = geterr(result_min, covinv, coords)
     return result_min, param_err
 
+@PROFILE
 def covinv_compute(params, cov):
     """Compute inverse covariance matrix"""
     try:
@@ -270,6 +274,7 @@ def covinv_compute(params, cov):
                 covinv[i][j] = np.nan
     return covinv
 
+@PROFILE
 def error_bar_scheme(result_min, fitwindow, xmin, xmax):
     """use a consistent error bar scheme;
     if fit window isn't max use conventional,
@@ -282,6 +287,7 @@ def error_bar_scheme(result_min, fitwindow, xmin, xmax):
             pass
     return result_min
 
+@PROFILE
 def bootstrap_pvalue(meta, params, reuse, coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
@@ -321,6 +327,7 @@ def bootstrap_pvalue(meta, params, reuse, coords, result_min):
 bootstrap_pvalue.result_minq = {}
 
 
+@PROFILE
 def set_bootstrap_shift(result_min):
     """Subtract any systematic difference
     to get the Null distribution for p-values
@@ -350,6 +357,7 @@ def set_bootstrap_shift(result_min):
     covops.CONST_SHIFT = shift
 set_bootstrap_shift.printed = False
 
+@PROFILE
 def reset_bootstrap():
     """Set const. shift to 0
     (for initial fit)
@@ -361,6 +369,7 @@ def reset_bootstrap():
     resmin.NULL_CHISQ_ARRS = {}
     latfit.config.BOOTSTRAP = False
 
+@PROFILE
 def debug_print(coords_full, cov_full):
     """Debug print
     """
@@ -373,6 +382,7 @@ def debug_print(coords_full, cov_full):
             print([sqrt(cov_full[i][i]) for i in range(len(cov_full))])
         sys.exit(0)
 
+@PROFILE
 def singlefit_reset():
     """reset all the internal singlefit function variables"""
     singlefit.reuse = None
@@ -404,6 +414,7 @@ def fit_select(coords_full, cov_full, selection):
     cov = cov_full[start_index:stop_index+1, start_index:stop_index+1]
     return coords, cov
 
+@PROFILE
 def earlier(already_cut, jdx, kdx):
     """If a time slice in dimension kdx is cut,
     all the later time slices should also be cut"""
@@ -534,6 +545,7 @@ def cut_on_errsize(meta):
     latfit.config.FIT_EXCL = list(excl)
     return ret
 
+@PROFILE
 def same_range(excl1, excl2):
     """Are the the two lists of excluded points the same?"""
     ret = True
@@ -611,6 +623,7 @@ def excl_inrange(meta, excl):
         ret.append(newexc)
     return ret
 
+@PROFILE
 def skipped_all(meta, excl):
     """Skipped all points in a given GEVP dim"""
     ret = False
@@ -624,6 +637,7 @@ def skipped_all(meta, excl):
             ret = True
     return ret
 
+@PROFILE
 def onlynpts(meta, excl, npts):
     """Fit dim contains only n points"""
     ret = False

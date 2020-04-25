@@ -586,7 +586,7 @@ def get_first_res(name, min_arr):
     err = min_arr[0][0].__dict__[name].err
     return mean, err
 
-def post_loop(meta, loop_store, plotdata,
+def post_loop(meta, loop_store,
               retsingle_save, test_success):
     """After loop over fit ranges"""
     result_min = {}

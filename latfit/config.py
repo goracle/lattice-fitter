@@ -996,7 +996,7 @@ if FULLDIM:
 MULT = len(GEVP_DIRS) if GEVP else 1
 
 # how many states to target to resolve.
-RESOLVABLE_STATES = 4
+RESOLVABLE_STATES = 4 if MULT <= 4 else 3
 
 if RESOLVABLE_STATES > MULT:
     RESOLVABLE_STATES = MULT

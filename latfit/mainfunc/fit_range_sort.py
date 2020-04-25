@@ -134,6 +134,7 @@ def exitp(meta, min_arr, overfit_arr, idx):
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
     return ret
+
 @PROFILE
 def keyexcl(excl):
     """Make a unique id for a set of excluded points"""
@@ -142,8 +143,9 @@ def keyexcl(excl):
 
 
 @PROFILE
-def get_one_fit_range(meta, prod, idx, samp_mult, checked):
+def get_one_fit_range(meta, idx, checked, combo_data):
     """Choose one fit range from all combinations"""
+    prod, samp_mult = combo_data
     key = None
     if not meta.random_fit:
         excl = prod[idx]
@@ -169,6 +171,12 @@ def get_one_fit_range(meta, prod, idx, samp_mult, checked):
         ret = list(excl)
         checked.add(key)
     return ret, checked
+
+def setup_checked(fit_range_init):
+    """Init the set of checked fit ranges"""
+    ret = set()
+    ret.add(fit_range_init)
+    return ret
 
 # generate all possible points excluded from fit range
 

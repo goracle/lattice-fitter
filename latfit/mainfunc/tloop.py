@@ -280,7 +280,7 @@ def fit(tadd=0, tsub=0):
             ## allocate results storage, do second initial test fit
             ## (if necessary)
             start = time.perf_counter()
-            min_arr, overfit_arr, retsingle_save, fit_range_init = \
+            min_arr, overfit_arr, retsingle_save, checked = \
                 dofit_second_initial(meta, retsingle_save, test_success)
             if VERBOSE:
                 print("Total elapsed time =",
@@ -289,11 +289,7 @@ def fit(tadd=0, tsub=0):
             ### Setup for fit range loop
 
             plotdata = store_init(plotdata)
-            prod, sorted_fit_ranges = frsort.fit_range_combos(meta,
-                                                              plotdata)
-
-            # store checked fit ranges
-            checked = set()
+            combo_data = frsort.fit_range_combos(meta, plotdata)
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
@@ -307,48 +303,33 @@ def fit(tadd=0, tsub=0):
                 if frsort.exitp(meta, min_arr, overfit_arr, idx):
                     break
 
-                # get one fit range, check it
-                excl, checked = frsort.get_one_fit_range(
-                    meta, prod, idx, sorted_fit_ranges, checked)
-                if excl is not None:
-                    excl = list(excl)
-                if excl is None:
+                if set_fit_range(meta, idx, checked, combo_data):
                     continue
-                if sfit.toosmallp(meta, excl):
-                    continue
-
-                # update global info about excluded points
-                latfit.config.FIT_EXCL = list(excl)
 
                 # do fit
                 start = time.perf_counter()
-                retsingle, plotdata = dofit(meta,
-                                            (idx, excl, fit_range_init),
-                                            (min_arr, overfit_arr,
-                                             retsingle_save),
-                                            plotdata)
+                retsingle, retsingle_save = dofit(meta, idx,
+                    (min_arr, overfit_arr, retsingle_save))
                 if VERBOSE:
                     print("Total elapsed time =",
                           time.perf_counter()-start,
                           "seconds. rank:", MPIRANK)
-                if retsingle[0]: # skip processing
+                if retsingle is None: # skip processing
                     continue
 
                 # process and store fit result
-                min_arr, overfit_arr, retsingle_save = process_fit_result(
-                    retsingle, excl, min_arr, overfit_arr)
+                min_arr, overfit_arr = process_fit_result(
+                    retsingle, min_arr, overfit_arr)
 
-                if CALC_PHASE_SHIFT:
-                    fit_range_consistency_check(meta, min_arr,
-                                                'phase_shift', mod_180=True)
-                fit_range_consistency_check(meta, min_arr, 'energy')
+                # check results for consistency; cut inconsistent fit windows
+                consis(meta, min_arr)
 
             if not meta.skip_loop:
 
                 min_arr, overfit_arr = mpi_gather(min_arr, overfit_arr)
 
             test = post_loop(meta, (min_arr, overfit_arr),
-                             plotdata, retsingle_save, test_success)
+                             retsingle_save, test_success)
 
         elif not FIT:
             nofit_plot(meta, plotdata, retsingle_save)
@@ -357,6 +338,33 @@ def fit(tadd=0, tsub=0):
     if VERBOSE:
         print("END FIT, rank:", MPIRANK)
     return test, processed
+
+def consis(meta, min_arr):
+    """Check fit results for consistency"""
+    if CALC_PHASE_SHIFT:
+        fit_range_consistency_check(meta, min_arr,
+                                    'phase_shift', mod_180=True)
+    fit_range_consistency_check(meta, min_arr, 'energy')
+
+
+def set_fit_range(meta, idx, checked, combo_data):
+    """Set the fit range"""
+    # get one fit range, check it
+    excl, checked = frsort.get_one_fit_range(
+        meta, idx, checked, combo_data)
+    if excl is not None:
+        excl = list(excl)
+    
+    skip = False
+    if excl is None:
+        skip = True
+    if not skip:
+        if sfit.toosmallp(meta, excl):
+            skip = True
+        if not skip:
+            # update global info about excluded points
+            latfit.config.FIT_EXCL = list(excl)
+    return skip
 
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
@@ -428,7 +436,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     samerange = sfit.cut_on_growing_exp(meta) and samerange
     assert samerange
 
-    fit_range_init = str(latfit.config.FIT_EXCL)
+    fit_range_init = frsort.keyexcl(list(latfit.config.FIT_EXCL))
+
     try:
         if not samerange and FIT:
             if VERBOSE:
@@ -476,7 +485,14 @@ def dofit_second_initial(meta, retsingle_save, test_success):
                 print("cutting result of test fits")
     assert len(min_arr) + len(overfit_arr) <= 1, len(
         min_arr) + len(overfit_arr)
-    return min_arr, overfit_arr, retsingle_save, fit_range_init
+
+    # store checked fit ranges
+    if fit_range_init is not None:
+        checked = frsort.setup_checked(fit_range_init)
+    else:
+        checked = set()
+
+    return min_arr, overfit_arr, retsingle_save, checked
 
 def store_init(plotdata):
     """Storage modification;
@@ -488,13 +504,12 @@ def store_init(plotdata):
     return plotdata
 
 
-def dofit(meta, fit_range_data, results_store, plotdata):
+def dofit(meta, idx, results_store):
     """Do a fit on a particular fit range"""
 
     # unpack
     min_arr, overfit_arr, retsingle_save = results_store
-    idx, excl, fit_range_init = fit_range_data
-    excl = list(excl)
+    excl = list(latfit.config.FIT_EXCL)
     skip = False
     try:
         showint = int(min(np.floor(meta.lenprod/10), (MPISIZE*5)))
@@ -517,43 +532,40 @@ def dofit(meta, fit_range_data, results_store, plotdata):
               "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
     # retsingle_save needs a cut on error size
-    if frsort.keyexcl(list(excl)) == fit_range_init:
+    try:
+        retsingle = sfit.singlefit(meta, meta.input_f)
+        if retsingle_save is None:
+            retsingle_save = retsingle
+        if VERBOSE:
+            print("fit succeeded for this selection"+\
+                    " excluded points=", list(excl))
+        if meta.lenprod == 1 or MAX_RESULTS == 1:
+            retsingle_save = retsingle
+    except ACCEPT_ERRORS as err:
+        # skip on any error
+        if (VERBOSE or not idx % showint) and DOWRITE:
+            print("fit failed for this selection."+\
+                    " excluded points=", excl, "with error:",
+                    err.__class__.__name__)
         skip = True
-    else:
-        try:
-            retsingle = sfit.singlefit(meta, meta.input_f)
-            if retsingle_save is None:
-                retsingle_save = retsingle
-            if VERBOSE:
-                print("fit succeeded for this selection"+\
-                      " excluded points=", list(excl))
-            if meta.lenprod == 1 or MAX_RESULTS == 1:
-                retsingle_save = retsingle
-        except ACCEPT_ERRORS as err:
-            # skip on any error
-            if (VERBOSE or not idx % showint) and DOWRITE:
-                print("fit failed for this selection."+\
-                      " excluded points=", excl, "with error:",
-                      err.__class__.__name__)
-            skip = True
     if not skip:
-        result_min, param_err, plotdata.coords, plotdata.cov = retsingle
+        result_min, param_err, _, _ = retsingle
         if VERBOSE:
             printerr(result_min.energy.val, param_err)
         if CALC_PHASE_SHIFT and VERBOSE:
             print_res.print_phaseshift(result_min)
     else:
-        retsingle = (None, None, plotdata.coords, plotdata.cov)
+        retsingle = None
 
-    return (skip, retsingle, retsingle_save), plotdata
+    return retsingle, retsingle_save
 
-def process_fit_result(retsingle, excl, min_arr, overfit_arr):
+def process_fit_result(retsingle, min_arr, overfit_arr):
     """ After fitting, process/store the results
     """
     # unpack
-    _, retsingle, retsingle_save = retsingle
     result_min, param_err, _, _ = retsingle
     skip = False
+    excl = list(lafit.config.FIT_EXCL)
 
     if cutresult(result_min, min_arr, overfit_arr, param_err):
         skip = True
@@ -565,7 +577,7 @@ def process_fit_result(retsingle, excl, min_arr, overfit_arr):
             min_arr.append(result)
         else:
             overfit_arr.append(result)
-    return min_arr, overfit_arr, retsingle_save
+    return min_arr, overfit_arr
 
 @PROFILE
 def augment_excl(excli):
