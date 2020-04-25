@@ -119,17 +119,16 @@ def invertmasked(params, len_time, excl, covjack):
 
     # hack
     #if invertmasked.params2 is None:
-    params2 = namedtuple('temp', ['dimops', 'num_configs'])
-    params2.dimops = 1
-    params2.num_configs = params.num_configs
+    invertmasked.params2.dimops = 1
+    invertmasked.params2.num_configs = params.num_configs
 
     try:
-        matrix_inv = invert_cov(matrix, params2)
+        matrix_inv = invert_cov(matrix, invertmasked.params2)
         invp(matrix_inv, matrix)
         matrix = matrix_inv
         symp(matrix)
         marray[np.logical_not(marray.mask)] = normalize_covinv(
-            matrix, params2).reshape(-1)
+            matrix, invertmasked.params2).reshape(-1)
         flag = 0
     except np.linalg.linalg.LinAlgError as err:
         if str(err) == 'Singular matrix':
@@ -145,6 +144,7 @@ def invertmasked(params, len_time, excl, covjack):
         raise
     marray[marray.mask] = marray.fill_value
     return marray, flag
+invertmasked.params2 = namedtuple('temp', ['dimops', 'num_configs'])
 
 
 
@@ -185,19 +185,22 @@ def prune_covjack(params, covjack, coords_jack, flag):
 
 def symp(matrix):
     """Assert matrix is symmetric"""
-    for i, _ in enumerate(matrix):
-        for j, _ in enumerate(matrix):
-            eva = matrix[i][j]
-            evb = matrix[j][i]
-            err = str(eva)+" "+str(evb)
-            try:
-                assert eva == evb, err
-            except (AssertionError, ValueError):
+    try:
+        assert np.allclose(matrix, matrix.T, rtol=1e-8)
+    except AssertionError:
+        for i, _ in enumerate(matrix):
+            for j, _ in enumerate(matrix):
+                if i <= j:
+                    continue
+                eva = matrix[i][j]
+                evb = matrix[j][i]
                 try:
                     assert np.allclose(eva, evb, rtol=1e-8)
                 except AssertionError:
+                    err = str(eva)+" "+str(evb)
                     print(err)
                     raise PrecisionLossError
+        assert None, "bug; precision loss error should've been raised"
 
 
 if CORRMATRIX:

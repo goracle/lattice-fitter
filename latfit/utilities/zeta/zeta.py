@@ -8,7 +8,7 @@ from math import sqrt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-from accupy import kdot
+#from accupy import kdot
 from latfit.config import PION_MASS, L_BOX, CALC_PHASE_SHIFT
 from latfit.config import AINVERSE, ISOSPIN, MOMSTR, FIT_SPACING_CORRECTION
 from latfit.config import IRREP
@@ -16,7 +16,16 @@ from latfit.utilities import read_file as rf
 from latfit.analysis.errorcodes import ZetaError, RelGammaError
 import latfit.utilities.zeta.i1zeta as i1z
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
 if CALC_PHASE_SHIFT:
+    @PROFILE
     def remove_epipi_indexing(epipi):
         """Remove the indexining on epipi"""
         try:
@@ -28,18 +37,22 @@ if CALC_PHASE_SHIFT:
                 pass
         return epipi
 
+    @PROFILE
     def getgamma(epipi, comp):
         """get relativistic gamma"""
-        comp = np.asarray(comp, dtype=np.float64)
-        assert len(comp) == 3, str(comp)
+        if getgamma.psq is None:
+            comp = np.asarray(comp, dtype=np.float64)
+            assert len(comp) == 3, str(comp)
+            getgamma.psq = np.dot(comp, comp)
+        psq = getgamma.psq
         if epipi:
             try:
                 if FIT_SPACING_CORRECTION:
-                    arg = epipi**2-(2*np.pi/L_BOX)**2*kdot(comp, comp)
+                    arg = epipi**2-(2*np.pi/L_BOX)**2*psq
                     gamma = epipi/sqrt(arg)
                 else:
                     arg = epipi**2-4*np.sin(
-                        np.pi/L_BOX)**2*kdot(comp, comp)
+                        np.pi/L_BOX)**2*psq
                     gamma = epipi/sqrt(arg)
             except (ValueError, FloatingPointError):
                 print("zeta.py, bad gamma value for epipi=", epipi)
@@ -50,39 +63,58 @@ if CALC_PHASE_SHIFT:
         if gamma < 1:
             raise RelGammaError(gamma=gamma, epipi=epipi)
         return gamma
-
+    getgamma.psq = None
 
     def zeta(epipi):
         """Calculate the I=0 scattering phase shift given the pipi energy
         for that channel.
         """
+        arglist, comp = args(epipi)
+        out = phase_shift(epipi, arglist, comp)
+        out = tocomplex(epipi, out)
+        return out
+
+    @PROFILE
+    def args(epipi):
+        """Get arg list for C code to calculate phase shift"""
         epipi = remove_epipi_indexing(epipi)
         comp = np.array(rf.procmom(MOMSTR))
         gamma = getgamma(epipi, comp)
         epipi = epipi*AINVERSE/gamma
         lbox = L_BOX/AINVERSE
+        setup_i1_zeta(lbox)
         #epipi = math.sqrt(epipi**2-(2*np.pi/lbox)**2*PTOTSQ) //not correct
 
         # set up the normal call to w00 phase shift method
-        binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
+        binpath = args.binpath
         arglist = [binpath, str(epipi), str(PION_MASS), str(lbox),
                    str(comp[0]), str(comp[1]), str(comp[2]), str(gamma),
                    str(int(not FIT_SPACING_CORRECTION))]
+        return arglist, comp
+    args.binpath = os.path.dirname(inspect.getfile(zeta))+'/main.o'
 
-        # set up the I=1 moving frame version
+    @PROFILE
+    def setup_i1_zeta(lbox):
+        """set up the I=1 moving frame version"""
         i1z.COMP = MOMSTR
         i1z.L_BOX = np.float(lbox)
         i1z.IRREP = str(IRREP)
         i1z.MPION = np.float(PION_MASS)
 
+else:
+    def zeta(_):
+        """Blank function; do not calculate phase shift"""
+        return
+
+@PROFILE
+def phase_shift(epipi, arglist, comp):
+    """Calculate phase shift"""
+    if not np.isnan(epipi):
         try:
-            if not np.isnan(epipi):
-                if ISOSPIN != 1 or not np.any(comp):
-                    out = subprocess.check_output(arglist)
-                else:
-                    out = i1z.phase(epipi)
+            if ISOSPIN != 1 or not np.any(comp):
+                out = subprocess.check_output(arglist)
             else:
-                out = np.nan
+                out = i1z.phase(epipi)
         except FileNotFoundError:
             print("Error in zeta: main.C not compiled yet.")
             print(subprocess.check_output(['pwd']))
@@ -93,13 +125,11 @@ if CALC_PHASE_SHIFT:
             print(epipi)
             raise ZetaError(subprocess.Popen(
                 arglist, stdout=subprocess.PIPE).stdout.read())
-        out = tocomplex(epipi, out)
-        return out
-else:
-    def zeta(_):
-        """Blank function; do not calculate phase shift"""
-        return
+    else:
+        out = np.nan
+    return out
 
+@PROFILE
 def tocomplex(epipi, out):
     """if the phase shift should be complex,
     make the output (from the .C file) to a complex python type"""
