@@ -74,15 +74,14 @@ def check_covinv(covinv):
     """Check inverse covariance matrix"""
     for i in chi.RCORD:
         for j in chi.RCORD:
+            if i <= j:
+                continue
             comp1 = covinv[i][j]
-            if i != j:
-                comp2 = np.transpose(covinv[j][i])
-            else:
-                comp2 = covinv[j][i]
-            err = str(covinv[i][j])+" "+str(covinv[j][i])
+            comp2 = np.transpose(covinv[j][i])
             try:
                 assert np.allclose(comp1, comp2, rtol=1e-8)
             except AssertionError:
+                err = str(covinv[i][j])+" "+str(covinv[j][i])
                 print(i, j)
                 print(err)
                 raise PrecisionLossError
@@ -152,6 +151,7 @@ def getenergies(result_min):
     return ret
 
 
+@PROFILE
 def mkmin_loop(covinv, coords, method, kick=False):
     """Inner loop part
     """
