@@ -590,6 +590,7 @@ def post_loop(meta, loop_store,
               retsingle_save, test_success):
     """After loop over fit ranges"""
     result_min = {}
+    plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)
     # did anything succeed?
