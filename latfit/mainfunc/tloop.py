@@ -565,7 +565,7 @@ def process_fit_result(retsingle, min_arr, overfit_arr):
     # unpack
     result_min, param_err, _, _ = retsingle
     skip = False
-    excl = list(lafit.config.FIT_EXCL)
+    excl = list(latfit.config.FIT_EXCL)
 
     if cutresult(result_min, min_arr, overfit_arr, param_err):
         skip = True
