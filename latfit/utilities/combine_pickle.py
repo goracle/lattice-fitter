@@ -46,6 +46,14 @@ def dummy_glob():
         ret.append(i)
     return ret
 
+def float_convert_fit_range(fit_range):
+    """Float convert fit range elements"""
+    if not hasattr(fit_range, '__iter__'):
+        ret = float(fit_range)
+    else:
+        ret = [float_convert_fit_range(i) for i in fit_range]
+    return ret
+
 def main(fit_select=''):
     """main"""
     fit_select = str(fit_select)
@@ -109,6 +117,7 @@ def main(fit_select=''):
                 #print(add[2])
                 #print(add[3])
                 newfrs = add[3][:len(add[2])]
+            newfrs = float_convert_fit_range(newfrs)
 
             # check fit range length
             #assert np.all([len(j) >= hist.LENMIN for j in newfrs]),\
@@ -195,7 +204,6 @@ def parse_found_for_dts(found):
     tminuses = []
     dt2s = []
     if found:
-        #print("found fit range")
         earliest = None
         for i, item in enumerate(found):
             # assumes tminus is 1 digit long
@@ -210,8 +218,6 @@ def parse_found_for_dts(found):
                 dt2 = item.split('dt')[1][0]
             tminuses.append(tminus)
             dt2s.append(dt2)
-        #print('T0 =', tminus)
-        #print('DELTA_T_MATRIX_SUBTRACTION =', dt2)
         print("file found:", tminuses, dt2s, found)
     return tminuses, dt2s
 
