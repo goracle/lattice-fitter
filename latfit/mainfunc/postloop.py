@@ -1,6 +1,7 @@
 """Actions peformed after the fit"""
 import sys
 import re
+from collections import namedtuple
 import pickle
 import numpy as np
 import mpi4py
@@ -644,6 +645,7 @@ def post_loop(meta, loop_store,
     if DOWRITE:
         print("fit window = ", meta.fitwindow)
     # plot the result
+    plotdata.fitcoord = meta.fit_coord()
     if check_include(result_min) and DOWRITE:
         mkplot.mkplot(plotdata, meta.input_f, result_min,
                       param_err, meta.fitwindow)
