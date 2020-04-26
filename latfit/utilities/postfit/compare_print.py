@@ -375,6 +375,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
     else:
         ret = (gvar.gvar(np.nan, np.nan), np.nan,
                [[[]]], np.nan*dropsdev(effmass))
+    print("min:", ret[0])
     return ret
 
 def dropsdev(arr):
