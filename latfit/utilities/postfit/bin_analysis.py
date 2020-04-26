@@ -93,8 +93,7 @@ def continuous_tmin_singleton(tot_new):
     """Check for continous tmin, singleton cut"""
 
     # singleton cut
-    assert len(tot_new) > 1 or (
-        not ISOSPIN and not STRONG_CUTS), tot_new
+    assert len(tot_new) > 1 or (not ISOSPIN and not STRONG_CUTS), tot_new
     maxtmax = max_tmax(tot_new)
     tmin_cont = set()
     if maxtmax:
@@ -403,7 +402,7 @@ def plot_t_dep_totnew(tot_new, plot_info,
 
 def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
-    sel = [[j for j in i] for i in itmin[1]]
+    sel = [sorted([j for j in i]) for i in itmin[1]]
     sys_err = itmin[3]
     if itmin[0] is None:
         fitwin = (None, None)
@@ -426,6 +425,7 @@ def to_include(itmin, dim, title, dump_min):
     #res = tot_to_stat(itmin[0], sys_err)
     res = stat_from_blocks(itmin[0], itmin[4])
     print("stat err only min result:", res)
+    assert list(zip(tminuses, dt2s)), "fits not found:"+str(sel)
     for i, j in zip(tminuses, dt2s):
         ts_loop = list(tosave)
         ts_loop.append(i)
@@ -436,6 +436,7 @@ def to_include(itmin, dim, title, dump_min):
             print("DELTA_T_MATRIX_SUBTRACTION =", j)
         savel = saven+'_'+str(i)+'_'+str(j)
         if dump_min:
+            print("saving:", savel+'.p')
             fn1 = open(savel+'.p', 'wb')
             pickle.dump(ts_loop, fn1)
 
