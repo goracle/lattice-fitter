@@ -333,6 +333,8 @@ def fit(tadd=0, tsub=0):
 
                 for retsingle in results:
                     # process and store fit result
+                    if retsingle is None:
+                        continue
                     min_arr, overfit_arr = process_fit_result(
                         retsingle, min_arr, overfit_arr)
                     # perform another consistency check
