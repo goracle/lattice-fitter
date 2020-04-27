@@ -87,49 +87,30 @@ def exitp(meta, min_arr, overfit_arr, idx):
                 " has been checked, exiting fit range loop."+\
                 " (number of fit ranges checked:"+str(idx+1)+")")
             print("rank :", MPIRANK, "exiting fit loop")
-    if not len(min_arr) + len(overfit_arr) and idx >= MAX_ITER and meta.random_fit:
-        print("Maximum iteration count", MAX_ITER,
+
+    # check to see if max iter count and no results
+    mix = get_chunked_max(3)
+    if not len(min_arr) + len(overfit_arr) and idx >= mix and meta.random_fit:
+        print("Maximum iteration count", mix,
               "exceeded with no results")
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
-    if idx >= MAX_ITER/8 and len(min_arr) < MAX_RESULTS/16 and meta.random_fit:
-        print("Maximum iteration count", MAX_ITER/8, "exceeded.")
-        print("and results needed are < 1/16 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= MAX_ITER/4 and len(min_arr) < MAX_RESULTS/8 and meta.random_fit:
-        print("Maximum iteration count", MAX_ITER/4, "exceeded.")
-        print("and results needed are < 1/8 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= MAX_ITER/2 and len(min_arr) < MAX_RESULTS/4 and meta.random_fit:
-        print("Maximum iteration count", MAX_ITER/2, "exceeded.")
-        print("and results needed are < 1/4 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= MAX_ITER and len(min_arr) < MAX_RESULTS/2:
-        print("Maximum iteration count", MAX_ITER, "exceeded.")
-        print("and results needed are < 1/2 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= 2*MAX_ITER and len(min_arr) < 2*MAX_RESULTS/3 and meta.random_fit:
-        print("Maximum iteration count * 2", 2 * MAX_ITER, "exceeded.")
-        print("and results needed are < 2/3 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= 3*MAX_ITER and len(min_arr) < 3*MAX_RESULTS/4:
-        print("Maximum iteration count * 3", 3 * MAX_ITER, "exceeded.")
-        print("and results needed are < 3/4 of", MAX_RESULTS)
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
-        ret = True
-    if idx >= 4*MAX_ITER:
-        print("Maximum iteration count * 4", 4 * MAX_ITER, "exceeded.")
+    # check on loop progress in 6 chunks; if not making progress, exit.
+    for chunk in range(6):
+        if ret:
+            break
+        mix = get_chunked_max(chunk)
+        thr = threshold(chunk)
+        if idx >= mix and len(min_arr) < thr and meta.random_fit:
+            print("Maximum iteration count", mix, "exceeded.")
+            print("and results needed are <", rstr, "of", MAX_RESULTS)
+            print("results:", len(min_arr))
+            print("rank :", MPIRANK, "exiting fit loop")
+            ret = True
+    # check to see if 4*max iter count (absolute upper bound)
+    mix = get_chunked_max(6)
+    if idx >= mix:
+        print("Maximum iteration count * 4", mix, "exceeded.")
         print("results:", len(min_arr))
         print("rank :", MPIRANK, "exiting fit loop")
         ret = True
@@ -215,6 +196,123 @@ def sort_fit_ranges(meta, tsorted, sampler):
                 sampler, tsorted[i], meta.lenfit)
             samp_mult.append(sampi)
     return samp_mult
+
+def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
+    """Get sets of fit ranges;
+    chunked based on progress points
+    """
+    if checked is None:
+        checked = []
+
+    # get maximum number of fit ranges
+    # "mix"
+    mix = meta.lenprod
+    if meta.random_fit:
+        mix = get_chunked_max(chunk)
+
+    ret = []
+    for idx in range(mix):
+        excl, checked = get_one_fit_range(
+            meta, idx, checked, combo_data)
+        if excl is not None:
+            excl = list(excl)
+            if sfit.toosmallp(meta, excl):
+                excl = None
+        ret.append(excl)
+    return ret
+
+def threshold(idx):
+    """Number of results needed at
+    threshold indexed by idx:
+    0: MAX_RESULTS/16
+    1: MAX_RESULTS/8
+    2: MAX_RESULTS/4
+    3: MAX_RESULTS/2
+    4: MAX_RESULTS*2/3
+    5: MAX_RESULTS*3/4
+    
+    These levels are arbitrary,
+    and have not been tuned
+    """
+    thr = MAX_RESULTS
+    rstr = ""
+    if not idx:
+        ret = thr/16
+        rstr = "1/16"
+    elif idx == 1:
+        ret = thr/8
+        rstr = "1/8"
+    elif idx == 2:
+        ret = thr/4
+        rstr = "1/4"
+    elif idx == 3:
+        ret = thr/2
+        rstr = "1/2"
+    elif idx == 4:
+        ret = thr*2/3
+        rstr = "2/3"
+    elif idx == 5:
+        ret = thr*3/4
+        rstr = "3/4"
+    else:
+        assert None, (
+            "bad threshold index specified:", idx)
+    return ret, rstr
+
+
+
+def get_chunked_max(idx):
+    """
+    get upper bound based on chunk index
+    0: MAX_ITER/8
+    1: MAX_ITER/4
+    2: MAX_ITER/2
+    3: MAX_ITER
+    4: MAX_ITER*2
+    5: MAX_ITER*3
+    6: MAX_ITER*4
+
+    These levels are arbitrary,
+    and have not been tuned
+    """
+    mix = MAX_ITER
+    if not idx:
+        ret = mix/8
+    elif idx == 1:
+        ret = mix/4
+    elif idx == 2:
+        ret = mix/2
+    elif idx == 3:
+        ret = mix
+    elif idx == 4:
+        ret = mix*2
+    elif idx == 5:
+        ret = mix*3
+    elif idx == 6:
+        ret = mix*4
+    else:
+        assert None, (
+            "bad max iter chunk index specified:", idx)
+    return ret
+
+
+def set_fit_range(meta, excl):
+    """check fit range; then set the fit range globally"""
+    # get one fit range, check it
+    if excl is not None:
+        excl = list(excl)
+    skip = False
+    if excl is None:
+        skip = True
+    if not skip:
+        if sfit.toosmallp(meta, excl):
+            assert None, "bug; inconsistent"
+            skip = True
+        if not skip:
+            # update global info about excluded points
+            latfit.config.FIT_EXCL = list(excl)
+    return skip
+
 
 @PROFILE
 def get_tsorted(plotdata):

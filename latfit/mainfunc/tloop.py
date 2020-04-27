@@ -297,32 +297,41 @@ def fit(tadd=0, tsub=0):
                 print("starting loop of max length:"+str(
                     meta.lenprod), "random fit:", meta.random_fit)
 
-            for idx in range(meta.lenprod):
+            for chunk in range(6):
 
-                # exit the fit loop?
-                if frsort.exitp(meta, min_arr, overfit_arr, idx):
+                # only one check for exhaustive fits
+                if chunk and not meta.random_fit:
                     break
 
-                if set_fit_range(meta, idx, checked, combo_data):
-                    continue
+                # otherwise, get a chunk of fit ranges
+                excls = frsort.combo_data_to_fit_ranges(
+                    meta, combo_data, chunk, checked=checked)
+                if not meta.random_fit:
+                    assert len(excls) == meta.lenprod, (
+                        len(excls), meta.lenprod)
 
-                # do fit
-                start = time.perf_counter()
-                retsingle, retsingle_save = dofit(meta, idx,
-                    (min_arr, overfit_arr, retsingle_save))
-                if VERBOSE:
-                    print("Total elapsed time =",
-                          time.perf_counter()-start,
-                          "seconds. rank:", MPIRANK)
-                if retsingle is None: # skip processing
-                    continue
+                # fit the chunk (to be parallelized)
+                from multiprocessing import Pool
+                test_pool = Pool(min(2, len(excls)))
+                def split_fit(fr_spec):
+                    """split fits over fit ranges"""
+                    idx, excl = fr_spec
+                    return retsingle_fit(
+                        meta, idx, excl, (min_arr, overfit_arr))
+                results = test_pool.map(split_fit, enumerate(excls))
 
-                # process and store fit result
-                min_arr, overfit_arr = process_fit_result(
-                    retsingle, min_arr, overfit_arr)
+                # store at least one result
+                if meta.lenprod == 1 or MAX_RESULTS == 1\
+                    or retsingle_save is None:
+                    retsingle_save = results[0]
 
-                # check results for consistency; cut inconsistent fit windows
-                consis(meta, min_arr)
+                for retsingle in results:
+                    # process and store fit result
+                    min_arr, overfit_arr = process_fit_result(
+                        retsingle, min_arr, overfit_arr)
+                    # perform another consistency check
+                    # (after results collected)
+                    consis(meta, min_arr)
 
             if not meta.skip_loop:
 
@@ -339,6 +348,42 @@ def fit(tadd=0, tsub=0):
         print("END FIT, rank:", MPIRANK)
     return test, processed
 
+def retsingle_fit(meta, idx, excl, results_store):
+    """Perform a fit in the fit range loop
+    return a result (to be processed)
+    """
+
+    min_arr, overfit_arr = results_store
+
+    # make temp copies of aggregated results
+    min_arr = list(min_arr)
+    overfit_arr = list(overfit_arr)
+
+    # skip all remaining fits?
+    skip = frsort.exitp(meta, min_arr, overfit_arr, idx)
+    if not skip:
+        # set the fit range, or skip this one
+        skip = frsort.set_fit_range(meta, excl)
+
+    retsingle = None
+    if not skip:
+        # do fit
+        start = time.perf_counter()
+        retsingle = dofit(meta, idx, (min_arr, overfit_arr))
+        if VERBOSE:
+            print("Total elapsed time =",
+                    time.perf_counter()-start,
+                    "seconds. rank:", MPIRANK)
+
+    # do a consistency check with collected results
+    # cut inconsistent fit windows
+    min_arr, overfit_arr = process_fit_result(
+        retsingle, min_arr, overfit_arr)
+    consis(meta, min_arr)
+
+    return retsingle
+
+
 def consis(meta, min_arr):
     """Check fit results for consistency"""
     if CALC_PHASE_SHIFT:
@@ -346,25 +391,6 @@ def consis(meta, min_arr):
                                     'phase_shift', mod_180=True)
     fit_range_consistency_check(meta, min_arr, 'energy')
 
-
-def set_fit_range(meta, idx, checked, combo_data):
-    """Set the fit range"""
-    # get one fit range, check it
-    excl, checked = frsort.get_one_fit_range(
-        meta, idx, checked, combo_data)
-    if excl is not None:
-        excl = list(excl)
-    
-    skip = False
-    if excl is None:
-        skip = True
-    if not skip:
-        if sfit.toosmallp(meta, excl):
-            skip = True
-        if not skip:
-            # update global info about excluded points
-            latfit.config.FIT_EXCL = list(excl)
-    return skip
 
 def dofit_initial(meta, plotdata):
     """Do an initial test fit"""
@@ -508,7 +534,7 @@ def dofit(meta, idx, results_store):
     """Do a fit on a particular fit range"""
 
     # unpack
-    min_arr, overfit_arr, retsingle_save = results_store
+    min_arr, overfit_arr = results_store
     excl = list(latfit.config.FIT_EXCL)
     skip = False
     try:
@@ -531,16 +557,11 @@ def dofit(meta, idx, results_store):
               "number of overfit", len(overfit_arr),
               "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
-    # retsingle_save needs a cut on error size
     try:
         retsingle = sfit.singlefit(meta, meta.input_f)
-        if retsingle_save is None:
-            retsingle_save = retsingle
         if VERBOSE:
             print("fit succeeded for this selection"+\
                     " excluded points=", list(excl))
-        if meta.lenprod == 1 or MAX_RESULTS == 1:
-            retsingle_save = retsingle
     except ACCEPT_ERRORS as err:
         # skip on any error
         if (VERBOSE or not idx % showint) and DOWRITE:
@@ -557,7 +578,7 @@ def dofit(meta, idx, results_store):
     else:
         retsingle = None
 
-    return retsingle, retsingle_save
+    return retsingle
 
 def process_fit_result(retsingle, min_arr, overfit_arr):
     """ After fitting, process/store the results
