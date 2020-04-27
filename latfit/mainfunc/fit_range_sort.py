@@ -216,7 +216,7 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
             meta, idx, checked, combo_data)
         if excl is not None:
             excl = list(excl)
-            if sfit.toosmallp(meta, excl):
+            if latfit.singlefit.toosmallp(meta, excl):
                 excl = None
         ret.append(excl)
     return ret
@@ -305,7 +305,7 @@ def set_fit_range(meta, excl):
     if excl is None:
         skip = True
     if not skip:
-        if sfit.toosmallp(meta, excl):
+        if latfit.singlefit.toosmallp(meta, excl):
             assert None, "bug; inconsistent"
             skip = True
         if not skip:
