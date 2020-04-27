@@ -297,6 +297,7 @@ def fit(tadd=0, tsub=0):
                 print("starting loop of max length:"+str(
                     meta.lenprod), "random fit:", meta.random_fit)
 
+            idxstart = 0
             for chunk in range(6):
 
                 # only one check for exhaustive fits
@@ -304,6 +305,8 @@ def fit(tadd=0, tsub=0):
                     break
 
                 # otherwise, get a chunk of fit ranges
+                # excls is this chunk;
+                # represented as sets of excluded points
                 excls = frsort.combo_data_to_fit_ranges(
                     meta, combo_data, chunk, checked=checked)
                 if not meta.random_fit:
@@ -316,9 +319,12 @@ def fit(tadd=0, tsub=0):
                 def split_fit(fr_spec):
                     """split fits over fit ranges"""
                     idx, excl = fr_spec
+                    idx += idxstart
                     return retsingle_fit(
                         meta, idx, excl, (min_arr, overfit_arr))
                 results = test_pool.map(split_fit, enumerate(excls))
+                idxstart += len(excls)
+
 
                 # store at least one result
                 if meta.lenprod == 1 or MAX_RESULTS == 1\
