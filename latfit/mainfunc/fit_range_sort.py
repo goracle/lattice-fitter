@@ -100,7 +100,7 @@ def exitp(meta, min_arr, overfit_arr, idx):
         if ret:
             break
         mix = get_chunked_max(chunk)
-        thr = threshold(chunk)
+        thr, rstr = threshold(chunk)
         if idx >= mix and len(min_arr) < thr and meta.random_fit:
             print("Maximum iteration count", mix, "exceeded.")
             print("and results needed are <", rstr, "of", MAX_RESULTS)
