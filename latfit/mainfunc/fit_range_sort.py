@@ -208,7 +208,8 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
     # "mix"
     mix = meta.lenprod
     if meta.random_fit and not NOLOOP:
-        mix = get_chunked_max(chunk)
+        mix = np.ceil(get_chunked_max(chunk))
+        mix = int(mix)
     assert int(mix) == mix, (mix, meta.lenprod)
     mix = int(mix)
 
@@ -259,7 +260,6 @@ def threshold(idx):
     else:
         assert None, (
             "bad threshold index specified:", idx)
-    ret = int(np.floor(ret))
     return ret, rstr
 
 
@@ -296,7 +296,6 @@ def get_chunked_max(idx):
     else:
         assert None, (
             "bad max iter chunk index specified:", idx)
-    ret = int(np.ceil(ret))
     return ret
 
 

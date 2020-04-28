@@ -313,7 +313,9 @@ def fit(tadd=0, tsub=0):
                 excls = frsort.combo_data_to_fit_ranges(
                     meta, combo_data, chunk, checked=checked)
                 print("starting chunk", chunk,
-                      "which has", len(excls), "fit ranges")
+                      "which has", len(excls),
+                      "fit ranges; result goal:",
+                      frsort.threshold(chunk) ,"rank:", MPIRANK)
                 if not meta.random_fit:
                     assert len(excls) == meta.lenprod, (
                         len(excls), meta.lenprod)
@@ -342,6 +344,7 @@ def fit(tadd=0, tsub=0):
                     # perform another consistency check
                     # (after results collected)
                     consis(meta, min_arr)
+
 
             if not meta.skip_loop:
 
