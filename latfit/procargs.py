@@ -3,6 +3,8 @@ import sys
 import getopt
 from recordtype import recordtype
 
+OPTIONS = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax')
+ops=OPTIONS
 
 def procargs(argv):
     """Parse the command line.
@@ -25,7 +27,6 @@ def procargs(argv):
     cfitmax = object()
     # cnextra = object()
     ctrials = object()
-    options = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax')
     # Get environment variables from command line.
     for opt, arg in opts:
         if opt == '-h':
@@ -44,6 +45,7 @@ def procargs(argv):
         if opt == "--fitmax":
             cfitmax = arg
     # exiting loop
+    options = OPTIONS(None, None, None, None, None, None)
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
             options.xmin = cxmin

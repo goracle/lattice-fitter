@@ -41,8 +41,8 @@ def extract(input_f, xmin, xmax, xstep):
 
         # if we've never finished a full time extent
         # without an error abort, then wipe the cache for safety
-        if not extract.complete:
-            assert not extract.reuse
+        #if not extract.complete:
+        #assert not extract.reuse
 
         # get rid of temp entries
         reuse = ijprune(extract.reuse)

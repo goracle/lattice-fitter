@@ -209,6 +209,8 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
     mix = meta.lenprod
     if meta.random_fit:
         mix = get_chunked_max(chunk)
+    assert int(mix) == mix, mix
+    mix = int(mix)
 
     ret = []
     for idx in range(mix):

@@ -14,7 +14,7 @@ MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
 mpi4py.rc.recv_mprobe = False
 
-def update_fitwin(meta, tadd, tsub, problemx=None):
+def update_fitwin(meta, tadd, tsub, problemx=None, check_past=True):
     """Update fit window"""
     # tadd tsub cut
     upx = problemx is not None
@@ -27,15 +27,20 @@ def update_fitwin(meta, tadd, tsub, problemx=None):
         for _ in range(tsub):
             meta.decr_xmax(problemx=problemx, dex=upx)
         partial_reset()
-    if not NOLOOP:
-        if finished_win_check(meta, tsub=tsub):
-            if VERBOSE:
-                print("raising finished skip")
-            raise FinishedSkip
-    if inconsistent_win_check(meta, tsub=tsub) and not NOLOOP:
+    if not NOLOOP and check_past:
+        checkpast(meta, tsub=tsub)
+
+def checkpast(meta, tsub=None):
+    """Check fit windows previously processed"""
+    if finished_win_check(meta, tsub=tsub):
+        if VERBOSE:
+            print("raising finished skip")
+        raise FinishedSkip
+    if inconsistent_win_check(meta, tsub=tsub):
         if VERBOSE:
             print("raising inconsistent skip")
         raise FitRangesAlreadyInconsistent
+
 
 def xmin_err(meta, err):
     """Handle xmax error"""
@@ -64,11 +69,11 @@ def xmin_err(meta, err):
     #print("new fit window = ", meta.fitwindow)
     return meta
 
-def xmax_err(meta, err):
+def xmax_err(meta, err, check_past=True):
     """Handle xmax error"""
     if VERBOSE:
         print("Test fit failed; bad xmax. problemx:", err.problemx)
-    update_fitwin(meta, 0, 1, problemx=err.problemx)
+    update_fitwin(meta, 0, 1, problemx=err.problemx, check_past=check_past)
     if VERBOSE:
         print("xmin, new xmax =", meta.options.xmin, meta.options.xmax)
     #if meta.fitwindow[1] < meta.options.xmax and FIT and not NOLOOP:

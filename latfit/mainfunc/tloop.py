@@ -3,6 +3,7 @@ import sys
 import os
 from math import sqrt
 from collections import namedtuple
+from multiprocessing import Pool
 import time
 import numpy as np
 import mpi4py
@@ -35,7 +36,7 @@ from latfit.mainfunc.cache import reset_cache, reset_main
 from latfit.mainfunc.metaclass import FitRangeMetaData
 from latfit.mainfunc.postloop import dump_fit_range
 from latfit.mainfunc.fitwin import winsize_check, update_fitwin
-from latfit.mainfunc.fitwin import xmin_err, xmax_err
+from latfit.mainfunc.fitwin import xmin_err, xmax_err, checkpast
 from latfit.mainfunc.cuts import cutresult
 from latfit.mainfunc.postloop import post_loop
 
@@ -314,15 +315,12 @@ def fit(tadd=0, tsub=0):
                         len(excls), meta.lenprod)
 
                 # fit the chunk (to be parallelized)
-                from multiprocessing import Pool
                 test_pool = Pool(min(2, len(excls)))
-                def split_fit(fr_spec):
-                    """split fits over fit ranges"""
-                    idx, excl = fr_spec
-                    idx += idxstart
-                    return retsingle_fit(
-                        meta, idx, excl, (min_arr, overfit_arr))
-                results = test_pool.map(split_fit, enumerate(excls))
+                argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
+                          for idx, excl in enumerate(excls)]
+                #print('argtup[0]', argtup[0])
+                results = test_pool.starmap(retsingle_fit, argtup)
+                # keep track of where we are in the overall loop
                 idxstart += len(excls)
 
 
@@ -331,8 +329,10 @@ def fit(tadd=0, tsub=0):
                     or retsingle_save is None:
                     retsingle_save = results[0]
 
+                print("lres", len(results))
                 for retsingle in results:
                     # process and store fit result
+                    print("retsingle", retsingle)
                     if retsingle is None:
                         continue
                     min_arr, overfit_arr = process_fit_result(
@@ -385,9 +385,10 @@ def retsingle_fit(meta, idx, excl, results_store):
 
     # do a consistency check with collected results
     # cut inconsistent fit windows
-    min_arr, overfit_arr = process_fit_result(
-        retsingle, min_arr, overfit_arr)
-    consis(meta, min_arr)
+    if retsingle is not None:
+        min_arr, overfit_arr = process_fit_result(
+            retsingle, min_arr, overfit_arr)
+        consis(meta, min_arr)
 
     return retsingle
 
@@ -414,6 +415,8 @@ def dofit_initial(meta, plotdata):
     test_success = False
     retsingle_save = None
     flag = True
+    xmin_store = meta.options.xmin
+    xmax_store = meta.options.xmax
     while flag:
         try:
             if VERBOSE:
@@ -426,7 +429,16 @@ def dofit_initial(meta, plotdata):
                 # this prevents bugs where some error starts filling it
                 # then breaks us out of the 'while flag' loop
                 # (e.g. fit window found to be inconsistent already)
-                reset_cache()
+                if xmin_store == meta.options.xmin and xmax_store == meta.options.xmax:
+                    reset_cache()
+                elif xmin_store == meta.options.xmin and xmax_store != meta.options.xmax:
+                    # removing extra time slices at the end is safe,
+                    # since processing always goes forward
+                    pass 
+                elif xmin_store != meta.options.xmin:
+                    reset_cache()
+            xmin_store = meta.options.xmin
+            xmax_store = meta.options.xmax
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             flag = False
@@ -435,16 +447,17 @@ def dofit_initial(meta, plotdata):
         except XmaxError as err:
             test_success = False
             try:
-                meta = xmax_err(meta, err)
+                meta = xmax_err(meta, err, check_past=False)
             except XminError as err2:
-                meta = xmax_err(meta, err2)
+                assert None, "not supported"
+                meta = xmax_err(meta, err2, check_past=False)
             plotdata.fitcoord = meta.fit_coord()
         except XminError as err:
             test_success = False
             try:
                 meta = xmin_err(meta, err)
             except XmaxError as err2:
-                meta = xmax_err(meta, err2)
+                meta = xmax_err(meta, err2, check_past=False)
             plotdata.fitcoord = meta.fit_coord()
         except accept_errors as err:
             flag = False
@@ -455,6 +468,7 @@ def dofit_initial(meta, plotdata):
     # results need for return
     # plotdata, meta, test_success, fit_range_init
     assert ext.iscomplete()
+    checkpast(meta)
     return (meta, plotdata, test_success, retsingle_save)
 
 def dofit_second_initial(meta, retsingle_save, test_success):
@@ -489,9 +503,9 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     except XmaxError as err:
         test_success = False
         try:
-            meta = xmax_err(meta, err)
+            meta = xmax_err(meta, err, check_past=True)
         except XminError as err2:
-            meta = xmax_err(meta, err2)
+            meta = xmax_err(meta, err2, check_past=True)
         # plotdata.fitcoord = meta.fit_coord()
         fit_range_init = None
     except ACCEPT_ERRORS as err:
