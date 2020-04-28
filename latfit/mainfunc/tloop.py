@@ -304,12 +304,16 @@ def fit(tadd=0, tsub=0):
                 # only one check for exhaustive fits
                 if chunk and not meta.random_fit:
                     break
+                if frsort.exitp(meta, min_arr, overfit_arr, idxstart):
+                    break
 
                 # otherwise, get a chunk of fit ranges
                 # excls is this chunk;
                 # represented as sets of excluded points
                 excls = frsort.combo_data_to_fit_ranges(
                     meta, combo_data, chunk, checked=checked)
+                print("starting chunk", chunk,
+                      "which has", len(excls), "fit ranges")
                 if not meta.random_fit:
                     assert len(excls) == meta.lenprod, (
                         len(excls), meta.lenprod)
