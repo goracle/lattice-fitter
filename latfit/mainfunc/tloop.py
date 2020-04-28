@@ -329,10 +329,8 @@ def fit(tadd=0, tsub=0):
                     or retsingle_save is None:
                     retsingle_save = results[0]
 
-                print("lres", len(results))
                 for retsingle in results:
                     # process and store fit result
-                    print("retsingle", retsingle)
                     if retsingle is None:
                         continue
                     min_arr, overfit_arr = process_fit_result(
