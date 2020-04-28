@@ -5,7 +5,7 @@ import numpy as np
 import latfit.analysis.sortfit as sortfit
 from latfit.config import GEVP, MAX_RESULTS
 from latfit.config import SKIP_LARGE_ERRORS
-from latfit.config import VERBOSE
+from latfit.config import VERBOSE, NOLOOP
 from latfit.config import ALTERNATIVE_PARALLELIZATION
 from latfit.config import MULT, BIASED_SPEEDUP, MAX_ITER
 import latfit.config
@@ -207,9 +207,9 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
     # get maximum number of fit ranges
     # "mix"
     mix = meta.lenprod
-    if meta.random_fit:
+    if meta.random_fit and not NOLOOP:
         mix = get_chunked_max(chunk)
-    assert int(mix) == mix, mix
+    assert int(mix) == mix, (mix, meta.lenprod)
     mix = int(mix)
 
     ret = []
@@ -259,6 +259,7 @@ def threshold(idx):
     else:
         assert None, (
             "bad threshold index specified:", idx)
+    ret = int(np.floor(ret))
     return ret, rstr
 
 
@@ -295,6 +296,7 @@ def get_chunked_max(idx):
     else:
         assert None, (
             "bad max iter chunk index specified:", idx)
+    ret = int(np.ceil(ret))
     return ret
 
 

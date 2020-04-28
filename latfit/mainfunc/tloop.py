@@ -13,7 +13,7 @@ from latfit.config import TLOOP, TSEP_VEC, TLOOP_START, LATTICE_ENSEMBLE
 from latfit.config import VERBOSE, FIT, MATRIX_SUBTRACTION, GEVP_DERIV
 from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
-from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT
+from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT, NOLOOP
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
 from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 
