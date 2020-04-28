@@ -1,5 +1,6 @@
 """The main fit code"""
 import sys
+import subprocess
 import os
 from math import sqrt
 from collections import namedtuple
@@ -55,6 +56,8 @@ import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.proc_meff as effmass
 
 EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
+
+NPROC = int(subprocess.check_output(['nproc', '--all']).rstrip())
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -321,7 +324,8 @@ def fit(tadd=0, tsub=0):
                         len(excls), meta.lenprod)
 
                 # fit the chunk (to be parallelized)
-                test_pool = Pool(min(2, len(excls)))
+                test_pool = Pool(min(NPROC if MPISIZE == 1 else int(
+                    np.floor(NPROC/MPISIZE)), len(excls)))
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
