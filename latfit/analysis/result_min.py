@@ -1,6 +1,7 @@
 """Contains result min class used in jackknife fit loop; stores results
  of fit"""
-from collections import namedtuple
+#from collections import namedtuple
+from recordtype import recordtype
 import pickle
 from random import randint
 from mpi4py import MPI
@@ -199,6 +200,8 @@ class Param:
         #return em.acmean(self.arr, axis=axis)
         return np.mean(self.arr, axis=axis)
 
+misc = recordtype('misc', 'error_bars dof num_configs status')
+
 class ResultMin:
     """Store fit results for an individual fit range in this class"""
     def __init__(self, meta, params, coords):
@@ -212,13 +215,11 @@ class ResultMin:
         self.scattering_length = Param()
         self.min_params = Param()
 
-        self.misc = namedtuple(
-            'misc', ['error_bars', 'dof',
-                     'status', 'num_configs'])
-        self.misc.error_bars = None
-        self.misc.dof = None
-        self.misc.num_configs = None
-        self.misc.status = 0
+        self.misc = misc(None, None, None, 0)
+        #self.misc.error_bars = None
+        #self.misc.dof = None
+        #self.misc.num_configs = None
+        #self.misc.status = 0
         self.alloc_phase_shift(params)
         self.alloc_sys_arr(params)
         meta.actual_range() # to set WINDOW
