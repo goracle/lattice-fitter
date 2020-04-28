@@ -323,10 +323,10 @@ def fit(tadd=0, tsub=0):
                 # keep track of where we are in the overall loop
                 idxstart += len(excls)
 
-
                 # store at least one result
-                if meta.lenprod == 1 or MAX_RESULTS == 1\
-                    or retsingle_save is None:
+                if (meta.lenprod == 1 or MAX_RESULTS == 1)\
+                    and retsingle_save is None:
+                    assert results[0] is not None, results
                     retsingle_save = results[0]
 
                 for retsingle in results:
