@@ -466,7 +466,8 @@ def dofit_initial(meta, plotdata):
     # results need for return
     # plotdata, meta, test_success, fit_range_init
     assert ext.iscomplete()
-    checkpast(meta)
+    if not NOLOOP:
+        checkpast(meta)
     return (meta, plotdata, test_success, retsingle_save)
 
 def dofit_second_initial(meta, retsingle_save, test_success):
