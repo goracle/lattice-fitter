@@ -324,7 +324,7 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # whether we use all available lattice data
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
-def subdim(dim):
+def dimsub(dim):
     """adjust gevp dimension"""
     fulldim = True
     dim = 1 if not GEVP else dim
@@ -343,7 +343,7 @@ def subdim(dim):
     if dim < dimstart:
         fulldim = False
     return dim, fulldim
-DIM, FULLDIM = subdim(DIM)
+DIM, FULLDIM = dimsub(DIM)
 DISP_ENERGIES = list(np.array(DISP_ENERGIES)[:DIM])
 DISP_ENERGIES = tuple(DISP_ENERGIES)
 
@@ -406,18 +406,21 @@ MATRIX_SUBTRACTION = False if IRREP != 'A_1PLUS_mom000' else MATRIX_SUBTRACTION
 # observed visible around the world effect
 if LATTICE_ENSEMBLE == '24c':
     if IRREP == 'A1_mom1':
+        MATRIX_SUBTRACTION = True
         MATRIX_SUBTRACTION = False # signal loss
-        MATRIX_SUBTRACTION = True 
     elif IRREP == 'A1_mom11':
         MATRIX_SUBTRACTION = False # signal loss
-        MATRIX_SUBTRACTION = True 
+        MATRIX_SUBTRACTION = True
 elif LATTICE_ENSEMBLE == '32c':
     if IRREP == 'A1_avg_mom111':
-        MATRIX_SUBTRACTION = False # signal loss
         MATRIX_SUBTRACTION = True
+        MATRIX_SUBTRACTION = False # signal loss
     elif IRREP == 'A1_mom1':
         MATRIX_SUBTRACTION = True # used in bug version
         MATRIX_SUBTRACTION = False
+    elif IRREP == 'A1_mom11':
+        MATRIX_SUBTRACTION = False
+        MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
