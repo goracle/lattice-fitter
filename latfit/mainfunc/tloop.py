@@ -335,6 +335,7 @@ def fit(tadd=0, tsub=0):
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
                 results = test_pool.starmap(retsingle_fit, argtup)
+                results = [i for i in results if i is not None]
                 # keep track of where we are in the overall loop
                 idxstart += len(excls)
 
