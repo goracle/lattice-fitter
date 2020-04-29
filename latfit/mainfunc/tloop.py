@@ -573,8 +573,9 @@ def dofit(meta, idx, results_store):
     min_arr, overfit_arr = results_store
     excl = list(latfit.config.FIT_EXCL)
     skip = False
+    proc_metric = max(MPISIZE*5, NPROC)
     try:
-        showint = int(min(np.floor(meta.lenprod/10), (MPISIZE*5)))
+        showint = int(min(np.floor(meta.lenprod/100), proc_metric))
         if not showint:
             showint = 1
     except FloatingPointError:
