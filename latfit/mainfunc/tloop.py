@@ -343,6 +343,8 @@ def fit(tadd=0, tsub=0):
                     and retsingle_save is None:
                     assert results[0] is not None, results
                     retsingle_save = results[0]
+                elif retsingle_save is None and results[0] is not None:
+                    retsingle_save = results[0]
 
                 for retsingle in results:
                     # process and store fit result
