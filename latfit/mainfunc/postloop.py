@@ -603,7 +603,7 @@ def post_loop(meta, loop_store,
 
     elif len(min_arr) == 1:
         result_min_avg = min_arr[0]
-        param_err_avg = result_min[1]
+        param_err_avg = result_min_avg[1]
         dump_single_fit(meta, min_arr)
 
     print_res.print_fit_results(meta, min_arr)

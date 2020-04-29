@@ -61,7 +61,7 @@ EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 # cores*num threas == NPROC (ideally)
 # num threads == how many workers in pool
 NPROC = int(subprocess.check_output(['nproc', '--all']).rstrip())
-NPROC = min(NPROC, 128)
+NPROC = min(NPROC, 60)
 print('NPROC:', NPROC)
 
 try:
