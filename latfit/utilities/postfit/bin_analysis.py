@@ -425,7 +425,10 @@ def to_include(itmin, dim, title, dump_min):
     #res = tot_to_stat(itmin[0], sys_err)
     res = stat_from_blocks(itmin[0], itmin[4])
     print("stat err only min result:", res)
-    assert list(zip(tminuses, dt2s)), "fits not found:"+str(sel)
+    if sel:
+        assert list(zip(tminuses, dt2s)), "fits not found:"+str(sel)
+    else:
+        print("not saving fit_...py file for non-existent fit range.")
     for i, j in zip(tminuses, dt2s):
         ts_loop = list(tosave)
         ts_loop.append(i)
