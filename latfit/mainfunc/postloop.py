@@ -522,25 +522,26 @@ def mean_and_err_loop_continue(name, min_arr):
     return ret
 
 @PROFILE
-def combine_results(result_min, result_min_close,
-                    meta, param_err_avg, param_err_close):
+def combine_results(meta, result_min_avg, param_err_avg,
+                    result_min_close, param_err_close):
     """use the representative fit's goodness of fit in final print
     """
-    if meta.skip_loop() or not isinstance(result_min, dict):
-        result_min, param_err_avg = result_min_close, param_err_close
+    if meta.skip_loop() or not isinstance(result_min_avg, dict):
+        result_min, param_err = result_min_close, param_err_close
     else:
+        result_min, param_err = result_min_avg, param_err_avg
         result_min['chisq'].val = result_min_close.chisq.val
         result_min['chisq'].err = result_min_close.chisq.err
         result_min['misc'] = result_min_close.misc
         result_min['pvalue'] = result_min_close.pvalue
         #result_min['pvalue'].err = result_min_close.pvalue.err
+        result_min = convert_to_namedtuple(result_min)
         if DOWRITE:
             print("closest representative fit result (lattice units):")
-        # convert here since we can't set attributes afterwards
-        result_min = convert_to_namedtuple(result_min)
-        printerr(result_min_close.energy.val, param_err_close)
-        print_res.print_phaseshift(result_min_close)
-    return result_min, param_err_avg
+            # convert here since we can't set attributes afterwards
+            printerr(result_min_close.energy.val, param_err_close)
+            print_res.print_phaseshift(result_min_close)
+    return result_min, param_err
 
 
 @PROFILE
@@ -647,8 +648,8 @@ def makerep(meta, min_arr, result_min_avg, param_err_avg, retsingle_save):
         plotdata.coords, plotdata.cov = retsingle
 
     result_min, param_err = combine_results(
-        result_min, result_min_close,
-        meta, param_err_avg, param_err_close)
+        meta, result_min_avg, param_err_avg,
+        result_min_close, param_err_close)
 
     # plot the result
     plotdata.fitcoord = meta.fit_coord()
