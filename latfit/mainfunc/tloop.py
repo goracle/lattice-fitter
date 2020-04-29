@@ -57,7 +57,11 @@ import latfit.mathfun.proc_meff as effmass
 
 EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 
+# number of processers total on CPU
+# cores*num threas == NPROC (ideally)
+# num threads == how many workers in pool
 NPROC = int(subprocess.check_output(['nproc', '--all']).rstrip())
+print('NPROC:', NPROC)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
