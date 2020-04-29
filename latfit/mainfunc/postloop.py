@@ -590,7 +590,6 @@ def get_first_res(name, min_arr):
 def post_loop(meta, loop_store,
               retsingle_save, test_success):
     """After loop over fit ranges"""
-    result_min = {}
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)
     # did anything succeed?
@@ -599,7 +598,7 @@ def post_loop(meta, loop_store,
     if len(min_arr) > 1:
 
         result_min_avg = find_mean_and_err(meta, min_arr)
-        param_err_avg = result_min['energy'].err
+        param_err_avg = result_min_avg['energy'].err
 
     elif len(min_arr) == 1:
         result_min_avg = min_arr[0]
