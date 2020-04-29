@@ -608,11 +608,11 @@ def post_loop(meta, loop_store,
     print_res.print_fit_results(meta, min_arr)
 
     if DOWRITE and not TLOOP:
-        makerep(meta, min_arr, result_min_avg, param_err_avg)
+        makerep(meta, min_arr, result_min_avg, param_err_avg, retsingle_save)
 
     return test
 
-def makerep(meta, min_arr, result_min_avg, param_err_avg):
+def makerep(meta, min_arr, result_min_avg, param_err_avg, retsingle_save):
     """Plot representative fit"""
     plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
 
