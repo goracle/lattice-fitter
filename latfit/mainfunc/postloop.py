@@ -523,11 +523,11 @@ def mean_and_err_loop_continue(name, min_arr):
 
 @PROFILE
 def combine_results(result_min, result_min_close,
-                    meta, param_err, param_err_close):
+                    meta, param_err_avg, param_err_close):
     """use the representative fit's goodness of fit in final print
     """
     if meta.skip_loop() or not isinstance(result_min, dict):
-        result_min, param_err = result_min_close, param_err_close
+        result_min, param_err_avg = result_min_close, param_err_close
     else:
         result_min['chisq'].val = result_min_close.chisq.val
         result_min['chisq'].err = result_min_close.chisq.err
@@ -540,7 +540,7 @@ def combine_results(result_min, result_min_close,
         result_min = convert_to_namedtuple(result_min)
         printerr(result_min_close.energy.val, param_err_close)
         print_res.print_phaseshift(result_min_close)
-    return result_min, param_err
+    return result_min, param_err_avg
 
 
 @PROFILE
@@ -591,7 +591,6 @@ def post_loop(meta, loop_store,
               retsingle_save, test_success):
     """After loop over fit ranges"""
     result_min = {}
-    plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)
     # did anything succeed?
@@ -599,28 +598,40 @@ def post_loop(meta, loop_store,
     test = list(min_arr) or meta.random_fit
     if len(min_arr) > 1:
 
-        result_min = find_mean_and_err(meta, min_arr)
-        param_err = result_min['energy'].err
+        result_min_avg = find_mean_and_err(meta, min_arr)
+        param_err_avg = result_min['energy'].err
 
+    elif len(min_arr) == 1:
+        result_min_avg = min_arr[0]
+        param_err_avg = result_min[1]
+        dump_single_fit(meta, min_arr)
+
+    print_res.print_fit_results(meta, min_arr)
+
+    if DOWRITE and not TLOOP:
+        makerep(meta, min_arr, result_min_avg, param_err_avg)
+
+    return test
+
+def makerep(meta, min_arr, result_min_avg, param_err_avg):
+    """Plot representative fit"""
+    plotdata = namedtuple('data', ['coords', 'cov', 'fitcoord'])
+
+    # set the fit range
+    if len(min_arr) > 1:
         latfit.config.FIT_EXCL = list(closest_fit_to_avg(
-            result_min['energy'].val, min_arr))
+            result_min_avg['energy'].val, min_arr))
         # do the best fit again, with good stopping condition
         # latfit.config.FIT_EXCL = min_excl(min_arr)
     elif len(min_arr) == 1:
-        result_min = min_arr[0]
-        param_err = result_min[1]
         latfit.config.FIT_EXCL = list(min_arr[0][2])
-        dump_single_fit(meta, min_arr)
-
-    if DOWRITE:
-        print("fit excluded points (indices):",
-              latfit.config.FIT_EXCL)
+    print("fit excluded points (indices):",
+          latfit.config.FIT_EXCL)
+    print("fit window = ", meta.fitwindow)
 
     if len(min_arr) > 1:
-        if not TLOOP:
-            latfit.config.MINTOL = True
-        if DOWRITE:
-            print("fitting for representative fit")
+        print("fitting for representative fit")
+        latfit.config.MINTOL = True
         assert ext.iscomplete()
         try:
             retsingle = sfit.singlefit(meta, meta.input_f)
@@ -628,29 +639,25 @@ def post_loop(meta, loop_store,
             print("reusing first successful fit"+\
                   " since representative fit failed (NoConvergence)")
             retsingle = retsingle_save
-            param_err = retsingle_save[1]
+            #param_err = retsingle_save[1]
     else:
-        if DOWRITE:
-            print("reusing first successful fit result for representative fit")
+        print("reusing first successful fit result for representative fit")
         retsingle = retsingle_save
-        param_err = retsingle_save[1]
+        #param_err = retsingle_save[1]
     result_min_close, param_err_close, \
         plotdata.coords, plotdata.cov = retsingle
 
-    print_res.print_fit_results(meta, min_arr)
     result_min, param_err = combine_results(
         result_min, result_min_close,
-        meta, param_err, param_err_close)
+        meta, param_err_avg, param_err_close)
 
-    if DOWRITE:
-        print("fit window = ", meta.fitwindow)
     # plot the result
     plotdata.fitcoord = meta.fit_coord()
     if check_include(result_min) and DOWRITE:
         mkplot.mkplot(plotdata, meta.input_f, result_min,
                       param_err, meta.fitwindow)
 
-    return test
+
 
 def fill_err_array(min_arr, name, weight_sum):
     """Fill the error array"""
