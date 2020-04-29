@@ -529,23 +529,14 @@ def dofit_second_initial(meta, retsingle_save, test_success):
                   err.__class__.__name__)
         fit_range_init = None
     if test_success:
-        result_min, param_err, _, _ = retsingle_save
+
+        min_arr, overfit_arr = process_fit_result(
+            retsingle_save, min_arr, overfit_arr)
         printerr(result_min.energy.val, param_err)
+
+        #result_min, param_err, _, _ = retsingle_save
         if CALC_PHASE_SHIFT and VERBOSE:
             print_res.print_phaseshift(result_min)
-        if not cutresult(result_min, min_arr,
-                         overfit_arr, param_err):
-            result = (result_min, list(param_err),
-                      list(latfit.config.FIT_EXCL))
-            # don't overfit
-            if result_min.chisq.val/result_min.misc.dof >= 1 and\
-               SKIP_OVERFIT:
-                min_arr.append(result)
-            else:
-                overfit_arr.append(result)
-        else:
-            if VERBOSE:
-                print("cutting result of test fits")
     assert len(min_arr) + len(overfit_arr) <= 1, len(
         min_arr) + len(overfit_arr)
 
