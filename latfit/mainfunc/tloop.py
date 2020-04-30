@@ -62,6 +62,9 @@ EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
 # num threads == how many workers in pool
 NPROC = int(subprocess.check_output(['nproc', '--all']).rstrip())
 NPROC = min(NPROC, 60)
+if NPROC < 10:
+    NPROC = 2
+NPROC = 1 if NOLOOP else NPROC
 print('NPROC:', NPROC)
 
 try:
@@ -329,8 +332,7 @@ def fit(tadd=0, tsub=0):
                         len(excls), meta.lenprod)
 
                 # fit the chunk (to be parallelized)
-                test_pool = Pool(min(NPROC if MPISIZE == 1 else int(
-                    np.floor(NPROC/MPISIZE)), len(excls)))
+                test_pool = Pool(min(NPROC, len(excls)))
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
@@ -342,14 +344,14 @@ def fit(tadd=0, tsub=0):
                 # store at least one result
                 if results and retsingle_save is None:
                     assert results[0] is not None, results
-                    retsingle_save = results[0]
+                    retsingle_save, _ = results[0]
 
-                for retsingle in results:
+                for retsingle, excl in results:
                     # process and store fit result
                     if retsingle is None:
                         continue
                     min_arr, overfit_arr = process_fit_result(
-                        retsingle, min_arr, overfit_arr)
+                        retsingle, min_arr, overfit_arr, excl)
                     # perform another consistency check
                     # (after results collected)
                     consis(meta, min_arr)
@@ -399,12 +401,14 @@ def retsingle_fit(meta, idx, excl, results_store):
 
     # do a consistency check with collected results
     # cut inconsistent fit windows
+    ret = None
     if retsingle is not None:
         min_arr, overfit_arr = process_fit_result(
-            retsingle, min_arr, overfit_arr)
+            retsingle, min_arr, overfit_arr, excl)
         consis(meta, min_arr)
+        ret = retsingle, excl
 
-    return retsingle
+    return ret
 
 
 def consis(meta, min_arr):
@@ -500,6 +504,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     assert samerange
 
     fit_range_init = frsort.keyexcl(list(latfit.config.FIT_EXCL))
+    excl = list(latfit.config.FIT_EXCL)
 
     try:
         if not samerange and FIT:
@@ -531,7 +536,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     if test_success:
 
         min_arr, overfit_arr = process_fit_result(
-            retsingle_save, min_arr, overfit_arr)
+            retsingle_save, min_arr, overfit_arr, excl)
 
     assert len(min_arr) + len(overfit_arr) <= 1, len(
         min_arr) + len(overfit_arr)
@@ -605,13 +610,14 @@ def dofit(meta, idx, results_store):
 
     return retsingle
 
-def process_fit_result(retsingle, min_arr, overfit_arr):
+def process_fit_result(retsingle, min_arr, overfit_arr, excl):
     """ After fitting, process/store the results
     """
     # unpack
     result_min, param_err, _, _ = retsingle
     skip = False
-    excl = list(latfit.config.FIT_EXCL)
+    excl = list(excl)
+    #excl = list(latfit.config.FIT_EXCL)
 
     if cutresult(result_min, min_arr, overfit_arr, param_err):
         skip = True
