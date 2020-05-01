@@ -509,8 +509,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     try:
         if not samerange and FIT:
             if VERBOSE:
-                print("Trying second initial fit with excluded times:",
-                      list(latfit.config.FIT_EXCL))
+                print("Trying second initial fit with excluded times:", excl)
             retsingle_save = sfit.singlefit(meta, meta.input_f)
             test_success = True if len(retsingle_save) > 2 else test_success
             if test_success and VERBOSE:
