@@ -66,6 +66,7 @@ if NPROC < 10:
     NPROC = 2
 NPROC = 1 if NOLOOP else NPROC
 print('NPROC:', NPROC)
+POOL = Pool(NPROC)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -332,11 +333,11 @@ def fit(tadd=0, tsub=0):
                         len(excls), meta.lenprod)
 
                 # fit the chunk (to be parallelized)
-                test_pool = Pool(min(NPROC, len(excls)))
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
-                results = test_pool.starmap(retsingle_fit, argtup)
+                results = POOL.starmap(retsingle_fit, argtup)
+                POOL.join()
                 results = [i for i in results if i is not None]
                 # keep track of where we are in the overall loop
                 idxstart += len(excls)
