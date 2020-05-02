@@ -66,7 +66,6 @@ if NPROC < 10:
     NPROC = 2
 NPROC = 1 if NOLOOP else NPROC
 print('NPROC:', NPROC)
-POOL = Pool(NPROC)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -701,3 +700,5 @@ def get_fitparams_loc(list_fit_params, trials):
             len(list_fit_params[i]))])*prefactor) for i in range(
                 len(list_fit_params))]
     return avg_fit_params, err_fit_params
+
+POOL = Pool(NPROC)
