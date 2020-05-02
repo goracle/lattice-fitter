@@ -335,7 +335,8 @@ def fit(tadd=0, tsub=0):
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
-                results = POOL.starmap(retsingle_fit, argtup)
+                with Pool(min(NPROC, len(excls))) as pool:
+                    results = pool.starmap(retsingle_fit, argtup)
                 results = [i for i in results if i is not None]
                 # keep track of where we are in the overall loop
                 idxstart += len(excls)
@@ -700,5 +701,3 @@ def get_fitparams_loc(list_fit_params, trials):
             len(list_fit_params[i]))])*prefactor) for i in range(
                 len(list_fit_params))]
     return avg_fit_params, err_fit_params
-
-POOL = Pool(NPROC)
