@@ -301,7 +301,11 @@ def fit(tadd=0, tsub=0):
                     meta.lenprod), "random fit:", meta.random_fit)
 
             idxstart = 0
+            chunk_new = -1
             for chunk in range(6):
+
+                if chunk < chunk_new:
+                    continue
 
                 # only one check for exhaustive fits
                 if chunk and not meta.random_fit:
@@ -312,14 +316,16 @@ def fit(tadd=0, tsub=0):
                 # otherwise, get a chunk of fit ranges
                 # excls is this chunk;
                 # represented as sets of excluded points
-                excls = frsort.combo_data_to_fit_ranges(
+                excls, chunk_new = frsort.combo_data_to_fit_ranges(
                     meta, combo_data, chunk, checked=checked)
                 print("starting chunk", chunk,
                       "which has", len(excls),
                       "fit ranges; result goal:",
                       frsort.threshold(chunk) ,"rank:", MPIRANK)
                 if not meta.random_fit:
-                    assert len(excls) == meta.lenprod, (
+                    # reduce by 1 since we've already checked one
+                    # in dofit_second_initial
+                    assert len(excls) == meta.lenprod-1, (
                         len(excls), meta.lenprod)
 
                 # fit the chunk (to be parallelized)
