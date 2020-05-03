@@ -9,7 +9,7 @@ def look_for_file():
         fn1 = open('proc_params.p', 'rb')
     except FileNotFoundError:
         print("process params file not found")
-   return fn1
+    return fn1
 
 def array_from_file(fn1):
     """Get the pickled array"""

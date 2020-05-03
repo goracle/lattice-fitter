@@ -216,6 +216,7 @@ INCLUDE = tupl_mat(INCLUDE)
 
 try:
     PROC_PARAMS = pickle.load(open('proc_params.p', 'rb'))
+    PROC_PARAMS = list(PROC_PARAMS)
 except FileNotFoundError:
     PROC_PARAMS = []
 
