@@ -214,6 +214,11 @@ if INCLUDE:
 # tuplize, do not modify
 INCLUDE = tupl_mat(INCLUDE)
 
+try:
+    PROC_PARAMS = pickle.load(open('proc_params.p', 'rb'))
+except FileNotFoundError:
+    PROC_PARAMS = []
+
 
 def print_include_messages(gevp):
     """Print messages"""

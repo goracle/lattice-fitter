@@ -15,7 +15,8 @@ from latfit.config import VERBOSE, FIT, MATRIX_SUBTRACTION, GEVP_DERIV
 from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
 from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT, NOLOOP
-from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT, MAX_RESULTS
+from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
+from latfit.config import MAX_RESULTS
 from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 
 # errors
@@ -56,16 +57,6 @@ import latfit.checks.checks_and_statements as sands
 import latfit.mathfun.proc_meff as effmass
 
 EXCL_ORIG = np.copy(list(EXCL_ORIG_IMPORT))
-
-# number of processers total on CPU
-# cores*num threas == NPROC (ideally)
-# num threads == how many workers in pool
-NPROC = int(subprocess.check_output(['nproc', '--all']).rstrip())
-NPROC = min(NPROC, 60)
-if NPROC < 10:
-    NPROC = 2
-NPROC = 1 if NOLOOP else NPROC
-print('NPROC:', NPROC)
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -335,7 +326,7 @@ def fit(tadd=0, tsub=0):
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
-                with Pool(min(NPROC, len(excls))) as pool:
+                with Pool(min(meta.options.nproc, len(excls))) as pool:
                     results = pool.starmap(retsingle_fit, argtup)
                 results = [i for i in results if i is not None]
                 # keep track of where we are in the overall loop

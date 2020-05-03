@@ -3,7 +3,7 @@ import sys
 import getopt
 from recordtype import recordtype
 
-OPTIONS = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax')
+OPTIONS = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax procs')
 ops=OPTIONS
 
 def procargs(argv):
@@ -13,7 +13,7 @@ def procargs(argv):
     try:
         opts = getopt.getopt(argv, "f:hi:t:",
                              ["ifolder=", "help", "ifile=", "trials=",
-                              "xmin=", "xmax=", 'xstep=',
+                              "xmin=", "xmax=", 'xstep=', 'procs=',
                               'fitmin=', 'fitmax='])[0]
         if opts == []:
             raise NameError("NoArgs")
@@ -25,6 +25,7 @@ def procargs(argv):
     cxstep = object()
     cfitmin = object()
     cfitmax = object()
+    cprocs = object()
     # cnextra = object()
     ctrials = object()
     # Get environment variables from command line.
@@ -34,18 +35,20 @@ def procargs(argv):
             sys.exit(0)
         if opt in "--xmin":
             cxmin = arg
-        if opt in "--xstep":
+        elif opt in "--xstep":
             cxstep = arg
-        if opt in "--xmax":
+        elif opt in "--xmax":
             cxmax = arg
-        if opt in "--trials":
+        elif opt in "--trials":
             ctrials = arg
-        if opt == "--fitmin":
+        elif opt == "--fitmin":
             cfitmin = arg
-        if opt == "--fitmax":
+        elif opt == "--fitmax":
             cfitmax = arg
+        elif opt == "--procs":
+            cprocs = arg
     # exiting loop
-    options = OPTIONS(None, None, None, None, None, None)
+    options = OPTIONS(None, None, None, None, None, None, None)
     for opt, arg in opts:
         if opt in "-i" "--ifile" "-f" "--ifolder":
             options.xmin = cxmin
@@ -54,6 +57,7 @@ def procargs(argv):
             options.trials = ctrials
             options.fitmin = cfitmin
             options.fitmax = cfitmax
+            options.procs = cprocs
             retval = arg, options
             break
     return retval

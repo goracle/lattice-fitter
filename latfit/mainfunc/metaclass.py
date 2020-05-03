@@ -103,8 +103,8 @@ class FitRangeMetaData:
         self.fitwindow = []
         self.random_fit = True
         self.input_f = None
-        self.options = recordtype('ops',
-                                  'xmin xmax xstep trials fitmin fitmax')
+        self.options = recordtype(
+            'ops', 'xmin xmax xstep trials fitmin fitmax procs')
 
     def incr_xmin(self, problemx=None, inx=False):
         """Increment xmin by one*xstep"""

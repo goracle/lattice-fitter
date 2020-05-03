@@ -14,10 +14,12 @@ from latfit.logger import setup_logger, Logger
 from latfit.utilities.postprod.h5jack import check_ids
 from latfit import fitfunc
 import latfit.checks.checks_and_statements as sands
+from latfit.checks.proc_params import check_params
 import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
 import latfit.analysis.errorcodes as errc
 from latfit.include import DIMSELECT, PARAM_OF_INTEREST, INCLUDE, FIT_EXCL
+from latfit.include import PROC_PARAMS
 from latfit.include import print_include_messages, LATTICE_ENSEMBLE
 from latfit.include import T0, DELTA_T_MATRIX_SUBTRACTION, ISOSPIN, IRREP
 
@@ -174,6 +176,8 @@ ALTERNATIVE_PARALLELIZATION = bool(INCLUDE)
 PIONRATIO = True
 PIONRATIO = False
 PIONRATIO = False if not GEVP else PIONRATIO
+if PROC_PARAMS:
+    PIONRATIO = PROC_PARAMS[2]
 
 # only apply pion ratio to ground state
 PR_GROUND_ONLY = True
@@ -184,7 +188,8 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
     else PR_GROUND_ONLY
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
-
+if PROC_PARAMS:
+    PR_GROUND_ONLY = PROC_PARAMS[1]
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -374,6 +379,8 @@ BOOTSTRAP_PVALUES = True if INCLUDE and ISOSPIN else BOOTSTRAP_PVALUES
 ## post fit config
 STRONG_CUTS = False
 STRONG_CUTS = True # use I=2 level cuts
+if PROC_PARAMS:
+    STRONG_CUTS = PROC_PARAMS[3]
 print("Strong cuts:", STRONG_CUTS)
 
 
@@ -425,6 +432,8 @@ MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
+if PROC_PARAMS:
+    MATRIX_SUBTRACTION = PROC_PARAMS[0]
 
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
@@ -1086,6 +1095,8 @@ sands.superjackknife_statements(check_ids(LATTICE_ENSEMBLE)[-2],
                                 SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
+check_params(MATRIX_SUBTRACTION, PR_GROUND_ONLY,
+             PIONRATIO, STRONG_CUTS)
 if FIT:
     assert len(fit_func(3, START_PARAMS)) == MULT
 assert RESOLVABLE_STATES and RESOLVABLE_STATES <= MULT
