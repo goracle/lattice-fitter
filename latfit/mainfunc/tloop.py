@@ -381,7 +381,7 @@ def retsingle_fit(meta, idx, excl, results_store):
     overfit_arr = list(overfit_arr)
 
     # skip all remaining fits?
-    skip = frsort.exitp(meta, min_arr, overfit_arr, idx)
+    skip = frsort.exitp(meta, min_arr, overfit_arr, idx, noprint=True)
     if not skip:
         # set the fit range, or skip this one
         skip = frsort.set_fit_range(meta, excl)

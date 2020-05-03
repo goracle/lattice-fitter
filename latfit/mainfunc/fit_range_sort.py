@@ -70,11 +70,11 @@ def fit_range_combos(meta, plotdata):
     return prod, sorted_fit_ranges
 
 @PROFILE
-def exitp(meta, min_arr, overfit_arr, idx):
+def exitp(meta, min_arr, overfit_arr, idx, noprint=False):
     """Test to exit the fit range loop"""
     ret = False
     if meta.skip_loop():
-        if VERBOSE:
+        if VERBOSE and not noprint:
             print("skipping loop")
         ret = True
 
@@ -83,18 +83,20 @@ def exitp(meta, min_arr, overfit_arr, idx):
                 len(overfit_arr) >= MAX_RESULTS
                 and not min_arr):
             ret = True
-            print("a reasonably large set of indices",
-                  "has been checked, exiting fit range loop.",
-                  "(number of fit ranges checked:"+str(idx+1)+")")
-            print("rank :", MPIRANK, "exiting fit loop")
+            if not noprint:
+                print("a reasonably large set of indices",
+                    "has been checked, exiting fit range loop.",
+                    "(number of fit ranges checked:"+str(idx+1)+")")
+                print("rank :", MPIRANK, "exiting fit loop")
 
     # check to see if max iter count and no results
     mix = get_chunked_max(3)
     assert isinstance(mix, int), mix
     if not len(min_arr) + len(overfit_arr) and idx >= mix and meta.random_fit:
-        print("Maximum iteration count", mix,
-              "exceeded with no results")
-        print("rank :", MPIRANK, "exiting fit loop")
+        if not noprint:
+            print("Maximum iteration count", mix,
+                "exceeded with no results")
+            print("rank :", MPIRANK, "exiting fit loop")
         ret = True
     # check on loop progress in 6 chunks; if not making progress, exit.
     for chunk in range(6):
@@ -103,17 +105,19 @@ def exitp(meta, min_arr, overfit_arr, idx):
         mix = get_chunked_max(chunk)
         thr, rstr = threshold(chunk)
         if idx >= mix and len(min_arr) < thr and meta.random_fit:
-            print("Maximum iteration count", mix, "exceeded.")
-            print("and results needed are <", rstr, "of", MAX_RESULTS)
-            print("results:", len(min_arr))
-            print("rank :", MPIRANK, "exiting fit loop")
+            if not noprint:
+                print("Maximum iteration count", mix, "exceeded.")
+                print("and results needed are <", rstr, "of", MAX_RESULTS)
+                print("results:", len(min_arr))
+                print("rank :", MPIRANK, "exiting fit loop")
             ret = True
     # check to see if 4*max iter count (absolute upper bound)
     mix = get_chunked_max(6)
     if idx >= mix:
-        print("Maximum iteration count * 4", mix, "exceeded.")
-        print("results:", len(min_arr))
-        print("rank :", MPIRANK, "exiting fit loop")
+        if not noprint:
+            print("Maximum iteration count * 4", mix, "exceeded.")
+            print("results:", len(min_arr))
+            print("rank :", MPIRANK, "exiting fit loop")
         ret = True
     return ret
 
