@@ -282,6 +282,7 @@ class FitRangeMetaData:
         self.input_f, self.options = procargs(sys.argv[1:])
         self.options.fitmin = str2float(self.options.fitmin)
         self.options.fitmax = str2float(self.options.fitmax)
+        self.options.procs = int(str2float(self.options.procs))
         self.options.xmin, self.options.xmax = xlim_err(self.options.xmin,
                                                         self.options.xmax)
         self.options.xstep = xstep_err(self.options.xstep, self.input_f)
