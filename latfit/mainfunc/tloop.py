@@ -296,8 +296,9 @@ def fit(tadd=0, tsub=0):
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
+            # subtract one since we already checked one fit range
             print("starting loop of max length:"+str(
-                meta.lenprod), "random fit:", meta.random_fit)
+                meta.lenprod-1), "random fit:", meta.random_fit)
 
             idxstart = 0
             chunk_new = -1
