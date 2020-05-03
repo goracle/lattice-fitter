@@ -90,6 +90,7 @@ def exitp(meta, min_arr, overfit_arr, idx):
 
     # check to see if max iter count and no results
     mix = get_chunked_max(3)
+    assert isinstance(mix, int), mix
     if not len(min_arr) + len(overfit_arr) and idx >= mix and meta.random_fit:
         print("Maximum iteration count", mix,
               "exceeded with no results")
