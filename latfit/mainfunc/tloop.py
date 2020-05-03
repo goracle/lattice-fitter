@@ -326,7 +326,7 @@ def fit(tadd=0, tsub=0):
                 argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
                           for idx, excl in enumerate(excls)]
                 #print('argtup[0]', argtup[0])
-                with Pool(min(meta.options.nproc, len(excls))) as pool:
+                with Pool(min(meta.options.procs, len(excls))) as pool:
                     results = pool.starmap(retsingle_fit, argtup)
                 results = [i for i in results if i is not None]
                 # keep track of where we are in the overall loop
