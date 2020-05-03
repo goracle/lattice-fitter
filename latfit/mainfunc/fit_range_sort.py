@@ -83,9 +83,9 @@ def exitp(meta, min_arr, overfit_arr, idx):
                 len(overfit_arr) >= MAX_RESULTS
                 and not min_arr):
             ret = True
-            print("a reasonably large set of indices"+\
-                " has been checked, exiting fit range loop."+\
-                " (number of fit ranges checked:"+str(idx+1)+")")
+            print("a reasonably large set of indices (idx:", idx, ")",
+                  "has been checked, exiting fit range loop.",
+                  "(number of fit ranges checked:"+str(idx+1)+")")
             print("rank :", MPIRANK, "exiting fit loop")
 
     # check to see if max iter count and no results
