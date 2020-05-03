@@ -215,7 +215,7 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
     mix = int(mix)
 
     ret = []
-    for idx in range(mix):
+    for idx in range(mix-len(checked)):
         excl, checked = get_one_fit_range(
             meta, idx, checked, combo_data)
         if excl is not None:
