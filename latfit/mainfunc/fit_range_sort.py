@@ -209,9 +209,10 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
     # "mix"
     mix = meta.lenprod
     if meta.random_fit and not NOLOOP:
-        mix, chunk = get_chunked_max(
+        mix2, chunk = get_chunked_max(
             chunk, procs=meta.options.procs, start=len(checked))
-        mix = np.ceil(mix)
+        mix2 = np.ceil(mix)
+        mix = min(mix, mix2)
     assert int(mix) == mix, (mix, meta.lenprod)
     mix = int(mix)
 
