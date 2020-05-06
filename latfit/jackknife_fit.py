@@ -66,13 +66,25 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def cuts_chisq(num_configs, dof):
+    """Get cutoff values for bad/good chisq"""
+    # p-value fiducial cut:  cut below this pvalue
+    # as it is 5 \sigma away from an acceptable chi^2/dof (t^2/dof)
+    chisq_fiduc_cut = hotelling.chisqfiduc(num_configs, dof)
+
+    # similarly, cut below 5 sigma below chisq/dof = 1
+    chisq_fiduc_overfit_cut = hotelling.overfit_chisq_fiduc(
+        num_configs, dof)
+
+    return chisq_fiduc_cut, chisq_fiduc_overfit_cut
+
 
 if JACKKNIFE_FIT == 'FROZEN':
     pass
 
 elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
     @PROFILE
-    def jackknife_fit(meta, params, reuse, reuse_blocked, coords):
+    def jackknife_fit(meta, params, reuse_coords):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -81,206 +93,325 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         (N.B. substitute t^2 for chi^2 if doing a correlated fit)
         """
         # storage for results
+        reuse, reuse_blocked, coords = reuse_coords
         result_min = ResultMin(meta, params, coords)
-        coords_jack = np.copy(copy.deepcopy(coords))
 
-        # p-value fiducial cut:  cut below this pvalue
-        # as it is 5 \sigma away from an acceptable chi^2/dof (t^2/dof)
-        chisq_fiduc_cut = hotelling.chisqfiduc(params.num_configs,
-                                               result_min.misc.dof)
-        # similarly, cut below 5 sigma below chisq/dof = 1
-        chisq_fiduc_overfit_cut = hotelling.overfit_chisq_fiduc(
-            params.num_configs, result_min.misc.dof)
-
-        skip_votes = []
         # loop over configs, doing a fit for each one
         # rearrange loop order so we can check goodness of fit
         # on more stable sloppy samples
-
+        skip_votes = []
         config_range = (np.array(range(
             params.num_configs)) + SUPERJACK_CUTOFF) % params.num_configs
         config_range = range(
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
-
-        start_loop = True
+        loop_location = {'start_loop': True, 'halfway': False}
 
         for config_num in config_range:
 
-            halfway = int(np.floor(len(config_range)/2)) == list(
-                config_range).index(config_num)
+            # check if we should skip this iteration
+            loop_location = update_location(
+                loop_location, config_num, config_range)
+            if location_check(loop_location):
+                continue
 
-            if ALTERNATIVE_PARALLELIZATION:
-                assert not latfit.config.BOOTSTRAP, "not supported"
-                if config_num not in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
-                    if config_num % MPISIZE != MPIRANK and MPISIZE > 1:
-                        if not (ISOSPIN == 0 and halfway):
-                            continue
-
-            # copy the jackknife block into coords_jack
-            if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
-                assert np.all(reuse[config_num] == reuse_blocked[
-                    config_num]),\
-                    str(reuse[config_num].shape)+" "+str(reuse_blocked[
-                        config_num].shape)
-            if not latfit.config.BOOTSTRAP:
-                coords_jack = copy_block(params, reuse_blocked[config_num],
-                                         coords_jack)
-            else:
-                # we still need the time data in coords (xmin, xmax, xstep)
-                coords_jack = copy_block(params, reuse[0],
-                                         coords_jack)
-
-            # get the data for the minimizer, and the error bars
+            # get the data for the minimizer
+            # (and the error bars)
+            coords_jack = get_jack_coords(params, config_num, reuse_coords)
             coords_jack, covinv_jack, result_min.misc.error_bars[
                 config_num] = get_doublejk_data(params, coords_jack,
                                                 reuse, reuse_blocked,
                                                 config_num)
 
-            if ISOSPIN == 0 and halfway:
-                start_loop = True
+            # minimize chi^2
+            result_min = find_min(params, result_min, coords_jack,
+                                  covinv_jack, loop_location)
 
-            if start_loop:
-                mkmin.SPARAMS = list(np.copy(START_PARAMS))
-                mkmin.PARAMS = params
-                mkmin.prealloc_chi(covinv_jack, coords_jack)
-
-            # minimize chi^2 (t^2) given the inv. covariance matrix and data
-            result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
-            if result_min_jack.status != 0:
-                assert not np.isnan(result_min_jack.status),\
-                    str(result_min_jack.status)
-                result_min.misc.status = result_min_jack.status
-                raise NoConvergence
-
-            if start_loop:
-                mkmin.SPARAMS = result_min_jack.x
-                start_loop = False
-
-            result_min.min_params.arr[config_num] = result_min_jack.x
-
-            # store results for this fit
-            result_min.chisq.arr[config_num] = result_min_jack.fun
+            # post min check(s)
+            # check if chi^2 average
+            # (even with padded zeros for configs we haven't fitted yet)
+            # is already too bad
             toomanybadfitsp(result_min)
 
-            # store the result
-            result_min.systematics.arr[config_num], _ = \
-                getsystematic(params, result_min.min_params.arr[config_num])
-            result_min.systematics.arr[config_num],\
-                params.energyind = getsystematic(
-                    params, result_min.min_params.arr[config_num])
-            result_min.energy.arr[config_num] = getenergies(
-                params, result_min.min_params.arr[config_num])
+            # compute derived quantities
+            result_min = compute_min_derived_quantities(
+                params, result_min, config_num)
 
-            if result_min_jack.fun/result_min.misc.dof < 10 and\
-               list(result_min.systematics.arr[config_num][:-1]) and (
-                   VERBOSE or ALTERNATIVE_PARALLELIZATION):
-                print('systematics:',
-                      result_min.systematics.arr[config_num][:-1],
-                      "config:", config_num)
+            # print min result
+            print_single_config_info(result_min, config_num)
 
-            # we shifted the GEVP energy spectrum down
-            # to fix the leading order around the world term
-            # so shift it back
-            if not latfit.config.BOOTSTRAP:
-
-                result_min.energy.arr[config_num] += correction_en(
-                    result_min, config_num)
-
-            # compute phase shift, if necessary
-            if CALC_PHASE_SHIFT and not latfit.config.BOOTSTRAP:
-                result_min.phase_shift.arr[config_num] = phase_shift_jk(
-                    params, result_min.energy.arr[config_num])
-
-            # compute p value for this fit
-            result_min.pvalue.arr[config_num] = result_min.funpvalue(
-                result_min_jack.fun)
-
-            sys_str = str(result_min.systematics.arr[config_num][-1])\
-                if not np.isnan(result_min.systematics.arr[config_num][-1])\
-                   else ''
-
-            # print results for this config
-            if VERBOSE or ALTERNATIVE_PARALLELIZATION:
-                print("config", config_num, ":",
-                      result_min.energy.arr[config_num],
-                      sys_str, hotelling.torchi(),
-                      trunc(result_min_jack.fun/result_min.misc.dof),
-                      "p-value=", trunc(result_min.pvalue.arr[config_num]),
-                      'dof=', result_min.misc.dof, "rank=", MPIRANK)
-
-            assert not np.isnan(result_min.pvalue.arr[
-                config_num]), "pvalue is nan"
+            # check first two configs for an early abort
             # use sloppy configs to check if fit will work
-            if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF] and\
-               not latfit.config.BOOTSTRAP:
+            skip_votes = first_two_configs_abort(
+                (params.num_configs, config_num), result_min, skip_votes)
 
-                # check if chi^2 (t^2) too big, too small
-                if result_min_jack.fun > chisq_fiduc_cut or\
-                   (SKIP_OVERFIT and result_min_jack.fun < \
-                    chisq_fiduc_overfit_cut):
-                    skip_votes.append(config_num)
-
-                if config_num == 1+SUPERJACK_CUTOFF:
-                    skip_range(params, result_min, skip_votes,
-                               result_min_jack, chisq_fiduc_cut)
-
-        # reset the precomputed quantities
-        mkmin.dealloc_chi()
-        # average results, compute jackknife uncertainties
-
-        if ALTERNATIVE_PARALLELIZATION:
-            result_min.gather()
-
-        # pickle/unpickle the jackknifed arrays
-        result_min = pickl(result_min)
-
-        # compute p-value jackknife uncertainty
-        result_min.pvalue.val, result_min.pvalue.err =\
-            jack_mean_err(result_min.pvalue.arr)
-
-        # print out the jackknife blocks for manual management
-        if NOLOOP:
-            result_min.printjack(meta)
-
-        # get the optimal params
-        result_min.min_params.val, result_min.min_params.err = jack_mean_err(
-            result_min.min_params.arr)
-
-        # compute the mean, error on the params
-        result_min.energy.val, result_min.energy.err = jack_mean_err(
-            result_min.energy.arr)
-        if VERBOSE:
-            print('param err:', result_min.energy.err,
-                  'np.std:', np.std(result_min.energy.arr, axis=0))
-
-        # compute the systematics and errors
-        if SYS_ENERGY_GUESS is not None:
-            result_min.systematics.val, result_min.systematics.err =\
-                jack_mean_err(result_min.systematics.arr)
-
-        # average the point by point error bars
-        result_min.misc.error_bars = em.acmean(result_min.misc.error_bars,
-                                               axis=0)
-
-        # compute phase shift and error in phase shift
-        if CALC_PHASE_SHIFT:
-            phase_shift_scatter = phase_shift_scatter_len_avg(result_min)
-
-            result_min = unpack_min_data(result_min, *phase_shift_scatter)
-
-        # compute mean, jackknife uncertainty of chi^2 (t^2)
-        result_min.chisq.val, result_min.chisq.err = jack_mean_err(
-            result_min.chisq.arr)
-
-        if VERBOSE:
-            print(hotelling.torchi(), result_min.chisq.val/result_min.misc.dof,
-                  "std dev:", np.std(result_min.chisq.arr, ddof=1))
+        # post fit processing
+        result_min = post_fit(meta, result_min)
 
         return result_min, result_min.energy.err
 else:
     print("***ERROR***")
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
+
+def location_check(loop_location):
+    """Check if we should skip this iteration"""
+    config_num = loop_location['num']
+    ret = False
+
+    # this skip is only for MPI parallelization of loop
+    if ALTERNATIVE_PARALLELIZATION:
+        assert not latfit.config.BOOTSTRAP, "not supported"
+
+        # all MPI ranks should calculate the first two (check, sloppy) configs
+        if config_num not in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
+
+            # check rank
+            if config_num % MPISIZE != MPIRANK and MPISIZE > 1:
+
+                # we need to not skip the midpoint either
+                if not (ISOSPIN == 0 and loop_location['halfway']):
+                    ret = True
+    return ret
+
+def update_location(loop_location, config_num, config_range):
+    """Update where we are in the loop"""
+    loop_location['num'] = config_num
+    loop_location['halfway'] = int(np.floor(len(config_range)/2)) == list(
+        config_range).index(config_num)
+    return loop_location
+
+def get_jack_coords(params, config_num, reuse_coords):
+    """Get (jackknife) sample coordinates to fit to
+    copy the jackknife block into coords_jack
+    """
+    reuse, reuse_blocked, coords = reuse_coords
+    coords_jack = np.copy(copy.deepcopy(coords))
+    if config_num < len(reuse) and len(reuse) == len(reuse_blocked):
+        assert np.all(reuse[config_num] == reuse_blocked[
+            config_num]),\
+            str(reuse[config_num].shape)+" "+str(reuse_blocked[
+                config_num].shape)
+    if not latfit.config.BOOTSTRAP:
+        coords_jack = copy_block(params, reuse_blocked[config_num],
+                                 coords_jack)
+    else:
+        # we still need the time data in coords (xmin, xmax, xstep)
+        coords_jack = copy_block(params, reuse[0], coords_jack)
+
+    return coords_jack
+
+
+
+def compute_min_derived_quantities(params, result_min, config_num):
+    """Compute quantities derived from optimal function params"""
+
+    # we shifted the GEVP energy spectrum down
+    # to fix the leading order around the world term
+    # so shift it back
+    if not latfit.config.BOOTSTRAP:
+        result_min.energy.arr[config_num] += correction_en(
+            result_min, config_num)
+
+    # compute phase shift, if necessary
+    if CALC_PHASE_SHIFT and not latfit.config.BOOTSTRAP:
+        result_min.phase_shift.arr[config_num] = phase_shift_jk(
+            params, result_min.energy.arr[config_num])
+
+    # compute p value for this fit
+    result_min.pvalue.arr[config_num] = result_min.funpvalue(
+        result_min.chisq.arr[config_num])
+    assert not np.isnan(result_min.pvalue.arr[
+        config_num]), "pvalue is nan"
+    return result_min
+
+
+def find_min(params, result_min, coords_jack, covinv_jack, loop_location):
+    """Find chi^2 min"""
+
+    # where are we in the fit loop?
+    # we reuse min guesses, so our min finder depends on the
+    # loop location
+    halfway = loop_location['halfway']
+    start_loop = loop_location['start_loop']
+    config_num = loop_location['num']
+
+    # I = 0 has been observed to get caught in a local min
+    # if we reuse the result for a guess.
+    # Thus, resetting the guess halfway ensures we don't
+    # underestimate the error
+    if ISOSPIN == 0 and halfway:
+        start_loop = True
+
+    if start_loop:
+        mkmin.SPARAMS = list(np.copy(START_PARAMS))
+        mkmin.PARAMS = params
+        mkmin.prealloc_chi(covinv_jack, coords_jack)
+
+    # minimize chi^2 (t^2) given the inv. covariance matrix and data
+    result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
+    if result_min_jack.status != 0:
+        assert not np.isnan(result_min_jack.status),\
+            str(result_min_jack.status)
+        result_min.misc.status = result_min_jack.status
+        raise NoConvergence
+
+    if start_loop:
+        mkmin.SPARAMS = result_min_jack.x
+        start_loop = False
+
+    # store results for this fit
+    result_min.min_params.arr[config_num] = result_min_jack.x
+    result_min.chisq.arr[config_num] = result_min_jack.fun
+    result_min = store_result(params, result_min, config_num)
+
+    return result_min
+
+
+
+
+if VERBOSE or ALTERNATIVE_PARALLELIZATION:
+    def print_single_config_info(result_min, config_num):
+        """Prints for a fit to a single jackknife sample"""
+
+        sys_str = str(result_min.systematics.arr[config_num][-1])\
+            if not np.isnan(result_min.systematics.arr[config_num][-1])\
+                else ''
+
+        if result_min.chisq.arr[config_num]/result_min.misc.dof < 10 and\
+           list(result_min.systematics.arr[config_num][:-1]):
+            print('systematics:',
+                  result_min.systematics.arr[config_num][:-1],
+                  "config:", config_num)
+
+        # print results for this config
+        print("config", config_num, ":",
+              result_min.energy.arr[config_num],
+              sys_str, hotelling.torchi(),
+              trunc(result_min.chisq.arr[config_num]/result_min.misc.dof),
+              "p-value=", trunc(result_min.pvalue.arr[config_num]),
+              'dof=', result_min.misc.dof, "rank=", MPIRANK)
+
+else:
+    def print_single_config_info(_):
+        """verbose mode turned off; print nothing"""
+
+
+def first_two_configs_abort(config_info, result_min, skip_votes):
+    """Check first two configs;
+    throw an error to abort fit loop if they are bad"""
+
+    # setup/unpack
+    num_configs, config_num = config_info
+    chisq_cuts = cuts_chisq(num_configs, result_min.misc.dof)
+    chisq_fiduc_cut, chisq_fiduc_overfit_cut = chisq_cuts
+
+    if config_num in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF] and\
+        not latfit.config.BOOTSTRAP:
+
+        # check if chi^2 (t^2) too big, too small
+        chisq = result_min.chisq.arr[config_num]
+        if chisq > chisq_fiduc_cut or\
+            (SKIP_OVERFIT and chisq < \
+            chisq_fiduc_overfit_cut):
+            skip_votes.append(config_num)
+
+        if config_num == 1+SUPERJACK_CUTOFF:
+            skip_range(num_configs, result_min,
+                       skip_votes, chisq_fiduc_cut, chisq)
+
+    return skip_votes
+
+
+def post_fit(meta, result_min):
+    """Post jackknife fit loop tasks"""
+
+    # reset the precomputed quantities
+    mkmin.dealloc_chi()
+    # average results, compute jackknife uncertainties
+
+    if ALTERNATIVE_PARALLELIZATION:
+        result_min.gather()
+
+    # retrieve/save result
+    result_min = post_fit_io(meta, result_min)
+
+    # compute std error and average of fit results
+    result_min = post_fit_avg_err(result_min)
+
+    # print any summary statements
+    post_fit_statements(result_min)
+
+    return result_min
+
+def post_fit_avg_err(result_min):
+    """Compute averages and error of loop result"""
+    # compute p-value jackknife uncertainty
+    result_min.pvalue.val, result_min.pvalue.err =\
+        jack_mean_err(result_min.pvalue.arr)
+
+    # get the optimal params
+    result_min.min_params.val, result_min.min_params.err = jack_mean_err(
+        result_min.min_params.arr)
+
+    # compute the mean, error on the params
+    result_min.energy.val, result_min.energy.err = jack_mean_err(
+        result_min.energy.arr)
+
+    # compute the systematics and errors
+    if SYS_ENERGY_GUESS is not None:
+        result_min.systematics.val, result_min.systematics.err =\
+            jack_mean_err(result_min.systematics.arr)
+
+    # average the point by point error bars
+    result_min.misc.error_bars = em.acmean(result_min.misc.error_bars, axis=0)
+
+    # compute phase shift and error in phase shift
+    if CALC_PHASE_SHIFT:
+        phase_shift_scatter = phase_shift_scatter_len_avg(result_min)
+
+        result_min = unpack_min_data(result_min, *phase_shift_scatter)
+
+    # compute mean, jackknife uncertainty of chi^2 (t^2)
+    result_min.chisq.val, result_min.chisq.err = jack_mean_err(
+        result_min.chisq.arr)
+
+    return result_min
+
+
+def post_fit_io(meta, result_min):
+    """Do i/o with result of fit loop"""
+    # pickle/unpickle the jackknifed arrays
+    # print out the jackknife blocks for manual management
+    result_min = pickl(result_min)
+    if NOLOOP:
+        result_min.printjack(meta)
+    return result_min
+
+
+if VERBOSE:
+    def post_fit_statements(result_min):
+        """Prints after the fit loop"""
+        print('param err:', result_min.energy.err,
+              'np.std:', np.std(result_min.energy.arr, axis=0))
+
+        print(hotelling.torchi(), result_min.chisq.val/result_min.misc.dof,
+              "std dev:", np.std(result_min.chisq.arr, ddof=1))
+else:
+    def post_fit_statements():
+        """print nothing; verbose mode is off"""
+
+
+def store_result(params, result_min, config_num):
+    """store the result for this config_num"""
+    result_min.systematics.arr[config_num], _ = \
+        getsystematic(params, result_min.min_params.arr[config_num])
+    result_min.systematics.arr[config_num],\
+        params.energyind = getsystematic(
+            params, result_min.min_params.arr[config_num])
+    result_min.energy.arr[config_num] = getenergies(
+        params, result_min.min_params.arr[config_num])
+    return result_min
+
 
 @PROFILE
 def toomanybadfitsp(result_min):
@@ -296,20 +427,19 @@ def toomanybadfitsp(result_min):
                                   pvalue=pvalue, uncorr=UNCORR)
 
 
-def skip_range(params, result_min, skip_votes,
-               result_min_jack, chisq_fiduc_cut):
+def skip_range(num_configs, result_min, skip_votes, chisq_fiduc_cut, chisq):
     """Raise an error if we should skip this fit range"""
     skiprange = False
     zero = 0+SUPERJACK_CUTOFF
     one = 1+SUPERJACK_CUTOFF
-    nconf = params.num_configs-SUPERJACK_CUTOFF
+    nconf = num_configs-SUPERJACK_CUTOFF
     dof = result_min.misc.dof
     # don't skip the fit range until we confirm
     # on 2nd config
     var = np.sqrt(hotelling.var(result_min.misc.dof, nconf))
     var_approx = np.sqrt(2*dof)
     div = 1/np.sqrt(nconf-1)
-    diff = abs(result_min_jack.fun-result_min.chisq.arr[zero])
+    diff = abs(chisq-result_min.chisq.arr[zero])
     if len(skip_votes) == 2:
         skiprange = True
     elif len(skip_votes) == 1:
@@ -323,7 +453,7 @@ def skip_range(params, result_min, skip_votes,
         skiprange = diff < 5*var*div
     if skiprange and not latfit.config.BOOTSTRAP and not NOLOOP:
         raise BadChisq(
-            chisq=result_min_jack.fun/result_min.misc.dof,
+            chisq=chisq/result_min.misc.dof,
             dof=result_min.misc.dof, uncorr=UNCORR)
     if skip_votes:
         # the second sample should never have a good fit
@@ -331,8 +461,7 @@ def skip_range(params, result_min, skip_votes,
         if DOWRITE:
             print("fiducial cut =", chisq_fiduc_cut)
             print("dof=", result_min.misc.dof)
-            print("first two chi^2's:",
-                result_min_jack.fun, result_min.chisq.arr[zero])
+            print("first two chi^2's:", chisq, result_min.chisq.arr[zero])
             print("var, var_approx, div, diff", var, var_approx, div, diff)
             print("Bad jackknife distribution:"+\
                     str(result_min.chisq.arr[zero]/result_min.misc.dof)+" "+\
