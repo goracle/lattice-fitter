@@ -206,7 +206,7 @@ def drop_extra_info(ilist):
             try:
                 assert con1 or con2 or con3, fitw
             except AssertionError:
-                assert contains(fitw[0], fitw[1]), fitw
+                assert contains(fitw[0], fitw[1]) or contains(fitw[1], fitw[0]), fitw
         if con1:
             fitw = fitw[0]
         elif con2:
