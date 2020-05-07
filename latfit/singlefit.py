@@ -87,7 +87,7 @@ def randomize_data(params, reuse_coords):
 
 
 @PROFILE
-def singlefit(meta, input_f):
+def singlefit(meta, input_f, fullfit=True):
     """Get data to fit
     and minimized params for the fit function (if we're fitting)
     """
@@ -133,8 +133,7 @@ def singlefit(meta, input_f):
     if point_cuts_wrapper(meta, err=singlefit.error2) and FIT and not ONLY_EXTRACT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
-            result_min, param_err = jackknife_fits(
-                meta, params, reuse_coords, meta.options.xmax)
+            result_min, param_err = jackknife_fits(meta, params, reuse_coords, fullfit=fullfit)
 
         else:
 
@@ -196,7 +195,7 @@ def get_reuse_blocked(num_configs, reuse, xmax):
 
 
 
-def jackknife_fits(meta, params, reuse_coords, xmax):
+def jackknife_fits(meta, params, reuse_coords, fullfit=True):
     """perform needed set of jackknife fits"""
     reset_bootstrap()
 
@@ -207,10 +206,10 @@ def jackknife_fits(meta, params, reuse_coords, xmax):
     else:
         try:
             result_min, param_err = jackknife_fit(
-                meta, params, reuse_coords)
+                meta, params, reuse_coords, fullfit=fullfit)
         except PrecisionLossError:
             singlefit_reset()
-            raise XmaxError(problemx=xmax)
+            raise XmaxError(problemx=meta.options.xmax)
         cloudpickle.dump((result_min, param_err),
                          open("result_min.p", "wb"))
         if BOOTSTRAP_PVALUES:

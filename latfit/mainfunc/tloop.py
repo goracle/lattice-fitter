@@ -19,7 +19,7 @@ from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 
 # errors
 from latfit.analysis.errorcodes import XmaxError, XminError
-from latfit.analysis.errorcodes import NegChisq
+from latfit.analysis.errorcodes import NegChisq, FitSuccess
 from latfit.analysis.errorcodes import RelGammaError, ZetaError
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.errorcodes import FitRangesAlreadyInconsistent
@@ -326,13 +326,9 @@ def fit(tadd=0, tsub=0):
                     assert len(excls) == meta.lenprod-1, (
                         len(excls), meta.lenprod)
 
-                # fit the chunk (to be parallelized)
-                argtup = [(meta, idx+idxstart, excl, (min_arr, overfit_arr))
-                          for idx, excl in enumerate(excls)]
-                #print('argtup[0]', argtup[0])
-                with Pool(min(meta.options.procs, len(excls))) as pool:
-                    results = pool.starmap(retsingle_fit, argtup)
-                results = [i for i in results if i is not None]
+                # parallelize over this chunk
+                results = dofit_parallel(
+                    meta, idxstart, (min_arr, overfit_arr), excls)
                 # keep track of where we are in the overall loop
                 idxstart += len(excls)
 
@@ -366,7 +362,51 @@ def fit(tadd=0, tsub=0):
         print("END FIT, rank:", MPIRANK)
     return test, processed
 
-def retsingle_fit(meta, idx, excl, results_store):
+def dofit_parallel(meta, idxstart, results_store, excls):
+    """Use multiprocess to parallelize over fit ranges
+    or over configs
+    """
+    # fit the chunk (to be parallelized)
+    # this is the initial argtup (quick loop)
+    excls = list(excls)
+    results = dofit_parallelized_over_fit_ranges(
+        meta, idxstart, results_store, excls, False)
+    excls = [(i[1], i[2]) for i in results if i is not None]
+
+    # now we have a set of fit ranges which made it past the first
+    # two configs without error; thus, we should now let these
+    # presumably "good" set of fits proceed
+
+    if meta.options.procs > excls:
+        # parallelize over configs (jackknife samples)
+        for idx, excl in excls:
+            toadd = retsingle_fit(meta, idx, excl, results_store, True)
+            results.append(toadd)
+    else:
+        # number of good fits is large;
+        # continue to parallelize over fit ranges
+        results = dofit_parallelized_over_fit_ranges(
+            meta, None, results_store, excls, True)
+    results = [i[0] for i in results if i is not None]
+    return results
+
+def dofit_parallelized_over_fit_ranges(meta, idxstart, results_store, excls, fullfit):
+    """fit, parallelized over fit ranges using multiprocess"""
+    if isinstance(index_info, (np.integer, np.float)):
+        idxstart = index_info
+        argtup = [(meta, idx+idxstart, excl, results_store, fullfit)
+                  for idx, excl in enumerate(excls)]
+    else:
+        assert idxstart is None, idxstart
+        argtup = [(meta, idx, excl, results_store, fullfit)
+                  for idx, excl in excls]
+    #print('argtup[0]', argtup[0])
+    poolsize = min(meta.options.procs, len(excls))
+    with Pool(poolsize) as pool:
+        results = pool.starmap(retsingle_fit, argtup)
+    return results
+
+def retsingle_fit(meta, idx, excl, results_store, fullfit):
     """Perform a fit in the fit range loop
     return a result (to be processed)
     """
@@ -384,10 +424,17 @@ def retsingle_fit(meta, idx, excl, results_store):
         skip = frsort.set_fit_range(meta, excl)
 
     retsingle = None
+    retex = None
     if not skip:
         # do fit
         start = time.perf_counter()
-        retsingle = dofit(meta, idx, (min_arr, overfit_arr))
+        try:
+            retsingle = dofit(meta, idx, (min_arr, overfit_arr), fullfit=fullfit)
+        except FitSuccess:
+            retex = excl, idx
+            retsingle = None
+            if VERBOSE:
+                print("marking", excl, "as good.")
         if VERBOSE:
             print("Total elapsed time =",
                   time.perf_counter()-start,
@@ -396,11 +443,11 @@ def retsingle_fit(meta, idx, excl, results_store):
     # do a consistency check with collected results
     # cut inconsistent fit windows
     ret = None
-    if retsingle is not None:
+    if retsingle is not None or retex is not None:
         min_arr, overfit_arr = process_fit_result(
             retsingle, min_arr, overfit_arr, excl)
         consis(meta, min_arr)
-        ret = retsingle, excl
+        ret = retsingle, retex
 
     return ret
 
@@ -552,7 +599,7 @@ def store_init(plotdata):
     return plotdata
 
 
-def dofit(meta, idx, results_store):
+def dofit(meta, idx, results_store, fullfit=True):
     """Do a fit on a particular fit range"""
 
     # unpack
@@ -581,7 +628,7 @@ def dofit(meta, idx, results_store):
               "rank:", MPIRANK)
     assert len(latfit.config.FIT_EXCL) == MULT, "bug"
     try:
-        retsingle = sfit.singlefit(meta, meta.input_f)
+        retsingle = sfit.singlefit(meta, meta.input_f, fullfit=fullfit)
         if VERBOSE:
             print("fit succeeded for this selection"+\
                     " excluded points=", list(excl))

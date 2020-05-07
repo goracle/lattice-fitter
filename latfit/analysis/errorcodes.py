@@ -48,6 +48,14 @@ class FitFail(Exception):
         super(FitFail, self).__init__(message)
         self.message = message
 
+class FitSuccess(Exception):
+    """Exception for marking fit range as good,
+    but we don't want to fit it yet"""
+    def __init__(self, message='', prin=PRIN):
+        if prin:
+            print("marking fit range as good")
+        super(FitSuccess, self).__init__(message)
+        self.message = message
 
 class MpiSkip(Exception):
     """Skip something due to parallelism"""

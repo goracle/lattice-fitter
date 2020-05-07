@@ -261,6 +261,15 @@ class ResultMin:
                 fn1 = open(fname, 'wb')
                 pickle.dump(topr, fn1)
 
+    def store_dict(self, store, idx):
+        """store results from dictionary at particular index"""
+        for key in self.__paramlist:
+            # this is calculated after the loop
+            if 'scattering_length' in key:
+                continue
+            assert key in store, store
+            self.__paramlist[key].arr[idx] = store[key]
+
 
     @PROFILE
     def alloc_errbar_arr(self, params, time_length):

@@ -3,6 +3,7 @@ import sys
 import copy
 import os
 import pickle
+from multiprocessing import Pool
 import mpi4py
 from mpi4py import MPI
 from scipy import stats
@@ -16,6 +17,7 @@ from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.analysis.errorcodes import NoConvergence, TooManyBadFitsError
 from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 from latfit.analysis.errorcodes import EnergySortError, ZetaError
+from latfit.analysis.errorcodes import FitSuccess
 
 from latfit.analysis.result_min import ResultMin
 from latfit.analysis.covops import get_doublejk_data
@@ -84,7 +86,7 @@ if JACKKNIFE_FIT == 'FROZEN':
 
 elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
     @PROFILE
-    def jackknife_fit(meta, params, reuse_coords):
+    def jackknife_fit(meta, params, reuse_coords, fullfit=True):
         """Fit under a double jackknife.
         returns the result_min which has the minimized params ('x'),
         jackknife avg value of chi^2 ('fun') and error in chi^2
@@ -93,8 +95,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         (N.B. substitute t^2 for chi^2 if doing a correlated fit)
         """
         # storage for results
-        reuse, reuse_blocked, coords = reuse_coords
-        result_min = ResultMin(meta, params, coords)
+        result_min = ResultMin(meta, params, reuse_coords[2])
 
         # loop over configs, doing a fit for each one
         # rearrange loop order so we can check goodness of fit
@@ -104,45 +105,49 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
             params.num_configs)) + SUPERJACK_CUTOFF) % params.num_configs
         config_range = range(
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
-        loop_location = {'start_loop': True, 'halfway': False}
 
-        for config_num in config_range:
+        if not fullfit or ALTERNATIVE_PARALLELIZATION:
+            for config_num in config_range:
 
-            # check if we should skip this iteration
-            loop_location = update_location(
-                loop_location, config_num, config_range)
-            if location_check(loop_location):
-                continue
+                res_dict = jackknife_iter(
+                    params, (config_num, config_range),
+                    reuse_coords, result_min.misc.dof, fullfit)
 
-            # get the data for the minimizer
-            # (and the error bars)
-            coords_jack = get_jack_coords(params, config_num, reuse_coords)
-            coords_jack, covinv_jack, result_min.misc.error_bars[
-                config_num] = get_doublejk_data(params, coords_jack,
-                                                reuse, reuse_blocked,
-                                                config_num)
+                if not res_dict:
+                    if ALTERNATIVE_PARALLELIZATION:
+                        assert meta.options.procs == 1, meta.options.procs
+                        continue
+                    assert None, "we should not be here; bug"
 
-            # minimize chi^2
-            result_min = find_min(params, result_min, coords_jack,
-                                  covinv_jack, loop_location)
+                # store result
+                result_min.store_dict(res_dict, config_num)
 
-            # post min check(s)
-            # check if chi^2 average
-            # (even with padded zeros for configs we haven't fitted yet)
-            # is already too bad
-            toomanybadfitsp(result_min)
+                # post min check(s)
+                # check if chi^2 average
+                # (even with padded zeros for configs we haven't fitted yet)
+                # is already too bad
+                toomanybadfitsp(result_min)
 
-            # compute derived quantities
-            result_min = compute_min_derived_quantities(
-                params, result_min, config_num)
+                # check first two configs for an early abort
+                # use sloppy configs to check if fit will work
+                skip_votes = first_two_configs_abort(
+                    (params.num_configs, config_num), result_min, skip_votes)
 
-            # print min result
-            print_single_config_info(result_min, config_num)
+        else:
 
-            # check first two configs for an early abort
-            # use sloppy configs to check if fit will work
-            skip_votes = first_two_configs_abort(
-                (params.num_configs, config_num), result_min, skip_votes)
+            # we are doing the full fit, so parallelize
+            # over jackknife samples using multiproc
+            argtup = [(params, (config_num, config_range), reuse_coords,
+                       result_min.misc.dof) for config_num in config_range]
+
+            poolsize = min(meta.options.procs, len(config_range))
+
+            with Pool(poolsize) as pool:
+                results = pool.starmap(jackknife_iter, argtup)
+            for config_num, res_dict in zip(config_range, results):
+                result_min.store_dict(res_dict, config_num)
+                toomanybadfitsp(result_min)
+
 
         # post fit processing
         result_min = post_fit(meta, result_min)
@@ -153,10 +158,53 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
-def location_check(loop_location):
+
+def jackknife_iter(params, config_info, reuse_coords, dof, fullfit):
+    """Fit to one jackknife sample
+    (function to be parallelized)
+    """
+    # unpack
+    config_num, config_range = config_info
+    reuse, reuse_blocked, coords = reuse_coords
+
+    # check if we should skip this iteration
+    skip = False
+    loop_location = update_location(config_num, config_range)
+    if location_check(loop_location, fullfit):
+        skip = True
+        #continue
+
+    res_dict = {}
+    if not skip:
+        # get the data for the minimizer
+        # (and the error bars)
+        coords_jack = get_jack_coords(params, config_num, reuse_coords)
+        coords_jack, covinv_jack, result_min.misc.error_bars[
+            config_num] = get_doublejk_data(params, coords_jack,
+                                            reuse, reuse_blocked,
+                                            config_num)
+
+        # minimize chi^2
+        result_min_jack, loop_location = find_min(params, coords_jack,
+                                                  covinv_jack, loop_location)
+
+        res_dict['min_params'] = result_min_jack.x
+        res_dict['chisq'] = result_min_jack.fun
+        res_dict = store_result(params, res_dict)
+        res_dict = compute_min_derived_quantities(params, res_dict)
+
+        print_single_config_info(res_dict, dof, config_num)
+
+    return res_dict
+
+
+def location_check(loop_location, fullfit):
     """Check if we should skip this iteration"""
     config_num = loop_location['num']
     ret = False
+    if not fullfit:
+        if config_num not in [0+SUPERJACK_CUTOFF, 1+SUPERJACK_CUTOFF]:
+            raise FitSuccess
 
     # this skip is only for MPI parallelization of loop
     if ALTERNATIVE_PARALLELIZATION:
@@ -173,11 +221,15 @@ def location_check(loop_location):
                     ret = True
     return ret
 
-def update_location(loop_location, config_num, config_range):
+def update_location(config_num, config_range):
     """Update where we are in the loop"""
     loop_location['num'] = config_num
     loop_location['halfway'] = int(np.floor(len(config_range)/2)) == list(
         config_range).index(config_num)
+    loop_location = {'start_loop': False}
+    if config_num == config_range[0] or (
+            loop_location['halfway'] and not ISOSPIN):
+        loop_location['start_loop'] = True
     return loop_location
 
 def get_jack_coords(params, config_num, reuse_coords):
@@ -202,30 +254,27 @@ def get_jack_coords(params, config_num, reuse_coords):
 
 
 
-def compute_min_derived_quantities(params, result_min, config_num):
+def compute_min_derived_quantities(params, res_dict):
     """Compute quantities derived from optimal function params"""
 
     # we shifted the GEVP energy spectrum down
     # to fix the leading order around the world term
     # so shift it back
     if not latfit.config.BOOTSTRAP:
-        result_min.energy.arr[config_num] += correction_en(
-            result_min, config_num)
+        res_dict['energy'] += correction_en(
+            res_dict['energy'], config_num, params.num_configs)
 
     # compute phase shift, if necessary
     if CALC_PHASE_SHIFT and not latfit.config.BOOTSTRAP:
-        result_min.phase_shift.arr[config_num] = phase_shift_jk(
-            params, result_min.energy.arr[config_num])
+        res_dict['phase_shift'] = phase_shift_jk(params, res_dict['energy'])
 
     # compute p value for this fit
-    result_min.pvalue.arr[config_num] = result_min.funpvalue(
-        result_min.chisq.arr[config_num])
-    assert not np.isnan(result_min.pvalue.arr[
-        config_num]), "pvalue is nan"
-    return result_min
+    res_dict['pvalue'] = result_min.funpvalue(res_dict['chisq'])
+    assert not np.isnan(res_dict['pvalue']), "pvalue is nan"
+    return res_dict
 
 
-def find_min(params, result_min, coords_jack, covinv_jack, loop_location):
+def find_min(params, coords_jack, covinv_jack, loop_location):
     """Find chi^2 min"""
 
     # where are we in the fit loop?
@@ -239,8 +288,8 @@ def find_min(params, result_min, coords_jack, covinv_jack, loop_location):
     # if we reuse the result for a guess.
     # Thus, resetting the guess halfway ensures we don't
     # underestimate the error
-    if ISOSPIN == 0 and halfway:
-        start_loop = True
+    #if ISOSPIN == 0 and halfway:
+    #    start_loop = True
 
     if start_loop:
         mkmin.SPARAMS = list(np.copy(START_PARAMS))
@@ -252,44 +301,37 @@ def find_min(params, result_min, coords_jack, covinv_jack, loop_location):
     if result_min_jack.status != 0:
         assert not np.isnan(result_min_jack.status),\
             str(result_min_jack.status)
-        result_min.misc.status = result_min_jack.status
+        #result_min.misc.status = result_min_jack.status
         raise NoConvergence
 
     if start_loop:
         mkmin.SPARAMS = result_min_jack.x
-        start_loop = False
+        #start_loop = False
 
-    # store results for this fit
-    result_min.min_params.arr[config_num] = result_min_jack.x
-    result_min.chisq.arr[config_num] = result_min_jack.fun
-    result_min = store_result(params, result_min, config_num)
-
-    return result_min
+    return result_min_jack
 
 
 
 
 if VERBOSE or ALTERNATIVE_PARALLELIZATION:
-    def print_single_config_info(result_min, config_num):
+    def print_single_config_info(res_dict, dof, config_num):
         """Prints for a fit to a single jackknife sample"""
 
-        sys_str = str(result_min.systematics.arr[config_num][-1])\
-            if not np.isnan(result_min.systematics.arr[config_num][-1])\
+        sys_str = str(res_dict['systematics'][-1])\
+            if not np.isnan(res_dict['systematics'][-1])\
                 else ''
 
-        if result_min.chisq.arr[config_num]/result_min.misc.dof < 10 and\
-           list(result_min.systematics.arr[config_num][:-1]):
-            print('systematics:',
-                  result_min.systematics.arr[config_num][:-1],
+        if res_dict['chisq']/dof < 10 and\
+           list(res_dict['systematics'][:-1]):
+            print('systematics:', res_dict['systematics'][:-1],
                   "config:", config_num)
 
         # print results for this config
-        print("config", config_num, ":",
-              result_min.energy.arr[config_num],
+        print("config", config_num, ":", res_dict['energy'],
               sys_str, hotelling.torchi(),
-              trunc(result_min.chisq.arr[config_num]/result_min.misc.dof),
-              "p-value=", trunc(result_min.pvalue.arr[config_num]),
-              'dof=', result_min.misc.dof, "rank=", MPIRANK)
+              trunc(res_dict['chisq']/dof),
+              "p-value=", trunc(res_dict['pvalue']),
+              'dof=', dof, "rank=", MPIRANK)
 
 else:
     def print_single_config_info(_):
@@ -401,16 +443,16 @@ else:
         """print nothing; verbose mode is off"""
 
 
-def store_result(params, result_min, config_num):
+def store_result(params, res_dict):
     """store the result for this config_num"""
-    result_min.systematics.arr[config_num], _ = \
-        getsystematic(params, result_min.min_params.arr[config_num])
-    result_min.systematics.arr[config_num],\
+    res_dict['systematics'], _ = \
+        getsystematic(params, res_dict['min_params'])
+    res_dict['systematics'],\
         params.energyind = getsystematic(
-            params, result_min.min_params.arr[config_num])
-    result_min.energy.arr[config_num] = getenergies(
-        params, result_min.min_params.arr[config_num])
-    return result_min
+            params, res_dict['min_params'])
+    res_dict['energy'] = getenergies(
+        params, res_dict['min_params'])
+    return res_dict
 
 
 @PROFILE
@@ -473,7 +515,7 @@ def skip_range(num_configs, result_min, skip_votes, chisq_fiduc_cut, chisq):
             raise BadJackknifeDist(uncorr=UNCORR)
 
 @PROFILE
-def correction_en(result_min, config_num):
+def correction_en(energy, config_num, num_configs):
     """Correct the jackknifed E_pipi"""
     delta_e_around_the_world = DELTA_E_AROUND_THE_WORLD
     delta_e2_around_the_world = DELTA_E2_AROUND_THE_WORLD
@@ -482,19 +524,19 @@ def correction_en(result_min, config_num):
         latw = len(delta_e_around_the_world)
 
         # block the ensemble if needed
-        if latw != len(result_min.energy.arr):
+        if latw != num_configs:
             delta_e_around_the_world = block_ensemble(
-                len(result_min.energy.arr), delta_e_around_the_world)
+                num_configs, delta_e_around_the_world)
 
             latw = len(delta_e_around_the_world)
-            assert latw == 1 or latw == len(result_min.energy.arr),\
+            assert latw == 1 or latw == num_configs,\
                 "bug:  array mismatch"
         if delta_e2_around_the_world is not None:
             assert len(delta_e2_around_the_world) == latw
 
-            if latw != len(result_min.energy.arr):
+            if latw != num_configs:
                 delta_e2_around_the_world = block_ensemble(
-                    len(result_min.energy.arr), delta_e2_around_the_world)
+                    num_configs, delta_e2_around_the_world)
 
         corre1 = delta_e_around_the_world[config_num] if latw > 1 else\
             delta_e_around_the_world[0]
@@ -507,8 +549,7 @@ def correction_en(result_min, config_num):
         corre2 = delta_e2_around_the_world if\
             delta_e2_around_the_world is not None else 0
     if FIT_SPACING_CORRECTION and not PIONRATIO and GEVP:
-        corre3 = misc.correct_epipi(result_min.energy.arr[config_num],
-                                    config_num=config_num)
+        corre3 = misc.correct_epipi(energy, config_num=config_num)
     else:
         corre3 = 0
     ret = 0
