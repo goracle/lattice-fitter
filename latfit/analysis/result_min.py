@@ -86,11 +86,10 @@ def trash(item):
     """Is item 0, np.nan, or None?"""
     if hasattr(item, '__iter__') and not isinstance(item, str):
         raise ValueError
+    if isinstance(item, str):
+        ret = not item
     else:
-        if isinstance(item, str):
-            ret = not item
-        else:
-            ret = not item or str(item) == 'nan'
+        ret = not item or str(item) == 'nan'
     return ret
 
 def dead(arr):
