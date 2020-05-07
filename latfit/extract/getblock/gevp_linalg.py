@@ -805,7 +805,8 @@ def dot_map_to_evals_final(dot_map, evals, evecs):
 def pos_shift(evals_past, evals_final):
     """Detect negative energy by positive shift in eigenvalue"""
     ret = False
-    for i, j in zip(evals_past, evals_final):
+    #for i, j in zip(evals_past, evals_final):
+    for _ in zip(evals_past, evals_final):
         break # until this is debugged
         #diff = i.val-j
         #if diff < 0:

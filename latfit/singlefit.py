@@ -130,7 +130,7 @@ def singlefit(meta, input_f):
         singlefit.error2, cov_full, coords_full, cov)
 
     # perform cuts on which coordinates to fit
-    if point_cuts_wrapper(meta, singlefit.error2) and FIT and not ONLY_EXTRACT:
+    if point_cuts_wrapper(meta, err=singlefit.error2) and FIT and not ONLY_EXTRACT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
             result_min, param_err = jackknife_fits(
@@ -234,10 +234,10 @@ def set_error_bars(err, cov_full, coords_full, cov):
 
 
 @PROFILE
-def point_cuts_wrapper(meta, err):
+def point_cuts_wrapper(meta, err=singlefit.error2):
     """Point cuts wrapper:  make cuts, do check"""
     old_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
-    fiduc_point_cuts(meta, err)
+    fiduc_point_cuts(meta, err=err)
     if VERBOSE:
         print("new excl:", latfit.config.FIT_EXCL)
         new_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
@@ -259,14 +259,14 @@ def tuple_mat_set_sort(mat):
 
 
 @PROFILE
-def fiduc_point_cuts(meta, err):
+def fiduc_point_cuts(meta, err=singlefit.error2):
     """Perform fiducial cuts on individual
     effective mass points"""
     if FIT:
-        samerange = cut_on_errsize(meta, err)
+        samerange = cut_on_errsize(meta, err=err)
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
-        samerange = cut_on_growing_exp(meta, err) and samerange
+        samerange = cut_on_growing_exp(meta, err=err) and samerange
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
         if not samerange:
@@ -473,7 +473,7 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
                      for config in range(total_configs)])
 
 @PROFILE
-def cut_on_growing_exp(meta, err):
+def cut_on_growing_exp(meta, err=singlefit.error2):
     """Growing exponential is a signal for around the world contamination"""
     #err = singlefit.error2
     coords = singlefit.coords_full
@@ -543,7 +543,7 @@ def gevp_grow_exp_cut(coords, err, indices, already_cut, excls):
     return already_cut
 
 @PROFILE
-def cut_on_errsize(meta, err):
+def cut_on_errsize(meta, err=singlefit.error2):
     """Cut on the size of the error bars on individual points"""
     #err = singlefit.error2
     coords = singlefit.coords_full
