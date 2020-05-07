@@ -5,7 +5,6 @@ The first point we land on is our answer
 (the first point on the plateau)
 """
 
-import sys
 from scipy import stats
 import numpy as np
 import gvar
@@ -119,7 +118,7 @@ def main():
     tavg = []
     for _ in range(3):
         arr1 = np.ones(llen)+np.array([
-            np.random.normal(0, 0.01*2**(i+1)) for _ in range(llen)])
+            np.random.normal(0, 0.01*2**(i+1)) for i in range(llen)])
         tavg.append(arr1)
     tavg = list(reversed(tavg))
     last = np.ones(llen)

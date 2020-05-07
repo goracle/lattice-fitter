@@ -9,7 +9,7 @@ from mpi4py import MPI
 
 # config
 from latfit.config import EFF_MASS, MULT, GEVP, SUPERJACK_CUTOFF
-from latfit.config import TLOOP, METHOD, ALTERNATIVE_PARALLELIZATION
+from latfit.config import TLOOP, ALTERNATIVE_PARALLELIZATION
 from latfit.config import NOLOOP, UNCORR, LATTICE_ENSEMBLE
 from latfit.config import SYS_ENERGY_GUESS
 from latfit.checks.consistency import check_include
@@ -588,8 +588,7 @@ def get_first_res(name, min_arr):
     err = min_arr[0][0].__dict__[name].err
     return mean, err
 
-def post_loop(meta, loop_store,
-              retsingle_save, test_success):
+def post_loop(meta, loop_store, retsingle_save):
     """After loop over fit ranges"""
     min_arr, overfit_arr = loop_store
     min_arr = loop_result(min_arr, overfit_arr)

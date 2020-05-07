@@ -117,7 +117,7 @@ def consistent_list_params(lparam, mod_180=False, collapse_check=False):
                 if not ret:
                     if DOWRITE:
                         print("States", idx, "and", jdx,
-                            "have collapsed into each other.")
+                              "have collapsed into each other.")
                         print(gvar(i.val, i.err))
                         print(gvar(j.val, j.err))
                     break

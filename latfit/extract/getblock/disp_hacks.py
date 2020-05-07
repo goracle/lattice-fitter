@@ -74,7 +74,7 @@ def match_delt(delt):
     to give it the same array structure as disp energies.
     """
     ret = []
-    sigveck = True if not np.all(DISP_ENERGIES[0]) else False
+    sigveck = not np.all(DISP_ENERGIES[0])
     mult = int(MULT)
     if sigveck:
         mult -= 1
@@ -103,7 +103,7 @@ def binhalf_e(ear):
         ear = np.swapaxes(new_disp, 0, 1)
     return ear
 
-def identity_sort_meff(tosort, timeij, dimops):
+def identity_sort_meff(tosort, dimops):
     """Perform a check:
     Sort the eigenvalues; throw an error if the sort
     is not the identity"""
@@ -152,8 +152,7 @@ def callprocmeff(eigvals, timeij, delta_t, id_sort=False, dimops=None):
     if id_sort:
         for i in range(4):
             tosort = eigvals[i]
-            eigvals[i] = identity_sort_meff(
-                tosort, timeij, dimops)
+            eigvals[i] = identity_sort_meff(tosort, dimops)
     todiv = eigvals[0]
     try:
         toproc = inv_arr(todiv[:dimops]) if not LOGFORM else todiv/delta_t

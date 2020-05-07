@@ -85,8 +85,8 @@ def exitp(meta, min_arr, overfit_arr, idx, noprint=False):
             ret = True
             if not noprint:
                 print("a reasonably large set of indices",
-                    "has been checked, exiting fit range loop.",
-                    "(number of fit ranges checked:"+str(idx+1)+")")
+                      "has been checked, exiting fit range loop.",
+                      "(number of fit ranges checked:"+str(idx+1)+")")
                 print("rank :", MPIRANK, "exiting fit loop")
 
     # check to see if max iter count and no results
@@ -95,7 +95,7 @@ def exitp(meta, min_arr, overfit_arr, idx, noprint=False):
     if not len(min_arr) + len(overfit_arr) and idx >= mix and meta.random_fit:
         if not noprint:
             print("Maximum iteration count", mix,
-                "exceeded with no results")
+                  "exceeded with no results")
             print("rank :", MPIRANK, "exiting fit loop")
         ret = True
     # check on loop progress in 6 chunks; if not making progress, exit.
@@ -283,7 +283,7 @@ def threshold(idx):
     3: MAX_RESULTS/2
     4: MAX_RESULTS*2/3
     5: MAX_RESULTS*3/4
-    
+
     These levels are arbitrary,
     and have not been tuned
     """

@@ -4,7 +4,7 @@ import getopt
 from recordtype import recordtype
 
 OPTIONS = recordtype('ops', 'xmin xmax xstep trials fitmin fitmax procs')
-ops=OPTIONS
+ops = OPTIONS
 
 def procargs(argv):
     """Parse the command line.

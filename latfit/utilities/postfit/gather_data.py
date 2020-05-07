@@ -187,7 +187,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
             if not nosave:
                 plt.annotate("median="+str(freq_median), xy=(0.05, 0.8),
                              xycoords='axes fraction')
-          
+
             median_store, fit_range_arr = apply_cuts(
                 median_store, fit_range_arr, twin, dim)
 
@@ -205,7 +205,7 @@ def make_hist(fname, best, twin, nosave=False, allowidx=None):
                 print(best, "min not found for dim:",
                       dim, "fname:", fname)
                 continue
-            assert len(median_store[0]), (
+            assert list(median_store[0]), (
                 len(median_store[0]), themin)
             ret[dim] = (themin, sys_err, fitr, effmass)
 

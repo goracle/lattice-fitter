@@ -86,7 +86,8 @@ def aroundtheworld_pionratio(diag_name, timeij):
                 latfit.config.DELTA_T2_MATRIX_SUBTRACTION-latfit.config.DELTA_T_MATRIX_SUBTRACTION
             sub3 = proc_folder(name, time3)
             ret -= sub2*np.exp((
-                np.array(exp)+np.array(exp2))*time2)-sub3*np.exp((np.array(exp)+np.array(exp2))*time3)
+                np.array(exp)+np.array(exp2))*time2)-sub3*np.exp((
+                    np.array(exp)+np.array(exp2))*time3)
     return ret
 
 def evals_pionratio(timeij, delta_t, switch=False):
@@ -218,7 +219,7 @@ def finsum_dev(i, j, addzero, eint):
     dev = em.acstd(finsum)*np.sqrt(len(finsum)-1)
     return dev
 
-def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
+def sort_addzero(addzero, enint, timeij, sortbydist=True):
     """Introducing rho/sigma operator introduces ambiguity
     in energy sort:  where to sort the extra 0 entry
     in the non-interacting energies introduced by these operators?
@@ -298,9 +299,9 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True, check_sort_all=True):
     if ISOSPIN == 0 and len(dispf) == 3: # hard coding!
         mapi = [(0, 0), (2, 1), (1, 2)]
     elif ISOSPIN == 0 and len(dispf) == 4: # hard coding!
-        mapi = [(0, 0), (2, 1), (1, 2), (3,3)]
+        mapi = [(0, 0), (2, 1), (1, 2), (3, 3)]
     elif ISOSPIN == 0 and len(dispf) == 5: # hard coding!
-        mapi = [(0, 0), (2, 1), (1, 2), (3,3), (4,4)]
+        mapi = [(0, 0), (2, 1), (1, 2), (3, 3), (4, 4)]
     elif ISOSPIN == 0 and len(dispf) == 2: # hard coding!
         mapi = [(0, 0), (1, 1)]
     else:
@@ -341,7 +342,7 @@ def delj(mapi, idx):
             continue
         ret.append((i, j))
     return ret
-        
+
 
 def fill_in_addzero_map(mapi, timeij):
     """Fill in one-to-one map"""

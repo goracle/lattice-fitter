@@ -9,7 +9,6 @@ import numpy as np
 import latfit.utilities.read_file as rf
 import latfit.utilities.postfit.fitwin as hist
 from latfit.include import INCLUDE
-from latfit.utilities.tuplize import list_mat
 
 
 def lenfit(fname):
@@ -17,7 +16,7 @@ def lenfit(fname):
     fitw = rf.pickle_fitwin(fname)
     return fitw[1]-fitw[0]+1
 
-def singleton_cut(add, res, newfrs, tochk):
+def singleton_cut(add, newfrs, tochk):
     """Obsolete cut for single results
     (new way is fit window min length)
     """
@@ -57,7 +56,7 @@ def float_convert_fit_range(fit_range):
 def main(fit_select=''):
     """main"""
     fit_select = str(fit_select)
-    verb = False if fit_select else True
+    verb = not fit_select
     ret = []
     shape = ()
     res_mean = None
@@ -128,7 +127,7 @@ def main(fit_select=''):
             #effmasspts = add[3][len(add[2]):]
             #assert np.all([len(j) == 1 for j in effmasspts])
 
-            if singleton_cut(add, res, newfrs, i):
+            if singleton_cut(add, newfrs, i):
                 pass
                 #continue
             if fit_select in str(newfrs) and fit_select:
@@ -204,8 +203,8 @@ def parse_found_for_dts(found):
     tminuses = []
     dt2s = []
     if found:
-        earliest = None
-        for i, item in enumerate(found):
+        #earliest = None
+        for item in found:
             # assumes tminus is 1 digit long
             #if earliest is None:
             #    earliest = item

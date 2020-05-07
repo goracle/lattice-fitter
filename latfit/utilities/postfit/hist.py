@@ -130,8 +130,8 @@ def tloop(cbest, ignorable_windows, fnames, dump_min=False, nosave=True):
         else:
             print("raising inconsistency since no consistent results found")
             raise BinInconsistency
-            newcbest = cbest
-            newcbest_blks = cbest_blks
+            #newcbest = cbest
+            #newcbest_blks = cbest_blks
         print("end of tloop")
     else:
         for fname in sys.argv[1:]:
@@ -330,7 +330,7 @@ def create_skip_file(tmin):
     fn1 = open(tosave, 'wb')
     print("saving skip file:", tosave)
     pickle.dump(dummy, fn1)
-    
+
 
 if __name__ == '__main__':
     try:

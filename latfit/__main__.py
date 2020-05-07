@@ -32,7 +32,7 @@ def main():
 def signal_handler(sig, frame):
     """Handle ctrl+c"""
     print('Ctrl+C pressed; raising.')
-    raise
+    raise RuntimeError
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":

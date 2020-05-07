@@ -1,12 +1,12 @@
 """Contains result min class used in jackknife fit loop; stores results
  of fit"""
 #from collections import namedtuple
-from recordtype import recordtype
 import pickle
 from random import randint
 from mpi4py import MPI
 import mpi4py
 import numpy as np
+from recordtype import recordtype
 from scipy import stats
 from latfit.config import START_PARAMS, UNCORR, ALTERNATIVE_PARALLELIZATION
 from latfit.config import GEVP, NBOOT, VERBOSE
@@ -108,7 +108,7 @@ def dead(arr):
             ret = dead(arr)
     else:
         ret = trash(arr)
-    assert ret == True or ret == False, (ret, arr)
+    #assert ret == True or ret == False, (ret, arr)
     return ret
 
 
@@ -129,6 +129,7 @@ class Param:
         self.__gathered = False
 
     def gather(self):
+        """MPI gather wrapper"""
         if not self.__gathered and self.arr.shape:
             self.__callgather()
             self.__gathered = True
@@ -153,11 +154,11 @@ class Param:
         for cfig in range(len(gat[0])):
             app = False
             prev = None
-            for rank in range(len(gat)):
+            for rank, _ in enumerate(gat):
                 assert len(gat) == MPISIZE
                 item = gat[rank][cfig]
                 #print("it", item, rank, cfig)
-                if blank(item): 
+                if blank(item):
                     # we did no work for this rank,
                     # config combination
                     continue

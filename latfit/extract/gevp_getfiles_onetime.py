@@ -13,7 +13,8 @@ def gevp_getfiles_onetime(time, chkpos=False):
     rdimops = range(len(GEVP_DIRS))
     try:
         files = [[proc_folder(GEVP_DIRS[op1][op2],
-                              time, opa=op1, chkpos=op1==op2 and chkpos)
+                              time, opa=op1,
+                              chkpos=op1 == op2 and chkpos)
                   for op1 in rdimops] for op2 in rdimops]
     except PrecisionLossError:
         raise XmaxError(problemx=time)

@@ -2,7 +2,7 @@
 import re
 import gvar
 import numpy as np
-from latfit.jackknife_fit import jack_mean_err
+from latfit.analysis.superjack import jack_mean_err
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 
 try:

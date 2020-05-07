@@ -13,7 +13,8 @@ from latfit.utilities.postfit.fitwin import max_tmax, contains
 from latfit.utilities.postfit.fitwin import generate_continuous_windows
 from latfit.utilities.postfit.cuts import consistency
 from latfit.utilities.postfit.strproc import tmin_param, min_fit_file
-from latfit.utilities.postfit.strproc import tot_to_stat, stat_from_blocks
+#from latfit.utilities.postfit.strproc import tot_to_stat
+from latfit.utilities.postfit.strproc import stat_from_blocks
 from latfit.utilities.combine_pickle import main as getdts
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 from latfit.config import RESOLVABLE_STATES, STRONG_CUTS
@@ -58,8 +59,8 @@ def cut_tmin(tot_new, tocut):
     todel = []
     for i, (_, _, fitwin, _) in enumerate(tot_new):
         fitwin = fitwin[1] # cut out the fit range info
-        assert isinstance(fitwin[0], np.float) or isinstance(
-            fitwin[0], np.integer), (fitwin[0], type(fitwin[0]))
+        assert isinstance(fitwin[0], (np.float, np.integer)), (
+            fitwin[0], type(fitwin[0]))
         if fitwin[0] in tocut or fitwin[0] < min(tocut):
             todel.append(i)
     ret = np.delete(tot_new, todel, axis=0)
@@ -189,13 +190,13 @@ def drop_extra_info(ilist):
                 fitw[1] = comprehend_mat(fitw[1])
                 i[0] = comprehend_mat(i[0])
                 i[1] = comprehend_mat(i[1])
-                con1 = fit_win_equality(fitw[0], i[0])
-                con2 = fit_win_equality(fitw[1], i[1])
-                con = con1 and con2
+                #con1 = fit_win_equality(fitw[0], i[0])
+                #con2 = fit_win_equality(fitw[1], i[1])
+                #con = con1 and con2
             else:
-                fitw = [i for i in fitw]
-                i = [i for i in i]
-                con = list(fitw) == list(i)
+                fitw = list(fitw)
+                i = list(i)
+                #con = list(fitw) == list(i)
             # this is handled in an earlier function
             #assert con, (fitw, i, j, hatt)
     if hatt:
@@ -232,7 +233,7 @@ def comprehend_mat(badlist):
     ret = badlist
     if hasattr(ret, '__iter__'):
         if hasattr(ret[0], '__iter__'):
-            ret = [[j for j in i] for i in ret]
+            ret = [list(i) for i in ret]
     return ret
 
 @PROFILE
@@ -402,8 +403,8 @@ def plot_t_dep_totnew(tot_new, plot_info,
 
 def to_include(itmin, dim, title, dump_min):
     """Show the include.py settings just learned"""
-    sel = [sorted([j for j in i]) for i in itmin[1]]
-    sys_err = itmin[3]
+    sel = [sorted(list(i)) for i in itmin[1]]
+    #sys_err = itmin[3]
     if itmin[0] is None:
         fitwin = (None, None)
     elif not np.isnan(itmin[0].val):
@@ -499,12 +500,11 @@ def filter_toapp_nan(cbest, toapp, dim, itemidx):
     for best in cbest:
         if best[dim][itemidx] is None or str(best[dim][itemidx]) == 'None':
             continue
-        else:
-            dbest = gvar.gvar(best[dim][itemidx])
-            if np.isnan(dbest.val):
-                makenan = True
-                print("making nan")
-            assert 'nan' not in str(dbest) or makenan
+        dbest = gvar.gvar(best[dim][itemidx])
+        if np.isnan(dbest.val):
+            makenan = True
+            print("making nan")
+        assert 'nan' not in str(dbest) or makenan
     if makenan:
         toapp[itemidx] = (gvar.gvar(np.nan, np.nan))
     return toapp
@@ -547,19 +547,19 @@ def prune_cbest(cbest):
                 continue
             assert len(cnew) == len(ibest)
             for idx, (jit, kit) in enumerate(zip(ibest, cnew)):
-                if jit[0] is not None and str(jit[0]) != 'None': 
+                if jit[0] is not None and str(jit[0]) != 'None':
                     enerr = gvar.gvar(jit[0]).sdev
                 else:
                     enerr = np.inf
-                if jit[1] is not None and str(jit[1]) != 'None': 
+                if jit[1] is not None and str(jit[1]) != 'None':
                     pherr = gvar.gvar(jit[1]).sdev
                 else:
                     pherr = np.inf
-                if kit[0] is not None and str(kit[0]) != 'None': 
+                if kit[0] is not None and str(kit[0]) != 'None':
                     enerr_new = gvar.gvar(kit[0]).sdev
                 else:
                     enerr_new = np.inf
-                if kit[1] is not None and str(kit[1]) != 'None': 
+                if kit[1] is not None and str(kit[1]) != 'None':
                     pherr_new = gvar.gvar(kit[1]).sdev
                 else:
                     pherr_new = np.inf
@@ -640,7 +640,7 @@ def quick_compare(tot_new, prin=False, minormax=None):
                     print("raising inconsistency:")
                     print(item, item2, fitwin, fitwin2)
                     raise BinInconsistency
-                elif minormax == 'max':
+                if minormax == 'max':
                     if item.val >= item2.val:
                         todel.add(str(item2))
                     else:
@@ -650,12 +650,15 @@ def quick_compare(tot_new, prin=False, minormax=None):
                         todel.add(str(item2))
                     else:
                         todel.add(str(item))
+                else:
+                    raise ValueError("minormax not None, min, or max:",
+                                     minormax)
     for item in tot_new:
         comp = str(gvar.gvar(item[0]))
         if comp not in todel:
             ret.append(item)
         else:
-            add = [i for i in item]
+            add = list(item)
             add[0] = None
             ret.append(add)
     return ret

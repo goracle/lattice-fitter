@@ -24,7 +24,7 @@ from latfit.config import TITLE, TLOOP
 from latfit.config import XLABEL, LOGPLOT
 from latfit.config import YLABEL, PLOT_LEGEND
 from latfit.config import UNCORR, UNCORR_OP
-from latfit.config import FIT, PIONRATIO
+from latfit.config import FIT
 from latfit.config import GEVP_DERIV
 from latfit.config import METHOD, DECREASE_VAR
 from latfit.config import BINDS
@@ -77,13 +77,13 @@ def update_result_min_nofit(plotdata):
             plotdata.coords[i][1] += em.acmean(DELTA_E2_AROUND_THE_WORLD)
         if FIT_SPACING_CORRECTION and GEVP:
             print("correcting plotted time slice ", i,
-                    " for lattice spacing errors.")
+                  " for lattice spacing errors.")
             plotdata.coords[i][1] = np.asarray(plotdata.coords[i][1])
             plotdata.coords[i][1] += misc.correct_epipi(
                 plotdata.coords[i][1])
             print('correction at time slice index:',
-                    i, "=", misc.correct_epipi(
-                        plotdata.coords[i][1]))
+                  i, "=", misc.correct_epipi(
+                      plotdata.coords[i][1]))
     return plotdata
 
 def mkplot(plotdata, input_f,
@@ -690,9 +690,8 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
                 if list(xfit[i]):
                     print("index error bug?")
                     raise
-                else:
-                    print("missing dim:", i)
-                    step_size = 1.0
+                print("missing dim:", i)
+                step_size = 1.0
             step_size = 1.0 if np.isnan(step_size) else step_size
             try:
                 xfit[i] = list(np.arange(xfit[i][0],

@@ -419,8 +419,7 @@ if EFF_MASS:
                         print("prev, mean:", prev, mean)
                         print("increasing tmin to decay region")
                     raise XminError(problemx=timeij-1)
-                else:
-                    test_ground_increase.mean = None
+                test_ground_increase.mean = None
     test_ground_increase.mean = np.nan
     test_ground_increase.err = np.nan
 

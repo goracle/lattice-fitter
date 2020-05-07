@@ -1,6 +1,6 @@
 """Various basic linear algebra operations on the GEVP matrices"""
 import sys
-from itertools import permutations 
+from math import exp, log
 
 import scipy
 import scipy.linalg
@@ -9,7 +9,6 @@ import numpy as np
 from accupy import kdot
 from sympy import S
 from sympy.matrices import Matrix
-from math import exp, log
 import gvar
 
 from latfit.utilities import exactmean as em
@@ -440,8 +439,9 @@ def indicator(pseudo_evals, ref_evals, idx, debug=False):
     ret = base_score
     return ret
 
-def old_test(test_arr, rdleft, rel_diff, evals_to_sorted, debug=False):
+def old_test(test_arr, rds, rel_diff, evals_to_sorted, debug=False):
     """Obsolete way to flip match"""
+    rdleft, rdright = rds
     for idx, item in enumerate(test_arr):
         lcomp = np.real(rdleft[idx]/rel_diff[idx])
         rcomp = np.real(rdright[idx]/rel_diff[idx])
@@ -488,7 +488,7 @@ def most_similar_pair(pseudos, evals, evalsi):
 
 def init_sort(pseudosi, evalsi):
     """Initial sort of pseudo eigenvalues"""
-    used = set()
+    # used = set()
     mapi = {}
     evalsi = list(evalsi)
     pseudosi = list(pseudosi)
@@ -567,7 +567,7 @@ def map_evals(evals_from, evals_to, debug=False):
 
     # begin legacy methods
     # old_test
-    # test_arr = old_test(test_arr, rdleft, rel_diff,
+    # test_arr = old_test(test_arr, (rdleft, rdright), rel_diff,
     # evals_to_sorted, debug=debug)
     # > 1 since getting one eigenvalue wrong still gives a good sort
     test = np.sum(test_arr) == len(evals_to)
@@ -626,7 +626,7 @@ def invert_reldiff_map(rel_diff, dot_map):
     for idx in range(len(rel_diff)):
         ret.append(rel_diff[dot_map[idx]])
     return ret
-        
+
 
 def collision_check(smap):
     """Check for collision"""
@@ -807,16 +807,16 @@ def pos_shift(evals_past, evals_final):
     ret = False
     for i, j in zip(evals_past, evals_final):
         break # until this is debugged
-        diff = i.val-j
-        if diff < 0:
-            dev = i.sdev
-            if -1*diff/dev > 1.5:
-                ret = True
-                print('diff', diff)
-                print('dev', dev)
-                print('evals past', evals_past)
-                print('evals final', evals_final)
-                sys.exit()
+        #diff = i.val-j
+        #if diff < 0:
+        #    dev = i.sdev
+        #    if -1*diff/dev > 1.5:
+        #        ret = True
+        #        print('diff', diff)
+        #        print('dev', dev)
+        #        print('evals past', evals_past)
+        #        print('evals final', evals_final)
+        #        sys.exit()
     return ret
 
 

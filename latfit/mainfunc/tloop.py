@@ -1,6 +1,5 @@
 """The main fit code"""
 import sys
-import subprocess
 import os
 from math import sqrt
 from collections import namedtuple
@@ -14,9 +13,8 @@ from latfit.config import TLOOP, TSEP_VEC, TLOOP_START, LATTICE_ENSEMBLE
 from latfit.config import VERBOSE, FIT, MATRIX_SUBTRACTION, GEVP_DERIV
 from latfit.config import BINNUM, USE_LATE_TIMES, BIASED_SPEEDUP, ADD_CONST
 from latfit.config import MULT, METHOD, JACKKNIFE, GEVP, GEVP_DEBUG
-from latfit.config import TSTEP, CALC_PHASE_SHIFT, SKIP_OVERFIT, NOLOOP
+from latfit.config import TSTEP, CALC_PHASE_SHIFT, NOLOOP
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
-from latfit.config import MAX_RESULTS
 from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 
 # errors
@@ -145,8 +143,8 @@ def tloop():
                         #continue
                     if DOWRITE:
                         print("t indices, matdt, t-t0, mpi rank:",
-                            i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
-                            latfit.config.T0, MPIRANK)
+                              i, j, latfit.config.DELTA_T_MATRIX_SUBTRACTION,
+                              latfit.config.T0, MPIRANK)
                         print("tadd, tsub, mpi rank:", tadd, tsub, MPIRANK)
                     try:
                         test, check2 = fit(tadd=tadd, tsub=tsub)
@@ -321,7 +319,7 @@ def fit(tadd=0, tsub=0):
                 print("starting chunk", chunk,
                       "which has", len(excls),
                       "fit ranges; result goal:",
-                      frsort.threshold(chunk) ,"rank:", MPIRANK)
+                      frsort.threshold(chunk), "rank:", MPIRANK)
                 if not meta.random_fit:
                     # reduce by 1 since we've already checked one
                     # in dofit_second_initial
@@ -358,8 +356,7 @@ def fit(tadd=0, tsub=0):
 
                 min_arr, overfit_arr = mpi_gather(min_arr, overfit_arr)
 
-            test = post_loop(meta, (min_arr, overfit_arr),
-                             retsingle_save, test_success)
+            test = post_loop(meta, (min_arr, overfit_arr), retsingle_save)
 
         elif not FIT:
             nofit_plot(meta, plotdata, retsingle_save)
@@ -393,8 +390,8 @@ def retsingle_fit(meta, idx, excl, results_store):
         retsingle = dofit(meta, idx, (min_arr, overfit_arr))
         if VERBOSE:
             print("Total elapsed time =",
-                    time.perf_counter()-start,
-                    "seconds. rank:", MPIRANK)
+                  time.perf_counter()-start,
+                  "seconds. rank:", MPIRANK)
 
     # do a consistency check with collected results
     # cut inconsistent fit windows
@@ -449,7 +446,7 @@ def dofit_initial(meta, plotdata):
                 elif xmin_store == meta.options.xmin and xmax_store != meta.options.xmax:
                     # removing extra time slices at the end is safe,
                     # since processing always goes forward
-                    pass 
+                    pass
                 elif xmin_store != meta.options.xmin:
                     reset_cache()
             xmin_store = meta.options.xmin
@@ -592,8 +589,8 @@ def dofit(meta, idx, results_store):
         # skip on any error
         if (VERBOSE or not idx % showint) and DOWRITE:
             print("fit failed for this selection."+\
-                    " excluded points=", excl, "with error:",
-                    err.__class__.__name__)
+                  " excluded points=", excl, "with error:",
+                  err.__class__.__name__)
         skip = True
     if not skip:
         result_min, param_err, _, _ = retsingle

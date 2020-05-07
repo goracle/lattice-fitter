@@ -129,11 +129,11 @@ def getfiles_gevp_singlerhs(time, time2, xstep=1):
            files[time+2*xstep], files[time+3*xstep]) if EFF_MASS else (
                files[time], files[time2])
 
-    for savedt in files:
-        break
-        getfiles_gevp_singlerhs.mats[savedt] = copy.deepcopy(np.array(
-            files[savedt])) if savedt not in getfiles_gevp_singlerhs.mats\
-            else getfiles_gevp_singlerhs.mats[savedt]
+    #for savedt in files:
+    #    break
+    #getfiles_gevp_singlerhs.mats[savedt] = copy.deepcopy(np.array(
+    #files[savedt])) if savedt not in getfiles_gevp_singlerhs.mats\
+    #        else getfiles_gevp_singlerhs.mats[savedt]
     return ret
 getfiles_gevp_singlerhs.mats = {}
 

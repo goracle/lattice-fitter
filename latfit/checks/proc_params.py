@@ -1,3 +1,4 @@
+"""Get processing params"""
 import sys
 import pickle
 import numpy as np

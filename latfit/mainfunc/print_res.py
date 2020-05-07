@@ -72,7 +72,7 @@ def print_fit_results(meta, min_arr):
     """
     if DOWRITE:
         print("Fit results:  pvalue, energies,",
-            "err on energies, included fit points")
+              "err on energies, included fit points")
         res = []
         for i in min_arr:
             res.append((getattr(i[0], "pvalue").val,

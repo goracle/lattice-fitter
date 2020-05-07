@@ -120,7 +120,7 @@ def fit_wins_equality(wins1, wins2):
         jnew = list(np.nan_to_num(j))
         if i != inew or j != jnew:
             continue
-        if win == None:
+        if win is None:
             win = i
         try:
             assert j[0] == win[0]
@@ -246,7 +246,7 @@ def output_loop(median_store, avg_dim, dim_idx, fit_range_arr, best):
     #fitrmin = None
     # pvalmin = None
 
-    if not len(median_err):
+    if not list(median_err):
         print("no results after cuts")
     else:
         print("number of results:", len(median_err))

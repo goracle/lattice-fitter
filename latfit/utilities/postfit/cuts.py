@@ -224,6 +224,6 @@ def consistency(item1, item2, prin=False):
             # sanity check; relax '15' to a higher number as necessary
             assert sig < 15 or not ISOSPIN,\
                 (sig, "check the best known list for",
-                "compatibility with current set",
-                "of results being analyzed", item1, item2)
+                 "compatibility with current set",
+                 "of results being analyzed", item1, item2)
     return ret

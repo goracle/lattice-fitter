@@ -13,7 +13,7 @@ from latfit.extract.errcheck.xstep_err import xstep_err
 from latfit.config import GEVP, STYPE, MAX_ITER
 from latfit.config import NOLOOP, MULT, FIT, VERBOSE
 from latfit.config import MATRIX_SUBTRACTION
-from latfit.config import RANGE_LENGTH_MIN, TLOOP
+from latfit.config import RANGE_LENGTH_MIN
 from latfit.config import ONLY_SMALL_FIT_RANGES
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
@@ -294,8 +294,7 @@ class FitRangeMetaData:
             self.options.fitmax = self.options.xmax
         self.fitwindow = fitrange_err(self.options, self.options.fitmin,
                                       self.options.fitmax)
-        assert isinstance(self.fitwindow[0], int) or isinstance(
-            self.fitwindow[0], float), self.fitwindow
+        assert isinstance(self.fitwindow[0], (float, int)), self.fitwindow
         self.xmin_mat_sub()
         self.actual_range()
         latfit.config.TSTEP = self.options.xstep

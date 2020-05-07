@@ -52,7 +52,7 @@ def extract(input_f, xmin, xmax, xstep):
         if not reuse:
             assert not extract.complete
             setprune = True
-            pr_extract(xmin, xmax, xstep=xstep)
+            pr_extract(xmin, xmax)
         else:
             # avoid going outside the established original bounds
             xmin, xmax = stored_xmin_xmax(xmin, xmax)
@@ -132,14 +132,12 @@ def ijprune(adict):
 def stored_xmin_xmax(xmin, xmax):
     """Get the dictionary stored xmin, xmax"""
     xmins, xmaxs = np.inf, 0
-    for key in extract.reuse.keys():
+    for key in extract.reuse:
         if isinstance(key, str):
             continue
-        else:
-            assert isinstance(key, float) or isinstance(
-                key, int), key
-            xmins = min(key, xmins)
-            xmaxs = max(key, xmaxs)
+        assert isinstance(key, (float, int)), key
+        xmins = min(key, xmins)
+        xmaxs = max(key, xmaxs)
     if xmin < xmins:
         raise XminError(problemx=xmin)
     if xmax > xmaxs:
@@ -148,7 +146,7 @@ def stored_xmin_xmax(xmin, xmax):
     xmax = min(xmax, xmaxs)
     return xmin, xmax
 
-def pr_extract(xmin, xmax, xstep=1):
+def pr_extract(xmin, xmax):
     """Print extraction info"""
     print("starting extraction with xmin, xmax, mpi rank=",
           xmin, xmax, MPIRANK)
@@ -177,7 +175,7 @@ def prune_ext(xmin, xmax):
     for key in list(keys):
         if isinstance(key, str):
             del keys[key]
-        elif isinstance(key, float) or isinstance(key, int):
+        elif isinstance(key, (float, int)):
             if key < xmin or key > xmax:
                 del keys[key]
         assert max(list(keys)) == xmax
