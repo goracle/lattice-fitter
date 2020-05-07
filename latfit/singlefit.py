@@ -2,7 +2,6 @@
 import sys
 import ast
 import os
-from collections import namedtuple
 import mpi4py
 from mpi4py import MPI
 import cloudpickle
@@ -60,8 +59,9 @@ def avgtime_replace(params, avg):
         avg[i] = tavg
     return avg
 
-def randomize_data(params, reuse, reuse_blocked, coords):
+def randomize_data(params, reuse_coords):
     """Replace data by avg + gaussian noise"""
+    reuse, reuse_blocked, coords = reuse_coords
     if isinstance(reuse, dict):
         reuse = rearrange_reuse_dict(params, reuse)
     if isinstance(reuse_blocked, dict):
@@ -91,106 +91,56 @@ def singlefit(meta, input_f):
     """Get data to fit
     and minimized params for the fit function (if we're fitting)
     """
-    fitwindow, xmin, xmax, xstep = meta.fitwindow, meta.options.xmin,\
-        meta.options.xmax, meta.options.xstep
     # test to see if file/folder exists
     inputexists(input_f)
 
     # process the file(s)
     if singlefit.reuse is None:
         singlefit.coords_full, singlefit.cov_full, singlefit.reuse = extract(
-            input_f, xmin, xmax, xstep)
+            input_f, meta.options.xmin, meta.options.xmax, meta.options.xstep)
     coords_full, cov_full, reuse = singlefit.coords_full,\
         singlefit.cov_full, singlefit.reuse
 
-    # Now that we have the data to fit, do pre-proccess it
-    params = namedtuple('fit_params', ['dimops', 'num_configs',
-                                       'prefactor', 'time_range'])
-    params = get_fit_params(cov_full, reuse, xmin, fitwindow, xstep)
+    ## get other meta data
 
-    # make reuse into an array, rearrange
-    reuse = rearrange_reuse_dict(params, reuse)
-
-    # block the ensemble
-    if singlefit.reuse_blocked is None or RANDOMIZE_ENERGIES:
-        singlefit.reuse_blocked = block_ensemble(params.num_configs, reuse)
-        chec = binconf(reuse, binnum=JACKKNIFE_BLOCK_SIZE)
-        try:
-            assert np.allclose(chec, singlefit.reuse_blocked, rtol=1e-14)
-        except AssertionError:
-            try:
-                raise PrecisionLossError
-            except PrecisionLossError:
-                raise XmaxError(problemx=xmax)
-
-
+    #params = namedtuple('fit_params', ['dimops', 'num_configs',
+    #                                   'prefactor', 'time_range'])
+    params = get_fit_params(cov_full, reuse, meta.options.xmin,
+                            meta.fitwindow, meta.options.xstep)
 
     # correct covariance matrix for jackknife factor
     if singlefit.sent is None:
         cov_full *= params.prefactor
         singlefit.sent = object()
 
-    # debug branch
-    debug_print(coords_full, cov_full)
-
     # select subset of data for fit
     coords, cov = fit_select(coords_full, cov_full,
-                             index_select(xmin, xmax, xstep,
-                                          fitwindow, coords_full))
+                             index_select(
+                                 meta.options.xmin, meta.options.xmax,
+                                 meta.options.xstep, meta.fitwindow,
+                                 coords_full))
 
-    # error handling for Degrees of Freedom <= 0 (it should be > 0).
-    # number of points plotted = len(cov).
-    # DOF = len(cov) - START_PARAMS
-    dof_errchk(len(cov_full), params.dimops)
-    dof_errchk(len(cov), params.dimops)
+    # get (blocked) data we need for fits
+    reuse_coords = get_reuse_coords(params, coords, reuse, meta.options.xmax)
 
-    # we have data 6ab
-    # at this point we have the covariance matrix, and coordinates
+    # perform checks
+    checks_prints(params, coords_full, cov_full, cov)
+    # set error bars
+    singlefit.error2 = set_error_bars(
+        singlefit.error2, cov_full, coords_full, cov)
 
-    if GEVP:
-        singlefit.error2 = np.array([np.sqrt(np.diag(
-            cov_full[i][i])) for i in range(len(coords_full))]) if\
-            singlefit.error2 is None else singlefit.error2
-        #print("(Rough) scale of errors in data points = ",
-        #np.sqrt(np.diag(cov[0][0])))
-    else:
-        singlefit.error2 = np.array([np.sqrt(cov_full[i][i])
-                                     for i in range(len(coords_full))]) if\
-                                         singlefit.error2 is None else\
-                                         singlefit.error2
-        print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
-
-
-    if RANDOMIZE_ENERGIES:
-        reuse, singlefit.reuse_blocked, coords = randomize_data(
-            params, reuse, singlefit.reuse_blocked, coords)
-
-    point_cuts_wrapper(meta)
-    if not toosmallp(meta, latfit.config.FIT_EXCL) and FIT and not ONLY_EXTRACT:
+    # perform cuts on which coordinates to fit
+    if point_cuts_wrapper(meta, singlefit.error2) and FIT and not ONLY_EXTRACT:
         if JACKKNIFE_FIT and JACKKNIFE == 'YES':
 
-            # initial fit
-            reset_bootstrap()
-            if os.path.isfile("result_min.p") and NOLOOP and DIMSELECT is None:
-                result_min, param_err = cloudpickle.load(
-                    open("result_min.p", "rb"))
-            else:
-                try:
-                    result_min, param_err = jackknife_fit(
-                        meta, params, (reuse, singlefit.reuse_blocked, coords))
-                except PrecisionLossError:
-                    singlefit_reset()
-                    raise XmaxError(problemx=xmax)
-                cloudpickle.dump((result_min, param_err),
-                                 open("result_min.p", "wb"))
-                if BOOTSTRAP_PVALUES:
-                    if check_include(result_min):
-                        result_min = bootstrap_pvalue(meta, params, reuse,
-                                                      coords, result_min)
+            result_min, param_err = jackknife_fits(
+                meta, params, reuse_coords, meta.options.xmax)
+
         else:
+
             result_min, param_err = non_jackknife_fit(params, cov, coords)
 
-        result_min = error_bar_scheme(result_min, fitwindow, xmin, xmax)
+        #result_min = error_bar_scheme(result_min, fitwindow, xmin, xmax)
 
         ret = (result_min, param_err, coords_full, cov_full)
     else:
@@ -203,16 +153,97 @@ singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
 
+def checks_prints(params, coords_full, cov_full, cov):
+    """Peform checks/print diagnostic info"""
+
+    # debug branch
+    debug_print(coords_full, cov_full)
+
+    # error handling for Degrees of Freedom <= 0 (it should be > 0).
+    # number of points plotted = len(cov).
+    # DOF = len(cov) - START_PARAMS
+    dof_errchk(len(cov_full), params.dimops)
+    dof_errchk(len(cov), params.dimops)
+
+def get_reuse_coords(params, coords, reuse, xmax):
+    """Get tuple of processed coordinate containers
+    used in jackknife_fit"""
+    # make reuse into an array, rearrange
+    reuse = rearrange_reuse_dict(params, reuse)
+    reuse_blocked = get_reuse_blocked(params.num_configs, reuse, xmax)
+
+    if RANDOMIZE_ENERGIES:
+        reuse, reuse_blocked, coords = randomize_data(
+            params, (reuse, reuse_blocked, coords))
+        singlefit.reuse_blocked = reuse_blocked
+
+    return reuse, reuse_blocked, coords
+
+def get_reuse_blocked(num_configs, reuse, xmax):
+    """Block coords and check"""
+    if singlefit.reuse_blocked is None or RANDOMIZE_ENERGIES:
+        singlefit.reuse_blocked = block_ensemble(num_configs, reuse)
+        try:
+            assert np.allclose(binconf(reuse, binnum=JACKKNIFE_BLOCK_SIZE),
+                               singlefit.reuse_blocked, rtol=1e-14)
+        except AssertionError:
+            try:
+                raise PrecisionLossError
+            except PrecisionLossError:
+                raise XmaxError(problemx=xmax)
+
+    return singlefit.reuse_blocked
+
+
+
+def jackknife_fits(meta, params, reuse_coords, xmax):
+    """perform needed set of jackknife fits"""
+    reset_bootstrap()
+
+    # load if we are debugging
+    if os.path.isfile("result_min.p") and NOLOOP and DIMSELECT is None:
+        result_min, param_err = cloudpickle.load(
+            open("result_min.p", "rb"))
+    else:
+        try:
+            result_min, param_err = jackknife_fit(
+                meta, params, reuse_coords)
+        except PrecisionLossError:
+            singlefit_reset()
+            raise XmaxError(problemx=xmax)
+        cloudpickle.dump((result_min, param_err),
+                         open("result_min.p", "wb"))
+        if BOOTSTRAP_PVALUES:
+            if check_include(result_min):
+                result_min = bootstrap_pvalue(
+                    meta, params, reuse_coords, result_min)
+    return result_min, param_err
+
+
+def set_error_bars(err, cov_full, coords_full, cov):
+    """Find/save the error bars (for plotting)"""
+    if err is None:
+        if GEVP:
+            err = np.array([np.sqrt(np.diag(
+                cov_full[i][i])) for i in range(len(coords_full))])
+        else:
+            err = np.array([np.sqrt(cov_full[i][i])
+                            for i in range(len(coords_full))])
+        print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
+    return err
+
+
 @PROFILE
-def point_cuts_wrapper(meta):
+def point_cuts_wrapper(meta, err):
     """Point cuts wrapper:  make cuts, do check"""
     old_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
-    fiduc_point_cuts(meta)
+    fiduc_point_cuts(meta, err)
     if VERBOSE:
         print("new excl:", latfit.config.FIT_EXCL)
         new_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
         if NOLOOP:
             assert new_excl == old_excl, (old_excl, new_excl)
+    return not toosmallp(meta, latfit.config.FIT_EXCL)
 
 @PROFILE
 def tuple_mat_set_sort(mat):
@@ -228,14 +259,14 @@ def tuple_mat_set_sort(mat):
 
 
 @PROFILE
-def fiduc_point_cuts(meta):
+def fiduc_point_cuts(meta, err):
     """Perform fiducial cuts on individual
     effective mass points"""
     if FIT:
-        samerange = cut_on_errsize(meta)
+        samerange = cut_on_errsize(meta, err)
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
-        samerange = cut_on_growing_exp(meta) and samerange
+        samerange = cut_on_growing_exp(meta, err) and samerange
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
         if not samerange:
@@ -288,7 +319,7 @@ def error_bar_scheme(result_min, fitwindow, xmin, xmax):
     return result_min
 
 @PROFILE
-def bootstrap_pvalue(meta, params, reuse, coords, result_min):
+def bootstrap_pvalue(meta, params, reuse_coords, result_min):
     """Get bootstrap p-values"""
     # fit to find the null distribution
     if result_min.misc.dof not in bootstrap_pvalue.result_minq:
@@ -300,8 +331,7 @@ def bootstrap_pvalue(meta, params, reuse, coords, result_min):
         print("starting computation of null distribution from bootstrap")
         print("NBOOT =", NBOOT)
         try:
-            result_minq, _ = jackknife_fit(
-                meta, params, (reuse, singlefit.reuse_blocked, coords))
+            result_minq, _ = jackknife_fit(meta, params, reuse_coords)
         except NoConvergence:
             print("minimizer failed to converge during bootstrap")
             assert None
@@ -443,49 +473,29 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
                      for config in range(total_configs)])
 
 @PROFILE
-def cut_on_growing_exp(meta):
+def cut_on_growing_exp(meta, err):
     """Growing exponential is a signal for around the world contamination"""
-    err = singlefit.error2
+    #err = singlefit.error2
     coords = singlefit.coords_full
-    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    assert err is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(
     # err.shape)+" "+str(coords.shape)
     start = ast.literal_eval(str(latfit.config.FIT_EXCL))
     excl = list_mat(latfit.config.FIT_EXCL)
-    actual_range = meta.actual_range()
     already_cut = set()
     for i, _ in enumerate(coords):
+        if NOLOOP:
+            if coords[i][0] not in meta.actual_range():
+                continue
         for j, _ in enumerate(coords):
             if i >= j:
                 continue
             excl_add = coords[j][0]
-            actual_range = meta.actual_range()
-            if excl_add not in actual_range:
+            if excl_add not in meta.actual_range():
                 continue
-            if NOLOOP:
-                if coords[i][0] not in actual_range:
-                    continue
             if MULT > 1:
-                for k in range(len(coords[0][1])):
-                    if (j, k) in already_cut:
-                        continue
-                    merr = max(err[i][k], err[j][k])
-                    assert merr > 0, str(merr)
-                    sig = np.abs(coords[i][1][k]-coords[j][1][k])/merr
-                    earlier_cut = earlier(already_cut, j, k)
-                    if (sig > 1.5 and coords[j][1][k] > coords[i][1][k]) or\
-                    earlier_cut:
-                        if VERBOSE:
-                            print("(max) err =", merr, "coords =",
-                                  coords[i][1][k], coords[j][1][k])
-                            print("cutting dimension", k,
-                                  "for time slice", excl_add,
-                                  "(exp grow cut)")
-                            print("time slices:", coords[i][0], coords[j][0])
-                            print("err/coords > diff cut =", sig)
-                        excl[k].append(excl_add)
-                        excl[k] = list(set(excl[k]))
-                        already_cut.add((j, k))
+                gevp_grow_exp_cut(coords, err, (i, j), already_cut,
+                                  (excl, excl_add))
             else:
                 if j in already_cut:
                     continue
@@ -506,20 +516,45 @@ def cut_on_growing_exp(meta):
     latfit.config.FIT_EXCL = list(excl)
     return ret
 
+def gevp_grow_exp_cut(coords, err, indices, already_cut, excls):
+    """Cut on growing exponential, when solving gevp"""
+    idx, jdx = indices
+    excl, excl_add = excls
+    for k in range(len(coords[0][1])):
+        if (jdx, k) in already_cut:
+            continue
+        merr = max(err[idx][k], err[jdx][k])
+        assert merr > 0, str(merr)
+        sig = np.abs(coords[idx][1][k]-coords[jdx][1][k])/merr
+        earlier_cut = earlier(already_cut, jdx, k)
+        if (sig > 1.5 and coords[jdx][1][k] > coords[idx][1][k]) or\
+        earlier_cut:
+            if VERBOSE:
+                print("(max) err =", merr, "coords =",
+                      coords[idx][1][k], coords[jdx][1][k])
+                print("cutting dimension", k,
+                      "for time slice", excl_add,
+                      "(exp grow cut)")
+                print("time slices:", coords[idx][0], coords[jdx][0])
+                print("err/coords > diff cut =", sig)
+            excl[k].append(excl_add)
+            excl[k] = list(set(excl[k]))
+            already_cut.add((jdx, k))
+    return already_cut
+
 @PROFILE
-def cut_on_errsize(meta):
+def cut_on_errsize(meta, err):
     """Cut on the size of the error bars on individual points"""
-    err = singlefit.error2
+    #err = singlefit.error2
     coords = singlefit.coords_full
-    assert singlefit.error2 is not None, "Bug in the acquiring error bars"
+    assert err is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(
     # err.shape)+" "+str(coords.shape)
     start = ast.literal_eval(str(latfit.config.FIT_EXCL))
     excl = list_mat(latfit.config.FIT_EXCL)
     for i, _ in enumerate(coords):
         excl_add = coords[i][0]
-        actual_range = meta.actual_range()
-        if excl_add not in actual_range:
+        if excl_add not in meta.actual_range():
             continue
         if MULT > 1:
             for j in range(len(coords[0][1])):
@@ -592,15 +627,7 @@ def toosmallp(meta, excl):
                 print("warning: only two data points in fit curve")
 
     #cut on arithmetic sequence
-    if not ret and len(filter_sparse(
-            excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
-        if not (ISOSPIN == 0 and GEVP):
-            if VERBOSE:
-                print("skip: not an arithmetic sequence; fit window:", meta.fitwindow)
-            ret = True
-        else:
-            if VERBOSE:
-                print("warning: not an arithmetic sequence")
+    ret = arith_seq_cut(meta, excl, ret)
 
     ret = False if ISOSPIN == 0 and GEVP else ret
     if ret:
@@ -608,6 +635,20 @@ def toosmallp(meta, excl):
             print('excl:', excl, 'is too small')
     return ret
 
+def arith_seq_cut(meta, excl, skipped):
+    """Cut on (non-)arithmetic sequences"""
+    ret = skipped
+    if not ret and len(filter_sparse(
+            excl, meta.fitwindow, xstep=meta.options.xstep)) != len(excl):
+        if not (ISOSPIN == 0 and GEVP):
+            if VERBOSE:
+                print("skip: not an arithmetic sequence; fit window:",
+                      meta.fitwindow)
+            ret = True
+        else:
+            if VERBOSE:
+                print("warning: not an arithmetic sequence")
+    return ret
 
 
 @PROFILE
