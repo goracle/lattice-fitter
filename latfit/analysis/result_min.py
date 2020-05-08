@@ -294,7 +294,7 @@ class ResultMin:
                 continue
             assert key in store, store
             self.__paramlist[key].arr[idx] = store[key]
-        self.misc.errorbars[idx] = store['misc.errorbars']
+        self.misc.error_bars[idx] = store['misc.error_bars']
 
 
     @PROFILE

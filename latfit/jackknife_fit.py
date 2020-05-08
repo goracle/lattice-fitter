@@ -109,6 +109,13 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
         if not fullfit or ALTERNATIVE_PARALLELIZATION or\
            current_process().name != 'MainProcess':
+
+            # make sure we are detecting a running pool instead of some
+            # other set of processes running outside of what we expect
+            if current_process().name != 'MainProcess':
+                assert 'ForkPoolWorker' in current_process().name,\
+                    current_process().name
+
             for config_num in config_range:
 
                 res_dict = jackknife_iter(
@@ -339,7 +346,7 @@ if VERBOSE or ALTERNATIVE_PARALLELIZATION:
               'dof=', dof, "rank=", MPIRANK)
 
 else:
-    def print_single_config_info(_):
+    def print_single_config_info(*_):
         """verbose mode turned off; print nothing"""
 
 
