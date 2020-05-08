@@ -379,12 +379,15 @@ def dofit_parallel(meta, idxstart, results_store, excls):
 
     if meta.options.procs > len(excls):
         # parallelize over configs (jackknife samples)
+        print("number of good fits is small:", excls)
+        print("len(excls)", len(excls))
         for idx, excl in excls:
             toadd = retsingle_fit(meta, idx, excl, results_store, True)
             results.append(toadd)
     else:
         # number of good fits is large;
         # continue to parallelize over fit ranges
+        print("number of good fits is large")
         results = dofit_parallelized_over_fit_ranges(
             meta, None, results_store, excls, True)
     results = [i[0] for i in results if i is not None]

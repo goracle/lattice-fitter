@@ -123,6 +123,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                     reuse_coords, result_min.misc.dof, fullfit)
 
                 if not res_dict:
+                    print('no res dict', config_num)
                     if ALTERNATIVE_PARALLELIZATION:
                         assert meta.options.procs == 1, meta.options.procs
                         continue
@@ -146,6 +147,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
             # we are doing the full fit, so parallelize
             # over jackknife samples using multiproc
+            print("parallelizing over jackknife samples")
             argtup = [(params, (config_num, config_range), reuse_coords,
                        result_min.misc.dof, fullfit)
                       for config_num in config_range]
@@ -154,13 +156,19 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
             with Pool(poolsize) as pool:
                 results = pool.starmap(jackknife_iter, argtup)
+            print("finished parallelizing over jackknife samples")
             for config_num, res_dict in zip(config_range, results):
                 result_min.store_dict(res_dict, config_num)
                 toomanybadfitsp(result_min)
+            print("fit storage finished")
 
 
         # post fit processing
+        print("fit finished")
         result_min = post_fit(meta, result_min)
+        # perform a check to be sure all energy values found are non-zero
+        assert np.all(result_min.energy.arr), result_min.energy.arr
+        print("post fit finished")
 
         return result_min, result_min.energy.err
 else:
