@@ -392,8 +392,7 @@ def dofit_parallel(meta, idxstart, results_store, excls):
 
 def dofit_parallelized_over_fit_ranges(meta, idxstart, results_store, excls, fullfit):
     """fit, parallelized over fit ranges using multiprocess"""
-    if isinstance(index_info, (np.integer, np.float)):
-        idxstart = index_info
+    if isinstance(idxstart, (np.integer, np.float, int)):
         argtup = [(meta, idx+idxstart, excl, results_store, fullfit)
                   for idx, excl in enumerate(excls)]
     else:
@@ -540,6 +539,7 @@ def dofit_second_initial(meta, retsingle_save, test_success):
 
     # cut late time points from the fit range
     # did we make any cuts?
+    assert sfit.singlefit.error2 is not None
     samerange = sfit.cut_on_errsize(meta)
     samerange = sfit.cut_on_growing_exp(meta) and samerange
     assert samerange

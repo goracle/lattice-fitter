@@ -85,7 +85,6 @@ def randomize_data(params, reuse_coords):
     coords = np.array(coords)
     return reuse, reuse_blocked, coords
 
-
 @PROFILE
 def singlefit(meta, input_f, fullfit=True):
     """Get data to fit
@@ -228,13 +227,15 @@ def set_error_bars(err, cov_full, coords_full, cov):
         else:
             err = np.array([np.sqrt(cov_full[i][i])
                             for i in range(len(coords_full))])
-        print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
+            if VERBOSE:
+                print("(Rough) scale of errors in data points = ", sqrt(cov[0][0]))
     return err
 
 
 @PROFILE
-def point_cuts_wrapper(meta, err=singlefit.error2):
+def point_cuts_wrapper(meta, err=None):
     """Point cuts wrapper:  make cuts, do check"""
+    err = singlefit.error2 if err is None else err
     old_excl = tuple_mat_set_sort(latfit.config.FIT_EXCL)
     fiduc_point_cuts(meta, err=err)
     if VERBOSE:
@@ -258,9 +259,10 @@ def tuple_mat_set_sort(mat):
 
 
 @PROFILE
-def fiduc_point_cuts(meta, err=singlefit.error2):
+def fiduc_point_cuts(meta, err=None):
     """Perform fiducial cuts on individual
     effective mass points"""
+    err = singlefit.error2 if err is None else err
     if FIT:
         samerange = cut_on_errsize(meta, err=err)
         if NOLOOP:
@@ -472,9 +474,10 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
                      for config in range(total_configs)])
 
 @PROFILE
-def cut_on_growing_exp(meta, err=singlefit.error2):
+def cut_on_growing_exp(meta, err=None):
     """Growing exponential is a signal for around the world contamination"""
     #err = singlefit.error2
+    err = singlefit.error2 if err is None else err
     coords = singlefit.coords_full
     assert err is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(
@@ -542,9 +545,10 @@ def gevp_grow_exp_cut(coords, err, indices, already_cut, excls):
     return already_cut
 
 @PROFILE
-def cut_on_errsize(meta, err=singlefit.error2):
+def cut_on_errsize(meta, err=None):
     """Cut on the size of the error bars on individual points"""
     #err = singlefit.error2
+    err = singlefit.error2 if err is None else err
     coords = singlefit.coords_full
     assert err is not None, "Bug in the acquiring error bars"
     #assert GEVP, "other versions not supported yet"+str(

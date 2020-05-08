@@ -4,6 +4,7 @@ import copy
 import os
 import pickle
 from multiprocessing import Pool
+from multiprocessing import current_process
 import mpi4py
 from mpi4py import MPI
 from scipy import stats
@@ -19,7 +20,7 @@ from latfit.analysis.errorcodes import BadChisq, BadJackknifeDist
 from latfit.analysis.errorcodes import EnergySortError, ZetaError
 from latfit.analysis.errorcodes import FitSuccess
 
-from latfit.analysis.result_min import ResultMin
+from latfit.analysis.result_min import ResultMin, funpvalue
 from latfit.analysis.covops import get_doublejk_data
 
 # util
@@ -106,7 +107,8 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         config_range = range(
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
 
-        if not fullfit or ALTERNATIVE_PARALLELIZATION:
+        if not fullfit or ALTERNATIVE_PARALLELIZATION or\
+           current_process().name != 'MainProcess':
             for config_num in config_range:
 
                 res_dict = jackknife_iter(
@@ -138,7 +140,8 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
             # we are doing the full fit, so parallelize
             # over jackknife samples using multiproc
             argtup = [(params, (config_num, config_range), reuse_coords,
-                       result_min.misc.dof) for config_num in config_range]
+                       result_min.misc.dof, fullfit)
+                      for config_num in config_range]
 
             poolsize = min(meta.options.procs, len(config_range))
 
@@ -165,33 +168,33 @@ def jackknife_iter(params, config_info, reuse_coords, dof, fullfit):
     """
     # unpack
     config_num, config_range = config_info
-    reuse, reuse_blocked, coords = reuse_coords
+    reuse, reuse_blocked, _ = reuse_coords
 
     # check if we should skip this iteration
-    skip = False
     loop_location = update_location(config_num, config_range)
+    loop_location['skip'] = False
     if location_check(loop_location, fullfit):
-        skip = True
+        loop_location['skip'] = True
         #continue
 
     res_dict = {}
-    if not skip:
+    if not loop_location['skip']:
         # get the data for the minimizer
         # (and the error bars)
         coords_jack = get_jack_coords(params, config_num, reuse_coords)
-        coords_jack, covinv_jack, result_min.misc.error_bars[
-            config_num] = get_doublejk_data(params, coords_jack,
-                                            reuse, reuse_blocked,
-                                            config_num)
+        coords_jack, covinv_jack, res_dict['misc.error_bars'] = \
+            get_doublejk_data(
+                params, coords_jack, reuse, reuse_blocked, config_num)
 
         # minimize chi^2
-        result_min_jack, loop_location = find_min(params, coords_jack,
-                                                  covinv_jack, loop_location)
+        result_min_jack = find_min(
+            params, coords_jack, covinv_jack, loop_location)
 
         res_dict['min_params'] = result_min_jack.x
         res_dict['chisq'] = result_min_jack.fun
         res_dict = store_result(params, res_dict)
-        res_dict = compute_min_derived_quantities(params, res_dict)
+        res_dict = compute_min_derived_quantities(
+            params, res_dict, config_num, dof)
 
         print_single_config_info(res_dict, dof, config_num)
 
@@ -223,10 +226,10 @@ def location_check(loop_location, fullfit):
 
 def update_location(config_num, config_range):
     """Update where we are in the loop"""
+    loop_location = {'start_loop': False}
     loop_location['num'] = config_num
     loop_location['halfway'] = int(np.floor(len(config_range)/2)) == list(
         config_range).index(config_num)
-    loop_location = {'start_loop': False}
     if config_num == config_range[0] or (
             loop_location['halfway'] and not ISOSPIN):
         loop_location['start_loop'] = True
@@ -254,7 +257,7 @@ def get_jack_coords(params, config_num, reuse_coords):
 
 
 
-def compute_min_derived_quantities(params, res_dict):
+def compute_min_derived_quantities(params, res_dict, config_num, dof):
     """Compute quantities derived from optimal function params"""
 
     # we shifted the GEVP energy spectrum down
@@ -269,7 +272,7 @@ def compute_min_derived_quantities(params, res_dict):
         res_dict['phase_shift'] = phase_shift_jk(params, res_dict['energy'])
 
     # compute p value for this fit
-    res_dict['pvalue'] = result_min.funpvalue(res_dict['chisq'])
+    res_dict['pvalue'] = funpvalue(res_dict['chisq'], dof, params.num_configs)
     assert not np.isnan(res_dict['pvalue']), "pvalue is nan"
     return res_dict
 
@@ -280,9 +283,10 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
     # where are we in the fit loop?
     # we reuse min guesses, so our min finder depends on the
     # loop location
-    halfway = loop_location['halfway']
+    # halfway = loop_location['halfway']
+    # config_num = loop_location['num']
+
     start_loop = loop_location['start_loop']
-    config_num = loop_location['num']
 
     # I = 0 has been observed to get caught in a local min
     # if we reuse the result for a guess.
@@ -291,10 +295,11 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
     #if ISOSPIN == 0 and halfway:
     #    start_loop = True
 
-    if start_loop:
+    if start_loop or not mkmin.prealloc_chi.allocd:
         mkmin.SPARAMS = list(np.copy(START_PARAMS))
         mkmin.PARAMS = params
         mkmin.prealloc_chi(covinv_jack, coords_jack)
+        start_loop = True
 
     # minimize chi^2 (t^2) given the inv. covariance matrix and data
     result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
@@ -462,7 +467,7 @@ def toomanybadfitsp(result_min):
     so abort the fit.
     """
     avg = em.acmean(result_min.chisq.arr)
-    pvalue = result_min.funpvalue(avg)
+    pvalue = result_min.calc_pvalue(avg)
     cond = pvalue < PVALUE_MIN and not latfit.config.BOOTSTRAP and not NOLOOP
     if cond:
         raise TooManyBadFitsError(chisq=avg/result_min.misc.dof,
@@ -529,7 +534,7 @@ def correction_en(energy, config_num, num_configs):
                 num_configs, delta_e_around_the_world)
 
             latw = len(delta_e_around_the_world)
-            assert latw == 1 or latw == num_configs,\
+            assert latw in (1, num_configs),\
                 "bug:  array mismatch"
         if delta_e2_around_the_world is not None:
             assert len(delta_e2_around_the_world) == latw

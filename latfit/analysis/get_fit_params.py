@@ -1,9 +1,10 @@
 """Get common fit parameters"""
-from collections import namedtuple
+from recordtype import recordtype
 import numpy as np
 
 from latfit.config import JACKKNIFE, JACKKNIFE_BLOCK_SIZE
 
+fit_params = recordtype('fit_params', 'dimops num_configs energyind prefactor time_range xstep')
 
 def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     """Get a namedtuple of fit params
@@ -11,8 +12,7 @@ def get_fit_params(cov, reuse, xmin, fitrange, xstep):
     dimops is the dimension of the GEVP matrix
     num_configs is the number of configurations to average over.
     """
-    params = namedtuple('fit_params', ['dimops', 'num_configs', 'energyind',
-                                       'prefactor', 'time_range', 'xstep'])
+    params = fit_params(None, None, None, None, None, None)
     params.xstep = xstep
     params.num_configs = len(reuse[xmin])/JACKKNIFE_BLOCK_SIZE
     assert int(params.num_configs) == params.num_configs,\

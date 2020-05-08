@@ -202,6 +202,27 @@ class Param:
 
 misc = recordtype('misc', 'error_bars dof num_configs status')
 
+@PROFILE
+def funpvalue(chisq, dof, num_configs):
+    """Give pvalue from Hotelling t^2 stastistic
+    (often referred to incorrectly as chi^2;
+    is actually a sort of correlated chi^2)
+    """
+    ret = None
+    nar = NULL_CHISQ_ARRS
+    if dof is not None and dof not in NULL_CHISQ_ARRS:
+        correction = (num_configs-dof)/(num_configs-1)
+        correction /= dof
+        correction = 1 if UNCORR else correction
+        cor = correction
+        ret = stats.f.sf(chisq*cor, dof, num_configs-dof)
+    elif dof in nar:
+        ret = chisq_arr_to_pvalue_arr(dof, num_configs, nar[dof],
+                                      np.asarray([chisq]))[0]
+    return ret
+
+
+
 class ResultMin:
     """Store fit results for an individual fit range in this class"""
     def __init__(self, meta, params, coords):
@@ -239,6 +260,10 @@ class ResultMin:
                             'scattering_length': self.scattering_length,
                             'min_params': self.min_params}
 
+    def calc_pvalue(self, chisq):
+        """Calculate the pvalue"""
+        return funpvalue(chisq, self.misc.dof, self.misc.num_configs)
+
     def gather(self):
         """MPI gather data from parallelized jackknife loop"""
         for item in self.__paramlist:
@@ -269,6 +294,7 @@ class ResultMin:
                 continue
             assert key in store, store
             self.__paramlist[key].arr[idx] = store[key]
+        self.misc.errorbars[idx] = store['misc.errorbars']
 
 
     @PROFILE
@@ -298,30 +324,6 @@ class ResultMin:
         self.misc.num_configs = params.num_configs
         # storage for fit by fit chi^2 (t^2)
         self.chisq.arr = np.zeros(params.num_configs)
-
-    @PROFILE
-    def funpvalue(self, chisq):
-        """Give pvalue from Hotelling t^2 stastistic
-        (often referred to incorrectly as chi^2;
-        is actually a sort of correlated chi^2)
-        """
-        ret = None
-        nar = NULL_CHISQ_ARRS
-        if self.misc.dof is not None and\
-           self.misc.dof not in NULL_CHISQ_ARRS:
-            correction = (self.misc.num_configs-self.misc.dof)/(
-                self.misc.num_configs-1)
-            correction /= self.misc.dof
-            correction = 1 if UNCORR else correction
-            cor = correction
-            ret = stats.f.sf(chisq*cor, self.misc.dof,
-                             self.misc.num_configs-self.misc.dof)
-        elif self.misc.dof in nar:
-            ret = chisq_arr_to_pvalue_arr(self.misc.dof,
-                                          self.misc.num_configs,
-                                          nar[self.misc.dof],
-                                          np.asarray([chisq]))[0]
-        return ret
 
     @PROFILE
     def alloc_phase_shift(self, params):

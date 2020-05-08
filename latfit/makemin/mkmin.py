@@ -37,6 +37,7 @@ def dealloc_chi():
     chi.RCORD = None
     chi.COUNT = None
     chi.SYMRANGE = None
+    prealloc_chi.allocd = False
 
 def prealloc_chi(covinv, coords):
     """Preallocate some variables for speedup of chi^2 eval
@@ -53,6 +54,8 @@ def prealloc_chi(covinv, coords):
     assert covinv.shape[0] == covinv.shape[1], str(
         covinv.shape)+" "+str(coords)
     assert covinv.shape[0] == lcord, str(covinv.shape)+" "+str(coords)
+    prealloc_chi.allocd = True
+prealloc_chi.allocd = False
 
 def sym_range(covinv, lcord):
     """Create iterable for symmetric i,j indices of covinv"""
