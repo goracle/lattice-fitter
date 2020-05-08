@@ -377,7 +377,7 @@ def dofit_parallel(meta, idxstart, results_store, excls):
     # two configs without error; thus, we should now let these
     # presumably "good" set of fits proceed
 
-    if meta.options.procs > excls:
+    if meta.options.procs > len(excls):
         # parallelize over configs (jackknife samples)
         for idx, excl in excls:
             toadd = retsingle_fit(meta, idx, excl, results_store, True)
@@ -442,11 +442,13 @@ def retsingle_fit(meta, idx, excl, results_store, fullfit):
     # do a consistency check with collected results
     # cut inconsistent fit windows
     ret = None
-    if retsingle is not None or retex is not None:
+    if retsingle is not None:
         min_arr, overfit_arr = process_fit_result(
             retsingle, min_arr, overfit_arr, excl)
         consis(meta, min_arr)
-        ret = retsingle, retex
+        ret = retsingle
+    if retex is not None:
+        ret = ret, retex
 
     return ret
 
