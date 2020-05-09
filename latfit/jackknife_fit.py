@@ -459,7 +459,7 @@ if VERBOSE:
         print(hotelling.torchi(), result_min.chisq.val/result_min.misc.dof,
               "std dev:", np.std(result_min.chisq.arr, ddof=1))
 else:
-    def post_fit_statements():
+    def post_fit_statements(_):
         """print nothing; verbose mode is off"""
 
 
