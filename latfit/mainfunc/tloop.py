@@ -590,6 +590,7 @@ def dofit(meta, idx_excl, results_lengths, fullfit=True):
     skip = frsort.set_fit_range(meta, excl)
 
     retsingle = None
+    retex = None
     if not skip:
 
         # unpack
