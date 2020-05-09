@@ -412,7 +412,7 @@ def dofit_parallelized_over_fit_ranges(meta, idxstart, excls, results_lengths, f
 
     poolsize = min(meta.options.procs, len(excls))
     with Pool(poolsize) as pool:
-        results = pool.starmap(do_fit, argtup)
+        results = pool.starmap(dofit, argtup)
     return results
 
 
