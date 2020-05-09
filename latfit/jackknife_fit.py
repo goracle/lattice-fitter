@@ -164,11 +164,9 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
 
         # post fit processing
-        print("fit finished")
         result_min = post_fit(meta, result_min)
         # perform a check to be sure all energy values found are non-zero
         assert np.all(result_min.energy.arr), result_min.energy.arr
-        print("post fit finished")
 
         return result_min, result_min.energy.err
 else:
