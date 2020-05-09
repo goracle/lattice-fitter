@@ -420,7 +420,8 @@ def retsingle_fit(meta, idx, excl, results_store, fullfit):
     overfit_arr = list(overfit_arr)
 
     # skip all remaining fits?
-    skip = frsort.exitp(meta, min_arr, overfit_arr, idx, noprint=True)
+    if fullfit: # don't check for results on initial pass
+        skip = frsort.exitp(meta, min_arr, overfit_arr, idx, noprint=True)
     if not skip:
         # set the fit range, or skip this one
         skip = frsort.set_fit_range(meta, excl)
@@ -433,7 +434,7 @@ def retsingle_fit(meta, idx, excl, results_store, fullfit):
         try:
             retsingle = dofit(meta, idx, (min_arr, overfit_arr), fullfit=fullfit)
         except FitSuccess:
-            retex = excl, idx
+            retex = idx, excl
             retsingle = None
             if VERBOSE:
                 print("marking", excl, "as good.")
