@@ -451,7 +451,7 @@ def retsingle_fit(meta, idx, excl, results_store, fullfit):
         consis(meta, min_arr)
         ret = retsingle
     if retex is not None:
-        ret = ret, retex
+        ret = ret, *retex
 
     return ret
 
