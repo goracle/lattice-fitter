@@ -370,10 +370,10 @@ def dofit_parallel(meta, idxstart, excls, results_lengths):
     # initial pass
     # fit the chunk (to be parallelized)
     excls = list(excls)
-    results = dofit_parallelized_over_fit_ranges(
+    results_excls = dofit_parallelized_over_fit_ranges(
         meta, idxstart, excls, results_lengths, False)
     # i has retsingle, idx, excl
-    excls = [(i[1], i[2]) for i in results if i is not None]
+    excls = [(i[1], i[2]) for i in results_excls if i is not None]
 
     # now we have a set of fit ranges which made it past the first
     # two configs without error; thus, we should now let these
@@ -386,7 +386,8 @@ def dofit_parallel(meta, idxstart, excls, results_lengths):
         print("len(excls)", len(excls))
         for idx_excl in excls:
             toadd = dofit(meta, idx_excl, results_lengths, True)
-            results.append(toadd)
+            if toadd is not None:
+                results.append(toadd)
     else:
         # number of good fits is large;
         # continue to parallelize over fit ranges
@@ -413,6 +414,7 @@ def dofit_parallelized_over_fit_ranges(meta, idxstart, excls, results_lengths, f
     poolsize = min(meta.options.procs, len(excls))
     with Pool(poolsize) as pool:
         results = pool.starmap(dofit, argtup)
+    results = [i for i in results if i is not None]
     return results
 
 
@@ -640,9 +642,11 @@ def dofit(meta, idx_excl, results_lengths, fullfit=True):
             if CALC_PHASE_SHIFT:
                 print_res.print_phaseshift(result_min)
 
-    ret = retsingle
+    ret = None
     if retex is not None:
         ret = retsingle, *retex
+    elif retsingle is not None:
+        ret = retsingle, excl
 
     return ret
 
