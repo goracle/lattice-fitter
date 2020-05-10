@@ -282,6 +282,9 @@ def update_location(config_num, config_range):
     loop_location = {'start_loop': False}
     loop_location['num'] = config_num
     loop_location['halfway'] = ishalfway(config_num, config_range)
+    if loop_location['halfway']:
+        assert half_range(config_range) == config_num, (
+            config_range, config_num)
     if config_num == config_range[0] or (
             loop_location['halfway'] and not ISOSPIN):
         loop_location['start_loop'] = True
