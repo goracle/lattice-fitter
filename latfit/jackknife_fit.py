@@ -125,7 +125,6 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
                 res_dict = jackknife_iter(config_num, const_args)
 
                 if not res_dict:
-                    print('no res dict', config_num)
                     if ALTERNATIVE_PARALLELIZATION:
                         assert meta.options.procs == 1, meta.options.procs
                         continue
