@@ -449,9 +449,10 @@ def jack_errorbars(covjack, params):
     given the covariance matrix
     """
     covjack = normalize_cov(covjack, params)
+    covjack = np.asarray(covjack)
     lent = len(covjack)
     if len(covjack.shape) == 4:
-        error_bars = np.zeros((covjack[0][0].shape), dtype=np.float)
+        error_bars = np.zeros((covjack[0][0].shape), dtype=covjack.dtype)
         for i in range(lent):
             error_bars[i] = np.sqrt(np.diag(covjack[i, :, i, :]))
     elif len(covjack.shape) == 2:

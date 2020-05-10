@@ -107,6 +107,10 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
         config_range = range(
             params.num_configs) if latfit.config.BOOTSTRAP else config_range
 
+        # arguments which don't change with respect to jackknife sample
+        const_args = (config_range, params, reuse_coords,
+                      result_min.misc.dof, fullfit)
+
         if not fullfit or ALTERNATIVE_PARALLELIZATION or\
            current_process().name != 'MainProcess':
 
@@ -118,9 +122,7 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
             for config_num in config_range:
 
-                res_dict = jackknife_iter(
-                    params, (config_num, config_range),
-                    reuse_coords, result_min.misc.dof, fullfit)
+                res_dict = jackknife_iter(config_num, const_args)
 
                 if not res_dict:
                     print('no res dict', config_num)
@@ -147,21 +149,8 @@ elif JACKKNIFE_FIT in ('DOUBLE', 'SINGLE'):
 
             # we are doing the full fit, so parallelize
             # over jackknife samples using multiproc
-            print("parallelizing over jackknife samples")
-            argtup = [(params, (config_num, config_range), reuse_coords,
-                       result_min.misc.dof, fullfit)
-                      for config_num in config_range]
-
-            poolsize = min(meta.options.procs, len(config_range))
-
-            with Pool(poolsize) as pool:
-                results = pool.starmap(jackknife_iter, argtup)
-            print("finished parallelizing over jackknife samples")
-            for config_num, res_dict in zip(config_range, results):
-                result_min.store_dict(res_dict, config_num)
-                toomanybadfitsp(result_min)
-            print("fit storage finished")
-
+            result_min = multiprocess_jackknife(
+                result_min, meta, config_range, const_args)
 
         # post fit processing
         result_min = post_fit(meta, result_min)
@@ -174,13 +163,64 @@ else:
     print("Bad jackknife_fit value specified.")
     sys.exit(1)
 
+def multiprocess_jackknife(result_min, meta, config_range, const_args):
+    """Do jackknife fits in parallel using multiprocess"""
 
-def jackknife_iter(params, config_info, reuse_coords, dof, fullfit):
+    _, _, _, _, fullfit = const_args
+    assert not fullfit, "if we aren't doing a full fit,"+\
+        " we don't need to parallelize"
+
+    # do first config in common to set the guess
+    res_dict = jackknife_iter(config_range[0], const_args)
+    result_min = post_single_iter(result_min, res_dict, config_range[0])
+
+    if not ISOSPIN:
+        # setup
+        hidx = list(config_range).index(half_range(config_range))
+        range1 = config_range[1:hidx]
+        range2 = config_range[hidx+1:]
+
+        # everything after the first config up to,
+        # but not including, the halfway point
+        result_min = call_multiproc(result_min, range1,
+                                    meta.options.procs, const_args)
+
+        # halfway point, to reset the guess
+        res_dict = jackknife_iter(config_range[hidx], const_args)
+        result_min = post_single_iter(result_min, res_dict, config_range[hidx])
+
+    else:
+        range2 = config_range[1:]
+
+    # everything else
+    result_min = call_multiproc(result_min, range2,
+                                meta.options.procs, const_args)
+
+    return result_min
+
+def call_multiproc(result_min, config_range, procs, const_args):
+    """Do the jackknife multiprocessing"""
+    argtup = [(config_num, const_args) for config_num in config_range]
+    poolsize = min(procs, len(argtup))
+    with Pool(poolsize) as pool:
+        results = pool.starmap(jackknife_iter, argtup)
+    for config_num, res_dict in zip(config_range, results):
+        result_min = post_single_iter(result_min, res_dict, config_num)
+    return result_min
+
+
+def post_single_iter(result_min, res_dict, config_num):
+    """Post-process a single jackknife iteration"""
+    result_min.store_dict(res_dict, config_num)
+    toomanybadfitsp(result_min)
+    return result_min
+
+def jackknife_iter(config_num, const_args):
     """Fit to one jackknife sample
     (function to be parallelized)
     """
     # unpack
-    config_num, config_range = config_info
+    config_range, params, reuse_coords, dof, fullfit = const_args
     reuse, reuse_blocked, _ = reuse_coords
 
     # check if we should skip this iteration
@@ -233,7 +273,7 @@ def location_check(loop_location, fullfit):
             if config_num % MPISIZE != MPIRANK and MPISIZE > 1:
 
                 # we need to not skip the midpoint either
-                if not (ISOSPIN == 0 and loop_location['halfway']):
+                if not (not ISOSPIN and loop_location['halfway']):
                     ret = True
     return ret
 
@@ -241,12 +281,30 @@ def update_location(config_num, config_range):
     """Update where we are in the loop"""
     loop_location = {'start_loop': False}
     loop_location['num'] = config_num
-    loop_location['halfway'] = int(np.floor(len(config_range)/2)) == list(
-        config_range).index(config_num)
+    loop_location['halfway'] = ishalfway(config_num, config_range)
     if config_num == config_range[0] or (
             loop_location['halfway'] and not ISOSPIN):
         loop_location['start_loop'] = True
     return loop_location
+
+def ishalfway(config_num, config_range):
+    """Find out if config_num is halfway through config_range"""
+    ret = int(np.floor(len(config_range)/2)) == list(
+        config_range).index(config_num)
+    return ret
+
+def half_range(config_range):
+    """Find halfway point of range config_range"""
+    retset = False
+    ret = None
+    for i in config_range:
+        if ishalfway(i, config_range):
+            ret = i
+            retset = True
+            break
+    assert retset, ("bug:", config_range)
+    return ret
+
 
 def get_jack_coords(params, config_num, reuse_coords):
     """Get (jackknife) sample coordinates to fit to
