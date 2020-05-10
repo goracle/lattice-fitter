@@ -167,7 +167,7 @@ def multiprocess_jackknife(result_min, meta, config_range, const_args):
     """Do jackknife fits in parallel using multiprocess"""
 
     _, _, _, _, fullfit = const_args
-    assert not fullfit, "if we aren't doing a full fit,"+\
+    assert fullfit, "if we aren't doing a full fit,"+\
         " we don't need to parallelize"
 
     # do first config in common to set the guess
