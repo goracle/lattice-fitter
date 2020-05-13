@@ -160,7 +160,8 @@ def modmissingdim(dimops, plotdata, result_min):
     """Determine if we leave out the top state of the GEVP from fit
     then return the modified fit dimension and truncated result
     """
-    xfit_check = get_xfit(dimops, plotdata.fitcoord) # determines if we left out a gevp dimension
+    xfit_check = get_xfit(
+        dimops, plotdata.fitcoord) # determines if we left out a gevp dimension
     todel = []
     dimops_mod = dimops
     result_min_mod = result_min
@@ -650,18 +651,18 @@ def plot_fit(xcoord, result_min, dimops):
         # result_min.energy.val is is the array of minimized fit params
         if dimops > 1:
             yfit = np.array([
-                fit_func(xfit[curve_num][i], min_params)[
-                    curve_num] for i in range(len(xfit[curve_num]))])
+                fit_func(i, min_params)[
+                    curve_num] for i in xfit[curve_num]])
         else:
             yfit = np.array([
-                fit_func(xfit[curve_num][i], min_params)
-                for i in range(len(xfit[curve_num]))])
+                fit_func(xfit[curve_num], min_params)
+                for i in xfit[curve_num]])
         if np.nan in yfit:
             continue
         # only plot fit function if minimizer result makes sense
         # if result_min.misc.status == 0:
         if not TLOOP:
-            plt.plot(xfit[curve_num], yfit)
+            plt.scatter(xfit[curve_num], yfit, marker='_', s=1)
 
 def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
     """Return the abscissa for the plot of the fit function."""
@@ -694,12 +695,28 @@ def get_xfit(dimops, xcoord, step_size=None, box_plot=False):
                 step_size = 1.0
             step_size = 1.0 if np.isnan(step_size) else step_size
             try:
-                xfit[i] = list(np.arange(xfit[i][0],
-                                         xfit[i][len(xfit[i])-1]+step_size,
-                                         step_size))
+                xfit[i] = generate_fine_coords(xfit[i], step_size)
             except IndexError: # here in case nothing is to be plot
                 xfit[i] = []
     return xfit
+
+def generate_fine_coords(basex, step_size):
+    """Get fine coords based on base list of ints"""
+    basex = list(basex)
+    assert np.all([i == int(i) for i in basex]), basex
+    basex = [int(i) for i in basex]
+    skips = list(np.arange(basex[0], basex[len(basex)-1]+1)) != basex
+    if skips:
+        ret = []
+        for i in basex:
+            toadd = list(np.arange(i-1/2, i+1/2+step_size, step_size))
+            ret.extend(toadd)
+    else:
+        ret = list(np.arange(
+            basex[0], basex[len(basex)-1]+step_size, step_size))
+    ret = sorted(list(set(ret)))
+    return ret
+
 
 def plot_box(xcoord, result_min, param_err, dimops):
     """plot tolerance box around straight line fit for effective mass
