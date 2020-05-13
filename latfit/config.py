@@ -75,10 +75,10 @@ if IRREP is None:
     IRREP = 'T_1_MINUS'
     IRREP = 'T_1_3MINUS'
     IRREP = 'A1x_mom011'
-    IRREP = 'A_1PLUS_mom000'
     IRREP = 'A1_avg_mom111'
-    IRREP = 'A1_mom1'
     IRREP = 'A1_mom11'
+    IRREP = 'A1_mom1'
+    IRREP = 'A_1PLUS_mom000'
 
     if ISOSPIN == 1:
         # control
@@ -173,8 +173,8 @@ ALTERNATIVE_PARALLELIZATION = bool(INCLUDE)
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
-PIONRATIO = True
 PIONRATIO = False
+PIONRATIO = True
 PIONRATIO = False if not GEVP else PIONRATIO
 if PROC_PARAMS:
     PIONRATIO = PROC_PARAMS[2]
