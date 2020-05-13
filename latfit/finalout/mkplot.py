@@ -708,8 +708,13 @@ def generate_fine_coords(basex, step_size):
     skips = list(np.arange(basex[0], basex[len(basex)-1]+1)) != basex
     if skips:
         ret = []
-        for i in basex:
-            toadd = list(np.arange(i-1/2, i+1/2+step_size, step_size))
+        for idx, item in enumerate(basex):
+            if not idx:
+                toadd = list(np.arange(item, item+1/2+step_size, step_size))
+            elif idx == len(basex)-1:
+                toadd = list(np.arange(item-1/2, item+step_size, step_size))
+            else:
+                toadd = list(np.arange(item-1/2, item+1/2+step_size, step_size))
             ret.extend(toadd)
     else:
         ret = list(np.arange(
