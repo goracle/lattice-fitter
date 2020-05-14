@@ -395,12 +395,12 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
         if diff < 0:
             #idxp1 = (idx+1) % len(ref_evals)
             widp1 = (ref_evals[idx]-ref_evals[idxp1])**2/log(1/zero)
-            assert np.abs(np.imag(widp1)) < 1e-12, widp1
+            assert np.abs(np.imag(widp1)) < 1e-8, widp1
             ret = exp(-(diff)**2/widp1)
         else:
             #idxm1 = (idx-1) % len(ref_evals)
             widm1 = (ref_evals[idx]-ref_evals[idxm1])**2/log(1/zero)
-            assert np.abs(np.imag(widm1)) < 1e-12, widm1
+            assert np.abs(np.imag(widm1)) < 1e-8, widm1
             ret = exp(-(diff)**2/widm1)
     else:
         assert None, "other functions not supported at this time"
