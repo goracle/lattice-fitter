@@ -391,7 +391,7 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
     idxp1, idxm1 = index_pm1(idx, len(ref_evals))
     if func == 'gaussian':
         diff = ref_evals[idx] - eval_to_score
-        assert np.abs(np.imag(diff)) < 1e-12, diff
+        assert np.abs(np.imag(diff)) < 1e-8, diff
         if diff < 0:
             #idxp1 = (idx+1) % len(ref_evals)
             widp1 = (ref_evals[idx]-ref_evals[idxp1])**2/log(1/zero)
