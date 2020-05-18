@@ -333,7 +333,7 @@ def get_chunked_max(idx, procs=None, start=0):
     procs = np.inf if procs is None else procs
     # 100 fit ranges for each proc seems a good amount
     # of work to do
-    while ret-start < procs*10:
+    while ret-start < procs:
         if not idx:
             ret = mix/8
         elif idx == 1:
