@@ -90,7 +90,7 @@ else:
     final_gevp_debug_print.avg_evecs = {}
 
 
-def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
+def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR, docheck=False):
     """Read in the GEVP matrix
     """
     decrease_var = 0 if decrease_var is None else decrease_var
@@ -120,7 +120,7 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR):
         #    pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
-    #posdef_diag_check(cmat)
+    posdef_diag_check(cmat)
     mean = em.acmean(cmat, axis=0)
     checkherm(mean)
     if decrease_var != 1:
@@ -269,9 +269,8 @@ if EFF_MASS:
         cmats_lhs = []
         assert len(file_tup) == 5, "bad length:"+str(len(file_tup))
         for idx in range(5):
-            cmat, mean = readin_gevp_matrices(file_tup[idx], num_configs)
-            if not idx or idx == 1:
-                posdef_diag_check(cmat)
+            cmat, mean = readin_gevp_matrices(file_tup[idx], num_configs, docheck=(
+                not idx or idx==1))
             if idx == 1:
                 cmat_rhs, mean_crhs = cmat, mean
             else:
