@@ -607,7 +607,8 @@ def post_loop(meta, loop_store, retsingle_save):
 
     print_res.print_fit_results(meta, min_arr)
 
-    if DOWRITE and not TLOOP:
+    #if DOWRITE and not TLOOP:
+    if DOWRITE:
         makerep(meta, min_arr, result_min_avg, param_err_avg, retsingle_save)
 
     return test

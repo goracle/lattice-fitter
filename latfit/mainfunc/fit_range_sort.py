@@ -202,7 +202,8 @@ def sort_fit_ranges(meta, tsorted, sampler):
             samp_mult.append(sampi)
     return samp_mult
 
-def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
+def combo_data_to_fit_ranges(
+        meta, combo_data, chunk, checked=None):
     """Get sets of fit ranges;
     chunked based on progress points
     """
@@ -229,7 +230,7 @@ def combo_data_to_fit_ranges(meta, combo_data, chunk, checked=None):
             if latfit.singlefit.toosmallp(meta, excl):
                 excl = None
         ret.append(excl)
-    return ret, chunk
+    return ret, chunk, checked
 
 
 def set_fit_range(meta, excl):

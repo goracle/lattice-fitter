@@ -314,7 +314,7 @@ def fit(tadd=0, tsub=0):
                 # otherwise, get a chunk of fit ranges
                 # excls is this chunk;
                 # represented as sets of excluded points
-                excls, chunk_new = frsort.combo_data_to_fit_ranges(
+                excls, chunk_new, checked = frsort.combo_data_to_fit_ranges(
                     meta, combo_data, chunk, checked=checked)
                 print("starting chunk", chunk,
                       "which has", len(excls),
@@ -325,6 +325,7 @@ def fit(tadd=0, tsub=0):
                     # in dofit_second_initial
                     assert len(excls) == meta.lenprod-1, (
                         len(excls), meta.lenprod)
+                excls = [i for i in excls if i is not None]
 
                 # parallelize over this chunk
                 results = dofit_parallel(
@@ -382,22 +383,27 @@ def dofit_parallel(meta, idxstart, excls, results_lengths):
     results = []
     if meta.options.procs > len(excls):
         # parallelize over configs (jackknife samples)
-        print("number of good fits is small:", excls)
-        print("len(excls)", len(excls))
+        print("number of good fits is small (rank):", excls, MPIRANK)
+        print("len(excls) (rank)", len(excls), MPIRANK)
         for idx_excl in excls:
             toadd = dofit(meta, idx_excl, results_lengths, True)
             if toadd is not None:
                 results.append(toadd)
+        print("number of results from small set of good ranges (rank):",
+              len(results), MPIRANK)
     else:
         # number of good fits is large;
         # continue to parallelize over fit ranges
-        print("number of good fits is large:", len(excls))
+        print("number of good fits is large (rank):", len(excls), MPIRANK)
         results = dofit_parallelized_over_fit_ranges(
             meta, None, excls, results_lengths, True)
+        print("number of results from large set of good ranges (rank):",
+              len(results), MPIRANK)
 
     return results
 
-def dofit_parallelized_over_fit_ranges(meta, idxstart, excls, results_lengths, fullfit):
+def dofit_parallelized_over_fit_ranges(
+        meta, idxstart, excls, results_lengths, fullfit):
     """fit, parallelized over fit ranges using multiprocess"""
 
     # index start is added to index
@@ -588,6 +594,7 @@ def dofit(meta, idx_excl, results_lengths, fullfit=True):
     # set fit range
     idx, excl = idx_excl
     skip = frsort.set_fit_range(meta, excl)
+    assert not skip or not fullfit, (skip, fullfit)
 
     retsingle = None
     retex = None
