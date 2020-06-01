@@ -171,16 +171,22 @@ def pr_complete(xmin, xmax, xstep=1):
 
 def prune_ext(xmin, xmax):
     """Prune the extraction dictionary"""
-    keys = ijprune(extract.reuse)
+    pruned = ijprune(extract.reuse)
+    keys = pruned.keys()
     for key in list(keys):
         if isinstance(key, str):
-            del keys[key]
+            del pruned[key]
         elif isinstance(key, (float, int)):
             if key < xmin or key > xmax:
-                del keys[key]
+                del pruned[key]
+    try:
         assert max(list(keys)) == xmax
         assert min(list(keys)) == xmin
-    extract.resuse = keys
+    except TypeError:
+        print("type error'd keys", key)
+        print("type", type(key), isinstance(key, str))
+        raise
+    extract.resuse = pruned
 
 def query(reuse):
     """Print a list of the keys"""
