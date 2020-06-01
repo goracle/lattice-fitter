@@ -394,39 +394,6 @@ if EFF_MASS:
         test_ground_increase(retblk, timeij)
         return retblk
 
-    def test_ground_increase(retblk, timeij):
-        """Test for increasing energy in the ground state.
-        Throw an xmin error if it increases.
-        """
-        mean = em.acmean(retblk, axis=0)[0]
-        err = em.acstd(retblk, axis=0)[0]*np.sqrt(len(retblk)-1)
-        prev = test_ground_increase.mean
-        if prev is not None and prev != mean:
-            if not np.isnan(test_ground_increase.err):
-                merr = max(err, test_ground_increase.err)
-            else:
-                merr = err
-            test_ground_increase.mean = mean
-            test_ground_increase.err = err
-            statistically_significant = np.abs(
-                mean-prev) > 1.5*merr
-            if not np.isnan(prev):
-                if prev < mean and statistically_significant:
-                    assert PIONRATIO
-                    if VERBOSE:
-                        print("ground state is still increasing:")
-                        print("prev, mean:", prev, mean)
-                        print("increasing tmin to decay region")
-                    raise XminError(problemx=timeij-1)
-                test_ground_increase.mean = None
-    test_ground_increase.mean = np.nan
-    test_ground_increase.err = np.nan
-
-    def grd_inc_reset():
-        """Reset cache when beginning to reprocess"""
-        test_ground_increase.mean = np.nan
-        test_ground_increase.err = np.nan
-
     if GEVP_DERIV:
         def eigvals_tplus_one(dimops, num, cmats_lhs, cmat_rhs):
             """get eigvals for GEVP derivative (t+1, t_0)"""
@@ -469,6 +436,40 @@ else:
                 sys.exit(1)
             retblk.append(eigvals)
         return retblk
+
+def test_ground_increase(retblk, timeij):
+    """Test for increasing energy in the ground state.
+    Throw an xmin error if it increases.
+    """
+    mean = em.acmean(retblk, axis=0)[0]
+    err = em.acstd(retblk, axis=0)[0]*np.sqrt(len(retblk)-1)
+    prev = test_ground_increase.mean
+    if prev is not None and prev != mean:
+        if not np.isnan(test_ground_increase.err):
+            merr = max(err, test_ground_increase.err)
+        else:
+            merr = err
+        test_ground_increase.mean = mean
+        test_ground_increase.err = err
+        statistically_significant = np.abs(
+            mean-prev) > 1.5*merr
+        if not np.isnan(prev):
+            if prev < mean and statistically_significant:
+                assert PIONRATIO
+                if VERBOSE:
+                    print("ground state is still increasing:")
+                    print("prev, mean:", prev, mean)
+                    print("increasing tmin to decay region")
+                raise XminError(problemx=timeij-1)
+            test_ground_increase.mean = None
+test_ground_increase.mean = np.nan
+test_ground_increase.err = np.nan
+
+
+def grd_inc_reset():
+    """Reset cache when beginning to reprocess"""
+    test_ground_increase.mean = np.nan
+    test_ground_increase.err = np.nan
 
 def test_bracket_signal(brackets, decrease_var=DECREASE_VAR):
     """Test the bracket signal"""
