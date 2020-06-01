@@ -1,13 +1,14 @@
 """Fit window module"""
 import numpy as np
 from latfit.config import RANGE_LENGTH_MIN, ISOSPIN
-from latfit.config import STRONG_CUTS
+from latfit.config import STRONG_CUTS, GEVP
 
 LENMIN = 3
 MIN_FITWIN_LEN = LENMIN
 if ISOSPIN or STRONG_CUTS:
     MIN_FITWIN_LEN += 1
-assert LENMIN == RANGE_LENGTH_MIN
+if GEVP:
+    assert LENMIN == RANGE_LENGTH_MIN
 # I=0 we have fewer successful fit ranges, so apply a less stringent cut
 if not ISOSPIN and not STRONG_CUTS:
     LENMIN -= 1
