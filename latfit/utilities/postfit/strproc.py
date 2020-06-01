@@ -26,7 +26,7 @@ def tot_to_stat(res, sys_err):
             sys_err = float(sys_err)
         err = res.sdev
         if not np.isnan(sys_err):
-            assert err > sys_err, (err, sys_err)
+            assert err > sys_err or not err, (err, sys_err)
         err = np.sqrt(err**2-sys_err**2)
         ret = gvar.gvar(res.val, err)
     return ret
@@ -147,7 +147,10 @@ def round_to_n(val, places):
         val = np.nan
         plc = 1
     else:
-        plc = -int(np.floor(np.log10(val))) + (places - 1)
+        if not val:
+            plc = 1
+        else:
+            plc = -int(np.floor(np.log10(val))) + (places - 1)
     ret = round(val, plc)
     return ret
 
