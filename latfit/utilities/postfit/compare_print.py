@@ -5,7 +5,7 @@ import latfit.utilities.exactmean as em
 from latfit.analysis.errorcodes import FitRangeInconsistency
 from latfit.analysis.superjack import jack_mean_err
 from latfit.config import ISOSPIN, STRONG_CUTS
-from latfit.utilities.postfit.fitwin import win_nan
+from latfit.utilities.postfit.fitwin import win_nan, wins_contained
 from latfit.utilities.postfit.cuts import lencut, allow_cut
 from latfit.utilities.postfit.cuts import statlvl
 from latfit.utilities.postfit.strproc import errstr
@@ -150,8 +150,11 @@ def print_compiled_res(cbest, min_en, min_ph):
     # perform check
     fitwins = slice_min_for_windows(min_en)
     fitwins2 = slice_min_for_windows(min_ph)
-    if not cbest:
-        fit_wins_equality(fitwins, fitwins2)
+    if not cbest and STRONG_CUTS:
+        if STRONG_CUTS:
+            fit_wins_equality(fitwins, fitwins2)
+        else:
+            assert wins_contained(fitwins, fitwins2), (fitwins, fitwins2)
         if not win_nan(fitwins[0]) and not win_nan(fitwins2[0]):
             assert list(fitwins[0]) == list(fitwins2[0]), (
                 fitwins[0], fitwins2[0])

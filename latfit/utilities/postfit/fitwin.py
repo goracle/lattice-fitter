@@ -94,6 +94,11 @@ def replace_inf_fitwin(fitw):
             ret.append(i)
     return ret
 
+def wins_contained(wins1, wins2):
+    """Check containment on list of windows"""
+    for i, j in zip(wins1, wins2):
+        assert contains(i, j), (i, j)
+
 def contains(win1, win2):
     """Check if either fit window contains the other one"""
     xmin1 = win1[0]
