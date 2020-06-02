@@ -23,10 +23,10 @@ def check_params(matsub, prgrdonly, pionratio, strongcuts):
     fn1 = look_for_file()
     if fn1 is not None:
         arr = array_from_file(fn1)
-        assert arr[0] == matsub, arr
-        assert arr[1] == prgrdonly, arr
-        assert arr[2] == pionratio, arr
-        assert arr[3] == strongcuts, arr
+        assert arr[0] == matsub, (arr, matsub)
+        assert arr[1] == prgrdonly, (arr, prgrdonly)
+        assert arr[2] == pionratio, (arr, pionratio)
+        assert arr[3] == strongcuts, (arr, strongcut)
     else:
         arr = [matsub, prgrdonly, pionratio, strongcuts]
         arr = np.asarray(arr)
