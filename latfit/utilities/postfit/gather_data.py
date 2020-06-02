@@ -40,7 +40,7 @@ def setup_make_hist(fname):
         if 'phase' in fname and len(freqarr.shape) == 3:
             pass
             #freqarr = np.array([[[
-            #    mod180(k) for k in j] for j in i] for i in freqarr])
+            #    np.real(k) % 180 for k in j] for j in i] for i in freqarr])
         print("using results from file", fname,
               "shape", freqarr.shape)
         exclarr = np.asarray(exclarr)

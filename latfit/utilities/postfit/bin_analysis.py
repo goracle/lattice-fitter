@@ -487,11 +487,13 @@ def print_tot(fname, tot, cbest, ignorable_windows, dump_min):
         coll_blks.append([blks1, blks2])
         #print("coll", coll)
         toapp = []
-    print('coll', coll)
+    print('directed walk-back result:\n')
+    print(coll, '\n')
     pr_best_fitwin(fitwin_votes)
     cbest.append(coll)
     cbest_blks.append(coll_blks)
-    prune_cbest(cbest)
+    if not dump_min:
+        prune_cbest(cbest)
     return cbest, cbest_blks
 
 def filter_toapp_nan(cbest, toapp, dim, itemidx):
@@ -547,6 +549,8 @@ def prune_cbest(cbest):
                 continue
             assert len(cnew) == len(ibest)
             for idx, (jit, kit) in enumerate(zip(ibest, cnew)):
+
+                # garbage values
                 if jit[0] is not None and str(jit[0]) != 'None':
                     enerr = gvar.gvar(jit[0]).sdev
                 else:
@@ -563,11 +567,13 @@ def prune_cbest(cbest):
                     pherr_new = gvar.gvar(kit[1]).sdev
                 else:
                     pherr_new = np.inf
+
+                # un-directed walk-back!
                 if enerr < enerr_new:
                     cnew[idx][0] = str(jit[0])
                 if pherr < pherr_new:
                     cnew[idx][1] = str(jit[1])
-    print("pruned cbest list:")
+    print('walk-back result:')
     print(cnew)
     return cnew
 
