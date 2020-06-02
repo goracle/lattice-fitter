@@ -17,5 +17,5 @@ def main():
     pfig.savefig(figx)
     plt.show() # Show the figure, edit it, etc.!
 
-if __name__ = '__main__':
+if __name__ == '__main__':
     main()
