@@ -740,6 +740,8 @@ if EFF_MASS:
 else:
     if LOGPLOT:
         YLABEL = r'log(C(t))'
+    else:
+        YLABEL = r'C(t)'
 
 # calculate the I=0 phase shift?
 CALC_PHASE_SHIFT = False
