@@ -96,8 +96,12 @@ def replace_inf_fitwin(fitw):
 
 def wins_contained(wins1, wins2):
     """Check containment on list of windows"""
+    ret = True
     for i, j in zip(wins1, wins2):
-        assert contains(i, j), (i, j)
+        ret = contains(i, j), (i, j)
+        if not ret:
+            break
+    return ret
 
 def contains(win1, win2):
     """Check if either fit window contains the other one"""
@@ -105,10 +109,13 @@ def contains(win1, win2):
     xmin2 = win2[0]
     xmax1 = win1[1]
     xmax2 = win2[1]
-    if xmin1 <= xmin2:
-        ret = xmax1 >= xmax2
-    else:
-        ret = xmax2 <= xmax1
+    ret = np.any(np.isnan([*win1, *win2]))
+    if not ret:
+        if xmin1 <= xmin2:
+            ret = xmax1 >= xmax2
+        else:
+            ret = xmax2 <= xmax1
+    print("test", [*win1, *win2], 'ret', ret)
     return ret
 
 @PROFILE

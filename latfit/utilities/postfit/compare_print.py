@@ -123,7 +123,7 @@ def fit_wins_equality(wins1, wins2):
         if win is None:
             win = i
         try:
-            assert j[0] == win[0]
+            assert j[0] == win[0], (j, win)
             assert j[1] == win[1], (j, win)
             assert len(i) == len(j)
             assert len(i) == 2

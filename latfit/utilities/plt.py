@@ -15,6 +15,7 @@ def main():
     print('saving plot as:', pname)
     pfig = PdfPages(pname)
     pfig.savefig(figx)
+    plt.savefig(pname, format='pdf', dpi=1200)
     plt.show() # Show the figure, edit it, etc.!
 
 if __name__ == '__main__':
