@@ -610,7 +610,7 @@ def fold_time(outblk, base=''):
             if not np.any(outblk[:, (LT-t-2 * tsep) % LT]):
                 retblk.append(outblk[:, t]) # don't average if only one half of the data is non-zero (small tdis)
             else:
-                assert np.all(outblk[:, LT-t-2*tsep]), outblk[:, LT-t-2*tsep]
+                assert np.all(outblk[:, (LT-t-2*tsep) % LT]), outblk[:, (LT-t-2*tsep) % LT]
                 if ANTIPERIODIC:
                     retblk.append(1/2 * (outblk[:, t] - outblk[
                         :, (LT-t-2 * tsep) % LT]))
