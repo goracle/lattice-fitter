@@ -101,6 +101,7 @@ def getwork(*xargs, **kwargs):
 @PROFILE
 def jackknife_err(blk):
     """Get jackknife error from block with shape=(L_traj, L_time)"""
+    blk = np.real(blk)
     len_t = len(blk)
     avg = np.mean(blk, axis=0)
     prefactor = (len_t-1)/len_t

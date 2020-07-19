@@ -67,8 +67,8 @@ THERMNUM = THERMNUM if not TEST24C else 0
 LATTICE_ENSEMBLE = '32c'
 LATTICE_ENSEMBLE = '24c'
 ENSEMBLE_DICT = {}
-ENSEMBLE_DICT['24c'] = {'tsep' : 3, 'tdis_max' : 16, 'tstep' : 8}
 ENSEMBLE_DICT['32c'] = {'tsep' : 4, 'tdis_max' : 22, 'tstep' : 64/6}
+ENSEMBLE_DICT['24c'] = {'tsep' : 3, 'tdis_max' : 16, 'tstep' : 8}
 
 #### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
 
@@ -605,12 +605,18 @@ def fold_time(outblk, base=''):
     else:
         tsep = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
     if FOLD and AVGTSRC:
-        if ANTIPERIODIC:
-            retblk = [1/2 * (outblk[:, t] - outblk[:, (LT-t-2 * tsep) % LT])
-                      for t in range(LT)]
-        else:
-            retblk = [1/2 * (outblk[:, t] + outblk[:, (LT-t-2*tsep) % LT])
-                      for t in range(LT)]
+        retblk = []
+        for t in range(LT):
+            if not np.any(outblk[:, (LT-t-2 * tsep) % LT]):
+                retblk.append(outblk[:, t]) # don't average if only one half of the data is non-zero (small tdis)
+            else:
+                assert np.all(outblk[:, LT-t-2*tsep]), outblk[:, LT-t-2*tsep]
+                if ANTIPERIODIC:
+                    retblk.append(1/2 * (outblk[:, t] - outblk[
+                        :, (LT-t-2 * tsep) % LT]))
+                else:
+                    retblk.append(1/2 * (outblk[:, t] + outblk[
+                        :, (LT-t-2*tsep) % LT]))
         ret = np.array(retblk).T
     else:
         ret = outblk
