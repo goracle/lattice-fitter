@@ -409,7 +409,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                         'FigureC_sep3_mom1src000_mom2src000_mom1snk000'):
                 printt = checkb.debugprint(allblks[base], base=base)
             try:
-                outsum.append(coeff*allblks[base])
+                outsum.append(coeff*fold_time(allblks[base], base))
                 #outblk += coeff*allblks[base]
             except ValueError:
                 # mismatch between shapes of outblk and base.
@@ -428,7 +428,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
         if printt:
             printt = checkb.debugprint(outblk, pstr='outblk=')
         if flag == 0:
-            h5write_blk(fold_time(outblk), opa, '.jkdat', ocs)
+            h5write_blk(outblk, opa, '.jkdat', ocs)
     if MPIRANK == 0:
         print("Done writing summed blocks.")
 
