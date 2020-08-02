@@ -14,8 +14,8 @@ from latfit.utilities import op_compose as opc
 # TESTKEY = 'FigureBub2_mom000'
 TESTKEY = 'FigureV_sep3_mom1src000_mom2src000_mom1snk000'
 TESTKEY = 'FigureD_vec_sep4_mom1src00_1_mom2src001_mom1snk001'
+TESTKEY = 'FigureCv3R_sep3_momsrc000_momsnk000'
 TESTKEY = 'FigureHbub_scalar_mom000'
-TESTKEY = 'FigureBub2_mom000'
 TESTKEY = ''
 
 
