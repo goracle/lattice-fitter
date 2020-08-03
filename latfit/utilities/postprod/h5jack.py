@@ -610,6 +610,8 @@ def fold_time(outblk, base='', dofold=False):
         mult = 2 if 'Cv3' not in base and 'FigureT' not in base else 1
         if 'Bub2' in base or 'FigureV' in base or 'Cv3' in base:
             dofold = True
+        elif 'corr' in base:
+            dofold = True
         for t in range(LT):
             if dofold:
                 assert np.all(outblk[:, (
