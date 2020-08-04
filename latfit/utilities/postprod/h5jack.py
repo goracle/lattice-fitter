@@ -605,19 +605,20 @@ def fold_time(outblk, base='', dofold=False):
     else:
         tsep = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
     if FOLD and AVGTSRC:
-        print("folding base:", base, "with tsep =", tsep)
         retblk = []
         mult = 2 if 'Cv3' not in base and 'FigureT' not in base else 1
         if 'Bub2' in base or 'FigureV' in base or 'Cv3' in base:
             dofold = True
-        elif 'corr' in base:
+        elif 'corr' in base and WRITE_INDIVIDUAL:
             dofold = True
+        if dofold:
+            print("folding base:", base, "with tsep =", tsep)
         for t in range(LT):
             if dofold:
                 assert np.all(outblk[:, (
                     LT-t-mult*tsep) % LT]), (
                         outblk[:, (LT-t-mult*tsep) % LT],
-                        t, mult, fullrange, base, outblk[:, t])
+                        t, mult, base, outblk[:, t])
                 if ANTIPERIODIC:
                     retblk.append(1/2 * (outblk[:, t] - outblk[
                         :, (LT-t-mult * tsep) % LT]))
