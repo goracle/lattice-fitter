@@ -15,6 +15,7 @@ from latfit.utilities.postprod.h5jack import check_ids
 from latfit import fitfunc
 import latfit.checks.checks_and_statements as sands
 from latfit.checks.proc_params import check_params
+from latfit.checks.proc_params import check_params2
 import latfit.mathfun.elim_jkconfigs as elimjk
 import latfit.extract.binout as binout
 import latfit.analysis.errorcodes as errc
@@ -79,6 +80,8 @@ if IRREP is None:
     IRREP = 'A1_mom11'
     IRREP = 'A1_mom1'
     IRREP = 'A_1PLUS_mom000'
+    if PROC_PARAMS:
+        IRREP = PROC_PARAMS['irrep']
 
     if ISOSPIN == 1:
         # control
@@ -108,6 +111,8 @@ MOMSTR = opc.get_comp_str(IRREP)
 if LATTICE_ENSEMBLE is None:
     LATTICE_ENSEMBLE = '32c'
     LATTICE_ENSEMBLE = '24c'
+    if PROC_PARAMS:
+        LATTICE_ENSEMBLE = PROC_PARAMS['lattice ensemble']
 print("LATTICE_ENSEMBLE:", LATTICE_ENSEMBLE)
 
 ## THE GOAL IS TO MINIMIZE EDITS BELOW THIS POINT
@@ -177,7 +182,7 @@ PIONRATIO = True
 PIONRATIO = False
 PIONRATIO = False if not GEVP else PIONRATIO
 if PROC_PARAMS:
-    PIONRATIO = PROC_PARAMS[2]
+    PIONRATIO = PROC_PARAMS['pionratio']
 
 # only apply pion ratio to ground state
 PR_GROUND_ONLY = True
@@ -189,7 +194,7 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'A1_mom1' in IRREP\
 PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
 if PROC_PARAMS:
-    PR_GROUND_ONLY = PROC_PARAMS[1]
+    PR_GROUND_ONLY = PROC_PARAMS['pr ground only']
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
@@ -328,6 +333,10 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # whether we use all available lattice data
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
+print("DIM init:", DIM)
+if PROC_PARAMS:
+    DIM = PROC_PARAMS['dim']
+    print("DIM from proc_params:", DIM)
 def dimsub(dim):
     """adjust gevp dimension"""
     fulldim = True
@@ -380,7 +389,7 @@ BOOTSTRAP_PVALUES = True if INCLUDE and ISOSPIN else BOOTSTRAP_PVALUES
 STRONG_CUTS = False
 STRONG_CUTS = True # use I=2 level cuts
 if PROC_PARAMS:
-    STRONG_CUTS = PROC_PARAMS[3]
+    STRONG_CUTS = PROC_PARAMS['strong cuts']
 print("Strong cuts:", STRONG_CUTS)
 
 
@@ -433,7 +442,7 @@ MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if PROC_PARAMS:
-    MATRIX_SUBTRACTION = PROC_PARAMS[0]
+    MATRIX_SUBTRACTION = PROC_PARAMS['matsub']
 
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
 ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
@@ -1097,8 +1106,8 @@ sands.superjackknife_statements(check_ids(LATTICE_ENSEMBLE)[-2],
                                 SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
-check_params(MATRIX_SUBTRACTION, PR_GROUND_ONLY,
-             PIONRATIO, STRONG_CUTS)
+check_params2(IRREP, LATTICE_ENSEMBLE, DIM, darr=check_params(
+    MATRIX_SUBTRACTION, PR_GROUND_ONLY, PIONRATIO, STRONG_CUTS))
 if FIT:
     assert len(fit_func(3, START_PARAMS)) == MULT
 assert RESOLVABLE_STATES and RESOLVABLE_STATES <= MULT
