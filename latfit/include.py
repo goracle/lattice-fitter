@@ -216,9 +216,11 @@ INCLUDE = tupl_mat(INCLUDE)
 
 try:
     PROC_PARAMS = pickle.load(open('proc_params.p', 'rb'))
-    PROC_PARAMS = list(PROC_PARAMS)
+    print("proc_params.p:", PROC_PARAMS)
+    print("proc_params.p key: MATRIX_SUBTRACTION, PR_GROUND_ONLY,",
+          "PIONRATIO, STRONGCUTS, IRREP, LATTICE ENSEMBLE, DIM")
 except FileNotFoundError:
-    PROC_PARAMS = []
+    PROC_PARAMS = {}
 
 
 def print_include_messages(gevp):

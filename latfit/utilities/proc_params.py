@@ -4,7 +4,6 @@
 import sys
 import os
 import pickle
-import numpy as np
 
 def main():
     """main"""
@@ -17,7 +16,7 @@ def main():
         ret = {}
         ret['matsub'] = bool(int(sys.argv[1]))
         ret['pr ground only'] = bool(int(sys.argv[2]))
-        ret['pion ratio'] = bool(int(sys.argv[3]))
+        ret['pionratio'] = bool(int(sys.argv[3]))
         ret['strong cuts'] = bool(int(sys.argv[4]))
         ret['irrep'] = sys.argv[5]
         ret['lattice ensemble'] = sys.argv[6]

@@ -15,7 +15,7 @@ def look_for_file():
 def array_from_file(fn1):
     """Get the pickled array"""
     ret = pickle.load(fn1)
-    ret = np.asarray(ret)
+    #ret = np.asarray(ret)
     return ret
 
 def check_params(matsub, prgrdonly, pionratio, strongcuts):
@@ -29,7 +29,7 @@ def check_params(matsub, prgrdonly, pionratio, strongcuts):
         assert darr['strong cuts'] == strongcuts, (darr, strongcut)
     else:
         darr = {'matsub': matsub, 'pr ground only': prgrdonly,
-                'pionratio':, pionratio, 'strong cuts': strongcuts}
+                'pionratio': pionratio, 'strong cuts': strongcuts}
         #darr = [matsub, prgrdonly, pionratio, strongcuts]
         #darr = np.asarray(arr)
         #fn1 = open('proc_params.p', 'wb')
@@ -43,8 +43,8 @@ def check_params2(irrep, ens, dim, darr=None):
     fn1 = look_for_file()
     if fn1 is not None:
         darr = array_from_file(fn1)
-        assert darr['irrep'] == matsub, (darr, irrep)
-        assert darr['lattice ensemble'] == prgrdonly, (darr, ens)
+        assert darr['irrep'] == irrep, (darr, irrep)
+        assert darr['lattice ensemble'] == ens, (darr, ens)
         assert darr['dim'] == dim, (darr, dim)
     else:
         assert darr is not None, darr

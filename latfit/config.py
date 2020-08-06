@@ -334,9 +334,6 @@ DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to chan
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
 print("DIM init:", DIM)
-if PROC_PARAMS:
-    DIM = PROC_PARAMS['dim']
-    print("DIM from proc_params:", DIM)
 def dimsub(dim):
     """adjust gevp dimension"""
     fulldim = True
@@ -352,6 +349,9 @@ def dimsub(dim):
     elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
         dim = 3
 
+    if PROC_PARAMS:
+        dim = PROC_PARAMS['dim']
+        print("DIM from proc_params:", dim)
 
     if dim < dimstart:
         fulldim = False
