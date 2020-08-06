@@ -190,7 +190,6 @@ PR_GROUND_ONLY = True if ISOSPIN == 0 and 'mom111' in MOMSTR and\
     'c' in LATTICE_ENSEMBLE else PR_GROUND_ONLY
 if PROC_PARAMS:
     PR_GROUND_ONLY = PROC_PARAMS[1]
-PR_GROUND_ONLY = False
 
 # use the pion ratio to correct systematic
 # (lattice spacing) error?
