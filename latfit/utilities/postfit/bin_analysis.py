@@ -606,7 +606,11 @@ def fit_range_equality(fitr1, fitr2):
 
 def consis_tot(tot):
     """Check tot for consistency"""
-    tot = np.array(tot)
+    try:
+        tot = np.array(tot)
+    except ValueError:
+        print('tot0', tot[0])
+        raise
     for opa in range(tot.shape[1]):
         if opa >= RESOLVABLE_STATES:
             continue
