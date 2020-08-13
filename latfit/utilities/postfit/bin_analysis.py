@@ -607,7 +607,7 @@ def fit_range_equality(fitr1, fitr2):
 def consis_tot(tot):
     """Check tot for consistency"""
     try:
-        tot = np.array(tot)
+        tot = np.asarray(tot)
     except ValueError:
         print('tot0', tot[0])
         raise
