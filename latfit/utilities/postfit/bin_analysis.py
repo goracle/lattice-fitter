@@ -610,6 +610,9 @@ def consis_tot(tot):
         tot = np.asarray(tot)
     except ValueError:
         print('tot0', tot[0])
+        for i in tot:
+            print(np.asarray(i).shape)
+            print(i)
         raise
     for opa in range(tot.shape[1]):
         if opa >= RESOLVABLE_STATES:
