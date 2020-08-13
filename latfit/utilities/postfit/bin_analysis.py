@@ -63,6 +63,7 @@ def cut_tmin(tot_new, tocut):
             fitwin[0], type(fitwin[0]))
         if fitwin[0] in tocut or fitwin[0] < min(tocut):
             todel.append(i)
+    tot_new = np.asarray(tot_new, dtype=object)
     ret = np.delete(tot_new, todel, axis=0)
     return ret
 
@@ -607,7 +608,7 @@ def fit_range_equality(fitr1, fitr2):
 def consis_tot(tot):
     """Check tot for consistency"""
     try:
-        tot = np.asarray(tot)
+        tot = np.asarray(tot, dtype=object)
     except ValueError:
         print('tot0', tot[0])
         for i in tot:
