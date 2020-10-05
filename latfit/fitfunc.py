@@ -70,7 +70,7 @@ def const_plus_exp(start_params):
                 expo = -1*ctime*(trial_params[-1]-energies[i])
                 toapp.append(-1*trial_params[2*i+1]*ctime*np.exp(expo))
             ret.append(toapp)
-            ret = np.array(ret)
+            ret = np.array(ret, dtype=np.object)
             dfdparam.mem[key] = ret
         return ret
     dfdparam.mem = {}

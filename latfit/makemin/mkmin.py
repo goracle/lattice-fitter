@@ -107,6 +107,7 @@ def mkmin(covinv, coords, method=METHOD):
     while (status or status2) and count:
         assert count >= 0, str(count)
         res_min = mkmin_loop(covinv, coords, method, kick=kick)
+        break
         status = res_min.status
         count -= 1
         if status:
@@ -134,6 +135,7 @@ def kick_params(kick_delta=KICK_DELTA):
         skew = np.ones_like(START_PARAMS)
     for i, _ in enumerate(SPARAMS):
         noise = np.random.normal()
+        assert None, "should not be kicking for reproduction"
         SPARAMS[i] += skew[i]*kick_delta*noise
     #print("after kick:", SPARAMS)
 
