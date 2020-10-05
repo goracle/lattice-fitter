@@ -7,7 +7,7 @@ from scipy import stats
 from sympy import N
 import numpy as np
 from accupy import kdot
-from matplotlib.mlab import PCA
+#from matplotlib.mlab import PCA
 
 from latfit.utilities import exactmean as em
 from latfit.analysis.errorcodes import ImaginaryEigenvalue
@@ -385,6 +385,7 @@ def pval_commutator(norms_comm):
     sum of squares of the commutator of the LHS and inverse RHS GEVP matrices
     we want to test this being consistent with 0
     """
+    assert None, "not supported"
     norms_comm = np.asarray(norms_comm)
     dimops = len(norms_comm[0][0])
     pca_list = []
@@ -392,21 +393,21 @@ def pval_commutator(norms_comm):
         reshape = np.reshape(i, dimops**2)
         pca_list.append(reshape)
     pca_list = np.asarray(pca_list)
-    results_pca = PCA(pca_list, standardize=False)
-    dof = len([i for i in results_pca.fracs if i > 0])
+    #results_pca = PCA(pca_list, standardize=False)
+    #dof = len([i for i in results_pca.fracs if i > 0])
     #print("frac=", results_pca.fracs, "dof=", dof)
     #print("mean=", em.acmean(results_pca.Y, axis=0))
-    results_pca.Y = np.asarray(results_pca.Y)[:, dimops:dof]
-    dof = results_pca.Y.shape[1]
+    #results_pca.Y = np.asarray(results_pca.Y)[:, dimops:dof]
+    #dof = results_pca.Y.shape[1]
     #print("original dimensions", dimops,
     #      "reduced dimensions:", results_pca.Y.shape)
-    sample_stddev = em.acstd(
-        results_pca.Y, ddof=0, axis=0)
+    #sample_stddev = em.acstd(
+    #    results_pca.Y, ddof=0, axis=0)
     # assuming the population mean of our statistic is 0
     chisq_arr = []
-    for i in results_pca.Y:
-        chisq_arr.append(fsum([i[j]**2/sample_stddev[j]**2
-                               for j in range(dof)]))
+    #for i in results_pca.Y:
+    #    chisq_arr.append(fsum([i[j]**2/sample_stddev[j]**2
+    #                           for j in range(dof)]))
     chisq_arr = np.array(chisq_arr)
     assert None, "pvalue code not checked below this line"
     if UNCORR:
