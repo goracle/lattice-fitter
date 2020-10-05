@@ -563,6 +563,7 @@ def loop_result(min_arr, overfit_arr):
                 "  Change fit range manually:"+str(min_arr)
         except AssertionError:
             raise FitFail
+        raise FitFail # absolutely no overfitting
     return min_arr
 
 
