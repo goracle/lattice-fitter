@@ -23,6 +23,9 @@ from latfit.analysis.errorcodes import FitSuccess
 from latfit.analysis.result_min import ResultMin, funpvalue
 from latfit.analysis.covops import get_doublejk_data
 
+# multiproc, id of worker
+from latfit.analysis.uniqueid import unique_id
+
 # util
 from latfit.utilities.postfit.compare_print import trunc
 from latfit.utilities import exactmean as em
@@ -373,6 +376,9 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
         mkmin.PARAMS = params
         mkmin.prealloc_chi(covinv_jack, coords_jack)
         start_loop = True
+
+    print("rank:", MPIRANK, "worker id:", unique_id(),
+          "config:", loop_location['num'], "params:", mkmin.SPARAMS)
 
     # minimize chi^2 (t^2) given the inv. covariance matrix and data
     result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
