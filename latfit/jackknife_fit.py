@@ -287,6 +287,7 @@ def update_location(config_num, config_range):
     if config_num == config_range[0] or (
             loop_location['halfway'] and not ISOSPIN):
         loop_location['start_loop'] = True
+    print(config_num, loop_location)
     return loop_location
 
 def ishalfway(config_num, config_range):
