@@ -175,6 +175,7 @@ RANDOMIZE_ENERGIES = False
 ALTERNATIVE_PARALLELIZATION = True
 ALTERNATIVE_PARALLELIZATION = False
 ALTERNATIVE_PARALLELIZATION = bool(INCLUDE)
+assert not ALTERNATIVE_PARALLELIZATION or not TLOOP
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
