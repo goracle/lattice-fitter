@@ -594,6 +594,8 @@ def dofit(meta, idx_excl, results_lengths, fullfit=True):
     # set fit range
     idx, excl = idx_excl
     skip = frsort.set_fit_range(meta, excl)
+    # make sure we've checked this fit range for skipping
+    # if we demand a full fit
     assert not skip or not fullfit, (skip, fullfit)
 
     retsingle = None

@@ -176,7 +176,9 @@ def multiprocess_jackknife(result_min, meta, config_range, const_args):
     res_dict = jackknife_iter(config_range[0], const_args)
     result_min = post_single_iter(result_min, res_dict, config_range[0])
 
-    if not ISOSPIN:
+    # reset the guess in I=0,
+    # since fits are more unstable and we don't want to underestimate the noise.
+    if not ISOSPIN:  
         # setup
         hidx = list(config_range).index(half_range(config_range))
         range1 = config_range[1:hidx]
