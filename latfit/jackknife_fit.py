@@ -382,6 +382,11 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
     print("rank:", MPIRANK, "worker id:", unique_id(),
           "config:", loop_location['num'], "params:", mkmin.SPARAMS)
 
+    if loop_location['num'] == SUPERJACK_CUTOFF and (
+            current_process().name != 'MainProcess' or not TLOOP):
+        print("coords_jack:", coords_jack)
+        print("covinv_jack:", covinv_jack)
+
     # minimize chi^2 (t^2) given the inv. covariance matrix and data
     result_min_jack = mkmin.mkmin(covinv_jack, coords_jack)
     if result_min_jack.status != 0:
