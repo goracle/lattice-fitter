@@ -34,7 +34,7 @@ from latfit.utilities.zeta.zeta import zeta
 # config
 from latfit.config import START_PARAMS
 from latfit.config import JACKKNIFE_FIT, UNCORR
-from latfit.config import EFF_MASS
+from latfit.config import EFF_MASS, TLOOP
 from latfit.config import GEVP, FIT_SPACING_CORRECTION
 from latfit.config import NOLOOP, ALTERNATIVE_PARALLELIZATION
 from latfit.config import SYS_ENERGY_GUESS
