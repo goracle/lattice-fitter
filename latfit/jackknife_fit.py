@@ -173,7 +173,9 @@ def multiprocess_jackknife(result_min, meta, config_range, const_args):
         " we don't need to parallelize"
 
     # do first config in common to set the guess
-    res_dict = jackknife_iter(config_range[0], const_args)
+    res_dict = jackknife_iter(config_range[0], const_args, parallel=True)
+    print("multi excl:", latfit.config.FIT_EXCL,
+          "multi fit win", meta.fitwindow)
     result_min = post_single_iter(result_min, res_dict, config_range[0])
 
     # reset the guess in I=0,
@@ -219,7 +221,7 @@ def post_single_iter(result_min, res_dict, config_num):
     toomanybadfitsp(result_min)
     return result_min
 
-def jackknife_iter(config_num, const_args):
+def jackknife_iter(config_num, const_args, parallel=False):
     """Fit to one jackknife sample
     (function to be parallelized)
     """
@@ -230,6 +232,7 @@ def jackknife_iter(config_num, const_args):
     # check if we should skip this iteration
     loop_location = update_location(config_num, config_range)
     loop_location['skip'] = False
+    loop_location['parallel'] = parallel
     if location_check(loop_location, fullfit):
         loop_location['skip'] = True
         #continue
@@ -365,6 +368,8 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
     # config_num = loop_location['num']
 
     start_loop = loop_location['start_loop']
+    if 'parallel' not in loop_location:
+        loop_location['parallel'] = False
 
     # I = 0 has been observed to get caught in a local min
     # if we reuse the result for a guess.
@@ -383,7 +388,7 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
           "config:", loop_location['num'], "params:", mkmin.SPARAMS)
 
     if loop_location['num'] == SUPERJACK_CUTOFF and (
-            current_process().name != 'MainProcess' or not TLOOP):
+            loop_location['parallel'] or not TLOOP):
         print("coords_jack:", coords_jack)
         print("covinv_jack.shape", covinv_jack.shape)
         print("covinv_jack:", covinv_jack)
