@@ -385,6 +385,7 @@ def find_min(params, coords_jack, covinv_jack, loop_location):
     if loop_location['num'] == SUPERJACK_CUTOFF and (
             current_process().name != 'MainProcess' or not TLOOP):
         print("coords_jack:", coords_jack)
+        print("covinv_jack.shape", covinv_jack.shape)
         print("covinv_jack:", covinv_jack)
 
     # minimize chi^2 (t^2) given the inv. covariance matrix and data
