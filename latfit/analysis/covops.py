@@ -16,7 +16,7 @@ from latfit.mathfun.block_ensemble import bootstrap_ensemble
 from latfit.extract.inverse_jk import inverse_jk
 from latfit.config import JACKKNIFE_FIT, RANDOMIZE_ENERGIES
 from latfit.config import UNCORR_OP, CORRMATRIX, JACKKNIFE_BLOCK_SIZE
-from latfit.config import UNCORR, GEVP
+from latfit.config import UNCORR, GEVP, ISOSPIN
 import latfit.config
 
 CONST_SHIFT = 0
@@ -418,6 +418,7 @@ def apply_shift(coords_jack_reuse, coords_jack):
     """apply the bootstrap constant shift to the averages"""
     coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
     shift = 0 if not CONST_SHIFT else CONST_SHIFT
+    assert not shift or ISOSPIN
     shift_arr = convert_coord_dict(shift, coords_jack)
     sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
