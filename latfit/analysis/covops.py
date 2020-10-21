@@ -418,7 +418,7 @@ def apply_shift(coords_jack_reuse, coords_jack):
     """apply the bootstrap constant shift to the averages"""
     coords_jack_reuse = copy.deepcopy(np.array(coords_jack_reuse))
     shift = 0 if not CONST_SHIFT else CONST_SHIFT
-    assert not shift or ISOSPIN
+    assert not shift or ISOSPIN, "no bootstrap supported for I=0 fits"
     shift_arr = convert_coord_dict(shift, coords_jack)
     sh1 = np.asarray(shift_arr).shape
     sh2 = coords_jack_reuse.shape
