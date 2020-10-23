@@ -209,7 +209,7 @@ if EFF_MASS:
                       "operator eliminations", allowedeliminations(),
                       'sample', ret[0])
                 for zamp in blkdict[dt1]:
-                    print('dt1', dt1, 'timeij', timeij, "examp:", zamp)
+                    print('dt1', delta_t, 'timeij', timeij, "examp:", zamp)
                 print("final tlhs, trhs =", timeij,
                       timeij-delta_t, "next hint:(",
                       np.count_nonzero(~np.isnan(ret[0])), ", ",
