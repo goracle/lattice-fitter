@@ -185,8 +185,9 @@ if EFF_MASS:
                           gsolve.HINT,
                           "operator eliminations", allowedeliminations(),
                           'sample', blkdict[dt1][0])
-                    for zamp in blkdict[dt1]:
-                        print('dt1', dt1, 'timeij', timeij, "examp:", zamp)
+                    for zdx, zamp in enumerate(blkdict[dt1]):
+                        print('dt1', dt1, 'timeij', timeij,
+                              "idx, examp:", zdx, zamp)
                 errdict, countdict, check_length = gevp_block_checks(
                     dt1, blkdict, errdict, countdict)
             keymax = countdict[max(countdict)]
@@ -208,8 +209,9 @@ if EFF_MASS:
                       gsolve.HINT,
                       "operator eliminations", allowedeliminations(),
                       'sample', ret[0])
-                for zamp in ret:
-                    print('dt1', delta_t, 'timeij', timeij, "examp:", zamp)
+                for zdx, zamp in enumerate(ret):
+                    print('dt1', delta_t, 'timeij', timeij, "idx, examp:",
+                          zdx, zamp)
                 print("final tlhs, trhs =", timeij,
                       timeij-delta_t, "next hint:(",
                       np.count_nonzero(~np.isnan(ret[0])), ", ",
