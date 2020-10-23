@@ -208,7 +208,7 @@ if EFF_MASS:
                       gsolve.HINT,
                       "operator eliminations", allowedeliminations(),
                       'sample', ret[0])
-                for zamp in blkdict[dt1]:
+                for zamp in ret:
                     print('dt1', delta_t, 'timeij', timeij, "examp:", zamp)
                 print("final tlhs, trhs =", timeij,
                       timeij-delta_t, "next hint:(",
