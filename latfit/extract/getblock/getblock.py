@@ -185,6 +185,8 @@ if EFF_MASS:
                           gsolve.HINT,
                           "operator eliminations", allowedeliminations(),
                           'sample', blkdict[dt1][0])
+                    for zamp in blkdict[dt1][0]:
+                        print('dt1', dt1, 'timeij', timeij, "examp:", zamp)
                 errdict, countdict, check_length = gevp_block_checks(
                     dt1, blkdict, errdict, countdict)
             keymax = countdict[max(countdict)]
