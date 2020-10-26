@@ -343,6 +343,9 @@ if EFF_MASS:
                                             print_evecs=True, commnorm=True)
                 brackets.append(glin.bracket(eigret[1][1], cmats_lhs[0][num]))
                 eigret = np.asarray(eigret)
+                if VERBOSE:
+                    print("timeij, num, evals:", timeij, num, eigret[0])
+                    print("timeij, num, evecs:", timeij, num, eigret[1])
 
                 glin.update_sorted_evecs(eigret[1], timeij, num)
                 glin.update_sorted_evals(eigret[0], timeij, num)
@@ -382,6 +385,8 @@ if EFF_MASS:
                                            [np.nan]*len(eigret[0]),
                                            [np.nan]*len(eigret[0])],
                                           timeij, delta_t, id_sort=False)
+            if VERBOSE:
+                print("timeij, num, energies:", timeij, num, energies)
             if not REINFLATE_BEFORE_LOG:
                 energies = variance_reduction(energies,
                                               avg_en_eig[0],
