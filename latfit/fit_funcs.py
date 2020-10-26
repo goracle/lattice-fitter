@@ -125,7 +125,13 @@ class FitFuncAdd:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        #print('tsteps', self._tsteps)
+        print('tsteps', self._tsteps)
+        print('self._c', self._c)
+        print('self._lent', self._lent)
+        print('self._pionmass', self._pionmass)
+        print('self._pionratio', self._pionratio)
+        print('self._gevp', self._gevp)
+        print('self._log', self._log)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -317,7 +323,13 @@ class FitFunc:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        #print('tsteps', self._tsteps)
+        print('tsteps', self._tsteps)
+        print('self._c', self._c)
+        print('self._lent', self._lent)
+        print('self._pionmass', self._pionmass)
+        print('self._pionratio', self._pionratio)
+        print('self._gevp', self._gevp)
+        print('self._log', self._log)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,

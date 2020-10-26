@@ -345,7 +345,7 @@ if EFF_MASS:
                 eigret = np.asarray(eigret)
                 if VERBOSE:
                     print("timeij, num, evals:", timeij, num, eigret[0])
-                    print("timeij, num, evecs:", timeij, num, eigret[1])
+                    #print("timeij, num, evecs:", timeij, num, eigret[1])
 
                 glin.update_sorted_evecs(eigret[1], timeij, num)
                 glin.update_sorted_evals(eigret[0], timeij, num)

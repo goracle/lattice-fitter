@@ -216,6 +216,7 @@ def incr_t0():
                               BIASED_SPEEDUP)
     latfit.config.FITS.select_and_update(ADD_CONST)
     if VERBOSE:
+        print("ADD_CONST", ADD_CONST)
         print("current delta t matsub =",
               latfit.config.DELTA_T_MATRIX_SUBTRACTION)
         print("new GEVP t-t0 =", latfit.config.T0)

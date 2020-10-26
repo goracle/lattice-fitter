@@ -22,7 +22,7 @@ from latfit.config import STYPE
 from latfit.config import LOGFORM
 from latfit.config import GEVP, ADD_CONST_VEC, LT_VEC
 from latfit.config import METHOD
-from latfit.config import ORIGL
+from latfit.config import ORIGL, VERBOSE
 from latfit.config import MATRIX_SUBTRACTION
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
 from latfit.analysis.test_arg import NegLogArgument
@@ -35,6 +35,11 @@ if MATRIX_SUBTRACTION and GEVP:
     ADD_CONST_VEC = [0 for i in ADD_CONST_VEC]
 
 RANGE1P = 3 if ADD_CONST else 2
+
+if VERBOSE:
+    print("RANGE1P", RANGE1P)
+    print("ADD_CONST_VEC, meff", ADD_CONST_VEC)
+    print("ADD_CONST, meff", ADD_CONST)
 
 # almost solve a cosh, analytic
 if EFF_MASS_METHOD == 1:
@@ -240,7 +245,6 @@ elif EFF_MASS_METHOD == 4:
         if not np.isnan(sol):
             sol = checksol(sol, index, times, corrs, fun)
         return sol
-    #proc_meff4.badtimes = []
 
     def checksol(sol, index, times, corrs, fun):
         """Check the solution."""

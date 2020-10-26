@@ -8,6 +8,7 @@ import latfit.extract.getblock.gevp_pionratio as grat
 import latfit.extract.getblock.gevp_linalg as glin
 import latfit.extract.getblock.getblock as gblock
 import latfit.extract.getfiles as getf
+import latfit.mathfun.proc_meff as pmeff
 import latfit.singlefit as sfit
 import latfit.config
 
@@ -40,4 +41,5 @@ def reset_processing():
     ext.reset_extract()
     getf.file_reset()
     grat.reset()
+    pmeff.EFF_MASS_TOMIN = pmeff.create_funcs()
     gblock.grd_inc_reset()
