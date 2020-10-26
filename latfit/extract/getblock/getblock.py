@@ -385,12 +385,12 @@ if EFF_MASS:
                                            [np.nan]*len(eigret[0]),
                                            [np.nan]*len(eigret[0])],
                                           timeij, delta_t, id_sort=False)
-            if VERBOSE:
-                print("timeij, num, energies:", timeij, num, energies)
             if not REINFLATE_BEFORE_LOG:
                 energies = variance_reduction(energies,
                                               avg_en_eig[0],
                                               1/decrease_var)
+            if VERBOSE:
+                print("timeij, num, energies:", timeij, num, energies)
             retblk.append(energies)
             num += 1
 
