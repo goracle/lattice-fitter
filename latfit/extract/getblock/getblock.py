@@ -264,6 +264,8 @@ if EFF_MASS:
                                            eigvals_mean_tp2,
                                            eigvals_mean_tp3], timeij,
                                           delta_t, id_sort=False)
+        for i, eng in enumerate(avg_energies):
+            print('avg energy', i, ':', eng)
 
         return avg_energies, eigvals_mean_t, evecs_mean_t
 
