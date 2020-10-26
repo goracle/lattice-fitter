@@ -449,6 +449,7 @@ def dofit_initial(meta, plotdata):
     flag = True
     xmin_store = meta.options.xmin
     xmax_store = meta.options.xmax
+    latfit.config.FITS.select_and_update(ADD_CONST)
     while flag:
         try:
             if VERBOSE:
