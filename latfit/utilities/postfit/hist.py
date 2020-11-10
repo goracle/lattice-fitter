@@ -200,7 +200,7 @@ def sort_filenames(fnames):
     for i in fnames:
         tmin_p = tmin_param(i)
         sdict[tmin_p] = i
-        keys = sorted(list(sdict))
+    keys = sorted(list(sdict))
     for i in keys:
         ret.append(sdict[i])
     return ret

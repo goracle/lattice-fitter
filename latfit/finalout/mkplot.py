@@ -10,6 +10,8 @@ from numbers import Number
 import itertools
 from collections import namedtuple
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rcParams
 import matplotlib.pyplot as plt

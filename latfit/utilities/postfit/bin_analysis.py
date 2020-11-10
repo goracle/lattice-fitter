@@ -45,8 +45,13 @@ def fill_best(cbest):
         aph = []
         aen = []
         for j in i:
-            energy = round_gvar(j[0])
-            phase = round_gvar(j[1])
+            try:
+                energy = round_gvar(j[0])
+                phase = round_gvar(j[1])
+            except IndexError:
+                print('err:', i,j)
+                print("cbest (err):", cbest)
+                raise
             aen.append(energy)
             aph.append(phase)
         rete.append(aen)

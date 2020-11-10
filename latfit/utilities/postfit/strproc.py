@@ -161,6 +161,7 @@ def nextchars_nums(base, after):
     nums = [str(i) for i in range(10)]
     base = str(base)
     after = str(after)
+    ret = ""
     if after not in base:
         ret = ""
     else:
@@ -170,12 +171,17 @@ def nextchars_nums(base, after):
             if i not in nums:
                 break
             ret2 += i
-    return ret2
+        ret = ret2
+    return ret
 
 def tmin_param(fname):
     """Find tmin param from filename: fname"""
     ret = nextchars_nums(fname, 'tmin')
-    ret = int(ret)
+    if ret:
+        ret = int(ret)
+    else:
+        print("err: fname", fname)
+        assert None, fname
     return ret
 
 def min_fit_file(dim, rest):
