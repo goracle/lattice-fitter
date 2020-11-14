@@ -12,6 +12,9 @@ except NameError:
         return arg2
     PROFILE = profile
 
+def query_sjcut():
+    return SUPERJACK_CUTOFF
+
 
 @PROFILE
 def jack_mean_err(arr, arr2=None, sjcut=SUPERJACK_CUTOFF,

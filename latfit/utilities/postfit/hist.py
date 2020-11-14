@@ -1,10 +1,12 @@
-#!/usr/bin/python3
+#!/dist/anaconda3/5.2.0/bin/python3
 """Make histograms from fit results over fit ranges"""
 import sys
 import os
 import subprocess
 import pickle
 import numpy as np
+import matplotlib
+matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import gvar
 from latfit.config import ISOSPIN, LATTICE_ENSEMBLE, IRREP
 from latfit.utilities.postprod.h5jack import ENSEMBLE_DICT, check_ids
