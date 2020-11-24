@@ -95,7 +95,11 @@ def main(fit_select=''):
             earlylist.append(i)
         assert '.p' in i, str(i)
         assert '.pdf' not in i, str(i)
-        add = pickle.load(open(str(i), "rb"))
+        try:
+            add = pickle.load(open(str(i), "rb"))
+        except EOFError:
+            print('unable to open', i)
+            raise
         if verb:
             print(i, "add.shape", add.shape)
         cond = add.shape == (4,) and ('pvalue' not in i or 'err' not in i)
