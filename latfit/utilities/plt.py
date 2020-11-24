@@ -14,7 +14,7 @@ def main():
     pname = re.sub(r'.p$', '.pdf', fname)
     print('saving plot as:', pname)
     pfig = PdfPages(pname)
-    pfig.savefig(figx)
+    pfig.savefig(figx, bbox_inches='tight')
     plt.savefig(pname, format='pdf', dpi=1200)
     plt.show() # Show the figure, edit it, etc.!
 
