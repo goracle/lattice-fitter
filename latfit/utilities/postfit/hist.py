@@ -1,4 +1,4 @@
-#!/dist/anaconda3/5.2.0/bin/python3
+#!/usr/bin/python3
 """Make histograms from fit results over fit ranges"""
 import sys
 import os
