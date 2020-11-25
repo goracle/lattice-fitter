@@ -6,7 +6,13 @@ for i in $@
 do
     cd $i || exit 1
     i=$(echo $i | tr -s '_' | tr '_' ' ')
-    echo "# $i"
+    ls proc_params.p > /dev/null || exit 1
+    cuts=$(proc_params.py | grep -c "cuts': False")
+    if [ $cuts -eq 1 ]; then
+	echo "# $i, weak cuts"
+    else
+	echo "# $i, strong cuts"
+    fi
     grep -A2 directed $(slat.sh) | tail -1
     cd $a
 done
@@ -18,7 +24,12 @@ do
     b=$(grep -A2 directed $(slat.sh) | tail -1)
     #arr+=(\"$b\")
     arr+=($b)
-    arr+=("@")
+    cuts=$(proc_params.py | grep -c "cuts': False")
+    if [ $cuts -eq 1 ]; then
+	arr+=("B")
+    else
+	arr+=("@")
+    fi
     cd $a
 done
 echo ""

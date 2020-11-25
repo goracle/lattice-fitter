@@ -32,6 +32,22 @@ def main():
         pickle.dump(ret, fn1)
         print("done.")
         
+def strongcuts(ddir=''):
+    """check whether the presumably existing
+    proc_params.p file has strong cuts turned on or off"""
+    ret = None
+    if ddir and ddir[-1] != '/':
+        ddir += '/'
+    if os.path.isfile(ddir+'proc_params.p'):
+        fn1 = open('proc_params.p', 'rb')
+        ret = pickle.load(fn1)
+        ret = ret['strong cuts']
+    else:
+        print("proc_params.p not found")
+        raise FileNotFoundError
+    assert ret is not None, ret
+    return ret
+
 
     
 

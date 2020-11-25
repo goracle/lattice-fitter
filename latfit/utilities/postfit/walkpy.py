@@ -6,6 +6,7 @@ import os
 import ast
 import numpy as np
 import gvar
+from proc_params import strongcuts
 
 ISOSPIN = 0
 
@@ -15,10 +16,22 @@ def proc_walkres_input():
     ret = []
     temp = ""
     mdim = np.inf
+    skipweak = False
     for i in args:
-        if i != '@':
-            temp += i
+        if i == '@':
+            skipweak = True
+            break
+    for i, item in enumerate(args):
+        # if we have strong cut results
+        # these outweigh weak cut results
+        # so skip the weak cut results
+        # save for next iter
+        if item not in ('@', 'B'):
+            temp += item
         else:
+            if skipweak and item == 'B':
+                temp = ""
+                continue
             toapp = ast.literal_eval(temp)
             toapp = filter_none(toapp)
             mdim = min(len(toapp), mdim)
