@@ -7,7 +7,7 @@ from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
 from latfit.analysis.errorcodes import BoolThrowErr, NegativeEnergy
-# from latfit.config import TRHS
+from latfit.config import VERBOSE
 
 class FitFunctions:
     """Default fit functions."""
@@ -37,8 +37,9 @@ class FitFunctions:
 
     def emit_state(self):
         """Emit subclass states"""
-        self._fitfuncadd.emit_state()
-        self._fitfunc.emit_state()
+        if VERBOSE:
+            self._fitfuncadd.emit_state()
+            self._fitfunc.emit_state()
 
     def select_and_update(self, add_const):
         """Select which set of functions to use"""
@@ -125,13 +126,14 @@ class FitFuncAdd:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        print('tsteps', self._tsteps)
-        print('self._c', self._c)
-        print('self._lent', self._lent)
-        #print('self._pionmass', self._pionmass)
-        print('self._pionratio', self._pionratio)
-        print('self._gevp', self._gevp)
-        print('self._log', self._log)
+        if VERBOSE:
+            print('tsteps', self._tsteps)
+            print('self._c', self._c)
+            print('self._lent', self._lent)
+            print('self._pionmass', self._pionmass)
+            print('self._pionratio', self._pionratio)
+            print('self._gevp', self._gevp)
+            print('self._log', self._log)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
@@ -323,13 +325,14 @@ class FitFunc:
 
     def emit_state(self):
         """For debug purposes, print various internal quantities"""
-        print('tsteps', self._tsteps)
-        print('self._c', self._c)
-        print('self._lent', self._lent)
-        #print('self._pionmass', self._pionmass)
-        print('self._pionratio', self._pionratio)
-        print('self._gevp', self._gevp)
-        print('self._log', self._log)
+        if VERBOSE:
+            print('tsteps', self._tsteps)
+            print('self._c', self._c)
+            print('self._lent', self._lent)
+            print('self._pionmass', self._pionmass)
+            print('self._pionratio', self._pionratio)
+            print('self._gevp', self._gevp)
+            print('self._log', self._log)
 
     def fit_func_exp(self, ctime, trial_params):
         """Give result of function,
