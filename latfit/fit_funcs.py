@@ -7,7 +7,6 @@ from numpy import exp
 from sympy import exp as exps
 from latfit.analysis.test_arg import zero_p, testsol
 from latfit.analysis.errorcodes import BoolThrowErr, NegativeEnergy
-from latfit.config import VERBOSE
 
 class FitFunctions:
     """Default fit functions."""
@@ -87,6 +86,7 @@ USE_FIXED_MASS = BoolThrowErr()
 TRHS = None
 GEVP = BoolThrowErr()
 DELTAT = np.nan
+VERBOSE = False
 
 def takelog(sol):
     """more permissive form of log"""

@@ -1002,6 +1002,7 @@ latfit.fit_funcs.LT = LT
 latfit.fit_funcs.GEVP = GEVP
 latfit.fit_funcs.DELTAT = -1 if GEVP_DERIV else int(T0[6:])
 latfit.fit_funcs.DELTAT = -1 if not GEVP else latfit.fit_funcs.DELTAT
+latfit.fit_funcs.VERBOSE = VERBOSE
 
 # selects fit func class and updates with module vars
 FITS.select_and_update(ADD_CONST)
