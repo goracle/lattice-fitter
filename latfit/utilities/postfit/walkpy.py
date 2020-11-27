@@ -80,14 +80,42 @@ def readin():
             phlist[i].append(ph1)
     return enlist, phlist
 
+def mod180(item):
+    """Mod 180 degrees"""
+    while item > 180:
+        item -= 180
+    while item < -180:
+        item += 180
+    return item
 
 def consis(it1, it2):
     """Check for consistency"""
+    # variants of it1
+    it1 = mod180(it1)
+    it1a = mod180(it1+180)
+    it1b = mod180(it1-180)
+    it1l = [it1, it1a, it1b]
+
+    # variants of it2
+    it2 = mod180(it2)
+    it2a = mod180(it2+180)
+    it2b = mod180(it2-180)
+    it2l = [it2, it2a, it2b]
+
+    # checks
     assert it1.sdev > 0, it1
     assert it2.sdev > 0, it2
     merr = max(it1.sdev, it2.sdev)
-    diff = np.abs(it1.val-it2.val)
-    ret = True if diff <= merr * 1.5 else False
+
+    ret = False
+    for i in it1l:
+        for j in it2l:
+            diff = np.abs(i.val-j.val)
+            ret = True if diff <= merr * 1.5 else ret
+            if ret:
+                break
+        if ret:
+            break
     return ret
 
 def consis_list(it1, clist):
