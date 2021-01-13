@@ -8,14 +8,18 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def main():
     """main"""
-    fname = sys.argv[1]
-    print('plotting:', fname)
-    figx = pickle.load(open(fname, 'rb'))
-    pname = re.sub(r'.p$', '.pdf', fname)
-    print('saving plot as:', pname)
-    pfig = PdfPages(pname)
-    pfig.savefig(figx, bbox_inches='tight')
-    plt.savefig(pname, format='pdf', dpi=1200)
+    fname1 = None
+    for fname in sys.argv[1:]:
+        #fname = sys.argv[1]
+        fname1 = fname
+        figx = pickle.load(open(fname, 'rb'))
+        print('plotting:', fname, figx)
+    if len(sys.argv) == 2:
+        pname = re.sub(r'.p$', '.pdf', fname1)
+        print('saving plot as:', pname)
+        pfig = PdfPages(pname)
+        pfig.savefig(figx, bbox_inches='tight')
+        plt.savefig(pname, format='pdf', dpi=1200)
     plt.show() # Show the figure, edit it, etc.!
 
 if __name__ == '__main__':
