@@ -13,16 +13,30 @@ do
     else
 	echo "# $i, strong cuts"
     fi
-    grep -A2 directed $(slat.sh) | tail -1
+
+    # two different ways to get energy phase pairs
+    # first uses independent walkbacks
+    # grep -A2 directed $(slat.sh) | tail -1
+
+    # second uses one walkback on the energy, then finds
+    # the corresponding phase shift calculated from that energy
+    paired_energies_phases.py $(slat.sh)
     cd $a
 done
-
 arr=()
 for i in $@
 do
     cd $i || exit 1
+
+    # two different ways to get energy phase pairs
+    # first uses independent walkbacks
+    #b=$(#paired_energies_phases.py $(#slat.sh));
     b=$(grep -A2 directed $(slat.sh) | tail -1)
-    #arr+=(\"$b\")
+
+    # second uses one walkback on the energy, then finds
+    # the corresponding phase shift calculated from that energy
+    b=$(paired_energies_phases.py $(slat.sh))
+
     arr+=($b)
     cuts=$(proc_params.py | grep -c "cuts': False")
     if [ $cuts -eq 1 ]; then
