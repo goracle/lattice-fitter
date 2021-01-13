@@ -59,6 +59,9 @@ TLOOP_START = (0, 0) if not TLOOP else TLOOP_START
 
 GEVP = False
 GEVP = True
+if not GEVP:
+    print("ignorning proc params for non-GEVP fit")
+    PROC_PARAMS = {}
 
 # METHODS/PARAMS
 
@@ -1108,8 +1111,9 @@ sands.superjackknife_statements(check_ids(LATTICE_ENSEMBLE)[-2],
                                 SUPERJACK_CUTOFF)
 sands.deprecated(USE_LATE_TIMES, LOGFORM)
 sands.randomize_data_check(RANDOMIZE_ENERGIES, EFF_MASS)
-check_params2(IRREP, LATTICE_ENSEMBLE, DIM, darr=check_params(
-    MATRIX_SUBTRACTION, PR_GROUND_ONLY, PIONRATIO, STRONG_CUTS))
+if GEVP:
+    check_params2(IRREP, LATTICE_ENSEMBLE, DIM, darr=check_params(
+        MATRIX_SUBTRACTION, PR_GROUND_ONLY, PIONRATIO, STRONG_CUTS))
 if FIT:
     assert len(fit_func(3, START_PARAMS)) == MULT
 assert RESOLVABLE_STATES and RESOLVABLE_STATES <= MULT
