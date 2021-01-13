@@ -68,7 +68,7 @@ def geten(line):
     return ret
 
 
-def parse_for_res(log):
+def parse_for_res(log, debug=False):
     """Get line number of a pattern"""
     ret = {}
     pat = 'dimension of gevp of interest'
@@ -86,7 +86,13 @@ def parse_for_res(log):
                 patd['loaded'] = 1
             elif pat in line:
                 patd['interest'] = 1
-                dimofin = int(line.split(':')[-1])
+                try:
+                    dimofin = int(line.split(':')[-1])
+                except ValueError:
+                    if debug:
+                        print(line)
+                        raise
+                    continue
             elif pat2 in line and patd['loaded'] == 1:
                 # check the log is following the
                 # expected output pattern
@@ -104,13 +110,22 @@ def parse_for_res(log):
                     count = 0
     return ret
 
-def conv_dict_to_orderedlist(enphd):
+def conv_dict_to_orderedlist(enphd, dim, debug=False):
     """Convert the dict to an ordered list"""
     ret = []
     count = 0
     for key in sorted(enphd.keys()):
-        assert key == count, ("incomplete set of results",
-                              enphd)
+        if debug:
+            assert key == count, ("in/overcomplete set of results",
+                                  enphd)
+        elif key != count:
+            assert key > count, (key, count)
+            if key < dim:
+                ret = []
+                break
+            while key > count:
+                count += 1
+                ret.append([])
         count += 1
         ret.append(enphd[key])
     return ret
@@ -121,31 +136,52 @@ def reset_patd(patd):
         patd[i] = 0
     return patd
 
-def phen(log):
+def phen(log, trunc=False, debug=False):
     """For a particular slurm log,
     get the energy/phase pair"""
+    # number of dimensions we are interested in
     dim = dimof(log)
+    # if >= 5, ignore the top two
+    dimorig = dim
     ret = []
     if dim is not None:
-        ret = parse_for_res(log)
-        ret = conv_dict_to_orderedlist(ret)
-        assert dim == len(ret), (ret, dim)
+        if dim >= 5:
+            dim = 3
+        ret = parse_for_res(log, debug=debug)
+        ret = conv_dict_to_orderedlist(ret, dim, debug=debug)
+        if trunc:
+            ret = ret[:dim]
+            assert dim == len(ret) or not ret, (ret, dim)
+        else:
+            assert dimorig == len(ret) or not ret, (ret, dim)
     return ret
 
-def paired_energies_phases(debug=False):
+def paired_energies_phases(log, trunc=False, debug=False):
     """main"""
-    ret = []
-    for log in sys.argv[1:]:
-        if debug:
-            print('extracting energy/phase pairs in', log)
-        pelist = phen(log)
-        if pelist and debug:
-            print('result:\n'+str(pelist))
-        ret.append(pelist)
-    if len(sys.argv) == 2:
-        ret = ret[0]
+    if debug:
+        print('extracting energy/phase pairs in', log)
+    ret = phen(log, trunc=trunc, debug=debug)
+    if ret and debug:
+        print('result:\n'+str(ret))
     return ret
 
+def checkbool(arg):
+    """Check argument is either 'True' or 'False'"""
+    assert arg in ('True', 'False'), arg
+    ret = None
+    if arg == 'True':
+        ret = True
+    elif arg == 'False':
+        ret = False
+    assert ret is not None
+    return ret
 
 if __name__ == '__main__':
-    print(paired_energies_phases())
+    LOG = sys.argv[1]
+    TRUNC = False
+    DEBUG = False
+    if len(sys.argv) > 2:
+        TRUNC = checkbool(sys.argv[2])
+    if len(sys.argv) > 3:
+        DEBUG = checkbool(sys.argv[3])
+    print(paired_energies_phases(LOG, trunc=TRUNC, debug=DEBUG))

@@ -20,7 +20,7 @@ do
 
     # second uses one walkback on the energy, then finds
     # the corresponding phase shift calculated from that energy
-    paired_energies_phases.py $(slat.sh)
+    paired_energies_phases.py $(slat.sh) 'False'
     cd $a
 done
 arr=()
@@ -35,7 +35,12 @@ do
 
     # second uses one walkback on the energy, then finds
     # the corresponding phase shift calculated from that energy
-    b=$(paired_energies_phases.py $(slat.sh))
+    b=$(paired_energies_phases.py $(slat.sh) 'True')
+
+    if [ "$b" = "[]" ]; then
+	cd $a
+	continue
+    fi
 
     arr+=($b)
     cuts=$(proc_params.py | grep -c "cuts': False")
