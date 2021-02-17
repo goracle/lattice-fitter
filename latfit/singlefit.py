@@ -142,6 +142,8 @@ def singlefit(meta, input_f, fullfit=True):
 
         ret = (result_min, param_err, coords_full, cov_full)
     else:
+        # meant to be a temporary container
+        save_fit_samples(reuse_coords[1])
         ret = (coords, cov)
     return ret
 singlefit.reuse = None
@@ -150,6 +152,11 @@ singlefit.cov_full = None
 singlefit.sent = None
 singlefit.error2 = None
 singlefit.reuse_blocked = None
+
+def save_fit_samples(samps):
+    """Save fit samples in pickle file."""
+    fn1 = open('samplestofit_config_time_op.p', 'wb')
+    cloudpickle.dump(samps, fn1)
 
 def checks_prints(params, coords_full, cov_full, cov):
     """Peform checks/print diagnostic info"""
