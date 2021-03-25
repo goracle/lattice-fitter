@@ -15,7 +15,7 @@ from latfit.makemin.dof_errchk import dof_errchk
 from latfit.makemin.mkmin import mkmin
 from latfit.finalout.geterr import geterr
 from latfit.mathfun.covinv_avg import covinv_avg
-from latfit.jackknife_fit import jackknife_fit
+from latfit.jackknife_fit import jackknife_fit, correction_en
 from latfit.analysis.get_fit_params import get_fit_params
 from latfit.mathfun.block_ensemble import block_ensemble
 from latfit.mathfun.binconf import binconf
@@ -155,8 +155,14 @@ singlefit.reuse_blocked = None
 
 def save_fit_samples(samps):
     """Save fit samples in pickle file."""
+    nconf = len(samps)
+    #print("nconf =", nconf)
+    rsamp = []
+    for num, en1 in enumerate(samps):
+        rsamp.append(correction_en(en1, num, nconf)+en1)
+    rsamp = np.array(rsamp)
     fn1 = open('samplestofit_config_time_op.p', 'wb')
-    cloudpickle.dump(samps, fn1)
+    cloudpickle.dump(rsamp, fn1)
 
 def checks_prints(params, coords_full, cov_full, cov):
     """Peform checks/print diagnostic info"""
