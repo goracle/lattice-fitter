@@ -260,7 +260,7 @@ def procmom(mstr):
     """
     bmat = re.findall(r'_*\d', mstr)
     if len(bmat) != 3:
-        print("Error: bad filename, number of momenta")
+        print("Error: bad filename, number of momenta.", mstr)
         sys.exit(1)
     return [int(bmat[i].replace('_', '-')) for i in range(len(bmat))]
 
