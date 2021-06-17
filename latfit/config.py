@@ -147,18 +147,18 @@ if T0 is None:
 
 def get_dts(dt1, ens, irr):
     """Get GEVP matrix subtraction delta ts"""
-    dt2 = 1 if not GEVP_DEBUG else 0
+    dt2 = 1
     if dt1 is None:
         if ens == '24c':
-            dt1 = 1 if not GEVP_DEBUG else 0
-            dt2 = 1 if not GEVP_DEBUG else 0
+            dt1 = 1
+            dt2 = 1
         if ens == '32c':
             if irr == 'A_1PLUS_mom000':
-                dt1 = 1 if not GEVP_DEBUG else 0
+                dt1 = 1
             else:
-                dt1 = 1 if not GEVP_DEBUG else 0
-            dt2 = 1 if not GEVP_DEBUG else 0
-        dt1 = 1 if not GEVP_DEBUG else 0
+                dt1 = 1
+            dt2 = 1
+        dt1 = 1
     dt1, dt2 = int(dt1), int(dt2)
     return dt1, dt2
 (DELTA_T_MATRIX_SUBTRACTION,
@@ -441,15 +441,14 @@ elif LATTICE_ENSEMBLE == '32c':
         MATRIX_SUBTRACTION = False
         MATRIX_SUBTRACTION = True
 MATRIX_SUBTRACTION = False if NOATWSUB else MATRIX_SUBTRACTION
-MATRIX_SUBTRACTION = False if GEVP_DEBUG else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if ISOSPIN == 1 else MATRIX_SUBTRACTION
 MATRIX_SUBTRACTION = False if not GEVP else MATRIX_SUBTRACTION
 if PROC_PARAMS:
     MATRIX_SUBTRACTION = PROC_PARAMS['matsub']
+MATRIX_SUBTRACTION = True
 
 ADD_CONST_VEC = [MATRIX_SUBTRACTION for _ in range(DIM)] if GEVP else [False]
-ADD_CONST_VEC = [False for _ in range(DIM)] if GEVP_DEBUG else ADD_CONST_VEC
 ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modify
 # second order around the world delta energy (E(k_max)-E(k_min)),
 # set to None if only subtracting for first order or if all orders are constant
@@ -970,7 +969,7 @@ LT_VEC = []
 for tsep in TSEP_VEC:
     LT_VEC.append(LT-2*tsep)
 LT = LT_VEC[0]
-if not GEVP_DEBUG and any(ADD_CONST_VEC):
+if any(ADD_CONST_VEC):
     assert MATRIX_SUBTRACTION or not GEVP, \
         "Must subtract around the world constant at GEVP level"
 else:
@@ -992,10 +991,8 @@ FITS = FitFunctions()
 latfit.fit_funcs.USE_FIXED_MASS = USE_FIXED_MASS
 latfit.fit_funcs.LOG = LOG
 latfit.fit_funcs.C = C
-latfit.fit_funcs.TSTEP = TSTEP if not GEVP or GEVP_DEBUG else\
-    DELTA_T_MATRIX_SUBTRACTION
-latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP or GEVP_DEBUG else\
-    DELTA_T2_MATRIX_SUBTRACTION
+latfit.fit_funcs.TSTEP = TSTEP if not GEVP else DELTA_T_MATRIX_SUBTRACTION
+latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP else DELTA_T2_MATRIX_SUBTRACTION
 latfit.fit_funcs.TSTEP2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else\
     latfit.fit_funcs.TSTEP2
 if GEVP:
