@@ -2,7 +2,10 @@
 all getblock module energy related functionality is contained here
 """
 import sys
+from os import path
 from collections import deque
+import pickle
+import h5py
 import numpy as np
 
 from latfit.utilities import exactmean as em
@@ -269,7 +272,7 @@ if EFF_MASS:
 
         return avg_energies, eigvals_mean_t, evecs_mean_t
 
-    def getlhsrhs(file_tup, num_configs):
+    def getlhsrhs(file_tup, num_configs, decrease_var=DECREASE_VAR):
         """Get lhs and rhs gevp matrices from file_tup
         (extract from index structure)
         """
@@ -278,7 +281,7 @@ if EFF_MASS:
         assert len(file_tup) == 5, "bad length:"+str(len(file_tup))
         for idx in range(5):
             cmat, mean = readin_gevp_matrices(file_tup[idx], num_configs, docheck=(
-                not idx or idx==1))
+                not idx or idx==1), decrease_var=decrease_var)
             if idx == 1:
                 cmat_rhs, mean_crhs = cmat, mean
             else:
@@ -302,6 +305,70 @@ if EFF_MASS:
         timeij = None if not EFF_MASS else timeij
         return num_configs, (delta_t, timeij)
 
+    def dump_cmats(*cmats):
+        """Dump GEVP matrices as pickle/hdf5 files"""
+        lencheck1 = None # check on the number of configs
+        lencheck2 = None # check on the column length
+        lencheck3 = None # check on the row length
+        done = set()
+        for time, cmat_set in cmats:
+
+            assert int(time) == float(time), time
+            time = str(int(time))
+
+            if time in done:
+                print("GEVP matrix C("+str(time)+") already written to disk; skipping.")
+                continue
+            done.add(time)
+
+            # setup
+            start_str = 'cmat.t'+str(time)
+            if isinstance(cmat_set[0][0][0], np.complex):
+                noimag = True
+                for i in cmat_set[0]:
+                    if not noimag:
+                        break
+                    for j in i:
+                        if np.imag(j) != 0.0:
+                            noimag = False
+                            break
+                if noimag:
+                    dtype = np.float64
+                else:
+                    dtype = np.complex128
+            else:
+                assert isinstance(cmat_set[0][0][0], np.float), cmat[0]
+                dtype = np.float64
+            print('dtype', dtype)
+            arr = np.array(cmat_set, dtype=dtype)
+
+            # checks
+            lencheck1 = len(arr) if lencheck1 is None else lencheck1
+            assert len(arr) == lencheck1, (lencheck1, len(arr))
+            lencheck2 = len(arr[0]) if lencheck2 is None else lencheck2
+            assert len(arr[0]) == lencheck2, (lencheck2, len(arr[0]))
+            lencheck3 = len(arr[0].T) if lencheck3 is None else lencheck3
+            assert len(arr[0].T) == lencheck3, (lencheck3, len(arr[0].T))
+
+            # hdf5 write
+            if path.exists(start_str+'.hdf5'):
+                print("skipping write of file", start_str+'.hdf5', "since it already exists.")
+            else:
+                print("writing", start_str+'.hdf5') 
+                fn1 = h5py.File(start_str+'.hdf5', 'w')
+                fn1[time] = arr
+                fn1.close()
+
+            # pickle file write
+            if path.exists(start_str+'.p'):
+                print("skipping write of file", start_str+'.p', "since it already exists.")
+            else:
+                print("writing", start_str+'.p')
+                gn1 = open(start_str+'.p', 'wb')
+                pickle.dump(arr, gn1)
+                gn1.close()
+
+        print("finished writing GEVP matrices of times:", sorted([int(i) for i in done]))
 
     def getblock_gevp_singlerhs(file_tup, delta_t, timeij=None,
                                 decrease_var=DECREASE_VAR):
@@ -317,15 +384,29 @@ if EFF_MASS:
             (delta_t, timeij), file_tup)
 
         # get the gevp matrices
+        ## variance decreased
         cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = getlhsrhs(
             file_tup, num_configs)
+        ## varianced not decreased
+        cmats_lhs1, mean_cmats_lhs1, cmat_rhs1, mean_crhs1 = getlhsrhs(
+            file_tup, num_configs, decrease_var=1.0)
 
         # do the around the world subtraction
         assert timeij-delta_t >= 0, str((timeij, delta_t))
+        ## variance decreased
         cmats_lhs, mean_cmats_lhs, cmat_rhs, mean_crhs = atwsub_cmats(
             (delta_t, timeij),
             cmats_lhs, mean_cmats_lhs,
             cmat_rhs, mean_crhs)
+        ## varianced not decreased
+        cmats_lhs1, mean_cmats_lhs1, cmat_rhs1, mean_crhs1 = atwsub_cmats(
+            (delta_t, timeij),
+            cmats_lhs1, mean_cmats_lhs1,
+            cmat_rhs1, mean_crhs1)
+
+        # assumes delta_t is not None (i.e. t-t0 = const)
+        # dump (jackknifed, non-variance-decreased) GEVP matrices to disk
+        dump_cmats((timeij, cmats_lhs1[0]), (timeij-delta_t, cmat_rhs1))
 
         num = 0
         # reset the list of allowed operator eliminations at the
