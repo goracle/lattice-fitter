@@ -123,7 +123,8 @@ def readin_gevp_matrices(file_tup, num_configs, decrease_var=DECREASE_VAR, doche
         #    pass
             #assert np.all(cmat[num] > 0), str(cmat[num])
         checkherm(cmat[num])
-    posdef_diag_check(cmat)
+    if docheck:
+        posdef_diag_check(cmat)
     mean = em.acmean(cmat, axis=0)
     checkherm(mean)
     if decrease_var != 1:
