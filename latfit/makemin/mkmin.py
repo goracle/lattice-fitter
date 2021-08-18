@@ -219,7 +219,7 @@ def mkmin_loop(covinv, coords, method, kick=False):
                             bounds=BINDS,
                             jac=None,
                             options=options)
-            status = res_min.minuit.get_fmin().is_valid
+            #status = res_min.minuit.get_fmin().is_valid
             status = 0 if res_min.success else 1
             res_min.status = status
         except RuntimeError:
