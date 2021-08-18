@@ -91,6 +91,11 @@ def check_covinv(covinv):
 
 
 SPARAMS = list(START_PARAMS)
+temp = SPARAMS[0]
+SPARAMS[0] = 44
+assert START_PARAMS[0] != SPARAMS[0]
+SPARAMS[0] = temp
+
 PARAMS = None
 
 @PROFILE
