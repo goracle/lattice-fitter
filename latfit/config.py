@@ -347,7 +347,7 @@ def dimsub(dim):
 
     # make edits to the dimension here
     if 'mom000' in IRREP and ISOSPIN == 0:
-        dim -= 2
+        dim -= 0
     if 'mom11' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
         dim -= 0
     elif 'mom1' in IRREP and ISOSPIN == 0 and 'avg' not in IRREP:
