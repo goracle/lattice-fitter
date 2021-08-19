@@ -150,7 +150,7 @@ def get_dts(dt1, ens, irr):
     dt2 = 1
     if dt1 is None:
         if ens == '24c':
-            dt1 = 1
+            dt1 = 6 # based on TI fit results.
             dt2 = 1
         if ens == '32c':
             if irr == 'A_1PLUS_mom000':
