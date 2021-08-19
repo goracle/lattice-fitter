@@ -224,9 +224,15 @@ def incr_t0():
 def incr_dt():
     """Increment the matrix subtraction time separation in
     D(t):= C(t)-C(t-dt), where D is the subtracted GEVP matrix"""
-    dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION
+    ens_offset = 5 if LATTICE_ENSEMBLE == '24c' else 0 # using large dt gives empirical statistical improvement (observed by T. Izubuchi).
+    if latfit.config.DELTA_T_MATRIX_SUBTRACTION == 1:
+        latfit.config.DELTA_T_MATRIX_SUBTRACTION += ens_offset
+    dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION-ens_offset
     dtee = tsep_based_incr(dtee)
+    dtee += ens_offset
     latfit.config.DELTA_T_MATRIX_SUBTRACTION = dtee
+    assert latfit.config.DELTA_T_MATRIX_SUBTRACTION > ens_offset, (
+        latfit.config.DELTA_T_MATRIX_SUBTRACTION, ens_offset)
     effmass.EFF_MASS_TOMIN = effmass.create_funcs()
     # check this!!!
     latfit.fit_funcs.TSTEP = TSTEP if not GEVP else dtee
