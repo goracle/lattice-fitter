@@ -226,6 +226,10 @@ def mkmin_loop(covinv, coords, method, kick=False):
             status = 1
             res_min = {}
             res_min['status'] = 1
+        except FloatingPointError:
+            status = 1
+            res_min = {}
+            res_min['status'] = 1
         # res_min['x'] = delta_add_energies(res_min['x'])
         res_min = convert_to_namedtuple(res_min)
         # insert string here
