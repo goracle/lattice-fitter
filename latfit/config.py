@@ -158,7 +158,6 @@ def get_dts(dt1, ens, irr):
             else:
                 dt1 = 1
             dt2 = 1
-        dt1 = 1
     dt1, dt2 = int(dt1), int(dt2)
     return dt1, dt2
 (DELTA_T_MATRIX_SUBTRACTION,
