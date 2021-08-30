@@ -505,7 +505,7 @@ def map_evals(evals_from, evals_to, debug=False):
 
     # derive map from sort
     assert len(evals_to), evals_to
-    ret = make_id(leval)
+    ret = make_id(leval) # ret is map
     evals_to = list(evals_to)
     for _, (i, j) in enumerate(zip(evals_to_sorted, evals_to)):
         fidx = evals_to.index(i)
@@ -515,12 +515,11 @@ def map_evals(evals_from, evals_to, debug=False):
     assert len(ret) == leval, str(ret)
     assert ret, ret
 
-    # wrapper to get scores
+    # wrapper to get inverse scores
     rel_diff = [indicator(
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
     rel_diff = np.array(rel_diff)
-
     # rel_diff = 1/(scores*sum(scores))
     # sum(scores) attempts to give more weight to time slices which have good
     # agreement across all comparisons
@@ -685,13 +684,10 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
     rrel = {}
     used = {}
     ret = {}
-    retrev = {}
     passed = False
 
     # loop over map disagreements, using score to resolve disagreements
-    # (weighted voting)
     while collision_check(ret) or len(ret) < len(inter):
-        flag = 0
         for i in sorted(list(inter)):
 
             # the score for the source is minimized
@@ -724,25 +720,18 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
             if toadd in used:
                 if mrel < used[toadd]:
                     # unmap prev src
-                    del ret[retrev[toadd]]
-                    del rrel[retrev[toadd]]
                     # remap target
                     used[toadd] = mrel
-                    retrev[toadd] = i
                     # map new src
                     rrel[i] = mrel
                     ret[i] = toadd
             else:
                 # mapt target
                 used[toadd] = mrel
-                retrev[toadd] = i
                 # map src
                 rrel[i] = mrel
                 ret[i] = toadd
-        if flag:
-            if len(ret) < len(inter):
-                sys.exit()
-        if passed:
+        if passed: # branch into this after one complete loop over inter
             for i in inter:
                 if i not in rrel:
                     print("no vote gives necessary pairing:", ret)
