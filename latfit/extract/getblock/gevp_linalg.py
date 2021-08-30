@@ -19,8 +19,6 @@ from latfit.analysis.errorcodes import NegativeEigenvalue
 from latfit.analysis.errorcodes import PrecisionLossError
 from latfit.analysis.errorcodes import EigenvalueSignInconsistency
 
-#SCORE_CUTOFF = 1e-3
-
 def checkgteq0(eigfin):
     """Check to be sure all eigenvalues are greater than 0"""
     for i in eigfin:
@@ -502,40 +500,38 @@ def map_evals(evals_from, evals_to, debug=False):
     # initial sort check
     assert list(evals_from) == list(fallback_sort(evals_from))
 
+    # sort evals based on pseudo-evals
     evals_to_sorted = init_sort(evals_to, evals_from)
 
-    rel_diff = [indicator(
-        evals_to_sorted, evals_from, idx, debug=debug) for idx,
-                _ in enumerate(evals_from)]
-    rel_diff = np.array(rel_diff)
-
-
-    # attempt to allow for zero/inf scores, score comparisons
-    try:
-        rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
-    except FloatingPointError:
-        print('rel diff', rel_diff)
-        raise
-    rel_diff = list(rel_diff)
-
+    # derive map from sort
     assert len(evals_to), evals_to
     ret = make_id(leval)
-
     evals_to = list(evals_to)
-    fallback_level = 0
-    unambig_indices = set(range(len(evals_to)))
-    if debug and False:
-        print('fr', evals_to_sorted)
-        print('to', evals_to)
     for _, (i, j) in enumerate(zip(evals_to_sorted, evals_to)):
         fidx = evals_to.index(i)
         tidx = evals_to.index(j)
         ret[fidx] = tidx
     assert not check_map_dups(ret), str(ret)+" "+str(test_arr)
     assert len(ret) == leval, str(ret)
-    # end legacy
     assert ret, ret
 
+    # wrapper to get scores
+    rel_diff = [indicator(
+        evals_to_sorted, evals_from, idx, debug=debug) for idx,
+                _ in enumerate(evals_from)]
+    rel_diff = np.array(rel_diff)
+
+    # rel_diff = 1/(scores*sum(scores))
+    # sum(scores) attempts to give more weight to time slices which have good
+    # agreement across all comparisons
+    # (or, rather, tries to filter out coincidental agreement)
+    # also, attempt to allow for inf rel diff's
+    try:
+        rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
+    except FloatingPointError:
+        print('rel diff', rel_diff)
+        raise
+    rel_diff = list(rel_diff)
     rel_diff = invert_reldiff_map(rel_diff, ret)
 
     return ret, rel_diff
@@ -563,57 +559,54 @@ def collision_check(smap):
 
 
 def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
-    """Sort eigenvalues in order of increasing energy"""
+    """Sort eigenvalues in order of increasing energy, 
+    then pseudo sort them.
+    
+    PSEUDO SORT MAIN
+    """
     evals = list(evals)
     ret = fallback_sort(evals, evecs)
+    # unpack
     if evecs is not None:
         evals = ret[0]
         assert evecs is not None, evecs
         evecs = ret[1]
         evals = list(evals)
+
+    # now, pseudo-sort
     dot_map = make_id(len(evals))
-    debug = False
     if sortevals.last_time is not None and c_lhs is not None\
        and c_rhs is not None and not np.any(np.isnan(evals)) and PSEUDO_SORT:
-        count = 5
-        timeij = sortevals.last_time
-        if debug:
-            print("c_lhs", c_lhs)
-            print("c_rhs", c_rhs)
-            print("det", det(np.dot(inv(c_rhs), c_lhs)))
-        if timeij + 1 == 12 + np.nan:
-            debug = True
+
+        count = 5 # max number of time slices to compare
+        timeij = sortevals.last_time # most recent sorted time slice
+
         votes = []
         while timeij in sortevals.sorted_evecs and len(
                 sortevals.sorted_evecs.keys()) > 1:
 
-            if debug:
-                print("stored times:", sortevals.sorted_evecs.keys())
-                print("timeij", timeij)
-
+            # do not use first time (naive sort the first two time slices)
             if timeij == min(sortevals.sorted_evecs.keys()):
                 break
+
             # loop increment
             count -= 1 # 3, 2, 1
-            if debug and False:
-                print('count', count)
 
             evecs_past = sortevals.sorted_evecs[timeij][sortevals.config]
             evals_past = sortevals.sorted_evals[timeij]
+            # reinflate the error
             evals_past = gvar.gvar(np.mean(evals_past, axis=0),
                                    np.std(evals_past, axis=0)*np.sqrt(
                                        len(evals_past)-1)*1/DECREASE_VAR)
-            if debug and False:
-                print("evecs(", timeij, ") =", evecs_past)
+
+            # length checks
             assert len(evecs_past) == len(evals), str(evecs_past)
             assert len(evecs_past[0]) == len(evals), str(evecs_past[0])
             assert len(evecs_past[0]) == len(c_lhs), str(
                 evecs_past[0])+" "+str(c_lhs)
+
             evals_from = np.copy(evals)
-            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs, debug=debug)
-            if debug:
-                print("evals from", evals_from)
-                print("evals to", evals_to)
+            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs, debug=debug) # pseudo-evals
             vote_map, rel_diff = map_evals(
                 evals_from, evals_to, debug=debug)
 
@@ -626,11 +619,13 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
 
             timeij -= 1 # t-1, t-2, t-3
 
+        # if any votes are cast, modify the map (which is set to identity map)
         if votes:
             dot_map = votes_to_map(votes, debug=debug)
 
     assert len(dot_map) == len(evals), (evals, dot_map)
-    assert not collision_check(dot_map)
+    assert not collision_check(dot_map) # check that map is injective (one-to-one)
+    # sort the eigenvalues using the map
     ret = dot_map_to_evals_final(dot_map, evals, evecs)
     return ret
 sortevals.sorted_evecs = {}
@@ -654,18 +649,18 @@ def dot_map_to_evals_final(dot_map, evals, evecs):
 def votes_to_map(votes, stop=np.inf, debug=False):
     """Get sorting map based on previous time slice votes
     for what each one thinks is the right ordering"""
-    ret = votes[0]
+    ret = votes[0] # initial consensus from most recently sorted time slice
     stop = len(votes) if stop >= len(votes) else stop
     votes = votes[:stop]
-    for i, idxsi, timei in votes:
-        #i = filter_dict(i, idxsi)
-        for j, idxsj, timej in votes:
-            if timej <= timei:
+    for mapi, scorei, timei in votes:
+        #imap = filter_dict(i, idxsi)
+        for mapj, scorej, timej in votes:
+            if timej <= timei: # speed-up
                 continue
             assert list(idxsj), votes
-            #j = filter_dict(j, idxsj)
-            ret1 = partial_compare_dicts((i, idxsi, timei),
-                                         (j, idxsj, timej), debug=debug)
+            #jmap = filter_dict(j, idxsj)
+            ret1 = partial_compare_dicts((mapi, scorei, timei),
+                                         (mapj, scorej, timej), debug=debug)
             ret = partial_compare_dicts(ret, ret1, debug=debug)
     return ret[0]
 
@@ -673,34 +668,30 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
     """Compare common entries in two dictionaries"""
     adict, arel, timea = ainfo
     bdict, brel, timeb = binfo
+
+    # check to be sure score lists aren't empty
     assert list(arel), ainfo
     assert list(brel), binfo
+
     arel = del_maxrel(arel)
     brel = del_maxrel(brel)
     assert len(brel) == len(arel), (arel, brel)
+
     aset = set(adict)
     bset = set(bdict)
     inter = aset.intersection(bset)
     assert len(inter) == len(arel), (arel, inter)
+
     rrel = {}
     used = {}
     ret = {}
     retrev = {}
     passed = False
+
+    # loop over map disagreements, using score to resolve disagreements
+    # (weighted voting)
     while collision_check(ret) or len(ret) < len(inter):
         flag = 0
-        if ret and debug: # set to True if debugging
-            print('debug')
-            print(ret)
-            print(rrel)
-            print(retrev)
-            print(used)
-            print('inter', inter)
-            print('adict', adict, 'timea', timea)
-            print("arel", arel)
-            print('bdict', bdict, 'timeb', timeb)
-            print("brel", brel)
-            flag = debug # set to 1 if debugging
         for i in sorted(list(inter)):
 
             # the score for the source is minimized
@@ -729,11 +720,6 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
                 toadd = adict[i]
                 mrel = min(aarel, bbrel)
 
-            if flag:
-                print('toadd', toadd)
-                print('used', used)
-                print('ret', ret)
-                print('rrel', rrel)
             # check to see if already mapped
             if toadd in used:
                 if mrel < used[toadd]:
@@ -754,42 +740,19 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
                 rrel[i] = mrel
                 ret[i] = toadd
         if flag:
-            print('debug2')
-            print(ret)
-            print(rrel)
-            print(retrev)
-            print(used)
             if len(ret) < len(inter):
                 sys.exit()
         if passed:
             for i in inter:
                 if i not in rrel:
                     print("no vote gives necessary pairing:", ret)
-                    #assert None,\
-                    #    "Please examine this case before proceeding further."
                     raise PrecisionLossError
-                    #rrel[i] = np.inf
-                    #ret = fill_in_missing(ret, inter)
-                    #break
         passed = True
     assert not collision_check(ret), ret
     assert rrel, (ret, used, rrel)
     rrel = conv_dict_to_list(rrel)
     assert rrel
     return ret, rrel, None
-
-def fill_in_missing(sdict, keys):
-    """Fill in 1 to 1 mapping with missing entry"""
-    rev = [sdict[i] for i in sdict]
-    miss = set(keys)-set(rev)
-    ret = sdict
-    if len(miss) == 1:
-        for i in keys:
-            if i not in sdict:
-                ret[i] = list(miss)[0]
-    return ret
-
-
 
 def conv_dict_to_list(rrel):
     """Convert dict to list"""
@@ -821,13 +784,13 @@ def partial_id_check(rdict, keys):
                 ret = False
     return ret
 
-def filter_dict(sdict, good_keys):
-    """Get rid of all keys which are not in the good key list"""
-    ret = {}
-    for i in sdict:
-        if i in good_keys:
-            ret[i] = sdict[i]
-    return ret
+#def filter_dict(sdict, good_keys):
+#    """Get rid of all keys which are not in the good key list"""
+#    ret = {}
+#    for i in sdict:
+#        if i in good_keys:
+#            ret[i] = sdict[i]
+#    return ret
 
 def make_id(mlen):
     """Get the identity mapping"""
@@ -845,61 +808,6 @@ def isid(dot_map):
     for i in dot_map:
         if dot_map[i] != i:
             ret = False
-    return ret
-
-def get_evec_map(evs1, evs2):
-    """Get similarity mapping between sets of eigenvectors"""
-    map1 = evec_max_op_dimension(evs1)
-    map2 = evec_max_op_dimension(evs2)
-    dot_map = combine_maps(map1, map2)
-    if not isid(dot_map):
-        print(dot_map)
-        print(evs1)
-        print(evs2)
-    return dot_map
-
-def combine_maps(frommap, tommap):
-    """Compose one-to-one maps:  roughly, from(i,j)*to(j, i)"""
-    ret = {}
-    for i in frommap:
-        val = frommap[i]
-        for j in tommap:
-            if tommap[j] == val:
-                ret[i] = j
-    return ret
-
-
-def evec_max_op_dimension(evs):
-    """Get evec/eval->operator mapping based on relative overlaps"""
-    opmap = {}
-    evs = np.asarray(evs)
-    for i in range(evs.shape[0]):
-        dim = evs[:, i]
-        idx = list(np.abs(dim)).index(max(np.abs(dim)))
-        opmap[i] = idx
-    # assert map is one-to-one (injective)
-    assert not check_map_dups(opmap), str(opmap)+" "+str(evs)
-    return opmap
-
-def delete_max(evec):
-    """Delete the max element of the eigenvector"""
-    maxe = 0
-    ind = None
-    for i, elem in enumerate(evec):
-        maxe = max(np.abs(maxe), np.abs(elem))
-        if np.abs(elem) == maxe:
-            ind = i
-    ret = np.delete(evec, ind)
-    return ret
-
-
-def max_sign(evec):
-    """Get the sign of the eigenvector's largest element"""
-    maxe = 0
-    for i in evec:
-        maxe = max(np.abs(maxe), np.abs(i))
-        if np.abs(i) == maxe:
-            ret = np.sign(i)
     return ret
 
 def reset_sortevals():
