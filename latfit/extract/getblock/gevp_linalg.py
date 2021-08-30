@@ -335,20 +335,50 @@ def degenerate_subspace_check(evecs_mean_t):
         print("evecs of avg gevp",
               np.real(evecs_mean_t))
 
-def update_sort_evecs(evecs, presort_evals, postsort_evals):
-    """Update the sort of the eigenvectors"""
-    assert None, "dones't work"
-    for i, eval1 in enumerate(presort_evals):
-        for j, eval2 in enumerate(postsort_evals):
-            if j <= i:
-                continue
-            if eval1 == eval2:
-                pre = list(np.copy(evecs[i]))
-                post = list(np.copy(evecs[j]))
-                evecs[j] = pre
-                evecs[i] = post
-    evecs = np.asarray(evecs)
-    return evecs
+def norms(evecs):
+    """Get norms of evecs"""
+    ret = []
+    for i in evecs:
+        ret.append(kdot(i, i))
+    ret = np.asarray(ret)
+    return ret
+
+def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
+    """
+    apply y->(y_i-<y>)*decrease_var+<y>
+    """
+    assert np.asarray(avg).shape != (0,), str(avg)
+    orig = np.asarray(orig)
+    if hasattr(orig, '__iter__') and np.asarray(orig).shape:
+        assert hasattr(avg, '__iter__') and np.asarray(avg).shape or len(
+            orig.shape) == 1, "dimension mismatch"
+        if len(orig.shape) == 1:
+            for i, j in enumerate(orig):
+                if np.isnan(j):
+                    orig[i] = np.nan
+                    if np.asarray(orig).shape == np.asarray(avg).shape:
+                        avg[i] = np.nan
+                    else:
+                        avg = np.nan
+    else:
+        assert not np.isnan(orig+avg), "nan found"
+    ret = (orig-avg)*decrease_var+avg
+    check = (ret-avg)/decrease_var+avg
+    try:
+        assert np.allclose(
+            check, orig, rtol=1e-8, equal_nan=True), \
+            "precision loss detected:"+str(decrease_var)
+    except AssertionError:
+        #print('avg =', avg)
+        #print('ret =', ret)
+        #print('check =', check)
+        #print('orig =', orig)
+        print("precision loss detected, orig != check")
+        raise PrecisionLossError
+    return ret
+
+
+### PSEUDO SORT -- BEGIN
 
 def ratio_evals(evecs, c_lhs, c_rhs, debug=False):
     """Get the ratio evals from the evecs and C(t), C(t_0)"""
@@ -407,75 +437,26 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
     return ret
 
 def indicator(pseudo_evals, ref_evals, idx, debug=False):
-    """Check the nearest neighbor alternative matches
+    """ legacy wrapper function; should be factored out
+
+    Check the nearest neighbor alternative matches
     return the max score, normalized to the base score"""
 
     # the init_sort of the pseudo eigenvalues may leave them
     # not in ascending (or descending) order
     # thus, we may not find nearest (numerically) neighbors just by
     # looking at the init_sort'd vector of pseudo eigenvalues
-    sorted_pseudos = list(fallback_sort(pseudo_evals))
-    sorted_idx = sorted_pseudos.index(pseudo_evals[idx])
-    idxp1, idxm1 = index_pm1(sorted_idx, len(ref_evals))
 
     base_score = score(pseudo_evals[idx], ref_evals, idx)
-    if debug:
-        print('base', base_score)
-
-    if not base_score:
-        nplus1 = np.inf
-        nminus1 = np.inf
-    else:
-        nplus1 = score(sorted_pseudos[idxp1], ref_evals, idx)/base_score
-        nminus1 = score(sorted_pseudos[idxm1], ref_evals, idx)/base_score
-    #if nplus1 > 1 or nminus1 > 1:
-    #    nplus1 = np.inf
-    #    nminus1 = np.inf
-    ret = max(nplus1, nminus1)
-    if debug:
-        print("idx, idxp1, idxm1", sorted_idx, idxp1, idxm1)
-        print("p1 vs. r", sorted_pseudos[idxp1], pseudo_evals[idx], nplus1)
-        print("m1 vs. r", sorted_pseudos[idxm1], pseudo_evals[idx], nminus1)
     ret = base_score
     return ret
 
-def old_test(test_arr, rds, rel_diff, evals_to_sorted, debug=False):
-    """Obsolete way to flip match"""
-    rdleft, rdright = rds
-    for idx, item in enumerate(test_arr):
-        lcomp = np.real(rdleft[idx]/rel_diff[idx])
-        rcomp = np.real(rdright[idx]/rel_diff[idx])
-        if not idx and debug and False:
-            print(lcomp, rcomp)
-            print('evals_to_sorted', evals_to_sorted)
-            print('rel_diff', rel_diff, 'idx', idx)
-            print('rdleft', rdleft)
-            print('rdright', rdright)
-        if item: # compare to neighbors to see if there's a better candidate
-            if lcomp > 3 and rcomp > 3: # neighbors are 3x worse
-                if debug and False:
-                    print(lcomp, rcomp)
-                    print('evals_to_sorted', evals_to_sorted)
-                    print('rel_diff', rel_diff, 'idx', idx)
-                    print('rdleft', rdleft)
-                    print('rdright', rdright)
-                    print("flipped to", False)
-                test_arr[idx] = 0
-        else:
-            # comparison may be good, but neighbor also matches
-            if rel_diff:
-                if debug and False:
-                    print(lcomp, rcomp)
-                    print('evals_to_sorted', evals_to_sorted)
-                    print('rel_diff', rel_diff, 'idx', idx)
-                    print('rdleft', rdleft)
-                    print('rdright', rdright)
-                    print("flipped to", True)
-                test_arr[idx] = 1
-    return test_arr
 
 def most_similar_pair(pseudos, evals, evalsi):
-    """Find most similar pair of entries"""
+    """Find most similar pair of entries
+    
+    evals = evalsi
+    """
     mscr = 0
     for _, item1 in enumerate(pseudos):
         for _, item2 in enumerate(evals):
@@ -488,29 +469,16 @@ def most_similar_pair(pseudos, evals, evalsi):
 
 def init_sort(pseudosi, evalsi):
     """Initial sort of pseudo eigenvalues"""
-    # used = set()
     mapi = {}
+
+    # make list copies
     evalsi = list(evalsi)
     pseudosi = list(pseudosi)
-    ret = list(evalsi)
     evals = list(evalsi)
     pseudos = list(pseudosi)
-    # (eval_to_score, ref_evals, idx, func='gaussian')
 
-    #perms = permutations(range(len(evalsi)))
-    #mscr = 0
-    #mperm = None
-    #for perm in perms:
-    #    scr = 0
-    #    perm = list(perm)
-    #    for idx1, idx2 in zip(range(len(evals)), perm):
-    #        toadd = score(pseudos[idx1], evals, idx2)
-    #        scr += toadd
-    #    mscr = max(scr, mscr)
-    #    if scr == mscr:
-    #        mperm = perm
-    #for idx1, idx2 in zip(range(len(evals)), mperm):
-    #    mapi[evals[idx2]] = pseudos[idx1]
+    # init ret
+    ret = list(evalsi)
 
     while pseudos:
         valp, vale = most_similar_pair(pseudos, evals, evalsi)
@@ -525,98 +493,51 @@ def init_sort(pseudosi, evalsi):
 
 def map_evals(evals_from, evals_to, debug=False):
     """Get similarity mapping"""
-    ret = {}
-    #used = set()
+
     leval = len(evals_from)
+
+    # length check
     assert leval == len(evals_to), str(
         evals_from)+" "+str(evals_to)
+    # initial sort check
     assert list(evals_from) == list(fallback_sort(evals_from))
-    #evals_to_sorted = fallback_sort(evals_to)
-    evals_to_sorted = init_sort(evals_to, evals_from)
-    if debug:
-        print("evals to, sorted", evals_to_sorted)
 
-    # obsolete indicator
-    #eleft = np.roll(evals_to_sorted, -1)
-    #eright = np.roll(evals_to_sorted, 1)
-    #rel_diff = np.abs(evals_from - evals_to_sorted)/evals_from
-    #rdleft = np.abs(evals_from - eleft)/evals_from
-    #rdright = np.abs(evals_from - eright)/evals_from
+    evals_to_sorted = init_sort(evals_to, evals_from)
 
     rel_diff = [indicator(
         evals_to_sorted, evals_from, idx, debug=debug) for idx,
                 _ in enumerate(evals_from)]
-    #norm = 1/np.sum([i for _, i in rel_diff])
     rel_diff = np.array(rel_diff)
-    if debug:
-        print("base scores", rel_diff)
+
+
+    # attempt to allow for zero/inf scores, score comparisons
     try:
         rel_diff = [1/i if i else np.inf for i in np.sum(rel_diff)*rel_diff]
     except FloatingPointError:
         print('rel diff', rel_diff)
         raise
     rel_diff = list(rel_diff)
-    #for i in rel_diff:
-    #    if i == np.inf:
-    #        rel_diff = list(np.ones(len(rel_diff)))
-    #fallback = False # unambiguous mapping
-    # test_arr = [1 if i >= SCORE_CUTOFF else 0 for i in rel_diff]
 
-    # get rid of artificial SCORE_CUTOFF
-    test_arr = [0 for i in rel_diff] # hack around the below code
-
-    # begin legacy methods
-    # old_test
-    # test_arr = old_test(test_arr, (rdleft, rdright), rel_diff,
-    # evals_to_sorted, debug=debug)
-    # > 1 since getting one eigenvalue wrong still gives a good sort
-    test = np.sum(test_arr) == len(evals_to)
-    test2 = np.sum(test_arr) > 1
-    test3 = np.sum(test_arr) <= 1
+    assert len(evals_to), evals_to
     ret = make_id(leval)
-    if debug:
-        print('test_arr2', test_arr)
+
     evals_to = list(evals_to)
-    fallback_level = -1
-    unambig_indices = set()
-    if test:
-        fallback_level = 2 # ambiguous mapping
-    elif test2:
-        fallback_level = 1
-        mapped_from = set()
-        mapped_to = set()
-        for idx, (i, j) in enumerate(zip(evals_to_sorted, evals_to)):
-            fidx = evals_to.index(i)
-            if not test_arr[idx]:
-                tidx = evals_to.index(j)
-                mapped_from.add(fidx)
-                mapped_to.add(tidx)
-                ret[fidx] = tidx
-                unambig_indices.add(fidx)
-        assert len(mapped_from) == len(mapped_to)
-        tot = set(range(len(evals_to)))
-        for i, j in zip(sorted(list(tot-mapped_from)),
-                        sorted(list(tot-mapped_to))):
-            ret[i] = j
-    elif test3:
-        fallback_level = 0
-        unambig_indices = set(range(len(evals_to)))
-        if debug and False:
-            print('fr', evals_to_sorted)
-            print('to', evals_to)
-        for _, (i, j) in enumerate(zip(evals_to_sorted, evals_to)):
-            fidx = evals_to.index(i)
-            tidx = evals_to.index(j)
-            ret[fidx] = tidx
-    assert fallback_level >= 0, str(test_arr)
+    fallback_level = 0
+    unambig_indices = set(range(len(evals_to)))
+    if debug and False:
+        print('fr', evals_to_sorted)
+        print('to', evals_to)
+    for _, (i, j) in enumerate(zip(evals_to_sorted, evals_to)):
+        fidx = evals_to.index(i)
+        tidx = evals_to.index(j)
+        ret[fidx] = tidx
     assert not check_map_dups(ret), str(ret)+" "+str(test_arr)
     assert len(ret) == leval, str(ret)
     # end legacy
     assert ret, ret
+
     rel_diff = invert_reldiff_map(rel_diff, ret)
-    if debug:
-        print('rel_diff', rel_diff)
-        print('test_arr', test_arr)
+
     return ret, rel_diff
 
 def invert_reldiff_map(rel_diff, dot_map):
@@ -652,24 +573,17 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
         evals = list(evals)
     dot_map = make_id(len(evals))
     debug = False
-    #timeij_start = None
     if sortevals.last_time is not None and c_lhs is not None\
        and c_rhs is not None and not np.any(np.isnan(evals)) and PSEUDO_SORT:
         count = 5
-        #timeij_start = sortevals.last_time
         timeij = sortevals.last_time
-        # debug = debug if timeij < 12 else True
         if debug:
             print("c_lhs", c_lhs)
             print("c_rhs", c_rhs)
             print("det", det(np.dot(inv(c_rhs), c_lhs)))
         if timeij + 1 == 12 + np.nan:
             debug = True
-        #if debug or timeij + 1 == 13:
-        #    print("\nevals init", evals)
-        #fallback = True
         votes = []
-        #        soft_votes = []
         while timeij in sortevals.sorted_evecs and len(
                 sortevals.sorted_evecs.keys()) > 1:
 
@@ -695,8 +609,6 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
             assert len(evecs_past[0]) == len(evals), str(evecs_past[0])
             assert len(evecs_past[0]) == len(c_lhs), str(
                 evecs_past[0])+" "+str(c_lhs)
-            #if debug:
-                #assert timeij in sortevals.sorted_evecs
             evals_from = np.copy(evals)
             evals_to = ratio_evals(evecs_past, c_lhs, c_rhs, debug=debug)
             if debug:
@@ -704,86 +616,22 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 print("evals to", evals_to)
             vote_map, rel_diff = map_evals(
                 evals_from, evals_to, debug=debug)
-            if debug:
-                print('vote map', vote_map)
-                # print('fallback', fallback_level)
 
             # unambiguous different mapping; accumulate two identical votes
             # to resort the eigenvalues
             # ambiguous sorting, throw out this map
-            #if fallback_level == 2:
-            #    continue
-            #if fallback_level == 1:
-            #    soft_votes.append((vote_map, unambig_indices))
-            #else:
-            #    assert not fallback_level
-            if not pos_shift(evals_past, dot_map_to_evals_final(
-                    dot_map, evals, evecs)[0]):
-                assert vote_map, vote_map
-                votes.append((vote_map, rel_diff, timeij))
-            #if debug:
-            #    print('votes', votes)
-            #    print('soft_votes', soft_votes)
 
-            #if len(votes)+np.floor(len(soft_votes)/2) == 3:
-            #    break
-
-            #if len(votes) == 2: # two unambiguous votes is arbitrary
-            #if debug:
-            #print("good votes")
-            #break
+            assert vote_map, vote_map
+            votes.append((vote_map, rel_diff, timeij))
 
             timeij -= 1 # t-1, t-2, t-3
 
-        if debug:
-            print(count)
-        #altlen = int(len(votes) + np.floor(len(soft_votes)/1))
-        #votes.extend(soft_votes)
-        if debug:
-            print("final votes")
-            for i in votes:
-                print(i)
-        #if len(votes) > 1:
         if votes:
             dot_map = votes_to_map(votes, debug=debug)
-        # assert votes or count == 5
-        #elif count < 2:
-            #print("late time sorting break down; timeij=", timeij)
-            #raise PrecisionLossError
-        #if altlen > 1:
-        #    dot_map = votes_to_map(votes, stop=altlen)
-        # old way
-        #if len(votes) >= 3 or (count == 2 and len(votes) == 2):
-        #    dot_map = votes_to_map(votes)
-        #elif altlen >= 3 or (count == 2 and altlen == 2):
-        #    if debug:
-        #        print("votes", votes, "soft_votes", soft_votes)
-        #    votes.extend(soft_votes)
-        #    dot_map = votes_to_map(votes, stop=altlen)
-        if debug:
-            print("final votes")
-            for i in votes:
-                print(i)
-            print("final dot map:", dot_map)
-    #exitp = False
+
     assert len(dot_map) == len(evals), (evals, dot_map)
-    #print('dot_map', dot_map, 'timeij', evals)
     assert not collision_check(dot_map)
     ret = dot_map_to_evals_final(dot_map, evals, evecs)
-    if evecs is not None and not np.any(np.isnan(evals)):
-        if debug:
-            print("evals final", ret[0])
-    elif not np.any(np.isnan(evals)):
-        if debug:
-            print("evals final", ret)
-    #if np.isnan(ret[0][0]):
-    #    print("raising nan")
-    #    raise
-    #print('BREAK')
-    #print(ret[0])
-    #print(evals)
-    if debug:
-        sys.exit()
     return ret
 sortevals.sorted_evecs = {}
 sortevals.sorted_evals = {}
@@ -802,25 +650,6 @@ def dot_map_to_evals_final(dot_map, evals, evecs):
         ret = (sevals, sevecs.T)
     return ret
 
-def pos_shift(evals_past, evals_final):
-    """Detect negative energy by positive shift in eigenvalue"""
-    ret = False
-    #for i, j in zip(evals_past, evals_final):
-    for _ in zip(evals_past, evals_final):
-        break # until this is debugged
-        #diff = i.val-j
-        #if diff < 0:
-        #    dev = i.sdev
-        #    if -1*diff/dev > 1.5:
-        #        ret = True
-        #        print('diff', diff)
-        #        print('dev', dev)
-        #        print('evals past', evals_past)
-        #        print('evals final', evals_final)
-        #        sys.exit()
-    return ret
-
-
 
 def votes_to_map(votes, stop=np.inf, debug=False):
     """Get sorting map based on previous time slice votes
@@ -837,18 +666,7 @@ def votes_to_map(votes, stop=np.inf, debug=False):
             #j = filter_dict(j, idxsj)
             ret1 = partial_compare_dicts((i, idxsi, timei),
                                          (j, idxsj, timej), debug=debug)
-            if debug:
-                print('ret1', ret1, 'timei', timei)
-                print('ret tl', ret, 'timej', timej)
             ret = partial_compare_dicts(ret, ret1, debug=debug)
-            #if disagree:
-            #    agree = set(idxsi).intersection(idxsj)
-                #agree = agree-set(disagree)
-                #allid = partial_id_check(ret, agree)
-                #if allid:
-                    #print("votes disagree:", votes)
-                    #raise PrecisionLossError
-                    #ret = make_id(ret)
     return ret[0]
 
 def partial_compare_dicts(ainfo, binfo, debug=False):
@@ -1155,46 +973,4 @@ def check_map_dups(dot_map):
         for j in dot_map:
             if i != j and dot_map[i] == dot_map[j]:
                 ret = True
-    return ret
-
-def norms(evecs):
-    """Get norms of evecs"""
-    ret = []
-    for i in evecs:
-        ret.append(kdot(i, i))
-    ret = np.asarray(ret)
-    return ret
-
-def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
-    """
-    apply y->(y_i-<y>)*decrease_var+<y>
-    """
-    assert np.asarray(avg).shape != (0,), str(avg)
-    orig = np.asarray(orig)
-    if hasattr(orig, '__iter__') and np.asarray(orig).shape:
-        assert hasattr(avg, '__iter__') and np.asarray(avg).shape or len(
-            orig.shape) == 1, "dimension mismatch"
-        if len(orig.shape) == 1:
-            for i, j in enumerate(orig):
-                if np.isnan(j):
-                    orig[i] = np.nan
-                    if np.asarray(orig).shape == np.asarray(avg).shape:
-                        avg[i] = np.nan
-                    else:
-                        avg = np.nan
-    else:
-        assert not np.isnan(orig+avg), "nan found"
-    ret = (orig-avg)*decrease_var+avg
-    check = (ret-avg)/decrease_var+avg
-    try:
-        assert np.allclose(
-            check, orig, rtol=1e-8, equal_nan=True), \
-            "precision loss detected:"+str(decrease_var)
-    except AssertionError:
-        #print('avg =', avg)
-        #print('ret =', ret)
-        #print('check =', check)
-        #print('orig =', orig)
-        print("precision loss detected, orig != check")
-        raise PrecisionLossError
     return ret
