@@ -144,13 +144,19 @@ if T0 is None:
     #T0 = 'TMINUS3' if ISOSPIN != 2 else 'TMINUS1'
     T0 = 'TMINUS1' # t-1 # 10 t-2
 
+LARGE_DELTA_T_MATRIX_SUBTRACTION = False
+LARGE_DELTA_T_MATRIX_SUBTRACTION = True
+
 
 def get_dts(dt1, ens, irr):
     """Get GEVP matrix subtraction delta ts"""
     dt2 = 1
     if dt1 is None:
         if ens == '24c':
-            dt1 = 6 # based on TI fit results.
+            if LARGE_DELTA_T_MATRIX_SUBTRACTION:
+                dt1 = 8 # based on TI fit results.
+            else:
+                dt1 = 1
             dt2 = 1
         if ens == '32c':
             if irr == 'A_1PLUS_mom000':

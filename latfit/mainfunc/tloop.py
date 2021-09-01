@@ -16,6 +16,7 @@ from latfit.config import MULT, METHOD, JACKKNIFE, GEVP
 from latfit.config import TSTEP, CALC_PHASE_SHIFT, NOLOOP
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
+from latfit.config import LARGE_DELTA_T_MATRIX_SUBTRACTION
 
 # errors
 from latfit.analysis.errorcodes import XmaxError, XminError
@@ -224,7 +225,10 @@ def incr_t0():
 def incr_dt():
     """Increment the matrix subtraction time separation in
     D(t):= C(t)-C(t-dt), where D is the subtracted GEVP matrix"""
-    ens_offset = 5 if LATTICE_ENSEMBLE == '24c' else 0 # using large dt gives empirical statistical improvement (observed by T. Izubuchi).
+    if LARGE_DELTA_T_MATRIX_SUBTRACTION:
+        ens_offset = 5 if LATTICE_ENSEMBLE == '24c' else 0 # using large dt gives empirical statistical improvement (observed by T. Izubuchi).
+    else:
+        ens_offset = 0
     if latfit.config.DELTA_T_MATRIX_SUBTRACTION == 1:
         latfit.config.DELTA_T_MATRIX_SUBTRACTION += ens_offset
     dtee = latfit.config.DELTA_T_MATRIX_SUBTRACTION-ens_offset
