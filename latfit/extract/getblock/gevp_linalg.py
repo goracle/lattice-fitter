@@ -684,7 +684,7 @@ def partial_compare_dicts(ainfo, binfo, debug=False):
     rrel = {}
     used = {}
     ret = {}
-    passed = False
+    passed = False # have we done one iter of the while loop below?
 
     # loop over map disagreements, using score to resolve disagreements
     while collision_check(ret) or len(ret) < len(inter):
