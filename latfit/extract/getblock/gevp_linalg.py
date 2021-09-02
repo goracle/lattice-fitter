@@ -378,7 +378,7 @@ def variance_reduction(orig, avg, decrease_var=DECREASE_VAR):
 
 ### PSEUDO SORT -- BEGIN
 
-def ratio_evals(evecs, c_lhs, c_rhs, debug=False):
+def ratio_evals(evecs, c_lhs, c_rhs):
     """Get the ratio evals from the evecs and C(t), C(t_0)"""
     ret = []
     for i in evecs:
@@ -386,9 +386,6 @@ def ratio_evals(evecs, c_lhs, c_rhs, debug=False):
         assert len(i) == len(c_rhs), str(c_rhs)+" "+str(i)
         num = bracket(i, c_lhs)
         denom = bracket(i, c_rhs)
-        if debug:
-            print("num", num)
-            print("denom", denom)
         ret.append(num/denom)
     ret = np.asarray(ret)
     return ret
@@ -434,7 +431,7 @@ def score(eval_to_score, ref_evals, idx, func='gaussian'):
         assert None, "other functions not supported at this time"
     return ret
 
-def indicator(pseudo_evals, ref_evals, idx, debug=False):
+def indicator(pseudo_evals, ref_evals, idx):
     """ legacy wrapper function; should be factored out
 
     Check the nearest neighbor alternative matches
@@ -489,7 +486,7 @@ def init_sort(pseudosi, evalsi):
     return ret
 
 
-def map_evals(evals_from, evals_to, debug=False):
+def map_evals(evals_from, evals_to):
     """Get similarity mapping"""
 
     leval = len(evals_from)
@@ -517,7 +514,7 @@ def map_evals(evals_from, evals_to, debug=False):
 
     # wrapper to get inverse scores
     rel_diff = [indicator(
-        evals_to_sorted, evals_from, idx, debug=debug) for idx,
+        evals_to_sorted, evals_from, idx) for idx,
                 _ in enumerate(evals_from)]
     rel_diff = np.array(rel_diff)
     # rel_diff = 1/(scores*sum(scores))
@@ -605,9 +602,9 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
                 evecs_past[0])+" "+str(c_lhs)
 
             evals_from = np.copy(evals)
-            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs, debug=debug) # pseudo-evals
+            evals_to = ratio_evals(evecs_past, c_lhs, c_rhs) # pseudo-evals
             vote_map, rel_diff = map_evals(
-                evals_from, evals_to, debug=debug)
+                evals_from, evals_to)
 
             # unambiguous different mapping; accumulate two identical votes
             # to resort the eigenvalues
@@ -620,7 +617,7 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
 
         # if any votes are cast, modify the map (which is set to identity map)
         if votes:
-            dot_map = votes_to_map(votes, debug=debug)
+            dot_map = votes_to_map(votes)
 
     assert len(dot_map) == len(evals), (evals, dot_map)
     assert not collision_check(dot_map) # check that map is injective (one-to-one)
@@ -645,7 +642,7 @@ def dot_map_to_evals_final(dot_map, evals, evecs):
     return ret
 
 
-def votes_to_map(votes, stop=np.inf, debug=False):
+def votes_to_map(votes, stop=np.inf):
     """Get sorting map based on previous time slice votes
     for what each one thinks is the right ordering"""
     ret = votes[0] # initial consensus from most recently sorted time slice
@@ -659,11 +656,11 @@ def votes_to_map(votes, stop=np.inf, debug=False):
             assert list(idxsj), votes
             #jmap = filter_dict(j, idxsj)
             ret1 = partial_compare_dicts((mapi, scorei, timei),
-                                         (mapj, scorej, timej), debug=debug)
-            ret = partial_compare_dicts(ret, ret1, debug=debug)
+                                         (mapj, scorej, timej))
+            ret = partial_compare_dicts(ret, ret1)
     return ret[0]
 
-def partial_compare_dicts(ainfo, binfo, debug=False):
+def partial_compare_dicts(ainfo, binfo):
     """Compare common entries in two dictionaries"""
     adict, arel, timea = ainfo
     bdict, brel, timeb = binfo
