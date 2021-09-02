@@ -653,7 +653,7 @@ def votes_to_map(votes, stop=np.inf):
         for mapj, scorej, timej in votes:
             if timej <= timei: # speed-up
                 continue
-            assert list(idxsj), votes
+            assert list(scorei), votes
             #jmap = filter_dict(j, idxsj)
             ret1 = partial_compare_dicts((mapi, scorei, timei),
                                          (mapj, scorej, timej))
