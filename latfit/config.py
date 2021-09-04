@@ -146,6 +146,7 @@ if T0 is None:
 
 LARGE_DELTA_T_MATRIX_SUBTRACTION = False
 LARGE_DELTA_T_MATRIX_SUBTRACTION = True
+print("matdt large:", LARGE_DELTA_T_MATRIX_SUBTRACTION)
 
 
 def get_dts(dt1, ens, irr):
