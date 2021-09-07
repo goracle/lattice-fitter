@@ -23,10 +23,10 @@ def main():
         fn1 = h5py.File('traj_'+traj+'_5555.hdf5', 'w') # 5555 is chosen just to not generate collisions with previously named files
         fn1[kk2kkstr(fil)] = get_kk_to_kk(fil)
         fn1[kk2sigmastr(fil)] = get_kk_to_sigma(fil)
-        fn1[sigma2kkstr(fil)] = get_sigma_to_kk(fil)
+        # fn1[sigma2kkstr(fil)] = get_sigma_to_kk(fil)
         for mom in generate_pion_moms():
             fn1[kk2pipistr(fil, mom)] = get_kk_to_pipi(fil, mom)
-            fn1[pipi2kkstr(fil, mom)] = get_pipi_to_kk(fil, mom)
+            # fn1[pipi2kkstr(fil, mom)] = get_pipi_to_kk(fil, mom)
         fn1.close()
 
 def names(fil=None):
