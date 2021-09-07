@@ -16,6 +16,15 @@ TDIS_MAX = 16
 TSEP_PIPI = 4 # 24c
 TSEP_PIPI = 3 # 24c
 
+try:
+    PROFILE = profile  # throws an exception when PROFILE isn't defined
+except NameError:
+    def profile(arg2):
+        """Line profiler default."""
+        return arg2
+    PROFILE = profile
+
+@PROFILE
 def main():
     """main"""
     for fil in glob.glob('*.h5'):
@@ -29,19 +38,22 @@ def main():
             # fn1[pipi2kkstr(fil, mom)] = get_pipi_to_kk(fil, mom)
         fn1.close()
 
+@PROFILE
 def names(fil=None):
     """Stores dataset names"""
     if fil is None:
         assert names.static is not None, names.static
         ret = names.static
+    elif names.static is not None:
+        ret = names.static
     else:
-        assert names.static is None, fil
         with h5py.File(fil,'r') as fn1:
             ret = list(fn1.keys())
         names.static = ret
     return ret
 names.static = None
 
+@PROFILE
 def getsep(fil):
     """Get tsep (time distance between K and K in KK operator
     then validate.  Assume during the whole program run
@@ -67,6 +79,7 @@ def getsep(fil):
 getsep.tsep_ens = None
 
 
+@PROFILE
 def kk2kkstr(fil):
     """get dataset name for KK->KK"""
     traj = re.sub('.h5', '', fil)
@@ -76,6 +89,7 @@ def kk2kkstr(fil):
     ret += '_mom1src000_mom2src000_mom1snk000'
     return ret
 
+@PROFILE
 def kk2sigmastr(fil):
     """get dataset name for KK->sigma"""
     traj = re.sub('.h5', '', fil)
@@ -85,6 +99,7 @@ def kk2sigmastr(fil):
     ret += '_momsrc000_momsnk000'
     return ret
 
+@PROFILE
 def generate_pion_moms():
     """Generate single particle 3-momenta up to (1,1,1) 
     (with +/- inserted in all combinations)"""
@@ -97,6 +112,7 @@ def generate_pion_moms():
     assert len(ret) == 27, ret
     return ret
 
+@PROFILE
 def kk2pipistr(fil, mom):
     """get dataset name for KK->KK"""
     traj = re.sub('.h5', '', fil)
@@ -107,20 +123,23 @@ def kk2pipistr(fil, mom):
     return ret
 
 
+@PROFILE
 def addt(*times):
     ret = sum(times)
     ret = ret % LT
     return ret
 
+@PROFILE
 def get_kk_to_sigma(fil):
     """Get contractions for KK->sigma+isospin project
     """
     dataset_names = names(fil)
+    fname = h5py.File(fil,'r')
     knames = [i for i in dataset_names if i.count('sigma') == 1]
     tsrcs = sorted(list(set([i.split('_')[-1] for i in knames])))
-    tsrcs = np.array(tsrcs)
-    tsrcs += sep # hack to deal with tsep offset in the first dataset
+    tsrcs = np.array(tsrcs, dtype=np.int)
     sep = getsep(fil)
+    tsrcs += sep # hack to deal with tsep offset in the first dataset
     ret = np.zeros((LT,LT), dtype=np.complex128)
     fn1 = h5py.File(fil, 'r')
     kstr = ['kaon000wlvs_y', 'kaon000wsvl_y']
@@ -138,7 +157,7 @@ def get_kk_to_sigma(fil):
 
             # T diagram sets
             coeff = math.sqrt(2)/2
-            sets = yyx_T_sigma_diagrams_sets(v1,v3,v4)
+            sets = yyx_T_sigma_diagrams_sets(v1,v3,v4, sep)
 
             idx = addt(sep, tdis) # definition of Masaaki's index for T
             for seq in sets:
@@ -147,12 +166,20 @@ def get_kk_to_sigma(fil):
                 dname = kstr[0]+str(y1)+'_'+kstr[1]+str(y2)+'_sigma000_x'+str(
                     x)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
-                toadd = fname[dname][idx]
+                toadd = mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
 
+    fname.close()
     return ret
 
-def yyx_T_sigma_diagrams_sets(v1,v3,v4):
+@PROFILE
+def mcomplex(toadd):
+    """Convert tuple to complex number"""
+    ret = complex(toadd[0], toadd[1])
+    return ret
+
+@PROFILE
+def yyx_T_sigma_diagrams_sets(v1,v3,v4, sep):
     """ T diagrams (for K->sigma)
     +sqrt(2)/2 Tr[ gP Sl(x-z) gS Sl(z-y) gP Ss(y-x) ] xzy lls
     +sqrt(2)/2 Tr[ gP Ss(x-y) gP Sl(y-z) gS Sl(z-x) ] xyz sll
@@ -168,13 +195,14 @@ def yyx_T_sigma_diagrams_sets(v1,v3,v4):
     dt = v3 # definition
     seqs = [(x, z, y), (x, y, z)]
     ret = []
-    for seq in seq:
-        seq = cycle4(seq)
+    for seq in seqs:
+        seq = cycle4(seq, sep, dt)
         ret.append(seq)
     return ret
 
 
 
+@PROFILE
 def get_kk_to_pipi(fil, mom):
     """Get contractions for KK->pipi+isospin project
     """
@@ -182,11 +210,12 @@ def get_kk_to_pipi(fil, mom):
     negmom = rf.ptostr(negmom)
     mom = rf.ptostr(mom)
     dataset_names = names(fil)
+    fname = h5py.File(fil,'r')
     knames = [i for i in dataset_names if i.count('pion') == 2]
     tsrcs = sorted(list(set([i.split('_')[-1] for i in knames])))
-    tsrcs = np.array(tsrcs)
-    tsrcs += sep # hack to deal with tsep offset in the first dataset
     sep = getsep(fil)
+    tsrcs = np.array(tsrcs, dtype=np.int)
+    tsrcs += sep # hack to deal with tsep offset in the first dataset
     ret = np.zeros((LT,LT), dtype=np.complex128)
     fn1 = h5py.File(fil, 'r')
     kstr = ['kaon000wsvl', 'kaon000wlvs']
@@ -205,7 +234,7 @@ def get_kk_to_pipi(fil, mom):
 
             # R diagram sets
             coeff = -1*math.sqrt(3)/2
-            sets = yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4)
+            sets = yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep)
             set1 = sets[:4]
             set2 = sets[4:]
 
@@ -224,7 +253,7 @@ def get_kk_to_pipi(fil, mom):
                 dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+pi1str[
                     0]+'_x'+str(x1)+'_'+pi2str+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
-                toadd = fname[dname][idx]
+                toadd = mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
@@ -241,12 +270,14 @@ def get_kk_to_pipi(fil, mom):
                 dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+pistr[
                     1]+'_x'+str(x1)+'_'+pistr[0]+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
-                toadd = fname[dname][idx]
+                toadd = mcomplex(fname[dname][idx])
                 ret[tsrc, tdis] += toadd*coeff
 
+    fname.close()
     return ret
 
-def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4):
+@PROFILE
+def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
     """R diagrams for KK->pipi
     llls
     -sqrt(3)/2 Tr[ gP Sl(x-w) gP Sl(w-z) gP Sl(z-y) gP Ss(y-x) ] xwzy
@@ -267,8 +298,8 @@ def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4):
     dt = v3 # definition
     seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
     ret = []
-    for seq in seq:
-        seq = cycle4(seq)
+    for seq in seqs:
+        seq = cycle4(seq, sep, dt)
         ret.append(seq)
     return ret
 
@@ -276,23 +307,26 @@ def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4):
 
 
 
+@PROFILE
 def get_kk_to_kk(fil):
     """Get contractions for KK->KK+isospin project
     involves D (direct type) diagrams and R (rectangle type diagrams)
     disconnected component is skipped for now (handled elsewhere)
     """
     dataset_names = names(fil)
+    fname = h5py.File(fil,'r')
     knames = [i for i in dataset_names if i.count('kaon') == 4 or (
-        not i.count('pion') and not i.count('sigma'))]
+        not i.count('pion') and not i.count('sigma') and not i.count('kaon') == 2)]
     tsrcs = sorted(list(set([i.split('_')[-1] for i in knames])))
-    tsrcs = np.array(tsrcs)
-    tsrcs += sep # hack to deal with tsep offset in the first dataset
+    tsrcs = np.array(tsrcs, dtype=np.int)
     sep = getsep(fil)
+    tsrcs += sep # hack to deal with tsep offset in the first dataset
     ret = np.zeros((LT,LT), dtype=np.complex128)
     fn1 = h5py.File(fil, 'r')
     kstr = ['kaon000wsvl', 'kaon000wlvs']
     for tsrc in tsrcs:
         for tdis in range(TDIS_MAX):
+            print("kk to kk: tsrc, tdis =", tsrc, tdis)
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
             v2 = addt(tsrc,tdis,sep)
@@ -301,7 +335,7 @@ def get_kk_to_kk(fil):
             dt = v3 # definition of dt: earliest time slice (in vertex sequence)
 
             # R diagram sets
-            sets = yyxx_Rdiagrams_sets(v1,v2,v3,v4)
+            sets = yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep)
             set1 = sets[:4]
             set2 = sets[4:]
 
@@ -313,7 +347,7 @@ def get_kk_to_kk(fil):
                 dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+kstr[
                     0]+'_x'+str(x1)+'_'+kstr[1]+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
-                toadd = fname[dname][idx]
+                toadd = mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
@@ -323,7 +357,7 @@ def get_kk_to_kk(fil):
                 dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+kstr[
                     1]+'_x'+str(x1)+'_'+kstr[0]+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
-                toadd = fname[dname][idx]
+                toadd = mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
 
             # D diagrams
@@ -338,9 +372,9 @@ def get_kk_to_kk(fil):
                     assert len(tr1) == 2, tr1
                     dt1 = min(tr1)
                     idx = addt(max(tr1), -1*dt1)
-                    dname = kstr[0]+'_y0_'+kstr[1]+'_x0_dt'+str(dt1)
+                    dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
                     assert dname in fname, (dname, fname)
-                    toadd *= fname[dname][idx]
+                    toadd *= mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
@@ -349,12 +383,14 @@ def get_kk_to_kk(fil):
                 for tr1 in seq: # x, y are absolute times
                     dt1 = min(tr1)
                     idx = addt(max(tr1), -min(tr1))
-                    dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt'+str(dt1)
+                    dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
                     assert dname in fname, (dname, fname)
-                    toadd *= fname[dname][idx]
+                    toadd *= mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
+    fname.close()
     return ret
 
+@PROFILE
 def modseq3(seq, dt, idx):
     """Change from absolute to relative (time) coordinates"""
     y1, y2, x = seq
@@ -364,6 +400,7 @@ def modseq3(seq, dt, idx):
     seq = (y1, y2, x)
     return seq
 
+@PROFILE
 def modseq4(seq, dt, idx):
     """Change from absolute to relative (time) coordinates"""
     y1, y2, x1, x2 = seq
@@ -374,6 +411,18 @@ def modseq4(seq, dt, idx):
     seq = (y1, y2, x1, x2)
     return seq
 
+def doublel(slist):
+    """ return [*slist, *slist]
+    (hack for kernprof, since it doesn't like [*a, *a] syntax)
+    """
+    ret = []
+    for i in slist:
+        ret.append(i)
+    for i in slist:
+        ret.append(i)
+    return ret
+
+@PROFILE
 def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     """D diagrams
     ls sl
@@ -394,7 +443,7 @@ def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     y = v2
     dt = v3 # definition
     seqs = [((x, w), (y, z)), ((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
-    seqs = [*seqs, *seqs]
+    seqs = doublel(seqs) # seqs = [*seqs, *seqs]
     ret = []
     for seq, coeff in zip(seqs, coeffs):
         if isdiscon(seq): # handled separately by bubble code (since it needs subtraction)
@@ -403,6 +452,7 @@ def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     return ret
 
 
+@PROFILE
 def isdiscon(seq):
     """check that there's one late time and one early time in the 
     trace (D diagram)"""
@@ -418,28 +468,33 @@ def isdiscon(seq):
     return ret
 
 
+@PROFILE
 def chkseq(seq, sep):
     """Check that all relative times are now either 0 or tsep"""
     for i in seq:
         assert not i or i == sep or i == TSEP_PIPI, (seq, sep)
     return seq
 
-def cycle4(seq):
+@PROFILE
+def cycle4(seq, sep, dt):
     """cycle until the earliest time slices are first"""
     seq = np.array(seq)
     done = False
-    seqset = set(seq)
-    min1 = min(seqset)
-    min2 = min(seqset-{min1})
+    min1 = dt
+    min2 = addt(dt, sep)
+    count = 0
     while not done:
         seq = np.roll(seq, -1)
         chk = {seq[0], seq[1]}
         if min1 in chk and min2 in chk:
             done = True
             break
+        assert count < len(seq), (seq, min1, min2, done, chk)
+        count += 1
     return tuple(seq)
 
-def yyxx_Rdiagrams_sets(v1,v2,v3,v4):
+@PROFILE
+def yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep):
     """Convert to Masaaki's vertex format (for KK->KK).
 
     connected:
@@ -459,17 +514,18 @@ def yyxx_Rdiagrams_sets(v1,v2,v3,v4):
     first sequence is definitional: x=v3, w=v4, z=v1, y=v2
     """
     coeffs = [-1/2, -1/2, -1, -1, -1, -1, -1/2, -1/2]
-    x = v3
     w = v4
-    z = v1
+    x = v1
     y = v2
+    z = v3
     dt = v3 # definition
     seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
-    seqs = [*seqs, *seqs]
+    seqs = doublel(seqs) # seqs = [*seqs, *seqs]
     ret = []
     for seq, coeff in zip(seqs, coeffs):
-        seq = cycle4(seq)
-        ret.append((*seq, coeff))
+        print("cycle4:", seq)
+        seq = cycle4(seq, sep, dt)
+        ret.append((seq, coeff))
     return ret
 
 
