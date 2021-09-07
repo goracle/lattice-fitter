@@ -218,17 +218,17 @@ def get_kk_to_pipi(fil, mom):
     tsrcs += sep # hack to deal with tsep offset in the first dataset
     ret = np.zeros((LT,LT), dtype=np.complex128)
     fn1 = h5py.File(fil, 'r')
-    kstr = ['kaon000wsvl', 'kaon000wlvs']
-    pistr = ['pion'+mom+'wsvl', 'pion'+mom+'wlvs']
-    pistr_neg = ['pion'+negmom+'wsvl', 'pion'+negmom+'wlvs']
+    kstr = ['kaon000wlvs', 'kaon000wsvl']
+    pistr = ['pion'+mom, 'pion'+mom]
+    pistr_neg = ['pion'+negmom, 'pion'+negmom]
 
     # R diagrams
     for tsrc in tsrcs:
         for tdis in range(TDIS_MAX):
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
-            v2 = addt(tsrc,tdis,sep)
-            v3 = addt(tsrc,-sep)
+            v2 = addt(tsrc,tdis,TSEP_PIPI)
+            v3 = addt(tsrc,-1*sep)
             v4 = tsrc # inner src
             dt = v3 # definition of dt: earliest time slice (in vertex sequence)
 
@@ -250,8 +250,9 @@ def get_kk_to_pipi(fil, mom):
                 else:
                     pi1str = pistr_neg[0]
                     pi2str = pistr[1]
-                dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+pi1str[
-                    0]+'_x'+str(x1)+'_'+pi2str+'_x'+str(x2)+'_dt_'+str(dt)
+                dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(
+                    y2)+'_'+pi1str+'_x'+str(x1)+'_'+pi2str+'_x'+str(
+                        x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
                 ret[tsrc,tdis] += toadd*coeff
@@ -267,8 +268,8 @@ def get_kk_to_pipi(fil, mom):
                 else:
                     pi1str = pistr_neg[1]
                     pi2str = pistr[0]
-                dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+pistr[
-                    1]+'_x'+str(x1)+'_'+pistr[0]+'_x'+str(x2)+'_dt_'+str(dt)
+                dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+pi1str+'_x'+str(
+                    x1)+'_'+pi2str+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
                 ret[tsrc, tdis] += toadd*coeff
@@ -291,10 +292,15 @@ def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
     +sqrt(3) Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Sl(z-w) gP Sl(w-z) ] 
     +sqrt(3) Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Sl(z-w) gP Sl(w-z) ] 
     """
-    x = v3
+    #x = v3
+    #w = v4
+    #z = v1
+    #y = v2
+    # copied from R diagram
     w = v4
-    z = v1
+    x = v1
     y = v2
+    z = v3
     dt = v3 # definition
     seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
     ret = []
@@ -482,6 +488,8 @@ def cycle4(seq, sep, dt):
     done = False
     min1 = dt
     min2 = addt(dt, sep)
+    assert min1 in seq, (min1, seq)
+    assert min2 in seq, (min2, seq)
     count = 0
     while not done:
         seq = np.roll(seq, -1)
