@@ -111,20 +111,32 @@ def type3_sets(dirname=''):
     return momset, momsetneg, deltatset
 
 
+def create_dsets(threen1, okey, lreto):
+    """Create and zero out datasets for diagram and mix counter-part"""
+    dset = threen1.create_dataset(okey, (lreto*LT**2,),
+                                    dtype=np.complex128)
+    dset[:] = np.zeros(lreto*LT**2, dtype=np.complex128)
+    dsetm = threen1.create_dataset(okey+'_mix3', (2*LT**2,),
+                                    dtype=np.complex128)
+    dsetm[:] = np.zeros(2*LT**2, dtype=np.complex128)
+
+
 def populate3(threen1, num, reto, type3sets):
     """Fill output file with blank datasets
     Return a dict of the dataset handles"""
     momset, momsetneg, deltatset = type3sets
     tsep = TSEP
+    for sink in ['sigma', 'pion']:
+        for deltat in deltatset:
+            deltat = str(deltat)
+            okey = 'traj_'+num+'_type3_'+sink+'_deltat_'+deltat
+            create_dsets(threen1, okey, len(reto))
     for mom, negmom in zip(momset, momsetneg):
         for deltat in deltatset:
             deltat = str(deltat)
             okey = 'traj_'+num+'_type3_deltat_'+deltat+'_tsep'+str(
                 tsep)+'_mom'+mom
-            dset = threen1.create_dataset(okey, (len(reto)*LT**2,), dtype=np.complex128)
-            dset[:] = np.zeros(len(reto)*LT**2, dtype=np.complex128)
-            dsetm = threen1.create_dataset(okey+'_mix3', (2*LT**2,), dtype=np.complex128)
-            dsetm[:] = np.zeros(2*LT**2, dtype=np.complex128)
+            create_dsets(threen1, okey, len(reto))
     print("done populating type3 output")
 
 @PROFILE
@@ -149,30 +161,57 @@ def conv_type3(num, reto, type3sets):
     #    threen1[item][RANK] = RANK+0j
     #    break
     #sys.exit()
+
+    # K->sigma/pi
+    for sink in ['sigma', 'pion']:
+        for deltat in deltatset:
+            count += 1
+            if RANK != (count % SIZE):
+                continue
+            deltat = str(deltat)
+            output = 'traj_'+num+'_type3_'+sink+'_deltat_'+deltat
+
+            dt1 = deltat
+
+            # read/convert
+            const = (num, sink, None, reto)
+            ret, mret = readconv_type3(dt1, *const)
+
+            # sum/avg
+            ret *= -1 # another correction since Masaaki applied g5
+
+            # write
+            okey = 'traj_'+num+'_type3_'+sink+'_deltat_'+deltat
+            threen1[okey][:] = ret
+            threen1[okey+'_mix3'][:] = mret
+            print("done converting:", output, 'count =', count)
+
+    # K->pipi
     for mom, negmom in zip(momset, momsetneg):
         for deltat in deltatset:
             count += 1
             if RANK != (count % SIZE):
                 continue
 
-            if count > 10:
-                break
             deltat = str(deltat)
             output = 'traj_'+num+'_type3_deltat_'+deltat+'_sep'+str(tsep)+\
                 '_mom'+mom
 
             dt1 = deltat
             dt2 = str(int(deltat)+tsep)
-            
 
             # read/convert
             const = (num, mom, negmom, reto)
+            const2 = (num, negmom, mom, reto)
             ret, mret = readconv_type3((dt1, dt2), *const)
-            pair = readconv_type3((dt2, dt1), *const)
+            pair = readconv_type3((dt2, dt1), *const2)
+
+            # sum/avg
             ret += pair[0]
+            ret *= -1 # another correction since Masaaki applied g5
             mret += pair[1]
-            ret /= 2
-            mret /= 2
+            #ret /= 2 # done in kaonanalysis
+            #mret /= 2
 
             # write
             okey = 'traj_'+num+'_type3_deltat_'+deltat+'_tsep'+str(
@@ -186,10 +225,16 @@ def conv_type3(num, reto, type3sets):
     os.chdir('..')
     print("done with cd, rank", RANK)
 
-def readconv_type3(dts, num, mom, negmom, reto):
-    dt1, dt2 = dts
-    assert negmom, (mom, negmom)
-    inp = 'pion'+mom+'_'+dt1+'_pion'+negmom+'_'+dt2+'_'
+def readconv_type3(dts, num, mom_sink, negmom, reto):
+    if isinstance(dts, str) or isinstance(dts, int):
+        sink = mom_sink
+        dt1 = dts
+        inp = sink+'000_'+dt1+'_'
+    else:
+        mom = mom_sink
+        dt1, dt2 = dts
+        assert negmom, (mom, negmom, dts)
+        inp = 'pion'+mom+'_'+dt1+'_pion'+negmom+'_'+dt2+'_'
     rcache = {}
     fname = inp+'kaon000_0.'+num+'.h5'
     assert fname not in readconv_type3.chk, fname
@@ -217,7 +262,7 @@ def inner(reto, fn1, rcache, inp=''):
                 key = inp+'kaon000_0_'+con+tail+'/correlator'
                 toapp, rcache = get_toapp(fn1, key, tdis, rcache)
                 ret.append(toapp)
-            for mtype in ['mixg5', 'mixid']:
+            for mtype in ['mixid', 'mixg5']: # order is important here, and is flipped from what one would naively expect from Dan's format; this is due to application of g5 by Masaaki
                 key = inp+'kaon000_0_'+mtype+tail+'/correlator'
                 toapp, rcache = get_toapp(fn1, key, tdis, rcache)
                 mret.append(toapp)
