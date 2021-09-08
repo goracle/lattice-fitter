@@ -304,6 +304,8 @@ def sort_addzero(addzero, enint, timeij, sortbydist=True):
         mapi = [(0, 0), (2, 1), (1, 2), (3, 3), (4, 4)]
     elif ISOSPIN == 0 and len(dispf) == 2: # hard coding!
         mapi = [(0, 0), (1, 1)]
+    elif ISOSPIN == 2 and len(dispf) == 4: # hard coding!
+        mapi = [(0, 0), (1, 1), (2, 2), (3, 3)]
     else:
         assert None, "map not hard-coded yet:"+str(len(dispf))
     if len(dispf)-len(mapi) == 1:
