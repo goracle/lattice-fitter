@@ -252,13 +252,20 @@ class ResultMin:
         self.energy.arr = np.zeros((params.num_configs,
                                     len(START_PARAMS)
                                     if not GEVP else params.dimops))
-        self.__paramlist = {'energy': self.energy,
-                            'systematics': self.systematics,
-                            'pvalue': self.pvalue,
-                            'chisq': self.chisq,
-                            'phase_shift': self.phase_shift,
-                            'scattering_length': self.scattering_length,
-                            'min_params': self.min_params}
+        if GEVP:
+            self.__paramlist = {'energy': self.energy,
+                                'systematics': self.systematics,
+                                'pvalue': self.pvalue,
+                                'chisq': self.chisq,
+                                'phase_shift': self.phase_shift,
+                                'scattering_length': self.scattering_length,
+                                'min_params': self.min_params}
+        else:
+            self.__paramlist = {'energy': self.energy,
+                                'systematics': self.systematics,
+                                'pvalue': self.pvalue,
+                                'chisq': self.chisq,
+                                'min_params': self.min_params}
 
     def calc_pvalue(self, chisq):
         """Calculate the pvalue"""

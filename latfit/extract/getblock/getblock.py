@@ -30,7 +30,7 @@ import latfit.extract.getblock.disp_hacks as gdisp
 import latfit.extract.getblock.gevp_solve as gsolve
 import latfit.extract.getblock.gevp_linalg as glin
 
-from latfit.config import EFF_MASS, PIONRATIO
+from latfit.config import EFF_MASS, PIONRATIO, MULT
 from latfit.config import GEVP, DELETE_NEGATIVE_OPERATORS
 from latfit.config import GEVP_DEBUG, GEVP_DERIV, STYPE
 from latfit.config import DECREASE_VAR, ISOSPIN
@@ -425,7 +425,10 @@ if EFF_MASS:
 
                 eigret = gsolve.get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
                                             print_evecs=True, commnorm=True)
-                brackets.append(glin.bracket(eigret[1][1], cmats_lhs[0][num]))
+                if MULT > 1:
+                    brackets.append(glin.bracket(eigret[1][1], cmats_lhs[0][num]))
+                else:
+                    brackets.append(glin.bracket(eigret[1][0], cmats_lhs[0][num]))
                 eigret = np.asarray(eigret)
                 if VERBOSE:
                     print("timeij, num, evals:", timeij, num, eigret[0])

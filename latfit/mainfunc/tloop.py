@@ -301,7 +301,8 @@ def fit(tadd=0, tsub=0):
             ### Setup for fit range loop
 
             plotdata = store_init(plotdata)
-            combo_data = frsort.fit_range_combos(meta, plotdata)
+            if not NOLOOP:
+                combo_data = frsort.fit_range_combos(meta, plotdata)
 
             # assume that manual spec. overrides brute force search
             meta.skip_loop()
@@ -311,9 +312,9 @@ def fit(tadd=0, tsub=0):
 
             idxstart = 0
             chunk_new = -1
-            for chunk in range(6):
+            for chunk in range(6): # magic number?
 
-                if chunk < chunk_new:
+                if chunk < chunk_new or NOLOOP:
                     continue
 
                 # only one check for exhaustive fits

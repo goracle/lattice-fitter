@@ -414,14 +414,16 @@ if VERBOSE or ALTERNATIVE_PARALLELIZATION:
     def print_single_config_info(res_dict, dof, config_num):
         """Prints for a fit to a single jackknife sample"""
 
-        sys_str = str(res_dict['systematics'][-1])\
-            if not np.isnan(res_dict['systematics'][-1])\
-                else ''
+        sys_str = ''
+        if GEVP:
+            sys_str = str(res_dict['systematics'][-1])\
+                if not np.isnan(res_dict['systematics'][-1])\
+                   else ''
 
-        if res_dict['chisq']/dof < 10 and\
-           list(res_dict['systematics'][:-1]):
-            print('systematics:', res_dict['systematics'][:-1],
-                  "config:", config_num)
+            if res_dict['chisq']/dof < 10 and\
+            list(res_dict['systematics'][:-1]):
+                print('systematics:', res_dict['systematics'][:-1],
+                    "config:", config_num)
 
         # print results for this config
         print("config", config_num, ":", res_dict['energy'],

@@ -94,7 +94,8 @@ def calleig(c_lhs, c_rhs=None):
             print(eigenvals)
             sys.exit(1)
         eigenvals = np.real(eigenvals)
-    eigenvals, evecs = glin.sortevals(eigenvals, evecs, c_lhs, c_rhs)
+    if len(eigenvals) > 1:
+        eigenvals, evecs = glin.sortevals(eigenvals, evecs, c_lhs, c_rhs)
     return eigenvals, evecs
 
 def solve_gevp(c_lhs, c_rhs=None):
