@@ -179,7 +179,7 @@ def iso0(vecp, name):
     elif name == 'VKK2sigma':
         norm = -1*sqrt(2)
     elif name == 'VKK2KK':
-        norm = 0.5
+        norm = 1.0
     else:
         norm = None
     return norm

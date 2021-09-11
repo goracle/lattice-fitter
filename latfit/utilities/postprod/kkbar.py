@@ -39,6 +39,7 @@ def main():
         print("processing:", fil)
         fn1[kk2kkstr(fil)] = get_kk_to_kk(fil)
         fn1[kk2sigmastr(fil)] = get_kk_to_sigma(fil)
+        fn1[kk_bubblestr(fil)] = get_kk_bubble(fil)
         # fn1[sigma2kkstr(fil)] = get_sigma_to_kk(fil)
         for mom in generate_pion_moms():
             fn1[kk2pipistr(fil, mom)] = get_kk_to_pipi(fil, mom)
@@ -85,6 +86,17 @@ def getsep(fil):
         getsep.tsep_ens = ret
     return getsep.tsep_ens
 getsep.tsep_ens = None
+
+
+@PROFILE
+def kk_bubblestr(fil):
+    """Get dataset name for KK bubble"""
+    traj = re.sub('.h5', '', fil)
+    ret = 'traj_'+traj+'_Figure_kk-bubble'
+    sep = getsep(fil)
+    ret += '_sep'+str(sep)
+    ret += '_mom1000_mom2000'
+    return ret
 
 
 @PROFILE
@@ -172,6 +184,27 @@ def addt(*times):
     ret = sum(times)
     ret = ret % LT
     return ret
+
+@PROFILE
+def get_kk_bubble(fil):
+    """Get KK bubble
+    """
+    dataset_names = names(fil)
+    fname = h5py.File(fil,'r')
+    sep = getsep(fil)
+    knames = ['kaon000wlvs_'+str(sep)+'_kaon000wsvl', 'kaon000wsvl_'+str(
+        sep)+'_kaon000wlvs']
+    ret = np.zeros(LT, dtype=np.complex128)
+    fn1 = h5py.File(fil, 'r')
+    print("getting kk bubble")
+    for dtee in range(LT):
+        idx = addt(dtee,-1*sep)
+        assert knames[0] in fn1, knames[0]
+        assert knames[1] in fn1, knames[1]
+        ret[dtee] += mcomplex(fn1[knames[0]][idx])
+        ret[dtee] += mcomplex(fn1[knames[1]][idx])
+    return ret
+
 
 @PROFILE
 def get_kk_to_sigma(fil):
@@ -437,9 +470,9 @@ def get_kk_to_kk(fil):
 
             # D diagrams
             sets = xy_xy_Ddiagrams_sets(v1,v2,v3,v4)
-            set1 = sets[:3]
-            set2 = sets[3:]
-            assert len(set1) == len(set2), (set1, set2, sets)
+            set1 = sets[:2]
+            set2 = sets[2:]
+            assert len(set1) == len(set2), (len(set1), len(set2), sets)
 
             # kstr[0], kstr[1]
             for seq, coeff, revl in set1:
@@ -518,29 +551,29 @@ def double_l(slist):
 def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     """D diagrams
     ls sl
-    +1/2 Tr[ gP Sl(x-w) gP Ss(w-x) ] Tr[ gP Ss(y-z) gP Sl(z-y) ] xw yz lssl (xw pair call disconnected; skip)
-    +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw lsls
-    +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw lssl
+    +1/2 Tr[ gP Sl(x-w) gP Ss(w-x) ] Tr[ gP Ss(y-z) gP Sl(z-y) ] xw yz lssl 
+    +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw lsls (xy pair call disconnected; skip)
+    +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw lssl (disconnected; skip)
     +1/2 Tr[ gP Sl(x-z) gP Ss(z-x) ] Tr[ gP Ss(y-w) gP Sl(w-y) ] xz yw lssl
     
-    +1/2 Tr[ gP Ss(x-w) gP Sl(w-x) ] Tr[ gP Sl(y-z) gP Ss(z-y) ] xw yz slls (disconnected; skip)
-    +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw slsl
-    +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw slls
+    +1/2 Tr[ gP Ss(x-w) gP Sl(w-x) ] Tr[ gP Sl(y-z) gP Ss(z-y) ] xw yz slls
+    +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw slsl (disconnected; skip)
+    +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw slls (disconnected; skip)
     +1/2 Tr[ gP Ss(x-z) gP Sl(z-x) ] Tr[ gP Sl(y-w) gP Ss(w-y) ] xz yw slls
     """
     #coeffs = [1/2, 1, 1, 1/2, 1/2, 1, 1, 1/2]
-    coeffs = [1, 1, 1/2, 1, 1, 1/2]
+    coeffs = [1/2, 1/2, 1/2, 1/2]
     x = v3
     w = v4
     z = v1
     y = v2
     dt = v3 # definition
     #seqs = [((x, w), (y, z)), ((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
-    seqs = [((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
+    seqs = [((x, w), (y, z)), ((x, z), (y, w))]
     seqs = double_l(seqs) # seqs = [*seqs, *seqs]
-    #revidx = ['lssl', 'lsls', 'lssl', 'lssl']
-    revidx = ['lsls', 'lssl', 'lssl', 'slsl', 'slls', 'slls']
-    assert len(seqs) == 6, (seqs, len(seqs))
+    #revidx = ['lssl', 'lsls', 'lssl', 'lssl', 'slls', 'slsl', 'slls', 'slls']
+    revidx = ['lssl', 'lssl', 'slls', 'slls']
+    assert len(seqs) == 4, (seqs, len(seqs))
     ret = []
     for seq, coeff, revl in zip(seqs, coeffs, revidx):
         #if isdiscon(seq): # handled separately by bubble code (since it needs subtraction)
