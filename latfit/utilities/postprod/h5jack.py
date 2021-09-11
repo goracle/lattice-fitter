@@ -594,7 +594,7 @@ bubb.dojackknife = dojackknife
 mostb.dojackknife = dojackknife
 
 @PROFILE
-def fold_time(outblk, base='', dofold=False):
+def fold_time(outblk, base, dofold=False):
     """average data about the midpoint in time for better statistics.
     1/2(f(t)+f(Lt-t))
     """
