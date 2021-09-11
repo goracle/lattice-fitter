@@ -27,9 +27,16 @@ except NameError:
 @PROFILE
 def main():
     """main"""
-    for fil in glob.glob('*.h5'):
+    count = 0
+    flist = [int(i.split('.')[0]) for i in glob.glob('*.h5')]
+    flist = sorted(flist)
+    flist = [str(i)+'.h5' for i in flist]
+    for fil in flist:
+        if count:
+            break
         traj = re.sub('.h5', '', fil)
         fn1 = h5py.File('traj_'+traj+'_5555.hdf5', 'w') # 5555 is chosen just to not generate collisions with previously named files
+        print("processing:", fil)
         fn1[kk2kkstr(fil)] = get_kk_to_kk(fil)
         fn1[kk2sigmastr(fil)] = get_kk_to_sigma(fil)
         # fn1[sigma2kkstr(fil)] = get_sigma_to_kk(fil)
@@ -37,6 +44,7 @@ def main():
             fn1[kk2pipistr(fil, mom)] = get_kk_to_pipi(fil, mom)
             # fn1[pipi2kkstr(fil, mom)] = get_pipi_to_kk(fil, mom)
         fn1.close()
+        count += 1
 
 @PROFILE
 def names(fil=None):
@@ -146,6 +154,7 @@ def get_kk_to_sigma(fil):
     #sigmastr = 'sigma000'
 
     # T diagrams
+    print("getting kk->sigma")
     for tsrc in tsrcs:
         for tdis in range(TDIS_MAX):
             toadd = 0+0j
@@ -159,14 +168,23 @@ def get_kk_to_sigma(fil):
             coeff = math.sqrt(2)/2
             sets = yyx_T_sigma_diagrams_sets(v1,v3,v4, sep)
 
+
             idx = addt(sep, tdis) # definition of Masaaki's index for T
-            for seq in sets:
+            for i, seq in enumerate(sets):
+                if not i:
+                    seq = list(seq)
+                    # fix the ordering, since sll and lls switch are handled by time switch
+                    # (coeff happens to be the same, so this is the only change we need to make)
+                    seq[0], seq[1] = seq[1], seq[0]
                 seq = modseq3(seq, dt, idx)
                 y1, y2, x = chkseq(seq, sep)
                 dname = kstr[0]+str(y1)+'_'+kstr[1]+str(y2)+'_sigma000_x'+str(
                     x)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis:
+                    print(coeff, dname, idx)
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
     fname.close()
@@ -185,8 +203,8 @@ def yyx_T_sigma_diagrams_sets(v1,v3,v4, sep):
     +sqrt(2)/2 Tr[ gP Ss(x-y) gP Sl(y-z) gS Sl(z-x) ] xyz sll
 
     discon, ignore
-    -sqrt(2) Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gS Sl(z-z) ] 
-    -sqrt(2) Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gS Sl(z-z) ] 
+    -sqrt(2) Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gS Sl(z-z) ]
+    -sqrt(2) Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gS Sl(z-z) ]
     """
     x = v3
     # w = v4
@@ -221,6 +239,8 @@ def get_kk_to_pipi(fil, mom):
     kstr = ['kaon000wlvs', 'kaon000wsvl']
     pistr = ['pion'+mom, 'pion'+mom]
     pistr_neg = ['pion'+negmom, 'pion'+negmom]
+    if mom == '000':
+        print("getting kk->pipi")
 
     # R diagrams
     for tsrc in tsrcs:
@@ -255,6 +275,9 @@ def get_kk_to_pipi(fil, mom):
                         x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis and mom == '000':
+                    print(coeff, dname, idx)
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
@@ -272,6 +295,9 @@ def get_kk_to_pipi(fil, mom):
                     x1)+'_'+pi2str+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis and mom == '000':
+                    print(coeff, dname, idx)
+                    print("toadd", toadd*coeff)
                 ret[tsrc, tdis] += toadd*coeff
 
     fname.close()
@@ -330,9 +356,10 @@ def get_kk_to_kk(fil):
     ret = np.zeros((LT,LT), dtype=np.complex128)
     fn1 = h5py.File(fil, 'r')
     kstr = ['kaon000wsvl', 'kaon000wlvs']
+    print("getting kk->kk")
     for tsrc in tsrcs:
         for tdis in range(TDIS_MAX):
-            print("kk to kk: tsrc, tdis =", tsrc, tdis)
+            #print("kk to kk: tsrc, tdis =", tsrc, tdis)
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
             v2 = addt(tsrc,tdis,sep)
@@ -354,6 +381,9 @@ def get_kk_to_kk(fil):
                     0]+'_x'+str(x1)+'_'+kstr[1]+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis:
+                    print(coeff, dname, idx)
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
@@ -364,34 +394,54 @@ def get_kk_to_kk(fil):
                     1]+'_x'+str(x1)+'_'+kstr[0]+'_x'+str(x2)+'_dt_'+str(dt)
                 assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis:
+                    print(coeff, dname, idx)
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
             # D diagrams
             sets = xy_xy_Ddiagrams_sets(v1,v2,v3,v4)
-            set1 = sets[:4]
-            set2 = sets[4:]
+            set1 = sets[:3]
+            set2 = sets[3:]
+            assert len(set1) == len(set2), (set1, set2, sets)
 
             # kstr[0], kstr[1]
-            for seq, coeff in set1:
+            for seq, coeff, revl in set1:
                 toadd = 1+0j
-                for tr1 in seq: # x, y in tr1 are absolute times
+                revl = [revl[0:2], revl[2:]]
+                for tr1, rev in zip(seq, revl):
                     assert len(tr1) == 2, tr1
                     dt1 = min(tr1)
                     idx = addt(max(tr1), -1*dt1)
+                    assert rev == 'ls' or rev == 'sl', rev
+                    if rev == 'ls':
+                        idx = addt(LT,-idx) # reverse prop direction is handled by inverting the index
                     dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
                     assert dname in fname, (dname, fname)
+                    if tsrc == tsrcs[0] and not tdis:
+                        print(coeff, dname, idx)
                     toadd *= mcomplex(fname[dname][idx])
+                if tsrc == tsrcs[0] and not tdis:
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
-            for seq, coeff in set2:
+            for seq, coeff, revl in set2:
                 toadd = 1+0j
-                for tr1 in seq: # x, y are absolute times
+                revl = [revl[0:2], revl[2:]]
+                for tr1, rev in zip(seq, revl):
                     dt1 = min(tr1)
                     idx = addt(max(tr1), -min(tr1))
+                    assert rev == 'ls' or rev == 'sl', rev
+                    if rev == 'ls':
+                        idx = addt(LT,-idx) # reverse prop direction is handled by inverting the index
                     dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
                     assert dname in fname, (dname, fname)
                     toadd *= mcomplex(fname[dname][idx])
+                    if tsrc == tsrcs[0] and not tdis:
+                        print(coeff, dname, idx)
+                if tsrc == tsrcs[0] and not tdis:
+                    print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
     fname.close()
     return ret
@@ -417,7 +467,7 @@ def modseq4(seq, dt, idx):
     seq = (y1, y2, x1, x2)
     return seq
 
-def doublel(slist):
+def double_l(slist):
     """ return [*slist, *slist]
     (hack for kernprof, since it doesn't like [*a, *a] syntax)
     """
@@ -432,29 +482,36 @@ def doublel(slist):
 def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     """D diagrams
     ls sl
-    +1/2 Tr[ gP Sl(x-w) gP Ss(w-x) ] Tr[ gP Ss(y-z) gP Sl(z-y) ] xw yz lssl
+    +1/2 Tr[ gP Sl(x-w) gP Ss(w-x) ] Tr[ gP Ss(y-z) gP Sl(z-y) ] xw yz lssl (xw pair call disconnected; skip)
     +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw lsls
     +1 Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw lssl
     +1/2 Tr[ gP Sl(x-z) gP Ss(z-x) ] Tr[ gP Ss(y-w) gP Sl(w-y) ] xz yw lssl
     
-    +1/2 Tr[ gP Ss(x-w) gP Sl(w-x) ] Tr[ gP Sl(y-z) gP Ss(z-y) ] xw yz slls
+    +1/2 Tr[ gP Ss(x-w) gP Sl(w-x) ] Tr[ gP Sl(y-z) gP Ss(z-y) ] xw yz slls (disconnected; skip)
     +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Ss(z-w) gP Sl(w-z) ] xy zw slsl
     +1 Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gP Sl(z-w) gP Ss(w-z) ] xy zw slls
     +1/2 Tr[ gP Ss(x-z) gP Sl(z-x) ] Tr[ gP Sl(y-w) gP Ss(w-y) ] xz yw slls
     """
-    coeffs = [1/2, 1, 1, 1/2, 1/2, 1, 1, 1/2]
+    #coeffs = [1/2, 1, 1, 1/2, 1/2, 1, 1, 1/2]
+    coeffs = [1, 1, 1/2, 1, 1, 1/2]
     x = v3
     w = v4
     z = v1
     y = v2
     dt = v3 # definition
-    seqs = [((x, w), (y, z)), ((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
-    seqs = doublel(seqs) # seqs = [*seqs, *seqs]
+    #seqs = [((x, w), (y, z)), ((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
+    seqs = [((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
+    seqs = double_l(seqs) # seqs = [*seqs, *seqs]
+    #revidx = ['lssl', 'lsls', 'lssl', 'lssl']
+    revidx = ['lsls', 'lssl', 'lssl', 'slsl', 'slls', 'slls']
+    assert len(seqs) == 6, (seqs, len(seqs))
     ret = []
-    for seq, coeff in zip(seqs, coeffs):
-        if isdiscon(seq): # handled separately by bubble code (since it needs subtraction)
-            continue
-        ret.append((seq, coeff))
+    for seq, coeff, revl in zip(seqs, coeffs, revidx):
+        #if isdiscon(seq): # handled separately by bubble code (since it needs subtraction)
+        #    print("not used:", seq)
+        #    continue
+        #print("used:", seq)
+        ret.append((seq, coeff, revl))
     return ret
 
 
@@ -528,10 +585,10 @@ def yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep):
     z = v3
     dt = v3 # definition
     seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
-    seqs = doublel(seqs) # seqs = [*seqs, *seqs]
+    seqs = double_l(seqs) # seqs = [*seqs, *seqs]
     ret = []
     for seq, coeff in zip(seqs, coeffs):
-        print("cycle4:", seq)
+        #print("cycle4:", seq)
         seq = cycle4(seq, sep, dt)
         ret.append((seq, coeff))
     return ret
