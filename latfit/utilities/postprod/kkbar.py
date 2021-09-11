@@ -130,6 +130,42 @@ def kk2pipistr(fil, mom):
     ret += '_mom1src000_mom2src000_mom1snk'+rf.ptostr(mom)
     return ret
 
+@PROFILE
+def foldt_kk_to_kk(out, sep):
+    """Fold time for better statistics: kk to kk"""
+    ret = np.zeros((LT,LT), dtype=np.complex128)
+    for tsrc in range(LT):
+        for tdis in range(LT):
+            ret[tsrc,tdis] += out[tsrc, tdis]
+            ret[tsrc,tdis] += out[tsrc, addt(LT,-2*sep,-1*tdis)]
+    ret *= 0.5
+    return ret
+
+@PROFILE
+def foldt_kk_to_sigma(out, sep):
+    """Fold time for better statistics: kk to kk"""
+    ret = np.zeros((LT,LT), dtype=np.complex128)
+    for tsrc in range(LT):
+        for tdis in range(LT):
+            ret[tsrc,tdis] += out[tsrc, tdis]
+            ret[tsrc,tdis] += out[tsrc, addt(LT,-1*sep,-1*tdis)]
+    ret *= 0.5
+    return ret
+
+@PROFILE
+def foldt_kk_to_pipi(out, sep):
+    """Fold time for better statistics: kk to kk"""
+    ret = np.zeros((LT,LT), dtype=np.complex128)
+    for tsrc in range(LT):
+        for tdis in range(LT):
+            ret[tsrc,tdis] += out[tsrc, tdis]
+            ret[tsrc,tdis] += out[tsrc, addt(LT,-1*sep-TSEP_PIPI,-1*tdis)]
+    ret *= 0.5
+    return ret
+
+
+
+
 
 @PROFILE
 def addt(*times):
@@ -156,7 +192,7 @@ def get_kk_to_sigma(fil):
     # T diagrams
     print("getting kk->sigma")
     for tsrc in tsrcs:
-        for tdis in range(TDIS_MAX):
+        for tdis in range(LT):
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
             #v2 = addt(tsrc,tdis,sep)
@@ -188,7 +224,7 @@ def get_kk_to_sigma(fil):
                 ret[tsrc,tdis] += toadd*coeff
 
     fname.close()
-    return ret
+    return foldt_kk_to_sigma(ret, sep)
 
 @PROFILE
 def mcomplex(toadd):
@@ -244,7 +280,7 @@ def get_kk_to_pipi(fil, mom):
 
     # R diagrams
     for tsrc in tsrcs:
-        for tdis in range(TDIS_MAX):
+        for tdis in range(LT):
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
             v2 = addt(tsrc,tdis,TSEP_PIPI)
@@ -301,7 +337,7 @@ def get_kk_to_pipi(fil, mom):
                 ret[tsrc, tdis] += toadd*coeff
 
     fname.close()
-    return ret
+    return foldt_kk_to_pipi(ret, sep)
 
 @PROFILE
 def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
@@ -358,7 +394,7 @@ def get_kk_to_kk(fil):
     kstr = ['kaon000wsvl', 'kaon000wlvs']
     print("getting kk->kk")
     for tsrc in tsrcs:
-        for tdis in range(TDIS_MAX):
+        for tdis in range(LT):
             #print("kk to kk: tsrc, tdis =", tsrc, tdis)
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
@@ -444,7 +480,7 @@ def get_kk_to_kk(fil):
                     print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
     fname.close()
-    return ret
+    return foldt_kk_to_kk(ret, sep)
 
 @PROFILE
 def modseq3(seq, dt, idx):
