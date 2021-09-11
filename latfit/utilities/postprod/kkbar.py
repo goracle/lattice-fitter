@@ -27,13 +27,10 @@ except NameError:
 @PROFILE
 def main():
     """main"""
-    count = 0
     flist = [int(i.split('.')[0]) for i in glob.glob('*.h5')]
     flist = sorted(flist)
     flist = [str(i)+'.h5' for i in flist]
     for fil in flist:
-        if count:
-            break
         traj = re.sub('.h5', '', fil)
         fn1 = h5py.File('traj_'+traj+'_5555.hdf5', 'w') # 5555 is chosen just to not generate collisions with previously named files
         print("processing:", fil)
@@ -45,7 +42,6 @@ def main():
             fn1[kk2pipistr(fil, mom)] = get_kk_to_pipi(fil, mom)
             # fn1[pipi2kkstr(fil, mom)] = get_pipi_to_kk(fil, mom)
         fn1.close()
-        count += 1
 
 @PROFILE
 def names(fil=None):
