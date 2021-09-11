@@ -172,6 +172,14 @@ def iso0(vecp, name):
         norm = -1.0
     elif name in ('Bub2', 'bub2'):
         norm = 2.0
+    elif name in ('KK2pipi', 'KK2sigma', 'KK2KK'):
+        norm = 1.0
+    elif name == 'VKK2pipi':
+        norm = sqrt(3)
+    elif name == 'VKK2sigma':
+        norm = -1*sqrt(2)
+    elif name == 'VKK2KK':
+        norm = 0.5
     else:
         norm = None
     return norm
@@ -205,8 +213,15 @@ PIPIRHO = set(['T'])
 RHOPIPI = set(['T'])
 PIPISIGMA = set(['Cv3R', 'T'])
 SIGMAPIPI = set(['Cv3', 'T'])
+KKPIPI = set(['KK2pipi', 'VKK2pipi'])
+KKSIGMA = set(['KK2sigma', 'VKK2sigma'])
+KKKK = set(['KK2KK', 'VKK2KK'])
 SIGMASIGMA = set(['Hbub', 'Bub2', 'bub2'])
 RHORHO = set(['Hbub'])
+
+# key is the name of the output operator
+# value: (list of diagrams, list of isospins operator is included in,
+# reverse diagram?  True or False)
 FILTERLIST = {'pion': (PION, [1], False),
               'pipi': (PIPI, [0, 1, 2], False),
               'pipirho': (PIPIRHO, [1], True),
@@ -214,6 +229,9 @@ FILTERLIST = {'pion': (PION, [1], False),
               'sigmasigma': (SIGMASIGMA, [0], False),
               'rhorho': (RHORHO, [1], False),
               'sigmapipi': (SIGMAPIPI, [0], False),
+              'kkpipi': (KKPIPI, [0], False),
+              'kksigma': (KKSIGMA, [0], False),
+              'kkkk': (KKKK, [0], False),
               'rhopipi': (RHOPIPI, [1], False)}
 
 

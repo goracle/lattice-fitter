@@ -607,7 +607,7 @@ def fold_time(outblk, base='', dofold=False):
     if FOLD and AVGTSRC:
         retblk = []
         mult = 2 if 'Cv3' not in base and 'FigureT' not in base else 1
-        if 'Bub2' in base or 'FigureV' in base or 'Cv3' in base:
+        if 'Bub2' in base or 'FigureV' in base or 'Cv3' in base or 'VKK' in base:
             dofold = True
         elif 'corr' in base and WRITE_INDIVIDUAL:
             dofold = True

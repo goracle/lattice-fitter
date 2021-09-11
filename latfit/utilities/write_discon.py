@@ -27,6 +27,12 @@ def comb_fig(dsrc, dsnk):
         retval = 'Cv3'
     elif figsrc == 'Vdis' and figsnk == 'Vdis':
         retval = 'V'
+    elif figsrc == 'kk-bubble' and figsnk == 'Vdis':
+        retval = 'VKK2pipi'
+    elif figsrc == 'kk-bubble' and figsnk == 'kk-bubble':
+        retval = 'VKK2KK'
+    elif figsrc == 'kk-bubble' and figsnk == 'scalar-bubble':
+        retval = 'VKK2sigma'
     elif 'type4' in figsrc and figsnk == 'Vdis':
         retval = 'type4'
     elif 'type4' in figsrc and figsnk == 'scalar-bubble':
