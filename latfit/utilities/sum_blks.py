@@ -174,9 +174,9 @@ def iso0(vecp, name):
         norm = 2.0
     elif name in ('KK2pipi', 'KK2sigma', 'KK2KK'):
         norm = 1.0
-    elif name == 'VKK2pipi':
+    elif name in ('VKK2pipi', 'Vpipi2KK'):
         norm = sqrt(3)
-    elif name == 'VKK2sigma':
+    elif name in ('VKK2sigma', 'Vsigma2KK'):
         norm = -1*sqrt(2)
     elif name == 'VKK2KK':
         norm = 1.0
@@ -213,8 +213,8 @@ PIPIRHO = set(['T'])
 RHOPIPI = set(['T'])
 PIPISIGMA = set(['Cv3R', 'T'])
 SIGMAPIPI = set(['Cv3', 'T'])
-KKPIPI = set(['KK2pipi', 'VKK2pipi'])
-KKSIGMA = set(['KK2sigma', 'VKK2sigma'])
+KKPIPI = set(['KK2pipi', 'VKK2pipi', 'Vpipi2KK'])
+KKSIGMA = set(['KK2sigma', 'VKK2sigma', 'Vsigma2KK'])
 KKKK = set(['KK2KK', 'VKK2KK'])
 SIGMASIGMA = set(['Hbub', 'Bub2', 'bub2'])
 RHORHO = set(['Hbub'])

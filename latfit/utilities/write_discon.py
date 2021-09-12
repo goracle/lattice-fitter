@@ -33,6 +33,10 @@ def comb_fig(dsrc, dsnk):
         retval = 'VKK2KK'
     elif figsrc == 'kk-bubble' and figsnk == 'scalar-bubble':
         retval = 'VKK2sigma'
+    elif figsrc == 'Vdis' and figsnk == 'kk-bubble':
+        retval = 'Vpipi2KK'
+    elif figsrc == 'scalar-bubble' and figsnk == 'kk-bubble':
+        retval = 'Vsigma2KK'
     elif 'type4' in figsrc and figsnk == 'Vdis':
         retval = 'type4'
     elif 'type4' in figsrc and figsnk == 'scalar-bubble':
@@ -41,6 +45,7 @@ def comb_fig(dsrc, dsnk):
         print("***ERROR***")
         print("write_discon:comb_fig: naming error:", figsrc, figsnk)
         print("from inputs:", dsrc, dsnk)
+        print("figures:", figsrc, figsnk)
         sys.exit(1)
     return retval
 
