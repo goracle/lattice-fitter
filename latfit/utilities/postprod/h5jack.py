@@ -408,7 +408,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
                     break
             if base in ('FigureC_sep3_mom1src_1_1_1_mom2src111_mom1snk_110',
                         'FigureC_sep3_mom1src000_mom2src000_mom1snk000'):
-                printt = checkb.debugprint(allblks[base], base=base)
+                printt = checkb.debugprint(allblks[base], base)
             try:
                 outsum.append(coeff*fold_time(allblks[base], base))
                 #outblk += coeff*allblks[base]
@@ -427,7 +427,7 @@ def h5sum_blks(allblks, ocs, outblk_shape):
         assert np.all(outblk == 0.0), "out block not zero'd"
         outblk += em.acsum(np.asarray(outsum, dtype=np.complex128))
         if printt:
-            printt = checkb.debugprint(outblk, pstr='outblk=')
+            printt = checkb.debugprint(outblk, '', pstr='outblk=')
         if flag == 0:
             h5write_blk(outblk, opa, '.jkdat', ocs)
     if MPIRANK == 0:

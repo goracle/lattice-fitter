@@ -159,9 +159,9 @@ def check_dup_single(blk, idx):
             sys.exit(1)
 
 @PROFILE
-def debugprint(blk, base=None, pstr=None):
+def debugprint(blk, base, pstr=None):
     """Print some debug info about this jackknife block"""
-    temp = fold_time(blk)
+    temp = fold_time(blk, base)
     if pstr is None:
         print(base)
         print(blk)
