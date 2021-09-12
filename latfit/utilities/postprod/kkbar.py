@@ -8,8 +8,13 @@ import math
 import glob
 import h5py
 import numpy as np
+import mpi4py
+from mpi4py import MPI
 
 from latfit.utilities import read_file as rf
+
+MPIRANK = MPI.COMM_WORLD.rank
+MPISIZE = MPI.COMM_WORLD.Get_size()
 
 LT = 64
 TDIS_MAX = 16
@@ -30,7 +35,10 @@ def main():
     flist = [int(i.split('.')[0]) for i in glob.glob('*.h5')]
     flist = sorted(flist)
     flist = [str(i)+'.h5' for i in flist]
-    for fil in flist:
+    count = 0
+    for i, fil in enumerate(flist):
+        if i % MPISIZE != MPIRANK and MPISIZE > 1:
+            continue
         traj = re.sub('.h5', '', fil)
         fn1 = h5py.File('traj_'+traj+'_5555.hdf5', 'w') # 5555 is chosen just to not generate collisions with previously named files
         print("processing:", fil)
@@ -142,10 +150,11 @@ def kk2pipistr(fil, mom):
 def foldt_kk_to_kk(out, sep):
     """Fold time for better statistics: kk to kk"""
     ret = np.zeros((LT,LT), dtype=np.complex128)
-    for tsrc in range(LT):
-        for tdis in range(LT):
-            ret[tsrc,tdis] += out[tsrc, tdis]
-            ret[tsrc,tdis] += out[tsrc, addt(LT,-2*sep,-1*tdis)]
+    foldlen = LT-2*sep
+    for tdis in range(LT):
+        tdis_2 = addt(foldlen,-1*tdis)
+        ret[:,tdis] += out[:, tdis]
+        ret[:,tdis] += out[:, tdis_2]
     ret *= 0.5
     return ret
 
@@ -153,10 +162,11 @@ def foldt_kk_to_kk(out, sep):
 def foldt_kk_to_sigma(out, sep):
     """Fold time for better statistics: kk to kk"""
     ret = np.zeros((LT,LT), dtype=np.complex128)
-    for tsrc in range(LT):
-        for tdis in range(LT):
-            ret[tsrc,tdis] += out[tsrc, tdis]
-            ret[tsrc,tdis] += out[tsrc, addt(LT,-1*sep,-1*tdis)]
+    foldlen = LT-sep
+    for tdis in range(LT):
+        tdis_2 = addt(foldlen,-1*tdis)
+        ret[:,tdis] += out[:, tdis]
+        ret[:,tdis] += out[:, tdis_2]
     ret *= 0.5
     return ret
 
@@ -164,10 +174,11 @@ def foldt_kk_to_sigma(out, sep):
 def foldt_kk_to_pipi(out, sep):
     """Fold time for better statistics: kk to kk"""
     ret = np.zeros((LT,LT), dtype=np.complex128)
-    for tsrc in range(LT):
-        for tdis in range(LT):
-            ret[tsrc,tdis] += out[tsrc, tdis]
-            ret[tsrc,tdis] += out[tsrc, addt(LT,-1*sep-TSEP_PIPI,-1*tdis)]
+    foldlen = LT-sep-TSEP_PIPI
+    for tdis in range(LT):
+        tdis_2 = addt(foldlen,-1*tdis)
+        ret[:,tdis] += out[:, tdis]
+        ret[:,tdis] += out[:, tdis_2]
     ret *= 0.5
     return ret
 
@@ -185,22 +196,35 @@ def addt(*times):
 def get_kk_bubble(fil):
     """Get KK bubble
     """
-    dataset_names = names(fil)
-    fname = h5py.File(fil,'r')
     sep = getsep(fil)
-    knames = ['kaon000wlvs_'+str(sep)+'_kaon000wsvl', 'kaon000wsvl_'+str(
-        sep)+'_kaon000wlvs']
-    ret = np.zeros(LT, dtype=np.complex128)
-    fn1 = h5py.File(fil, 'r')
-    print("getting kk bubble")
-    for dtee in range(LT):
-        idx = addt(dtee,-1*sep)
-        assert knames[0] in fn1, knames[0]
-        assert knames[1] in fn1, knames[1]
-        ret[dtee] += mcomplex(fn1[knames[0]][idx])
-        ret[dtee] += mcomplex(fn1[knames[1]][idx])
-    return ret
 
+    if sep not in get_kk_bubble.knames:
+        get_kk_bubble.knames[sep] = [
+            'kaon000wlvs_'+str(sep)+'_kaon000wsvl',
+            'kaon000wsvl_'+str(sep)+'_kaon000wlvs']
+        get_kk_bubble.idxl[sep] = list(np.roll(range(LT), sep))
+
+    # bubble dataset names
+    dname1 = get_kk_bubble.knames[sep][0]
+    dname2 = get_kk_bubble.knames[sep][1]
+
+    # setup container
+    ret = np.zeros(LT, dtype=np.complex128)
+
+    print("getting kk bubble")
+
+    fname = h5py.File(fil,'r')
+    for dtee, idx in zip(get_kk_bubble.dts, get_kk_bubble.idxl[sep]):
+        # idx = addt(dtee,-1*sep)
+        # assert knames[0] in fn1, knames[0]
+        # assert knames[1] in fn1, knames[1]
+        ret[dtee] += mcomplex(fname[dname1][idx])
+        ret[dtee] += mcomplex(fname[dname2][idx])
+    fname.close()
+    return ret
+get_kk_bubble.knames = {}
+get_kk_bubble.idxl = {}
+get_kk_bubble.dts = list(range(LT))
 
 @PROFILE
 def get_kk_to_sigma(fil):
@@ -241,11 +265,11 @@ def get_kk_to_sigma(fil):
                     # fix the ordering, since sll and lls switch are handled by time switch
                     # (coeff happens to be the same, so this is the only change we need to make)
                     seq[0], seq[1] = seq[1], seq[0]
-                seq = modseq3(seq, dt, idx)
-                y1, y2, x = chkseq(seq, sep)
+                    seq = tuple(seq)
+                y1, y2, x = modseq3(seq, dt, idx, sep)
                 dname = kstr[0]+str(y1)+'_'+kstr[1]+str(y2)+'_sigma000_x'+str(
                     x)+'_dt_'+str(dt)
-                assert dname in fname, (dname, fname)
+                # assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
                 if tsrc == tsrcs[0] and not tdis:
                     print(coeff, dname, idx)
@@ -292,15 +316,17 @@ def get_kk_to_pipi(fil, mom):
     negmom = tuple(np.array(mom)*-1)
     negmom = rf.ptostr(negmom)
     mom = rf.ptostr(mom)
-    dataset_names = names(fil)
-    fname = h5py.File(fil,'r')
-    knames = [i for i in dataset_names if i.count('pion') == 2]
-    tsrcs = sorted(list(set([i.split('_')[-1] for i in knames])))
+    fname = h5py.File(fil, 'r')
     sep = getsep(fil)
-    tsrcs = np.array(tsrcs, dtype=np.int)
-    tsrcs += sep # hack to deal with tsep offset in the first dataset
+    if not get_kk_to_pipi.knames:
+        dataset_names = names(fil)
+        get_kk_to_pipi.knames = [
+            i for i in dataset_names if i.count('pion') == 2]
+        get_kk_to_pipi.tsrcs = sorted(list(set(
+            [i.split('_')[-1] for i in get_kk_to_pipi.knames])))
+        get_kk_to_pipi.tsrcs = np.array(get_kk_to_pipi.tsrcs, dtype=np.int)
+        get_kk_to_pipi.tsrcs += sep # hack to deal with tsep offset in the first dataset
     ret = np.zeros((LT,LT), dtype=np.complex128)
-    fn1 = h5py.File(fil, 'r')
     kstr = ['kaon000wlvs', 'kaon000wsvl']
     pistr = ['pion'+mom, 'pion'+mom]
     pistr_neg = ['pion'+negmom, 'pion'+negmom]
@@ -308,7 +334,7 @@ def get_kk_to_pipi(fil, mom):
         print("getting kk->pipi")
 
     # R diagrams
-    for tsrc in tsrcs:
+    for tsrc in get_kk_to_pipi.tsrcs:
         for tdis in range(LT):
             toadd = 0+0j
             v1 = addt(tsrc,tdis) # inner sink
@@ -326,8 +352,7 @@ def get_kk_to_pipi(fil, mom):
             # kstr[0], kstr[1]
             idx = addt(sep, tdis) # definition of Masaaki's index for R
             for seq in set1:
-                seq = modseq4(seq, dt, idx)
-                y1, y2, x1, x2 = chkseq(seq, sep)
+                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
                 assert x1 != x2, seq
                 if x1 < x2:
                     pi1str = pistr[0]
@@ -338,17 +363,16 @@ def get_kk_to_pipi(fil, mom):
                 dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(
                     y2)+'_'+pi1str+'_x'+str(x1)+'_'+pi2str+'_x'+str(
                         x2)+'_dt_'+str(dt)
-                assert dname in fname, (dname, fname)
+                # assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
-                if tsrc == tsrcs[0] and not tdis and mom == '000':
+                if tsrc == get_kk_to_pipi.tsrcs[0] and not tdis and mom == '000':
                     print(coeff, dname, idx)
                     print("toadd", toadd*coeff)
                 ret[tsrc,tdis] += toadd*coeff
 
             # same as above, but kstr[1], kstr[0]
             for seq in set2:
-                seq = modseq4(seq, dt, idx)
-                y1, y2, x1, x2 = chkseq(seq, sep)
+                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
                 assert x1 != x2, seq
                 if x1 < x2:
                     pi1str = pistr[1]
@@ -358,15 +382,17 @@ def get_kk_to_pipi(fil, mom):
                     pi2str = pistr[0]
                 dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+pi1str+'_x'+str(
                     x1)+'_'+pi2str+'_x'+str(x2)+'_dt_'+str(dt)
-                assert dname in fname, (dname, fname)
+                # assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
-                if tsrc == tsrcs[0] and not tdis and mom == '000':
+                if tsrc == get_kk_to_pipi.tsrcs[0] and not tdis and mom == '000':
                     print(coeff, dname, idx)
                     print("toadd", toadd*coeff)
                 ret[tsrc, tdis] += toadd*coeff
 
     fname.close()
     return foldt_kk_to_pipi(ret, sep)
+get_kk_to_pipi.knames = []
+get_kk_to_pipi.tsrcs = []
 
 @PROFILE
 def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
@@ -388,18 +414,21 @@ def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
     #z = v1
     #y = v2
     # copied from R diagram
-    w = v4
-    x = v1
-    y = v2
-    z = v3
-    dt = v3 # definition
-    seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
-    ret = []
-    for seq in seqs:
-        seq = cycle4(seq, sep, dt)
-        ret.append(seq)
-    return ret
-
+    key = (v1,v2,v3,v4, sep)
+    if key not in yyxx_R_pipi_diagrams_sets.cache:
+        w = v4
+        x = v1
+        y = v2
+        z = v3
+        dt = v3 # definition
+        seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
+        ret = []
+        for seq in seqs:
+            seq = cycle4(seq, sep, dt)
+            ret.append(seq)
+        yyxx_R_pipi_diagrams_sets.cache[key] = ret
+    return yyxx_R_pipi_diagrams_sets.cache[key]
+yyxx_R_pipi_diagrams_sets.cache = {}
 
 
 
@@ -436,15 +465,15 @@ def get_kk_to_kk(fil):
             sets = yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep)
             set1 = sets[:4]
             set2 = sets[4:]
+            assert len(set1) == len(set2), (len(set1), len(set2), set1, set2)
 
             # kstr[0], kstr[1]
             idx = addt(sep, tdis) # definition of Masaaki's index for R
             for seq, coeff in set1:
-                seq = modseq4(seq, dt, idx)
-                y1, y2, x1, x2 = chkseq(seq, sep)
+                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
                 dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+kstr[
                     0]+'_x'+str(x1)+'_'+kstr[1]+'_x'+str(x2)+'_dt_'+str(dt)
-                assert dname in fname, (dname, fname)
+                # assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
                 if tsrc == tsrcs[0] and not tdis:
                     print(coeff, dname, idx)
@@ -453,11 +482,10 @@ def get_kk_to_kk(fil):
 
             # same as above, but kstr[1], kstr[0]
             for seq, coeff in set2:
-                seq = modseq4(seq, dt, idx)
-                y1, y2, x1, x2 = chkseq(seq, sep)
+                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
                 dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+kstr[
                     1]+'_x'+str(x1)+'_'+kstr[0]+'_x'+str(x2)+'_dt_'+str(dt)
-                assert dname in fname, (dname, fname)
+                # assert dname in fname, (dname, fname)
                 toadd = mcomplex(fname[dname][idx])
                 if tsrc == tsrcs[0] and not tdis:
                     print(coeff, dname, idx)
@@ -482,7 +510,7 @@ def get_kk_to_kk(fil):
                     if rev == 'ls':
                         idx = addt(LT,-idx) # reverse prop direction is handled by inverting the index
                     dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
-                    assert dname in fname, (dname, fname)
+                    # assert dname in fname, (dname, fname)
                     if tsrc == tsrcs[0] and not tdis:
                         print(coeff, dname, idx)
                     toadd *= mcomplex(fname[dname][idx])
@@ -501,7 +529,7 @@ def get_kk_to_kk(fil):
                     if rev == 'ls':
                         idx = addt(LT,-idx) # reverse prop direction is handled by inverting the index
                     dname = kstr[1]+'_y0_'+kstr[0]+'_x0_dt_'+str(dt1)
-                    assert dname in fname, (dname, fname)
+                    # assert dname in fname, (dname, fname)
                     toadd *= mcomplex(fname[dname][idx])
                     if tsrc == tsrcs[0] and not tdis:
                         print(coeff, dname, idx)
@@ -512,25 +540,36 @@ def get_kk_to_kk(fil):
     return foldt_kk_to_kk(ret, sep)
 
 @PROFILE
-def modseq3(seq, dt, idx):
+def modseq3(seq, dt, idx, sep):
     """Change from absolute to relative (time) coordinates"""
-    y1, y2, x = seq
-    y1 = addt(y1, -dt)
-    y2 = addt(y2, -dt)
-    x = addt(x, -dt-idx)
-    seq = (y1, y2, x)
-    return seq
+    key = (seq, dt, idx, sep)
+    if key not in modseq3.cache:
+        y1, y2, x = seq
+        y1 = addt(y1, -dt)
+        y2 = addt(y2, -dt)
+        x = addt(x, -dt-idx)
+        seq = (y1, y2, x)
+        chkseq(seq, sep)
+        modseq3.cache[key] = seq
+    return modseq3.cache[key]
+modseq3.cache = {}
+
 
 @PROFILE
-def modseq4(seq, dt, idx):
+def modseq4(seq, dt, idx, sep):
     """Change from absolute to relative (time) coordinates"""
-    y1, y2, x1, x2 = seq
-    y1 = addt(y1, -dt)
-    y2 = addt(y2, -dt)
-    x1 = addt(x1, -dt-idx)
-    x2 = addt(x2, -dt-idx)
-    seq = (y1, y2, x1, x2)
-    return seq
+    key = (seq, dt, idx, sep)
+    if key not in modseq4.cache:
+        y1, y2, x1, x2 = seq
+        y1 = addt(y1, -dt)
+        y2 = addt(y2, -dt)
+        x1 = addt(x1, -dt-idx)
+        x2 = addt(x2, -dt-idx)
+        seq = (y1, y2, x1, x2)
+        chkseq(seq, sep)
+        modseq4.cache[key] = seq
+    return modseq4.cache[key]
+modseq4.cache = {}
 
 def double_l(slist):
     """ return [*slist, *slist]
@@ -601,27 +640,30 @@ def chkseq(seq, sep):
     """Check that all relative times are now either 0 or tsep"""
     for i in seq:
         assert not i or i == sep or i == TSEP_PIPI, (seq, sep)
-    return seq
 
 @PROFILE
 def cycle4(seq, sep, dt):
     """cycle until the earliest time slices are first"""
-    seq = np.array(seq)
-    done = False
-    min1 = dt
-    min2 = addt(dt, sep)
-    assert min1 in seq, (min1, seq)
-    assert min2 in seq, (min2, seq)
-    count = 0
-    while not done:
-        seq = np.roll(seq, -1)
-        chk = {seq[0], seq[1]}
-        if min1 in chk and min2 in chk:
-            done = True
-            break
-        assert count < len(seq), (seq, min1, min2, done, chk)
-        count += 1
-    return tuple(seq)
+    key = (str(sorted(list(seq))), sep, dt)
+    if key not in cycle4.cache:
+        seq = np.array(seq)
+        done = False
+        min1 = dt
+        min2 = addt(dt, sep)
+        assert min1 in seq, (min1, seq)
+        assert min2 in seq, (min2, seq)
+        count = 0
+        while not done:
+            seq = np.roll(seq, -1)
+            chk = {seq[0], seq[1]}
+            if min1 in chk and min2 in chk:
+                done = True
+                break
+            assert count < len(seq), (seq, min1, min2, done, chk)
+            count += 1
+        cycle4.cache[key] = tuple(seq)
+    return cycle4.cache[key]
+cycle4.cache={}
 
 @PROFILE
 def yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep):
