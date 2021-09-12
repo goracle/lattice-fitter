@@ -7,6 +7,7 @@ import re
 import glob
 import math
 import pickle
+import subprocess
 import ast
 import numpy as np
 from mpi4py import MPI
@@ -928,3 +929,6 @@ if __name__ == '__main__':
     END = time.perf_counter()
     if MPIRANK == 0:
         print("Total elapsed time =", END-START, "seconds")
+        subprocess.check_output(['notify-send', '-u', 'critical',
+                                 '-t', '30', "h5jack: local run complete"])
+
