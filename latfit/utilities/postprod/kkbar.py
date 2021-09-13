@@ -261,15 +261,15 @@ def get_kk_to_sigma(fil):
     for tsrc in tsrcs:
         for tdis in range(LT):
             toadd = 0+0j
-            v1 = addt(tsrc,tdis) # inner sink
+            v4 = addt(tsrc,tdis) # inner sink
             #v2 = addt(tsrc,tdis,sep)
-            v3 = addt(tsrc,-sep)
-            v4 = tsrc # inner src
-            dt = v3 # definition of dt: earliest time slice (in vertex sequence)
+            v2 = addt(tsrc,-sep)
+            v1 = tsrc # inner src
+            dt = v2 # definition of dt: earliest time slice (in vertex sequence)
 
             # T diagram sets
             coeff = math.sqrt(2)/2
-            sets = yyx_T_sigma_diagrams_sets(v1,v3,v4, sep)
+            sets = yyx_T_sigma_diagrams_sets(v1,v2,v4, sep)
 
 
             idx = addt(sep, tdis) # definition of Masaaki's index for T
@@ -300,7 +300,7 @@ def mcomplex(toadd):
     return ret
 
 @PROFILE
-def yyx_T_sigma_diagrams_sets(v1,v3,v4, sep):
+def yyx_T_sigma_diagrams_sets(v1,v2,v4, sep):
     """ T diagrams (for K->sigma)
     +sqrt(2)/2 Tr[ gP Sl(x-z) gS Sl(z-y) gP Ss(y-x) ] xzy lls
     +sqrt(2)/2 Tr[ gP Ss(x-y) gP Sl(y-z) gS Sl(z-x) ] xyz sll
@@ -309,11 +309,11 @@ def yyx_T_sigma_diagrams_sets(v1,v3,v4, sep):
     -sqrt(2) Tr[ gP Sl(x-y) gP Ss(y-x) ] Tr[ gS Sl(z-z) ]
     -sqrt(2) Tr[ gP Ss(x-y) gP Sl(y-x) ] Tr[ gS Sl(z-z) ]
     """
-    x = v3
-    # w = v4
-    z = v1
-    y = v4 # 2->4
-    dt = v3 # definition
+    z = v4
+    # w = v3
+    x = v1
+    y = v2 # 2->4
+    dt = v2 # definition
     seqs = [(x, z, y), (x, y, z)]
     ret = []
     for seq in seqs:
@@ -351,11 +351,11 @@ def get_kk_to_pipi(fil, mom):
     for tsrc in get_kk_to_pipi.tsrcs:
         for tdis in range(LT):
             toadd = 0+0j
-            v1 = addt(tsrc,tdis) # inner sink
-            v2 = addt(tsrc,tdis,TSEP_PIPI)
-            v3 = addt(tsrc,-1*sep)
-            v4 = tsrc # inner src
-            dt = v3 # definition of dt: earliest time slice (in vertex sequence)
+            v4 = addt(tsrc,tdis) # inner sink
+            v3 = addt(tsrc,tdis,TSEP_PIPI)
+            v2 = addt(tsrc,-1*sep)
+            v1 = tsrc # inner src
+            dt = v2 # definition of dt: earliest time slice (in vertex sequence)
 
             # R diagram sets
             coeff = -1*math.sqrt(3)/2
@@ -430,11 +430,11 @@ def yyxx_R_pipi_diagrams_sets(v1,v2,v3,v4, sep):
     # copied from R diagram
     key = (v1,v2,v3,v4, sep)
     if key not in yyxx_R_pipi_diagrams_sets.cache:
-        w = v4
-        x = v1
+        z = v4
+        w = v3
         y = v2
-        z = v3
-        dt = v3 # definition
+        x = v1
+        dt = v2 # definition
         seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
         ret = []
         for seq in seqs:
@@ -469,11 +469,11 @@ def get_kk_to_kk(fil, donly=False):
         for tdis in range(LT):
             #print("kk to kk: tsrc, tdis =", tsrc, tdis)
             toadd = 0+0j
-            v1 = addt(tsrc,tdis) # inner sink
-            v2 = addt(tsrc,tdis,sep)
-            v3 = addt(tsrc,-sep)
-            v4 = tsrc # inner src
-            dt = v3 # definition of dt: earliest time slice (in vertex sequence)
+            v4 = addt(tsrc,tdis) # inner sink
+            v3 = addt(tsrc,tdis,sep)
+            v2 = addt(tsrc,-sep)
+            v1 = tsrc # inner src
+            dt = v2 # definition of dt: earliest time slice (in vertex sequence)
 
             if not donly:
 
@@ -614,11 +614,11 @@ def xy_xy_Ddiagrams_sets(v1, v2, v3, v4):
     """
     #coeffs = [1/2, 1, 1, 1/2, 1/2, 1, 1, 1/2]
     coeffs = [1/2, 1/2, 1/2, 1/2]
-    x = v3
-    w = v4
-    z = v1
+    z = v4
+    w = v3
     y = v2
-    dt = v3 # definition
+    x = v1
+    dt = v2 # definition
     #seqs = [((x, w), (y, z)), ((x, y), (z, w)), ((x, y), (z, w)), ((x, z), (y, w))]
     seqs = [((x, w), (y, z)), ((x, z), (y, w))]
     seqs = double_l(seqs) # seqs = [*seqs, *seqs]
@@ -702,11 +702,11 @@ def yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep):
     first sequence is definitional: x=v3, w=v4, z=v1, y=v2
     """
     coeffs = [-1/2, -1/2, -1, -1, -1, -1, -1/2, -1/2]
-    w = v4
-    x = v1
+    z = v4
+    w = v3
     y = v2
-    z = v3
-    dt = v3 # definition
+    x = v1
+    dt = v2 # definition
     seqs = [(x, w, z, y), (x, z, w, y), (x, y, w, z), (x, y, z, w)]
     seqs = double_l(seqs) # seqs = [*seqs, *seqs]
     ret = []
