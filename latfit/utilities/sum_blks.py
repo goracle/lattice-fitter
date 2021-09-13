@@ -180,6 +180,8 @@ def iso0(vecp, name):
         norm = -1*sqrt(2)
     elif name == 'VKK2KK':
         norm = 1.0
+    elif name == 'DKK2KK':
+        norm = 0.0 # dummy coefficient; this "diagram" is only needed for pion (kaon) ratio method
     else:
         norm = None
     return norm
@@ -215,7 +217,7 @@ PIPISIGMA = set(['Cv3R', 'T'])
 SIGMAPIPI = set(['Cv3', 'T'])
 KKPIPI = set(['KK2pipi', 'VKK2pipi', 'Vpipi2KK'])
 KKSIGMA = set(['KK2sigma', 'VKK2sigma', 'Vsigma2KK'])
-KKKK = set(['KK2KK', 'VKK2KK'])
+KKKK = set(['KK2KK', 'VKK2KK', 'DKK2KK'])
 SIGMASIGMA = set(['Hbub', 'Bub2', 'bub2'])
 RHORHO = set(['Hbub'])
 

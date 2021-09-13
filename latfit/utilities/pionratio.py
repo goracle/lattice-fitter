@@ -40,6 +40,7 @@ import latfit.utilities.postprod.checkblks as checkblks
 
 TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
 TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
+TSEP = 4
 
 TSTEP = int(TSTEP)
 
@@ -52,6 +53,9 @@ MPISIZE = MPI.COMM_WORLD.Get_size()
 
 MOM = [0, 0, 0]
 STYPE = 'hdf5'
+
+PARTICLE = 'pion'
+PARTICLE = 'kaon'
 
 # ensemble specific hack
 # DELTAT is T-T0 where T, T0 are RHS, LHS time separations
@@ -794,7 +798,7 @@ def piondirect(atw=False, reverseatw=False):
           reverseatw, "rank=", MPIRANK)
     if reverseatw:
         assert atw
-    baseglob = glob.glob('pioncorrChk_*_unsummed.jkdat')
+    baseglob = glob.glob(PARTICLE+'corrChk_*_unsummed.jkdat')
     assert baseglob, "unsummed diagrams missing"
     allblks = {}
     count = {}
@@ -814,6 +818,8 @@ def piondirect(atw=False, reverseatw=False):
             keys = top_keys(fname, gname)
             allblks, count = zero_out_and_count(allblks, count,
                                                 keys, toppi)
+            for key in allblks:
+                print("pisq key", key)
             allblks = add_topologies(allblks, top1, top2, top3, keys)
     pionratiowrite(allblks, count, atw, reverseatw, numt)
 
@@ -838,6 +844,8 @@ def pionratiowrite(allblks, count, atw, reverseatw, numt):
         ocs = overall_coeffs(
             isoproj(False, 0, dlist=list(
                 allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+        if PARTICLE == 'kaon':
+            ocs = coeffto1(ocs) # overwrite the 0.0 dummy coeff of DKK2KK in sum_blks.py
         assert isinstance(ocs, dict)
         suffix = '_pisq' if not atw else '_pisq_atw'
         if atw and reverseatw:
@@ -895,16 +903,33 @@ def directratio(allblks, deltat_matrix=3):
         assert abs(allblks[blk][0][13]) < 1
     return allblks
 
-@PROFILE
-def addfigdvec(strin):
-    """Add figure D vec to string"""
-    return 'FigureD_vec_'+strin
+if PARTICLE == 'pion':
+
+    @PROFILE
+    def addfigdvec(strin):
+        """Add figure D vec to string"""
+        return 'FigureD_vec_'+strin
 
 
-@PROFILE
-def addfigd(strin):
-    """Add figure D to string"""
-    return 'FigureD_'+strin
+    @PROFILE
+    def addfigd(strin):
+        """Add figure D to string"""
+        return 'FigureD_'+strin
+
+elif PARTICLE == 'kaon':
+
+    @PROFILE
+    def addfigdvec(strin):
+        """Add figure D vec to string"""
+        assert None, "not implemented"
+        return 'FigureDKK2KK_vec_'+strin
+
+
+    @PROFILE
+    def addfigd(strin):
+        """Add figure D to string"""
+        return 'FigureDKK2KK_'+strin
+
 
 
 
@@ -917,9 +942,9 @@ def do_ratio(ptotstr, dosub):
         '.')) == 1 else sys.argv[1]
     fn1 = h5py.File(filename, 'r')
     data = anticipate(fn1)
-    pionstr = 'pioncorrChk_mom'+ptotstr
-    pionstr = 'pioncorrChk_mom'+ptotstr
-    print("using pion correlator:", pionstr)
+    pionstr = PARTICLE+'corrChk_mom'+ptotstr
+    pionstr = PARTICLE+'corrChk_mom'+ptotstr
+    print("using "+PARTICLE+" correlator:", pionstr)
     gn1 = h5py.File(pionstr+'.jkdat', 'r')
     pion = np.array(gn1[pionstr])
     multsub = 1.0 if dosub else 0.0
@@ -944,8 +969,8 @@ def do_ratio(ptotstr, dosub):
     filesplit = filename.split('.')
     ext = '.jkdat'
     suffix = ext if dosub else '_nosub'+ext
-    hn1 = h5py.File(filesplit[0]+'_pionratio'+suffix, 'w')
-    hn1[filesplit[0]+'_pionratio'] = c_pipiminus/pionminus
+    hn1 = h5py.File(filesplit[0]+'_'+PARTICLE+'ratio'+suffix, 'w')
+    hn1[filesplit[0]+'_'+PARTICLE+'ratio'] = c_pipiminus/pionminus
     hn1.close()
     print("Finished with", sys.argv[1])
 
@@ -961,14 +986,16 @@ def anticipate(fn1):
         data = i
     return np.array(fn1[group+'/'+data])
 
-PIONCORRS = ['pioncorrChk_mom000.jkdat',
-             'pioncorrChk_p1.jkdat',
-             'pioncorrChk_p11.jkdat',
-             'pioncorrChk_p111.jkdat']
+PIONCORRS = [PARTICLE+'corrChk_mom000.jkdat',
+             PARTICLE+'corrChk_p1.jkdat',
+             PARTICLE+'corrChk_p11.jkdat',
+             PARTICLE+'corrChk_p111.jkdat']
+if PARTICLE == 'kaon':
+    PIONCORRS = [PIONCORRS[0]] # since we only have stationary kaons (at the moment)
 
 for INDEX, _ in enumerate(PIONCORRS):
     if not checkblks.FREEFIELD and __name__ == '__main__':
-        assert os.path.isfile(PIONCORRS[INDEX])
+        assert os.path.isfile(PIONCORRS[INDEX]), (PIONCORRS[INDEX], PARTICLE)
         DATAN = re.sub('.jkdat', '', PIONCORRS[INDEX])
         assert h5py.File(PIONCORRS[INDEX], 'r')
         tostore = np.array(h5py.File(PIONCORRS[INDEX], 'r')[DATAN])
@@ -1024,7 +1051,7 @@ def divide_multiply(_=10):
         assert num
 
         # write
-        writestring = re.sub('.jkdat', '_pionratio.jkdat', fn1)
+        writestring = re.sub('.jkdat', '_'+PARTICLE+'ratio.jkdat', fn1)
         if os.path.isfile(writestring):
             continue
         gn1 = h5py.File(writestring, 'w')
@@ -1042,7 +1069,7 @@ if __name__ == '__main__':
     piondirect(atw=True, reverseatw=True)
     print("after reverse atw", MPIRANK)
     piondirect()
-    print("after pion ratio, rank", MPIRANK)
+    print("after "+PARTICLE+" ratio, rank", MPIRANK)
     print("end")
     for dirn in ['I0', 'I1', 'I2']:
         os.chdir(dirn)

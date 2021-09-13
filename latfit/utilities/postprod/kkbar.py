@@ -43,6 +43,7 @@ def main():
         fn1 = h5py.File('traj_'+traj+'_5555.hdf5', 'w') # 5555 is chosen just to not generate collisions with previously named files
         print("processing:", fil)
         fn1[kk2kkstr(fil)] = get_kk_to_kk(fil)
+        fn1[kk2kk_nonint_str(fil)] = get_kk_to_kk(fil, donly=True)
         fn1[kk2sigmastr(fil)] = get_kk_to_sigma(fil)
         fn1[kk_bubblestr(fil)] = get_kk_bubble(fil)
         # fn1[sigma2kkstr(fil)] = get_sigma_to_kk(fil)
@@ -112,6 +113,19 @@ def kk2kkstr(fil):
     ret += '_sep'+str(sep)
     ret += '_mom1src000_mom2src000_mom1snk000'
     return ret
+
+@PROFILE
+def kk2kk_nonint_str(fil):
+    """Get dataset name for KK->KK, D diagram only
+    (for non-interacting energy)
+    """
+    traj = re.sub('.h5', '', fil)
+    ret = 'traj_'+traj+'_FigureDKK2KK'
+    sep = getsep(fil)
+    ret += '_sep'+str(sep)
+    ret += '_mom1src000_mom2src000_mom1snk000'
+    return ret
+
 
 @PROFILE
 def kk2sigmastr(fil):
@@ -434,7 +448,7 @@ yyxx_R_pipi_diagrams_sets.cache = {}
 
 
 @PROFILE
-def get_kk_to_kk(fil):
+def get_kk_to_kk(fil, donly=False):
     """Get contractions for KK->KK+isospin project
     involves D (direct type) diagrams and R (rectangle type diagrams)
     disconnected component is skipped for now (handled elsewhere)
@@ -461,36 +475,38 @@ def get_kk_to_kk(fil):
             v4 = tsrc # inner src
             dt = v3 # definition of dt: earliest time slice (in vertex sequence)
 
-            # R diagram sets
-            sets = yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep)
-            set1 = sets[:4]
-            set2 = sets[4:]
-            assert len(set1) == len(set2), (len(set1), len(set2), set1, set2)
+            if not donly:
 
-            # kstr[0], kstr[1]
-            idx = addt(sep, tdis) # definition of Masaaki's index for R
-            for seq, coeff in set1:
-                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
-                dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+kstr[
-                    0]+'_x'+str(x1)+'_'+kstr[1]+'_x'+str(x2)+'_dt_'+str(dt)
-                # assert dname in fname, (dname, fname)
-                toadd = mcomplex(fname[dname][idx])
-                if tsrc == tsrcs[0] and not tdis:
-                    print(coeff, dname, idx)
-                    print("toadd", toadd*coeff)
-                ret[tsrc,tdis] += toadd*coeff
+                # R diagram sets
+                sets = yyxx_Rdiagrams_sets(v1,v2,v3,v4, sep)
+                set1 = sets[:4]
+                set2 = sets[4:]
+                assert len(set1) == len(set2), (len(set1), len(set2), set1, set2)
 
-            # same as above, but kstr[1], kstr[0]
-            for seq, coeff in set2:
-                y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
-                dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+kstr[
-                    1]+'_x'+str(x1)+'_'+kstr[0]+'_x'+str(x2)+'_dt_'+str(dt)
-                # assert dname in fname, (dname, fname)
-                toadd = mcomplex(fname[dname][idx])
-                if tsrc == tsrcs[0] and not tdis:
-                    print(coeff, dname, idx)
-                    print("toadd", toadd*coeff)
-                ret[tsrc,tdis] += toadd*coeff
+                # kstr[0], kstr[1]
+                idx = addt(sep, tdis) # definition of Masaaki's index for R
+                for seq, coeff in set1:
+                    y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
+                    dname = kstr[0]+'_y'+str(y1)+'_'+kstr[1]+'_y'+str(y2)+'_'+kstr[
+                        0]+'_x'+str(x1)+'_'+kstr[1]+'_x'+str(x2)+'_dt_'+str(dt)
+                    # assert dname in fname, (dname, fname)
+                    toadd = mcomplex(fname[dname][idx])
+                    if tsrc == tsrcs[0] and not tdis:
+                        print(coeff, dname, idx)
+                        print("toadd", toadd*coeff)
+                    ret[tsrc,tdis] += toadd*coeff
+
+                # same as above, but kstr[1], kstr[0]
+                for seq, coeff in set2:
+                    y1, y2, x1, x2 = modseq4(seq, dt, idx, sep)
+                    dname = kstr[1]+'_y'+str(y1)+'_'+kstr[0]+'_y'+str(y2)+'_'+kstr[
+                        1]+'_x'+str(x1)+'_'+kstr[0]+'_x'+str(x2)+'_dt_'+str(dt)
+                    # assert dname in fname, (dname, fname)
+                    toadd = mcomplex(fname[dname][idx])
+                    if tsrc == tsrcs[0] and not tdis:
+                        print(coeff, dname, idx)
+                        print("toadd", toadd*coeff)
+                    ret[tsrc,tdis] += toadd*coeff
 
             # D diagrams
             sets = xy_xy_Ddiagrams_sets(v1,v2,v3,v4)
