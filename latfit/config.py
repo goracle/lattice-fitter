@@ -342,8 +342,9 @@ KKOP = ISOSPIN == 0
 
 # get dispersive energies
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
-if KKOP and not ISOSPIN:
-    DIM += 1
+#if KKOP and not ISOSPIN:
+    #DIM += 1
+
 # whether we use all available lattice data
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
