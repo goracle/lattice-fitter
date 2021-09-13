@@ -524,8 +524,8 @@ def overall_coeffs(iso, irr):
                         continue
                     pol_coeff, polcount = polcoeff(original_block,
                                                    pol_coeffs)
-                    if not pol_coeff*outer_coeff*inner_coeff:
-                        continue
+                    #if not pol_coeff*outer_coeff*inner_coeff:
+                    #continue
                     ocs.setdefault(
                         isospin_str+strip_op(operator),
                         []).append(
