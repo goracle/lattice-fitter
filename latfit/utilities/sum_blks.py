@@ -112,11 +112,11 @@ def isospin_coeff(filen, iso):
     """Get isospin coefficient"""
     norm = 1.0
     vecp = rf.vecp(filen)
-    kaonp = rf.kaonp(filen)
+    #kaonp = rf.kaonp(filen)
     name = rf.figure(filen)
-    if kaonp:
-        norm = 0.0
-    elif iso == 0:
+    #if kaonp:
+    #    norm = 0.0
+    if iso == 0:
         norm = iso0(vecp, name)
     elif iso == 1:
         norm = iso1(vecp, name)
@@ -279,14 +279,15 @@ def get_norm(loop, dur, fixn):
         norm = None
     else:
         norm1 = isospin_coeff(dur, loop.iso)
-        if not norm1 or norm1 == 0:
-            norm = None
-        elif fixn:
+        if fixn:
             norm2 = norm_fix(dur)
         else:
             norm2 = 1.0
-        if norm1 and norm2:
+        assert norm2 is not None, "norm2 should not be None; bug"
+        if norm1 is not None and norm2 is not None:
             norm = norm1*norm2
+        else:
+            norm = None
     return norm
 
 
@@ -318,7 +319,7 @@ def get_coeffs_arr(loop, fixn, dlist):
     coeffs_arr = []
     for dur in dlist:
         norm = get_norm(loop, dur, fixn)
-        if not norm:
+        if norm is None:
             continue
         coeffs_arr.append((dur, norm))
     return coeffs_arr
@@ -339,11 +340,14 @@ def isoproj(fixn, dirnum, dlist=None, stype='ascii'):
             for loop.sep in seplist:
                 for loop.mom in momlist:
                     # loop.mom = list(loop.mom)
+                    #print(loop.opa, loop.iso, loop.sep, loop.mom)
                     coeffs_arr = get_coeffs_arr(
                         loop, fixn, seplist[loop.sep] & momlist[loop.mom])
+                    #print(coeffs_arr)
                     if coeffs_arr == []:
                         continue
                     outdir = get_outdir(loop, dirnum)
+                    #print(outdir)
                     if stype == 'ascii':
                         sum_blks(outdir, coeffs_arr)
                     else:
