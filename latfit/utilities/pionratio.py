@@ -685,10 +685,14 @@ def top_keys(fname, gname):
     momstr = 'sep'+str(TSEP)+'_mom1src'+rf.ptostr(momf)+\
         '_mom2src'+rf.ptostr(momg)+'_mom1snk'
     key1 = addfigd(momstr)+rf.ptostr(momg)
-    key3halves = addfigdvec(momstr)+rf.ptostr(momg)
     key2 = addfigd(momstr)+rf.ptostr(momf)
-    key3 = addfigdvec(momstr)+rf.ptostr(momf)
-    ret = (key1, key3halves, key2, key3)
+    if PARTICLE == 'pion': # kk is I=0 only
+        key3 = addfigdvec(momstr)+rf.ptostr(momf)
+        key3halves = addfigdvec(momstr)+rf.ptostr(momg)
+    if PARTICLE == 'pion': # kk is I=0 only
+        ret = (key1, key3halves, key2, key3)
+    else:
+        ret = (key1, key2)
     if 'mom1src000_mom2src001_mom1snk001' in key1:
         pass
         #print(fname, gname)
@@ -709,28 +713,41 @@ def zero_out_and_count(allblks, count, keys, toppi):
     """Zero out the output container and count the topologies added together
     """
     nconf = len(toppi[0]) if len(toppi) == 2 else len(toppi)
-    key1, key3halves, key2, key3 = keys
+    if PARTICLE == 'pion':
+        key1, key3halves, key2, key3 = keys
+        # key3
+        if key3 not in allblks:
+            allblks[key3] = np.zeros((nconf, LT), dtype=np.complex)
+            count[key3] = 1
+        else:
+            count[key3] += 1
+
+        # key3halves
+        if key3halves not in allblks:
+            allblks[key3halves] = np.zeros((nconf, LT),
+                                        dtype=np.complex)
+            count[key3halves] = 1
+        else:
+            count[key3halves] += 1
+
+
+    else:
+        key1, key2 = keys
+
+    # key1
     if key1 not in allblks:
         allblks[key1] = np.zeros((nconf, LT), dtype=np.complex)
         count[key1] = 1
     else:
         count[key1] += 1
-    if key3halves not in allblks:
-        allblks[key3halves] = np.zeros((nconf, LT),
-                                       dtype=np.complex)
-        count[key3halves] = 1
-    else:
-        count[key3halves] += 1
+
+    # key2
     if key2 not in allblks:
         allblks[key2] = np.zeros((nconf, LT), dtype=np.complex)
         count[key2] = 1
     else:
         count[key2] += 1
-    if key3 not in allblks:
-        allblks[key3] = np.zeros((nconf, LT), dtype=np.complex)
-        count[key3] = 1
-    else:
-        count[key3] += 1
+
     return allblks, count
 
 def mom_comp_filter(momf, momg):
@@ -742,19 +759,24 @@ def mom_comp_filter(momf, momg):
 
 def add_topologies(allblks, top1, top2, top3, keys):
     """Add topologies together and save"""
-    key1, key3halves, key2, key3 = keys
     normfactor = 2
+    if PARTICLE == 'pion':
+        key1, key3halves, key2, key3 = keys
+        allblks[key3halves] += top1/normfactor
+        allblks[key3] += top3/normfactor
+    else:
+        key1, key2 = keys
+
     allblks[key1] += top1/normfactor
-    allblks[key3halves] += top1/normfactor
-    momf = rf.mom(keys[0])[0]
-    momg = rf.mom(keys[0])[1]
-    if np.isnan(top2[0][17]) and mom_comp_filter(momf, momg):
-        pass
+    allblks[key2] += top2/normfactor
+
+    #momf = rf.mom(keys[0])[0]
+    #momg = rf.mom(keys[0])[1]
+    #if np.isnan(top2[0][17]) and mom_comp_filter(momf, momg):
+    #    pass
         #print(top2[0])
         #print(keys)
         #sys.exit(0)
-    allblks[key2] += top2/normfactor
-    allblks[key3] += top3/normfactor
     return allblks
 
 def getatwdict(atw, reverseatw, baseglob):
@@ -844,8 +866,11 @@ def pionratiowrite(allblks, count, atw, reverseatw, numt):
         ocs = overall_coeffs(
             isoproj(False, 0, dlist=list(
                 allblks.keys()), stype=STYPE), opc.op_list(stype=STYPE))
+        assert ocs, "operator list is empty"
+        for opa in ocs:
+            print("opa", opa)
         if PARTICLE == 'kaon':
-            ocs = coeffto1(ocs) # overwrite the 0.0 dummy coeff of DKK2KK in sum_blks.py
+            ocs = coeffto1(ocs) # coeff = 0->1 (of DKK2KK in sum_blks.py)
         assert isinstance(ocs, dict)
         suffix = '_pisq' if not atw else '_pisq_atw'
         if atw and reverseatw:
@@ -864,8 +889,8 @@ def coeffto1(ocs):
     """Set coefficients to 1"""
     for opa in ocs:
         for i in range(len(ocs[opa])):
-            base, _ = ocs[opa][i]
-            ocs[opa][i] = (base, 1.0)
+            base, _, polcount = ocs[opa][i]
+            ocs[opa][i] = (base, 1.0, polcount)
     return ocs
 
 @PROFILE
