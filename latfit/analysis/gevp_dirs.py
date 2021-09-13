@@ -36,13 +36,14 @@ def hierarchy(index, isospin, irrep, optional_ops):
                 retstr = 'sigma'
             elif index == 1 and isospin == 1:
                 retstr = 'rho'
-            elif index == 2 and kkop:
-                retsr = 'kk'
             elif index == 2:
                 retstr = 'pipi'
         else:
             if index == 3:
                 retstr = 'UUpipi'
+            elif index == 5:
+                assert kkop, (index, isospin, irrep, optional_ops)
+                retstr = 'kk'
             else:
                 retstr = 'U'+str(index-2)+'pipi'
     return retstr
