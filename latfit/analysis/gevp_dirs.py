@@ -3,7 +3,7 @@
 import re
 import latfit.utilities.read_file as rf
 
-def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
+def gevp_dirs(isospin, momstr, irrep, dim, optional_ops={}):
     """Return array of gevp dirs"""
     dirstr = 'I'+str(isospin)+"/"
     irrepstr = '_'+str(irrep)
@@ -11,15 +11,17 @@ def gevp_dirs(isospin, momstr, irrep, dim, sigma=False):
     retdirs = [[None for i in range(dim)] for j in range(dim)]
     for i in range(dim):
         for j in range(dim):
-            istr = hierarchy(i, isospin, sigma, irrep)
-            jstr = hierarchy(j, isospin, sigma, irrep)
+            istr = hierarchy(i, isospin, irrep, optional_ops)
+            jstr = hierarchy(j, isospin, irrep, optional_ops)
             if istr == 'pipi' and jstr == 'pipi':
                 jstr = ''
             retdirs[i][j] = dirstr+istr+jstr+irrepstr+endstr
     return retdirs
 
-def hierarchy(index, isospin, sigma, irrep):
+def hierarchy(index, isospin, irrep, optional_ops):
     """Return the operator for this dimension, in ascending energy order"""
+    sigma = optional_ops['sigma']
+    kkop = optional_ops['kkop']
     if index == 0 and (isospin != 1 or 'A_1PLUS' in irrep):
         retstr = 'S_pipi'
     elif isospin == 1 and index == 0:
@@ -34,6 +36,8 @@ def hierarchy(index, isospin, sigma, irrep):
                 retstr = 'sigma'
             elif index == 1 and isospin == 1:
                 retstr = 'rho'
+            elif index == 2 and kkop:
+                retsr = 'kk'
             elif index == 2:
                 retstr = 'pipi'
         else:

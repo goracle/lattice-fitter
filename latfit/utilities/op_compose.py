@@ -228,6 +228,8 @@ def generate_checksums(isospin):
         for _, opa, _ in OPLIST_STRIPPED[oplist]:
             if 'sigma' in opa and isospin != 0:
                 newl -= 1
+            elif 'kk' in opa and isospin != 0:
+                newl -= 1
             elif 'rho' in opa and isospin != 1:
                 newl -= 1
         checks[oplist] = newl**2

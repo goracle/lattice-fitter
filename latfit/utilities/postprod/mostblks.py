@@ -123,7 +123,8 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
     #        continue
         if rows is not None and cols is not None:
             outarr = outarr[rows, cols]
-        outarr *= TSTEP if 'pioncorrChk' not in base else 1
+        outarr *= TSTEP if 'pioncorrChk' not in base and\
+            'kaoncorrChk' not in base else 1
         if avgtsrc:
             blk[i] = em.acmean(outarr)
         else:

@@ -335,11 +335,15 @@ misc.PIONRATIO = PIONRATIO
 DISP_ENERGIES = opc.free_energies(
     IRREP, misc.massfunc(), L_BOX) if GEVP else ()
 
-# switch to include the sigma in the gevp fits
+# switch to include the sigma (in the gevp)
 SIGMA = ISOSPIN == 0
+# switch to include the KK/KKbar op (in the gevp)
+KKOP = ISOSPIN == 0
 
 # get dispersive energies
 DIM = len(DISP_ENERGIES) + (1 if SIGMA or ISOSPIN == 1 else 0) # no need to change
+if KKOP and not ISOSPIN:
+    DIM += 1
 # whether we use all available lattice data
 # if we don't, we have leftover data for pion ratio/atw sub
 # which we use to not skip (when doing atw sub/PR) the rho/sigma state
@@ -1018,8 +1022,10 @@ FITS.select_and_update(ADD_CONST)
 
 ORIGL = len(START_PARAMS)
 
-GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM, SIGMA)
-GEVP_DIRS_PLUS_ONE = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM+1, SIGMA)
+GEVP_DIRS = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM,
+                      optional_ops={'sigma': SIGMA, 'kkop': KKOP})
+GEVP_DIRS_PLUS_ONE = gevp_dirs(ISOSPIN, MOMSTR, IRREP, DIM+1,
+                               optional_ops={'sigma': SIGMA, 'kkop': KKOP})
 if FULLDIM or not (SIGMA or ISOSPIN == 1):
     GEVP_DIRS_PLUS_ONE = GEVP_DIRS
 MULT = len(GEVP_DIRS) if GEVP else 1

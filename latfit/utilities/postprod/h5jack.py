@@ -152,9 +152,11 @@ print("Configs with sloppy and exact versions:", EXACT_CONFIGS)
 WRITEBLOCK = []
 if AVGTSRC:
     WRITEBLOCK = ['pioncorrChk_mom000']
+    WRITEBLOCK = ['kaoncorrChk_mom000']
 else:
     WRITEBLOCK = ['pioncorr_mom000']
     WRITEBLOCK = ['pioncorrChk_mom000']
+    WRITEBLOCK = ['kaoncorrChk_mom000']
 AVGTSRC = True if not WRITE_INDIVIDUAL else AVGTSRC
 
 # set aux variables
@@ -215,9 +217,12 @@ def fill_write_block(fndef=FNDEF):
     for i in fn1:
         if AVGTSRC:
             cond = 'pioncorrChk' in i
+            cond = 'kaoncorrChk' in i
         else:
             cond = 'pioncorr' in i and 'Chk' not in i
             cond = 'pioncorrChk' in i
+            cond = 'kaoncorr' in i and 'Chk' not in i
+            cond = 'kaoncorrChk' in i
         if cond:
             spl = i.split('_')
             needed = spl[2:]
