@@ -37,6 +37,7 @@ import latfit.config
 import latfit.analysis.result_min as resmin
 import latfit.analysis.covops as covops
 import latfit.mathfun.block_ensemble as blke
+from latfit.config import CUT_ON_GROWING_EXP
 
 MPIRANK = MPI.COMM_WORLD.rank
 MPISIZE = MPI.COMM_WORLD.Get_size()
@@ -156,11 +157,17 @@ singlefit.reuse_blocked = None
 def save_fit_samples(samps):
     """Save fit samples in pickle file."""
     nconf = len(samps)
-    #print("nconf =", nconf)
-    rsamp = []
-    for num, en1 in enumerate(samps):
-        rsamp.append(correction_en(en1, num, nconf)+en1)
-    rsamp = np.array(rsamp)
+    print("nconf =", nconf)
+    if GEVP:
+        rsamp = []
+        for num, en1 in enumerate(samps):
+            # apply matrix sub energy shift
+            rsamp.append(correction_en(en1, num, nconf)+en1)
+        rsamp = np.array(rsamp)
+    else:
+        rsamp = np.array(samps)
+        assert len(rsamp.shape) == 1, rsamp.shape
+    assert len(rsamp), len(rsamp)
     fn1 = open('samplestofit_config_time_op.p', 'wb')
     cloudpickle.dump(rsamp, fn1)
 
@@ -280,7 +287,8 @@ def fiduc_point_cuts(meta, err=None):
         samerange = cut_on_errsize(meta, err=err)
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
-        samerange = cut_on_growing_exp(meta, err=err) and samerange
+        if CUT_ON_GROWING_EXP:
+            samerange = cut_on_growing_exp(meta, err=err) and samerange
         if NOLOOP:
             assert samerange, latfit.config.FIT_EXCL
         if not samerange:
@@ -490,6 +498,7 @@ def rearrange_reuse_dict(params, reuse, bsize=JACKKNIFE_BLOCK_SIZE):
 def cut_on_growing_exp(meta, err=None):
     """Growing exponential is a signal for around the world contamination"""
     #err = singlefit.error2
+    assert CUT_ON_GROWING_EXP
     err = singlefit.error2 if err is None else err
     coords = singlefit.coords_full
     assert err is not None, "Bug in the acquiring error bars"

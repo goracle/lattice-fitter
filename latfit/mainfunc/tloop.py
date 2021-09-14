@@ -17,6 +17,7 @@ from latfit.config import TSTEP, CALC_PHASE_SHIFT, NOLOOP
 from latfit.config import FIT_EXCL as EXCL_ORIG_IMPORT
 from latfit.config import INCLUDE, ONLY_EXTRACT, ALTERNATIVE_PARALLELIZATION
 from latfit.config import LARGE_DELTA_T_MATRIX_SUBTRACTION
+from latfit.config import CUT_ON_GROWING_EXP
 
 # errors
 from latfit.analysis.errorcodes import XmaxError, XminError
@@ -527,7 +528,8 @@ def dofit_second_initial(meta, retsingle_save, test_success):
     # did we make any cuts?
     assert sfit.singlefit.error2 is not None
     samerange = sfit.cut_on_errsize(meta)
-    samerange = sfit.cut_on_growing_exp(meta) and samerange
+    if CUT_ON_GROWING_EXP:
+        samerange = sfit.cut_on_growing_exp(meta) and samerange
     assert samerange
 
     fit_range_init = frsort.keyexcl(list(latfit.config.FIT_EXCL))
