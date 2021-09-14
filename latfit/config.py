@@ -73,6 +73,13 @@ if ISOSPIN is None:
 LAST_STATE_PHASE_ERR_CUT = False
 LAST_STATE_PHASE_ERR_CUT = True
 
+# correlators should fall monotonically with time
+# if it doesn't, perhaps it indicates some data pathology,
+# so we cut data from time slices later than when it starts to rise
+CUT_ON_GROWING_EXP = True
+CUT_ON_GROWING_EXP = False
+print('CUT_ON_GROWING_EXP:', CUT_ON_GROWING_EXP)
+
 # group irrep
 if IRREP is None:
     IRREP = 'T_1_2MINUS'
