@@ -93,7 +93,9 @@ def binhalf_e(ear):
     horrible global/local hack
     """
     new_disp = []
-    ldisp = len(np.asarray(misc.massfunc()).shape)
+    ldisp = len(np.asarray(misc.massfunc('pion')).shape)
+    ldisp2 = len(np.asarray(misc.massfunc('kaon')).shape)
+    assert ldisp == ldisp2, (ldisp, ldisp2, "kaon/pion mass should be in the same format")
     for i in range(MULT):
         if MULT > 1 and ldisp > 1:
             new_disp.append(misc.select_subset(ear[:, i]))

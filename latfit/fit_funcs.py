@@ -63,7 +63,7 @@ class FitFunctions:
         else:
             print("Not using fixed pion mass in pion ratio fits.")
 
-#global LOG, LT, C, TSTEP, TSTEP2, PION_MASS, PIONRATIO
+#global LOG, LT, C, TSTEP, TSTEP2, PION_MASS, KAON_MASS, PIONRATIO
 #global DELTAT
 #LOG = upd.log
 #LT = upd.lent
@@ -71,6 +71,7 @@ class FitFunctions:
 #TSTEP = upd.tstep
 #TSTEP2 = upd.tstep2
 #PION_MASS = upd.pionmass
+#KAON_MASS = upd.kaonmass
 #PIONRATIO = upd.pionratio
 #DELTAT = upd.deltat
 
@@ -81,6 +82,7 @@ C = np.nan
 TSTEP = np.nan
 TSTEP2 = np.nan
 PION_MASS = np.nan
+KAON_MASS = np.nan
 PIONRATIO = BoolThrowErr()
 USE_FIXED_MASS = BoolThrowErr()
 TRHS = None
@@ -111,6 +113,7 @@ class FitFuncAdd:
         self._c = C
         self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
+        self._kaonmass = KAON_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
@@ -121,6 +124,7 @@ class FitFuncAdd:
         self._c = C
         self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
+        self._kaonmass = KAON_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
@@ -131,6 +135,7 @@ class FitFuncAdd:
             print('self._c', self._c)
             print('self._lent', self._lent)
             print('self._pionmass', self._pionmass)
+            print('self._kaonmass', self._kaonmass)
             print('self._pionratio', self._pionratio)
             print('self._gevp', self._gevp)
             print('self._log', self._log)
@@ -264,10 +269,16 @@ class FitFuncAdd:
     def pion_ratio(self, ctime, trial_params, _):
         """Include pions in the denominator of eff mass ratio."""
         tpion = ctime+1/2-self._lent/2.0
+        assert None, "no longer supported, since kaon is not accounted for"
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[2]
-        return trial_params[0]*(
+        kaonmass = self._kaonmass if USE_FIXED_MASS else trial_params[2]
+        ret = trial_params[0]*(
             cosh(tpion*trial_params[1])+sinh(
                 tpion*trial_params[1])/tanh(2*tpion*pionmass))
+        ret_k = trial_params[0]*(
+            cosh(tpion*trial_params[1])+sinh(
+                tpion*trial_params[1])/tanh(2*tpion*kaonmass))
+        return ret
 
     @staticmethod
     def ratio_pionratio(corrs, times=None, nocheck=False):
@@ -292,11 +303,17 @@ class FitFuncAdd:
         tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
         # tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(3)]
+        assert None, "no longer supported, since kaon is not accounted for"
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
+        kaonmass = self._kaonmass if USE_FIXED_MASS else trial_params[1]
         corrs = [trial_params[0]*(
             sinh(tpion[i]*trial_params[1])+cosh(
                 tpion[i]*trial_params[1])/tanh(
                     2*tpion[i]*pionmass)) for i in range(3)]
+        corrs_k = [trial_params[0]*(
+            sinh(tpion[i]*trial_params[1])+cosh(
+                tpion[i]*trial_params[1])/tanh(
+                    2*tpion[i]*kaonmass)) for i in range(3)]
         #return self.ratio_pionratio(corrs, ctime, nocheck=True)
         return corrs[0]
 
@@ -310,6 +327,7 @@ class FitFunc:
         self._c = C
         self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
+        self._kaonmass = KAON_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
@@ -320,6 +338,7 @@ class FitFunc:
         self._c = C
         self._tsteps = [TSTEP, TSTEP2, DELTAT]
         self._pionmass = PION_MASS
+        self._kaonmass = KAON_MASS
         self._pionratio = PIONRATIO
         self._gevp = GEVP
 
@@ -330,6 +349,7 @@ class FitFunc:
             print('self._c', self._c)
             print('self._lent', self._lent)
             print('self._pionmass', self._pionmass)
+            print('self._kaonmass', self._kaonmass)
             print('self._pionratio', self._pionratio)
             print('self._gevp', self._gevp)
             print('self._log', self._log)
@@ -447,12 +467,18 @@ class FitFunc:
         lent = self._lent if lent is None else lent
         tstep = self._tsteps[0] if tstep_arr[0] is None else tstep_arr[0]
         # tstep2 = self._tsteps[1] if tstep_arr[1] is None else tstep_arr[1]
+        assert None, "no longer supported, since kaon is not accounted for"
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[1]
+        kaonmass = self._kaonmass if USE_FIXED_MASS else trial_params[1]
         tpion = [ctime+i*tstep+1/2-lent/2.0 for i in range(2)]
         corrs = [trial_params[0]*(sinh((tpion[i]-1/2)*trial_params[
             1]-1/2*pionmass)+cosh(
                 (tpion[i]-1/2)*trial_params[1]-1/2*pionmass))/tanh(
                     2*tpion[i]*pionmass) for i in range(2)]
+        corrs_k = [trial_params[0]*(sinh((tpion[i]-1/2)*trial_params[
+            1]-1/2*kaonmass)+cosh(
+                (tpion[i]-1/2)*trial_params[1]-1/2*kaonmass))/tanh(
+                    2*tpion[i]*kaonmass) for i in range(2)]
         #return self.ratio_pionratio(corrs, ctime, nocheck=True)
         return corrs[0]
 
@@ -479,6 +505,11 @@ class FitFunc:
         """Include pions in the denominator of eff mass ratio."""
         lent = self._lent if lent is None else lent
         tpion = ctime+1/2-lent/2.0
+        assert None, "no longer supported, since kaon is not accounted for"
         pionmass = self._pionmass if USE_FIXED_MASS else trial_params[2]
-        return trial_params[0]*(sinh(tpion*trial_params[1])+cosh(
+        kaonmass = self._kaonmass if USE_FIXED_MASS else trial_params[2]
+        ret = trial_params[0]*(sinh(tpion*trial_params[1])+cosh(
             tpion*trial_params[1])/tanh(2*tpion*pionmass))
+        ret_k = trial_params[0]*(sinh(tpion*trial_params[1])+cosh(
+            tpion*trial_params[1])/tanh(2*tpion*kaonmass))
+        return ret

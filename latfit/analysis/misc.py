@@ -29,28 +29,28 @@ def elim_jkconfigs(ret, elimlist):
     if ret or elimlist:
         pass
 
-def massfunc():
+def massfunc(particle):
     """Return the pion mass"""
-    pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
-    pionstr = '_pioncorrChk_'
-    if massfunc.MASS is None:
+    pionstr = '_'+particle+'corrChk_' if not PIONRATIO else '_'+particle+'corr_'
+    pionstr = '_'+particle+'corrChk_'
+    if particle not in massfunc.MASS:
         try:
             fn1 = open('energy_min_'+LATTICE+pionstr+'mom000.jkdat.p', 'rb')
-            massfunc.MASS = pickle.load(fn1)
+            massfunc.MASS[particle] = pickle.load(fn1)
             print("load of jackknifed mass successful")
-            massfunc.MASS = massfunc.MASS.flatten()
-            massfunc.MASS = select_subset(massfunc.MASS)
+            massfunc.MASS[particle] = massfunc.MASS[particle].flatten()
+            massfunc.MASS[particle] = select_subset(massfunc.MASS[particle])
         except FileNotFoundError:
             print("jackknifed mass not found")
-            massfunc.MASS = MASS
+            massfunc.MASS[particle] = MASS
             raise
-    return massfunc.MASS
-massfunc.MASS = None
+    return massfunc.MASS[particle]
+massfunc.MASS = {}
 
-def p1f():
+def p1f(particle):
     """E_pi(|p|=1)"""
-    pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
-    pionstr = '_pioncorrChk_'
+    pionstr = '_'+particle+'corrChk_' if not PIONRATIO else '_'+particle+'corr_'
+    pionstr = '_'+particle+'corrChk_'
     if LATTICE == '24c':
         ret = 0.29641
     elif LATTICE == '32c':
@@ -68,10 +68,10 @@ def p1f():
     return ret
 p1f.P1 = np.nan
 
-def p11f():
+def p11f(particle):
     """E_pi(|p|=11)"""
-    pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
-    pionstr = '_pioncorrChk_'
+    pionstr = '_'+particle+'corrChk_' if not PIONRATIO else '_'+particle+'corr_'
+    pionstr = '_'+particle+'corrChk_'
     if LATTICE == '24c':
         ret = 0.39461
     elif LATTICE == '32c':
@@ -89,10 +89,10 @@ def p11f():
     return ret
 p11f.P11 = np.nan
 
-def p111f():
+def p111f(particle):
     """E_pi(|p|=11)"""
-    pionstr = '_pioncorrChk_' if not PIONRATIO else '_pioncorr_'
-    pionstr = '_pioncorrChk_'
+    pionstr = '_'+particle+'corrChk_' if not PIONRATIO else '_'+particle+'corr_'
+    pionstr = '_'+particle+'corrChk_'
     if LATTICE == '24c':
         ret = 0.4715
     elif LATTICE == '32c':
@@ -110,19 +110,19 @@ def p111f():
     return ret
 p111f.P111 = np.nan
 
-def fitepi(norm):
+def fitepi(norm, particle):
     """Select the right E_pi"""
     ret = None
     if norm == 0:
-        ret = massfunc()
+        ret = massfunc(particle)
     elif norm == 1:
-        ret = p1f()
+        ret = p1f(particle)
         ret = select_subset(ret)
     elif norm == 2:
-        ret = p11f()
+        ret = p11f(particle)
         ret = select_subset(ret)
     elif norm == 3:
-        ret = p111f()
+        ret = p111f(particle)
         ret = select_subset(ret)
     else:
         assert ret is not None, ""
@@ -142,7 +142,7 @@ def select_subset(arr):
     return ret
 
 
-def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
+def correct_epipi(energies, particle, config_num=None, irr=None, uncorrect=False):
     """Correct 24c dispersion relation errors using fits
     lattice disp -> continuum
     """
@@ -165,9 +165,9 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
         mom1, mom2 = moms
         norma = rf.norm2(mom1)
         normb = rf.norm2(mom2)
-        epi1 = fitepi(norma)
-        epi2 = fitepi(normb)
-        crect = ((dispersive(mom1, continuum=True)+dispersive(
+        epi1 = fitepi(norma, particle)
+        epi2 = fitepi(normb, particle)
+        crect = ((dispersive(mom1, particle, continuum=True)+dispersive(
             mom2, continuum=True))-(epi1+epi2))
         crect = np.asarray(crect)
         origshape = crect.shape
@@ -199,13 +199,13 @@ def correct_epipi(energies, config_num=None, irr=None, uncorrect=False):
         #    correction *= 0
     return correction
 
-def uncorrect_epipi(epipi, irr=None):
+def uncorrect_epipi(epipi, particle, irr=None):
     """Uncorrect a single energy (continuum disp->lattice disp)"""
     if epipi is None:
         ret = None
     else:
         energies = [epipi]
-        ret = correct_epipi(energies, irr, uncorrect=True)[0]
+        ret = correct_epipi(energies, particle, irr=irr, uncorrect=True)[0]
         ret += energies[0]
     return ret
 
@@ -213,9 +213,9 @@ def norm2(mom):
     """Norm^2"""
     return mom[0]**2+mom[1]**2+mom[2]**2
 
-def dispersive(momentum, mass=None, box_length=None, continuum=False):
+def dispersive(momentum, particle, mass=None, box_length=None, continuum=False):
     """get the dispersive analysis energy == sqrt(m^2+p^2)"""
-    mass = massfunc() if mass is None else mass
+    mass = massfunc(particle) if mass is None else mass
     mass = np.asarray(mass)
     assert continuum == CONTINUUM, "dispersion relation mismatch."
     box_length = BOX_LENGTH if box_length is None else box_length
@@ -236,7 +236,7 @@ def dispersive(momentum, mass=None, box_length=None, continuum=False):
             try:
                 assert np.allclose(ret, mass, rtol=1e-8), "precision gain"
             except AssertionError:
-                ret = massfunc()
+                ret = massfunc(particle)
                 assert np.allclose(ret, mass, rtol=1e-16), "precision gain"
     if ret is not None:
         ret = np.asarray(ret)

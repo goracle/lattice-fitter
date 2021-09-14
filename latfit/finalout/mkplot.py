@@ -82,10 +82,10 @@ def update_result_min_nofit(plotdata):
                   " for lattice spacing errors.")
             plotdata.coords[i][1] = np.asarray(plotdata.coords[i][1])
             plotdata.coords[i][1] += misc.correct_epipi(
-                plotdata.coords[i][1])
+                plotdata.coords[i][1], 'pion')
             print('correction at time slice index:',
                   i, "=", misc.correct_epipi(
-                      plotdata.coords[i][1]))
+                      plotdata.coords[i][1]), 'pion')
     return plotdata
 
 def mkplot(plotdata, input_f,

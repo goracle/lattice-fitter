@@ -273,18 +273,21 @@ if LATTICE_ENSEMBLE == '32c':
     L_BOX = 32
     AINVERSE = 1.3784
     PION_MASS = 0.10470*AINVERSE
+    KAON_MASS = np.nan
     LT = 64
     SUPERJACK_CUTOFF = 17
 elif LATTICE_ENSEMBLE == '24c':
     L_BOX = 24
     AINVERSE = 1.015
     PION_MASS = 0.13975*AINVERSE
+    KAON_MASS = np.nan
     LT = 64
     SUPERJACK_CUTOFF = 14
 elif LATTICE_ENSEMBLE == '16c':
     L_BOX = 16
     AINVERSE = 1.0*np.nan
     PION_MASS = 0.3*AINVERSE
+    KAON_MASS = np.nan
     LT = 32
     SUPERJACK_CUTOFF = 0
 SUPERJACK_CUTOFF = sands.mod_superjack(
@@ -336,11 +339,13 @@ elimjk.ELIM_JKCONF_LIST = tuple(ELIM_JKCONF_LIST)
 
 misc.LATTICE = str(LATTICE_ENSEMBLE)
 misc.BOX_LENGTH = L_BOX
-misc.MASS = PION_MASS/AINVERSE
+#misc.MASS = PION_MASS/AINVERSE
+misc.MASS = np.nan
 misc.IRREP = IRREP
 misc.PIONRATIO = PIONRATIO
 DISP_ENERGIES = opc.free_energies(
-    IRREP, misc.massfunc(), L_BOX) if GEVP else ()
+    IRREP, misc.massfunc('pion'),
+    misc.massfunc('kaon'), L_BOX) if GEVP else ()
 
 # switch to include the sigma (in the gevp)
 SIGMA = ISOSPIN == 0
@@ -476,8 +481,9 @@ ADD_CONST = ADD_CONST_VEC[0] or (MATRIX_SUBTRACTION and GEVP) # no need to modif
 ## first delta E
 
 # change this if the slowest pion is not stationary
+# 'pion' is used here, as we assume this always gives a smaller delta_E than the kaon
 DELTA_E_AROUND_THE_WORLD = misc.dispersive(rf.procmom(
-    MOMSTR), continuum=FIT_SPACING_CORRECTION)-misc.massfunc() if GEVP\
+    MOMSTR), 'pion', continuum=FIT_SPACING_CORRECTION)-misc.massfunc('pion') if GEVP\
     and MATRIX_SUBTRACTION and ISOSPIN != 1 else 0
 
 ## second delta E
@@ -487,15 +493,15 @@ E21 = None
 E22 = None
 if IRREP == 'A1_mom1' and GEVP:
     # the exception to the usual pattern for p1
-    E21 = misc.massfunc()
-    E22 = misc.dispersive(rf.procmom(MOMSTR),
+    E21 = misc.massfunc('pion')
+    E22 = misc.dispersive(rf.procmom(MOMSTR), 'pion',
                           continuum=FIT_SPACING_CORRECTION)
     E22 = tuple(E22-E21)
 elif GEVP:
     # the general E2
-    E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0],
+    E21 = misc.dispersive(opc.mom2ndorder(IRREP)[0], 'pion',
                           continuum=FIT_SPACING_CORRECTION)
-    E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1],
+    E22 = misc.dispersive(opc.mom2ndorder(IRREP)[1], 'pion',
                           continuum=FIT_SPACING_CORRECTION)
     E22 = E22-E21
 assert E21 is None or (np.all(E21 > 0) and np.all(E22+E21 > 0))
@@ -537,9 +543,9 @@ if not MATRIX_SUBTRACTION:
 
 ### delta e around the world section conclusion
 if FIT_SPACING_CORRECTION and GEVP:
-    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD)
+    DELTA_E_AROUND_THE_WORLD = misc.uncorrect_epipi(DELTA_E_AROUND_THE_WORLD, 'pion')
     DELTA_E2_AROUND_THE_WORLD = misc.uncorrect_epipi(
-        DELTA_E2_AROUND_THE_WORLD)
+        DELTA_E2_AROUND_THE_WORLD, 'pion')
 if np.any(np.isnan(DELTA_E_AROUND_THE_WORLD)):
     DELTA_E_AROUND_THE_WORLD = None
 
@@ -1013,7 +1019,8 @@ latfit.fit_funcs.TSTEP2 = TSTEP if not GEVP else DELTA_T2_MATRIX_SUBTRACTION
 latfit.fit_funcs.TSTEP2 = 0 if DELTA_E2_AROUND_THE_WORLD is None else\
     latfit.fit_funcs.TSTEP2
 if GEVP:
-    latfit.fit_funcs.PION_MASS = misc.massfunc()
+    latfit.fit_funcs.PION_MASS = misc.massfunc('pion')
+    latfit.fit_funcs.KAON_MASS = misc.massfunc('kaon')
 latfit.fit_funcs.PIONRATIO = False
 latfit.fit_funcs.LT = LT
 latfit.fit_funcs.GEVP = GEVP

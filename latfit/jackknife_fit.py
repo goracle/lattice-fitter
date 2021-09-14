@@ -41,6 +41,7 @@ from latfit.config import SYS_ENERGY_GUESS
 from latfit.config import PVALUE_MIN, NOATWSUB, PIONRATIO
 from latfit.config import PICKLE, MATRIX_SUBTRACTION
 from latfit.config import CALC_PHASE_SHIFT, PION_MASS
+#from latfit.config import KAON_MASS
 from latfit.config import SUPERJACK_CUTOFF, SLOPPYONLY
 from latfit.config import DELTA_E_AROUND_THE_WORLD
 from latfit.config import DELTA_E2_AROUND_THE_WORLD
@@ -648,7 +649,7 @@ def correction_en(energy, config_num, num_configs):
         corre2 = delta_e2_around_the_world if\
             delta_e2_around_the_world is not None else 0
     if FIT_SPACING_CORRECTION and not PIONRATIO and GEVP:
-        corre3 = misc.correct_epipi(energy, config_num=config_num)
+        corre3 = misc.correct_epipi(energy, 'pion', config_num=config_num)
     else:
         corre3 = 0
     ret = 0

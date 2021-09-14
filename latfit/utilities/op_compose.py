@@ -106,12 +106,16 @@ def ptonewlinelist(mom):
     return 'int p[0] = '+str(mom[0])+'\nint p[1] = '+\
         str(mom[1])+'\nint p[2] = '+str(mom[2])+'\n'
 
-def free_energies(irrep, pionmass, lbox):
+def free_energies(irrep, pionmass, kaonmass, lbox):
     """return a list of free energies."""
     assert pionmass is not None
+    assert kaonmass is not None
     if hasattr(pionmass, '__iter__'):
         assert pionmass[0] is not None
+    if hasattr(kaonmass, '__iter__'):
+        assert kaonmass[0] is not None
     assert not np.any(np.isnan(pionmass)), str(pionmass)
+    assert not np.any(np.isnan(kaonmass)), str(kaonmass)
     retlist = []
     if irrep in AVG_ROWS:
         for irr in AVG_ROWS[irrep]:
@@ -125,15 +129,20 @@ def free_energies(irrep, pionmass, lbox):
             continue
         opprev = opa
         energy = 0
-        for pin in mom:
-            # print(pionmass, pin, lbox)
-            if hasattr(pionmass, '__iter__') and np.asarray(pionmass).shape:
-                toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(
-                    pin)) for i in pionmass]
-            else:
-                toadd = sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
+        if opa == 'kk':
+            toadd = 2*kaonmass
             toadd = np.array(toadd)
             energy += toadd
+        else:
+            for pin in mom:
+                # print(pionmass, pin, lbox)
+                if hasattr(pionmass, '__iter__') and np.asarray(pionmass).shape:
+                    toadd = [sqrt(i**2+(2*np.pi/lbox)**2*rf.norm2(
+                        pin)) for i in pionmass]
+                else:
+                    toadd = sqrt(pionmass**2+(2*np.pi/lbox)**2*rf.norm2(pin))
+                toadd = np.array(toadd)
+                energy += toadd
         retlist.append(energy)
     sortedret = []
     for i, mean in enumerate([em.acmean(i) for i in retlist]):
