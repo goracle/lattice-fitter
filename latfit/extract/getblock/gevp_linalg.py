@@ -574,12 +574,12 @@ def sortevals(evals, evecs=None, c_lhs=None, c_rhs=None):
     if sortevals.last_time is not None and c_lhs is not None\
        and c_rhs is not None and not np.any(np.isnan(evals)) and PSEUDO_SORT:
 
-        count = 5 # max number of time slices to compare
+        count = 5 # max number of time slices to compare; magic number
         timeij = sortevals.last_time # most recent sorted time slice
 
         votes = []
         while timeij in sortevals.sorted_evecs and len(
-                sortevals.sorted_evecs.keys()) > 1:
+                sortevals.sorted_evecs.keys()) > 1: # magic number.  we do not pseudo-sort the first two time slices, since pseudo-sort is necessarily unreliable at very early times.
 
             # do not use first time (naive sort the first two time slices)
             if timeij == min(sortevals.sorted_evecs.keys()):
