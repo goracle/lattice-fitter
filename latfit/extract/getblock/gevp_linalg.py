@@ -655,13 +655,14 @@ def votes_to_map(votes, stop=np.inf):
                 continue
             assert list(scorei), votes
             #jmap = filter_dict(j, idxsj)
-            ret1 = partial_compare_dicts((mapi, scorei, timei),
+            ret1 = find_consensus((mapi, scorei, timei),
                                          (mapj, scorej, timej))
-            ret = partial_compare_dicts(ret, ret1)
+            ret = find_consensus(ret, ret1)
     return ret[0]
 
-def partial_compare_dicts(ainfo, binfo):
-    """Compare common entries in two dictionaries"""
+def find_consensus(ainfo, binfo):
+    """Compare common entries in two dictionaries
+    to find the pair-wise consensus sort"""
     adict, arel, timea = ainfo
     bdict, brel, timeb = binfo
 
@@ -669,8 +670,8 @@ def partial_compare_dicts(ainfo, binfo):
     assert list(arel), ainfo
     assert list(brel), binfo
 
-    arel = del_maxrel(arel)
-    brel = del_maxrel(brel)
+    #arel = del_maxrel(arel) # how was this supposed to increase the speed of find_consensus?
+    #brel = del_maxrel(brel)
     assert len(brel) == len(arel), (arel, brel)
 
     aset = set(adict)
@@ -684,7 +685,7 @@ def partial_compare_dicts(ainfo, binfo):
     passed = False # have we done one iter of the while loop below?
 
     # loop over map disagreements, using score to resolve disagreements
-    while collision_check(ret) or len(ret) < len(inter):
+    while len(ret) < len(inter):
         for i in sorted(list(inter)):
 
             # the score for the source is minimized
@@ -752,6 +753,7 @@ def del_maxrel(rel):
     delete the max relative difference
     replace with second highest
     """
+    assert None, "not safe to use."
     rel = list(rel)
     mmax = max(rel)
     idx = rel.index(mmax)
@@ -834,7 +836,7 @@ def select_sorted_evecs(config_num, timeij):
     sortevals.last_time = timeij - 1
 
 def fallback_sort(evals, evecs=None, reverse=None):
-    """The usual sorting procedure for the eigenvalues"""
+    """The usual, naive sorting procedure for the eigenvalues"""
     evals = list(evals)
 
     ind = []
@@ -849,9 +851,11 @@ def fallback_sort(evals, evecs=None, reverse=None):
         sortrev = reverse
 
     if evecs is not None:
-        evecs = [x for y, x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+        evecs = [x for y, x in sorted(zip(evals,
+                                          evecs.T), reverse=sortrev)]
         evecs = np.array(evecs).T
-        evals = [y for y, x in sorted(zip(evals, evecs.T), reverse=sortrev)]
+        evals = [y for y, x in sorted(zip(evals,
+                                          evecs.T), reverse=sortrev)]
     else:
         evals = sorted(evals, reverse=sortrev)
     for i, _ in enumerate(ind):
