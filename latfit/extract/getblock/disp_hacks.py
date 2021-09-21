@@ -152,6 +152,7 @@ def callprocmeff(eigvals, timeij, delta_t, id_sort=False, dimops=None):
         eigvals.append(np.zeros(dimops)*np.nan)
         assert len(eigvals) == 4
     if id_sort:
+        assert len(eigvals) == 4, len(eigvals)
         for i in range(4):
             tosort = eigvals[i]
             eigvals[i] = identity_sort_meff(tosort, dimops)
