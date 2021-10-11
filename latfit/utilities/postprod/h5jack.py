@@ -70,7 +70,9 @@ LATTICE_ENSEMBLE = '24c'
 ENSEMBLE_DICT = {}
 ENSEMBLE_DICT['32c'] = {'tsep' : 4, 'tdis_max' : 22, 'tstep' : 64/6}
 ENSEMBLE_DICT['24c'] = {'tsep' : 3, 'tdis_max' : 16, 'tstep' : 8}
-
+if TEST44:
+    for i in ENSEMBLE_DICT:
+        ENSEMBLE_DICT[i] = {'tsep' : 1, 'tdis_max' : 4, 'tstep' : 2}
 #### RARELY MODIFY (AUTOFILLED OR OBSOLETE)
 
 def tdismax():
@@ -208,6 +210,8 @@ def fill_fndefs():
     for i in glob.glob(PREFIX+'*'+'.'+EXTENSION):
         alist.append(i)
     alist = sorted(alist)
+    if TEST44:
+        alist = [alist[0], alist[0], alist[0]]
     return (alist[0], alist[1], alist[2])
 
 def fill_write_block(fndef=FNDEF):
@@ -624,7 +628,7 @@ def fold_time(outblk, base, dofold=False):
                 assert np.all(outblk[:, (
                     LT-t-mult*tsep) % LT]), (
                         outblk[:, (LT-t-mult*tsep) % LT],
-                        t, mult, base, outblk[:, t])
+                        t, mult, base, outblk[:, t], outblk.shape, (LT-t-mult*tsep) % LT)
                 if ANTIPERIODIC:
                     retblk.append(1/2 * (outblk[:, t] - outblk[
                         :, (LT-t-mult * tsep) % LT]))

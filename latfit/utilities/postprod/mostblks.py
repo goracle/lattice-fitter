@@ -5,7 +5,7 @@ import h5py
 from latfit.utilities import exactmean as em
 from latfit.utilities.postprod.checkblks import convert_traj, printblk
 from latfit.utilities.postprod.checkblks import check_key
-from latfit.utilities.postprod.checkblks import TESTKEY2
+from latfit.utilities.postprod.checkblks import TESTKEY2, TEST44
 
 #### DO NOT MODIFY THE BELOW
 
@@ -105,11 +105,13 @@ def getgenconblk(base, trajl, avgtsrc=False, rowcols=None, openlist=None):
             fn1 = openlist[filekey]
         traj = convert_traj(traj)
         filekey = get_file_name(traj)
+        #print("key:",  'traj_'+str(traj)+'_'+base)
         try:
-            fn1['traj_'+str(traj)+'_'+base].read_direct(
-                outarr, np.s_[:, :tdismax()+1], np.s_[:, :tdismax()+1])
-            # outarr = np.array(fn1['traj_'+str(traj)+'_'+base][
-            # :, :TDIS_MAX+1])
+            if TEST44:
+                outarr = np.array(fn1['traj_'+str(traj)+'_'+base][:, :TDIS_MAX+1])
+            else:
+                fn1['traj_'+str(traj)+'_'+base].read_direct(
+                    outarr, np.s_[:, :tdismax()+1], np.s_[:, :tdismax()+1])
         except:
             namec = 'traj_'+str(traj)+'_'+base
             print(namec in fn1)
@@ -138,6 +140,8 @@ def getmostblks(basl, trajl, openlist):
     except for disconnected diagrams"""
     mostblks = {}
     for base in basl:
+        if 'type' in base:
+            continue
         if not check_key(base):
             continue
         avgtsrc = True if not WRITE_INDIVIDUAL else AVGTSRC

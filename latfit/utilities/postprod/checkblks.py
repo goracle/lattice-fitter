@@ -134,10 +134,11 @@ def try_check_dup(iinblks, blks):
     """Try block in check_dup_configs
     """
     if isinstance(blks, dict):
-        if len(blks[iinblks].shape) == 2:
-            assert blks[iinblks][0, 0] != blks[iinblks][1, 0]
-        else:
-            assert blks[iinblks][0, 0, 0] != blks[iinblks][1, 0, 0]
+        if not TEST44:
+            if len(blks[iinblks].shape) == 2:
+                assert blks[iinblks][0, 0] != blks[iinblks][1, 0]
+            else:
+                assert blks[iinblks][0, 0, 0] != blks[iinblks][1, 0, 0]
     else:
         if len(iinblks.shape) == 2:
             assert iinblks[0, 0] != iinblks[1, 0]

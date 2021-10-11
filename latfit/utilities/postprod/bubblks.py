@@ -161,8 +161,7 @@ if JACKBUB:
                 # so this won't be correct,
                 # but it avoids an error message.
                 outcome = np.tensordot(src, snk, axes=(0, 0))[
-                    ROWS, cols]/(len(src)*1.0 if not TEST44 and\
-                                    not FREEFIELD else 1.0)
+                    ROWS, cols]/(len(src)*1.0 if not FREEFIELD else 1.0)
                 # mean is over tsrc
                 # len(src) division is average over configs
                 # (except for excluded one)
@@ -278,6 +277,8 @@ def getbubbles(bubl, trajl, openlist=None):
     """Get all of the bubbles."""
     bubbles = {}
     for dsrc in bubl:
+        if 'type' in dsrc:
+            continue
         if BUBKEY and dsrc != BUBKEY:
             continue
         for traj in trajl:
