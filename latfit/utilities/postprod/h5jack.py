@@ -97,6 +97,13 @@ ANTIPERIODIC = False
 SKIP_VEC = True
 SKIP_VEC = False
 
+# check for KK operator
+KK_OP = True
+KK_OP = False
+
+# check for kaon->kaon correlator
+KCORR = True
+KCORR = False
 
 # representative hdf5 file, to get info about lattice
 PREFIX = 'traj_'
@@ -172,6 +179,7 @@ bubb.LT = LT
 bubb.TSTEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tstep']
 bubb.ROWS = ROWS
 bubb.COLS = COLS
+bubb.KK_OP = KK_OP # check for KK op if true.
 
 # dynamically set mostblks variables
 mostb.TSEP = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tsep']
@@ -185,6 +193,8 @@ mostb.EXTENSION = EXTENSION
 mostb.WRITE_INDIVIDUAL = WRITE_INDIVIDUAL
 mostb.TDIS_MAX = ENSEMBLE_DICT[LATTICE_ENSEMBLE]['tdis_max']
 mostb.AVGTSRC = AVGTSRC
+mostb.KK_OP = KK_OP
+mostb.KCORR = KCORR
 
 # check blks dynamic
 checkb.LT = LT

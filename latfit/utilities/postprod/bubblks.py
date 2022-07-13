@@ -52,6 +52,7 @@ HNDEF = ''
 ROWS = None
 COLS = None
 FREEFIELD = None
+KK_OP = None
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -291,8 +292,15 @@ def getbubbles(bubl, trajl, openlist=None):
             traj = convert_traj(traj)
             filekey = get_file_name(traj)
             keysrc = 'traj_' + str(traj) + '_' + dsrc
-            assert(keysrc in fn1), "key = " + keysrc + \
-                " not found in fn1:"+errfn
+            try:
+                assert(keysrc in fn1), "key = " + keysrc + \
+                    " not found in fn1:"+errfn
+            except AssertionError:
+                if not KK_OP and 'kk-bubble' in keysrc:
+                    assert KK_OP is not None, "set KK_OP in h5jack.py"
+                    continue
+                else:
+                    raise
             #try:
             #    pdiag = fn1[keysrc].attrs['mom']
             #except KeyError:

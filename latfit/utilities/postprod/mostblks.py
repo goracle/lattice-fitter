@@ -24,6 +24,8 @@ EXTENSION = None
 WRITE_INDIVIDUAL = None
 TDIS_MAX = np.nan
 AVGTSRC = np.nan
+KK_OP = None
+KCORR = None
 
 try:
     PROFILE = profile  # throws an exception when PROFILE isn't defined
@@ -145,6 +147,12 @@ def getmostblks(basl, trajl, openlist):
         if not check_key(base):
             continue
         avgtsrc = True if not WRITE_INDIVIDUAL else AVGTSRC
+        if not KK_OP and ('KK2KK' in base or 'KK2sigma' in base or 'sigma2KK' in base or 'KK2pipi' in base or 'pipi2KK' in base):
+            assert KK_OP is not None, "set KK_OP in h5jack.py"
+            continue
+        if not KCORR and 'kaoncorr' in base:
+            assert KCORR is not None, "set KCORR in h5jack.py"
+            continue
         blk = getgenconblk(base, trajl, avgtsrc=avgtsrc, openlist=openlist)
         if TESTKEY2:
             print("Printing non-averaged-over-tsrc data")
