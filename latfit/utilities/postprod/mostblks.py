@@ -150,7 +150,7 @@ def getmostblks(basl, trajl, openlist):
         if not KK_OP and ('KK2KK' in base or 'KK2sigma' in base or 'sigma2KK' in base or 'KK2pipi' in base or 'pipi2KK' in base):
             assert KK_OP is not None, "set KK_OP in h5jack.py"
             continue
-        if not KCORR and 'kaoncorr' in base:
+        if not KCORR and ('kaoncorr' in base or 'Hbub_kaon' in base):
             assert KCORR is not None, "set KCORR in h5jack.py"
             continue
         blk = getgenconblk(base, trajl, avgtsrc=avgtsrc, openlist=openlist)
