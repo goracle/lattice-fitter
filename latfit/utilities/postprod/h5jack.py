@@ -666,6 +666,13 @@ def do_ama(sloppyblks, exactblks, sloppysubtractionblks):
         retblks = {}
         for blk in sloppyblks:
 
+            if not KK_OP and ('KK2KK' in blk or 'KK2sigma' in blk or 'sigma2KK' in blk or 'KK2pipi' in blk or 'pipi2KK' in blk):
+                assert KK_OP is not None, "set KK_OP in h5jack.py"
+                continue
+            if not KCORR and ('kaoncorr' in blk or 'Hbub_kaon' in blk):
+                assert KCORR is not None, "set KCORR in h5jack.py"
+                continue
+
             len_sloppy, len_exact = checkb.check_ama(blk, sloppyblks,
                                                      exactblks,
                                                      sloppysubtractionblks)
@@ -863,6 +870,12 @@ def main(fixn=False):
         if WRITEBLOCK and not (
                 TESTKEY or TESTKEY2):
             for single_block in WRITEBLOCK:
+                if not KK_OP and ('KK2KK' in single_block or 'KK2sigma' in single_block or 'sigma2KK' in single_block or 'KK2pipi' in single_block or 'pipi2KK' in single_block):
+                    assert KK_OP is not None, "set KK_OP in h5jack.py"
+                    continue
+                if not KCORR and ('kaoncorr' in single_block or 'Hbub_kaon' in single_block):
+                    assert KCORR is not None, "set KCORR in h5jack.py"
+                    continue
                 try:
                     allblks[single_block] = fold_time(allblks[
                         single_block], single_block)
