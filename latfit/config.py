@@ -195,8 +195,8 @@ assert not ALTERNATIVE_PARALLELIZATION or not TLOOP
 
 # Pion ratio?  Put single pion correlators in the denominator
 # of the eff mass equation to get better statistics.
-PIONRATIO = True
 PIONRATIO = False
+PIONRATIO = True
 PIONRATIO = False if not GEVP else PIONRATIO
 if PROC_PARAMS:
     PIONRATIO = PROC_PARAMS['pionratio']
