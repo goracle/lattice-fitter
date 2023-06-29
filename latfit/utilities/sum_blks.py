@@ -167,7 +167,7 @@ def iso0(vecp, name):
     elif name == 'Cv3' or name == 'Cv3R':
         norm = 6.0/sqrt(6.0)
     elif name == 'T' and not vecp:
-        norm = -5.0/(sqrt(6.0))
+        norm = -6.0/(sqrt(6.0))
     elif name == 'Hbub' and not vecp:
         norm = -1.0
     elif name in ('Bub2', 'bub2'):
