@@ -566,7 +566,7 @@ def get_polreq(op1):
                 reqpol = None
                 try:
                     pol_coeffs = np.asarray(ast.literal_eval(polstrspl[1]),
-                                            dtype=np.complex)
+                                            dtype=complex)
                     pol_coeffs = pol_sq_conj(op1, pol_coeffs)
                 except SyntaxError:
                     print('unable to parse:', polstrspl[1], 'as code.')
@@ -597,7 +597,7 @@ def pol_sq_conj(op1, pol_coeffs):
 @PROFILE
 def dojackknife(blk):
     """Apply jackknife to block with shape = (L_traj, L_time)"""
-    out = np.zeros(blk.shape, dtype=np.complex)
+    out = np.zeros(blk.shape, dtype=complex)
     if len(blk) == 1:
         out = blk
     else:

@@ -3,7 +3,7 @@
 import sys
 import os.path
 from math import sqrt
-from collections import Iterable
+from collections.abc import Iterable
 import re
 import warnings
 import linecache as lc

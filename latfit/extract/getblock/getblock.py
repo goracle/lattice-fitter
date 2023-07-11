@@ -425,8 +425,10 @@ if EFF_MASS:
 
                 eigret = gsolve.get_eigvals(cmats_lhs[0][num], cmat_rhs[num],
                                             print_evecs=True, commnorm=True)
+
+                print("n", num, cmats_lhs[0][num], cmat_rhs[num])
                 if MULT > 1:
-                    brackets.append(glin.bracket(eigret[1][1], cmats_lhs[0][num]))
+                    brackets.append([glin.bracket(eigret[1][i], cmats_lhs[0][num]) for i in range(MULT)])
                 else:
                     brackets.append(glin.bracket(eigret[1][0], cmats_lhs[0][num]))
                 eigret = np.asarray(eigret)
@@ -438,6 +440,12 @@ if EFF_MASS:
                 glin.update_sorted_evals(eigret[0], timeij, num)
 
                 if num == 0:
+
+                    # pickle the GEVP matrices, for debug purposes.
+                    gn1 = open('timeij_'+str(timeij)+'.p', 'wb')
+                    pickle.dump([cmats_lhs[0], cmat_rhs], gn1)
+                    gn1.close()
+
                     gsolve.MEAN = None
                     avg_en_eig = average_energies(
                         mean_cmats_lhs, mean_crhs, delta_t, timeij)
@@ -489,6 +497,9 @@ if EFF_MASS:
         final_gevp_debug_print(timeij, num_configs)
         #glin.update_sorted_evecs(avg_en_eig[2], timeij)
         test_bracket_signal(brackets)
+        gn1 = open('bracket_timeij_'+str(timeij)+'.p', 'wb')
+        pickle.dump(brackets, gn1)
+        gn1.close()
         test_ground_increase(retblk, timeij)
         return retblk
 
@@ -569,8 +580,9 @@ def grd_inc_reset():
     test_ground_increase.mean = np.nan
     test_ground_increase.err = np.nan
 
-def test_bracket_signal(brackets, decrease_var=DECREASE_VAR):
+def test_bracket_signal(brackets_in, decrease_var=DECREASE_VAR):
     """Test the bracket signal"""
+    brackets = [i[1] for i in brackets_in]
     mean = em.acmean(np.real(brackets))
     brackets = np.real(brackets)
     assert np.all(brackets > 0) or np.all(brackets < 0), brackets
