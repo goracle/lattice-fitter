@@ -31,8 +31,8 @@ MPIRANK = MPI.COMM_WORLD.rank
 
 # Do a fit at all?
 
-FIT = False
 FIT = True
+FIT = False
 FIT = FIT if IRREP is None else True
 
 # only extract; do not plot, do not fit
